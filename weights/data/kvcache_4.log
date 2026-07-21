@@ -1,0 +1,8 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+KV-CACHE QUANT TEST: c_KV latent (the cache) -> 4.0-bit | kv weights fp16 | 151 win
+  layer 0/27 (23s)
+  layer 9/27 (421s)
+  layer 18/27 (797s)
+  layer 26/27 (1129s)
+
+KV-CACHE QUANT [4.0-bit c_KV]: ppl=11.6768 (delta vs fp16-kv-cache baseline) | carve-out(weights)=6.9616 fp16=6.3070 | compare to WEIGHT-quant kv@2bit=+5.27

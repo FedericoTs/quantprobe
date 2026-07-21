@@ -1,0 +1,9 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+DICHOTOMY: shared-MLP intermediate rotation=identity, shared down_proj@2bit | 151 win
+  layer 0/27 (23s)
+  shared down: interm=2816, eff_rank=1168 (vs KV-latent composed eff_rank 394)
+  layer 9/27 (530s)
+  layer 18/27 (1034s)
+  layer 26/27 (1481s)
+
+DICHOTOMY [shared-MLP rot=identity, down@2bit]: ppl=7.0578 (delta vs carve-out +0.0962) | HIGH-rank intermediate (eff~1168.42442810572) | compare to KV-latent (low-rank) rot=hadamard +1623

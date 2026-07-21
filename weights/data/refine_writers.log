@@ -1,0 +1,21 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+DeepSeek-V2-Lite carve-out 2-bit: 8 win, routed-gate/up=2 DOWN_K=2 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) WRITERS_K=2
+  cache: D:\evo-compress-data\moe_cache\f1f143db391c
+  layer 0/27 quantized+fwd (129s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 2/27 quantized+fwd (2602s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 4/27 quantized+fwd (5072s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 6/27 quantized+fwd (7542s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 8/27 quantized+fwd (10013s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 10/27 quantized+fwd (12482s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 12/27 quantized+fwd (14958s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 14/27 quantized+fwd (17428s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 16/27 quantized+fwd (19898s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 18/27 quantized+fwd (22368s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 20/27 quantized+fwd (24838s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 22/27 quantized+fwd (27308s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 24/27 quantized+fwd (29781s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 26/27 quantized+fwd (32261s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+
+[raw] ppl=6.8205 (saved defensively before formatting)
+
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=2 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) WRITERS_K=2): WikiText-2 ppl = 6.8205 | quant 2.142 b/w over 15.26B params, 445M kept fp16 | resident = 4.98 GB (quant 4.09 + fp16 0.89) = 2.535 b/w whole-model | 8 win, 32266s

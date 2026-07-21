@@ -1,0 +1,17 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (299078 > 32768). Running this sequence through the model will result in indexing errors
+Qwen1.5-MoE-A2.7B fp16 baseline: 146 win x 2048 tok, 24 layers
+  layer 0/24 fwd (36s) hfin=True
+  layer 2/24 fwd (110s) hfin=True
+  layer 4/24 fwd (184s) hfin=True
+  layer 6/24 fwd (257s) hfin=True
+  layer 8/24 fwd (330s) hfin=True
+  layer 10/24 fwd (403s) hfin=True
+  layer 12/24 fwd (476s) hfin=True
+  layer 14/24 fwd (549s) hfin=True
+  layer 16/24 fwd (622s) hfin=True
+  layer 18/24 fwd (695s) hfin=True
+  layer 20/24 fwd (769s) hfin=True
+  layer 22/24 fwd (841s) hfin=True
+  layer 23/24 fwd (878s) hfin=True
+
+Qwen1.5-MoE-A2.7B fp16 baseline: WikiText-2 ppl = 7.2174 (146 win, 880s)

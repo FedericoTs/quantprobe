@@ -1,0 +1,23 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+  layer 0/27
+  layer 9/27
+  layer 18/27
+
+TASK-TRIM PROBE (DeepSeek-V2-Lite, 64 experts/layer, top-6, 2048 tok/domain)
+  layer  dom    n90   never | used-set Jaccard prose~code
+  L1     prose   54     0
+  L1     code    52     0
+         Jaccard=1.00
+  L13    prose   48     0
+  L13    code    48     0
+         Jaccard=1.00
+  L26    prose   51     0
+  L26    code    50     0
+         Jaccard=1.00
+
+  MEANS over 26 MoE layers:
+    prose : n90=50.5/64 experts for 90% of routings | never-used=0.0
+    code  : n90=49.5/64 experts for 90% of routings | never-used=0.0
+    used-set Jaccard prose~code = 1.00
+
+  VERDICT: n90 << 64 AND low Jaccard -> task-trim viable; n90 near 64 or high overlap -> trim dead.

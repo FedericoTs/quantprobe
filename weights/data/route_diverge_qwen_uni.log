@@ -1,0 +1,81 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (299078 > 32768). Running this sequence through the model will result in indexing errors
+qwen routing-divergence [qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True]: 2 win x 2048 tok, cache D:\evo-compress-data\moe_cache\37f031e55776
+  [fp16 ] layer 0/24 done
+  [fp16 ] layer 1/24 done
+  [fp16 ] layer 2/24 done
+  [fp16 ] layer 3/24 done
+  [fp16 ] layer 4/24 done
+  [fp16 ] layer 5/24 done
+  [fp16 ] layer 6/24 done
+  [fp16 ] layer 7/24 done
+  [fp16 ] layer 8/24 done
+  [fp16 ] layer 9/24 done
+  [fp16 ] layer 10/24 done
+  [fp16 ] layer 11/24 done
+  [fp16 ] layer 12/24 done
+  [fp16 ] layer 13/24 done
+  [fp16 ] layer 14/24 done
+  [fp16 ] layer 15/24 done
+  [fp16 ] layer 16/24 done
+  [fp16 ] layer 17/24 done
+  [fp16 ] layer 18/24 done
+  [fp16 ] layer 19/24 done
+  [fp16 ] layer 20/24 done
+  [fp16 ] layer 21/24 done
+  [fp16 ] layer 22/24 done
+  [fp16 ] layer 23/24 done
+  [quant] layer 0/24 done
+  [quant] layer 1/24 done
+  [quant] layer 2/24 done
+  [quant] layer 3/24 done
+  [quant] layer 4/24 done
+  [quant] layer 5/24 done
+  [quant] layer 6/24 done
+  [quant] layer 7/24 done
+  [quant] layer 8/24 done
+  [quant] layer 9/24 done
+  [quant] layer 10/24 done
+  [quant] layer 11/24 done
+  [quant] layer 12/24 done
+  [quant] layer 13/24 done
+  [quant] layer 14/24 done
+  [quant] layer 15/24 done
+  [quant] layer 16/24 done
+  [quant] layer 17/24 done
+  [quant] layer 18/24 done
+  [quant] layer 19/24 done
+  [quant] layer 20/24 done
+  [quant] layer 21/24 done
+  [quant] layer 22/24 done
+  [quant] layer 23/24 done
+
+# qwen routing divergence vs fp16 | qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True | 4096 tok/layer | top-4 of 60 experts
+layer   overlap  top1_agree  divergence
+    0    0.7169      0.7961      0.2831
+    1    0.7852      0.8203      0.2148
+    2    0.7478      0.8354      0.2522
+    3    0.7781      0.7930      0.2219
+    4    0.7505      0.7896      0.2495
+    5    0.7120      0.7219      0.2880
+    6    0.7559      0.7556      0.2441
+    7    0.7884      0.7178      0.2116
+    8    0.7922      0.6948      0.2078
+    9    0.7555      0.7078      0.2445
+   10    0.7511      0.6965      0.2489
+   11    0.7767      0.6912      0.2233
+   12    0.7937      0.7002      0.2063
+   13    0.7875      0.7371      0.2125
+   14    0.8066      0.7302      0.1934
+   15    0.8104      0.7466      0.1896
+   16    0.8070      0.7590      0.1930
+   17    0.7657      0.7625      0.2343
+   18    0.7355      0.7371      0.2645
+   19    0.6981      0.7373      0.3019
+   20    0.6903      0.7004      0.3097
+   21    0.6747      0.6541      0.3253
+   22    0.6713      0.6616      0.3287
+   23    0.6920      0.7078      0.3080
+
+# early-half mean div=0.2408 late-half=0.2556 ratio=1.06x max=0.3287
+
+saved -> C:\Users\Federico\Documents\evo-compress\weights\data\route_diverge_qwen_uniform.txt

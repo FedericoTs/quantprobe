@@ -1,0 +1,6 @@
+  layer 0/32 (455s) BC=False AWQ=True
+  layer 8/32 (472s) BC=False AWQ=True
+  layer 16/32 (490s) BC=False AWQ=True
+  layer 24/32 (507s) BC=False AWQ=True
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=3 pout=0.005: WikiText-2 ppl = 3.9035 @ ~2.591b (1 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47

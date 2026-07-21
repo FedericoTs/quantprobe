@@ -1,0 +1,10 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+writer-fp16 ablation: keep ('q_proj', 'kv_a_proj_with_mqa', 'kv_b_proj', 'gate_proj', 'up_proj') at fp16 in the uniform-2bit model | cache D:\evo-compress-data\moe_cache\a5877fc5e500
+  layer 0/27 (2s) hfin=True
+  layer 6/27 (54s) hfin=True
+  layer 12/27 (106s) hfin=True
+  layer 18/27 (158s) hfin=True
+  layer 24/27 (210s) hfin=True
+  layer 26/27 (227s) hfin=True
+
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 6.1870 | fp16=5.6570 -> recovers 95% of the collapse (vs forced-routing's 16%)

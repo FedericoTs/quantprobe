@@ -1,0 +1,5 @@
+=== CLEAN-BOOT BENCH: 30B pure CPU (predicted 16-17; was 12.6 @2133) ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |            tg32 |          8.80 ± 2.00 |
+=== dense 7B Q2 CPU (predicted ~10.1; was 7.18 @2133) ===
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |   0 |            tg32 |         10.27 ± 0.88 |
+XMP BENCH DONE

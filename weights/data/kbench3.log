@@ -1,0 +1,40 @@
+﻿cmd.exe : "vswhere.exe" non è riconosciuto come comando interno o esterno,
+In riga:1 car:1
++ & cmd /c "tools\run_trellis.cmd kbench" 2>&1 | Out-File -FilePath wei ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ("vswhere.exe" n...erno o esterno,:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ un programma eseguibile o un file batch.
+Using C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensions\torch_extensions\
+Cache\py312_cu124 as PyTorch extensions root...
+Detected CUDA files, patching ldflags
+Emitting ninja build file C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensio
+ns\torch_extensions\Cache\py312_cu124\evoq_f0\build.ninja...
+Building extension module evoq_f0...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+[1/2] C:\Users\Federico\Documents\evo-compress\tools\cuda_portable\bin\nvcc --generate-dependencies-with-compile --dependency-output evoq_kernel.cuda.o.d -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcompiler /EHsc -Xcompiler /wd4068 -Xcompiler /wd4067 -Xcompiler /wd4624 -Xcompiler /wd4190 -Xcompiler /wd4018 -Xcompiler /wd4275 -Xcompiler /wd4267 -Xcompiler /wd4244 -Xcompiler /wd4251 -Xcompiler /wd4819 -Xcompiler /MD -DTORCH_EXTENSION_NAME=evoq_f0 -DTORCH_API_INCLUDE_EXTENSION_H -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include\TH -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include\THC -IC:\Users\Federico\Documents\evo-compress\tools\cuda_portable\include -IC:\Python312\Include -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_61,code=sm_61 -std=c++17 -O3 -gencode=arch=compute_61,code=sm_61 -c C:\Users\Federico\Documents\evo-compress\weights\evoq_kernel.cu -o evoq_kernel.cuda.o 
+C:\Users\Federico\Documents\evo-compress\weights\evoq_kernel.cu(426): warning #177-D: variable "acc" was declared but never referenced
+      int acc[2];
+          ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+evoq_kernel.cu
+tmpxft_00001f94_00000000-10_evoq_kernel.cudafe1.cpp
+[2/2] "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64/link.exe" evoq_kernel.cuda.o /nologo /DLL c10.lib c10_cuda.lib torch_cpu.lib torch_cuda.lib -INCLUDE:?warp_size@cuda@at@@YAHXZ torch.lib /LIBPATH:C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\lib torch_python.lib /LIBPATH:C:\Python312\libs /LIBPATH:C:\Users\Federico\Documents\evo-compress\tools\cuda_portable\lib\x64 cudart.lib /out:evoq_f0.pyd
+   Creazione della libreria evoq_f0.lib e dell'oggetto evoq_f0.exp
+Loading extension module evoq_f0...
+=== Llama-2-7B shape sweep: 2-bit trellis_gemv v1/v2 vs 4-bit F0 (GTX 1060, sm_61) ===
+shape     outxin       v1 ms   v2 ms  v3i ms   F0 ms  v3i/F0 v3i GB/s
+q        4096x4096     0.260   0.417   0.208   0.104   0.50x       24
+k        4096x4096     0.260   0.370   0.260   0.104   0.40x       19
+v        4096x4096     0.260   0.417   0.208   0.104   0.50x       24
+o        4096x4096     0.260   0.364   0.208   0.104   0.50x       24
+gate    11008x4096     0.625   0.912   0.573   0.260   0.45x       23
+up      11008x4096     0.573   0.937   0.573   0.312   0.55x       23
+down     4096x11008    0.625   1.041   0.573   0.364   0.64x       23
+
+PER-TOKEN matmul (x32 layers): v1 10.9 | v2 7.0 | v3i(lookup-free) 12.0 | F0 23.1 tok/s | best-trellis vs F0 0.52x
+7B RESIDENT: trellis 1.82 GB (2.162 b/w) vs F0 4-bit 3.44 GB (4.084 b/w) | fp16 13.5 GB
+  >>> 2-bit trellis: QTIP-parity quality (6.88 ppl) at 1.82 GB resident, matmul 11 tok/s on a 6GB GTX 1060 (Q4_K_M 21.8 t/s @ 4.56 GB).

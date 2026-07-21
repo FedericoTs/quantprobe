@@ -1,0 +1,7 @@
+CHECKPOINT OK: GLM file present
+=== DISK-TIER BENCH: 106B-A12B MoE, ~28GB model vs 16GB RAM (SATA page-cache streaming) ===
+--- run 1 (cold-ish): pure CPU, tg16 x2 ---
+| glm4moe 106B.A12B IQ2_XXS - 2.0625 bpw |  39.74 GiB |   110.47 B | CUDA       |   0 |            tg16 |          0.19 ± 0.02 |
+--- run 2 (warm): same, page cache now hot with the used expert set ---
+| glm4moe 106B.A12B IQ2_XXS - 2.0625 bpw |  39.74 GiB |   110.47 B | CUDA       |   0 |            tg16 |          0.19 ± 0.02 |
+GLM BENCH DONE

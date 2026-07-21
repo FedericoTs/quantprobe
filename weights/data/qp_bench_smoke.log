@@ -1,0 +1,11 @@
+[quantprobe] placement: all in VRAM | predicted 14.4 tok/s
+[quantprobe] bench: tools/llamacpp\llama-bench.exe -m D:/evo-compress-data/gguf/qwen7b-Q2_K.gguf -n 32 -p 0 -r 2 --mmap 1 -ngl 99
+
+[quantprobe] could not parse llama-bench output; raw tail:
+build: 18ef86ece (9596)
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
+  Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
+load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp\ggml-cuda.dll
+load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp\ggml-rpc.dll
+load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp\ggml-cpu-haswell.dll
+BENCH SMOKE DONE

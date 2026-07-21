@@ -1,0 +1,11 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+DeepSeek-V2-Lite baseline: 16 windows x 2048 tok, 27 layers
+  layer 0/27 (3s)
+  layer 4/27 (43s)
+  layer 8/27 (83s)
+  layer 12/27 (122s)
+  layer 16/27 (162s)
+  layer 20/27 (201s)
+  layer 24/27 (241s)
+
+DeepSeek-V2-Lite fp16 baseline: WikiText-2 ppl = 6.1740 (16 win, 267s)

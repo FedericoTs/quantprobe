@@ -1,0 +1,18 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+DeepSeek-V2-Lite FULL 2-bit: 8 win, DOWN_K=3 O_K=3 INT8_GS=True
+  layer 0/27 quantized+fwd (119s)
+  layer 2/27 quantized+fwd (2444s)
+  layer 4/27 quantized+fwd (4769s)
+  layer 6/27 quantized+fwd (7094s)
+  layer 8/27 quantized+fwd (9418s)
+  layer 10/27 quantized+fwd (11739s)
+  layer 12/27 quantized+fwd (14058s)
+  layer 14/27 quantized+fwd (16382s)
+  layer 16/27 quantized+fwd (18706s)
+  layer 18/27 quantized+fwd (21030s)
+  layer 20/27 quantized+fwd (23355s)
+  layer 22/27 quantized+fwd (25677s)
+  layer 24/27 quantized+fwd (27998s)
+  layer 26/27 quantized+fwd (30317s)
+
+DeepSeek-V2-Lite FULL 2-bit (DOWN_K=3 O_K=3 INT8_GS=True): WikiText-2 ppl = 11.7369 | quant 2.394 b/w over 15.26B params, 445M kept fp16 | resident = 5.46 GB (quant 4.57 + fp16 0.89) = 2.780 b/w whole-model | 8 win, 30322s

@@ -1,0 +1,44 @@
+##### PHASE 0: disk cleanup (regenerable artifacts only; keep B-late12 + sources) #####
+D:              932G  925G  7.2G 100% /d
+D:              932G  845G   87G  91% /d
+##### PHASE 1 (T7): batch-union throughput, 30B exps=CPU, batch 1/4/8 #####
+|    PP |     TG |    B |   N_KV |   T_PP s | S_PP t/s |   T_TG s | S_TG t/s |      T s |    S t/s |
+|-------|--------|------|--------|----------|----------|----------|----------|----------|----------|
+|    16 |     32 |    1 |     48 |    4.947 |     3.23 |    6.591 |     4.86 |   11.538 |     4.16 |
+|    16 |     32 |    4 |    192 |    8.533 |     7.50 |    8.122 |    15.76 |   16.655 |    11.53 |
+|    16 |     32 |    8 |    384 |    8.609 |    14.87 |   11.588 |    22.09 |   20.197 |    19.01 |
+##### PHASE 2 (T2): router lookahead probe (DeepSeek-V2-Lite) #####
+  layer 20: pred-top6 recall=0.924  prefetch-hit top8=0.983 top12=0.999
+  layer 21: pred-top6 recall=0.929  prefetch-hit top8=0.985 top12=0.999
+  layer 22: pred-top6 recall=0.938  prefetch-hit top8=0.990 top12=1.000
+  layer 23: pred-top6 recall=0.938  prefetch-hit top8=0.989 top12=1.000
+  layer 24: pred-top6 recall=0.958  prefetch-hit top8=0.996 top12=1.000
+  layer 25: pred-top6 recall=0.931  prefetch-hit top8=0.989 top12=1.000
+  layer 26: pred-top6 recall=0.952  prefetch-hit top8=0.993 top12=1.000
+LOOKAHEAD (DeepSeek-V2-Lite, 26 MoE layers): mean top6 recall=0.912 | top8 prefetch=0.969 | top12 prefetch=0.989 | colibri GLM-5.2 reference: 0.716
+##### PHASE 3 (T6): quantization-tier self-speculation (Qwen2.5-7B) #####
+llama_quantize:    total time = 232639.42 ms
+llama_quantize:    total time = 297606.46 ms
+--- baseline: Q4_K_M alone on GPU ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |            tg32 |         22.77 ± 0.03 |
+llama-speculative.exe NOT PRESENT -> T6 SKIPPED (note for later build)
+tools/llamacpp/llama-server.exe
+tools/llamacpp/rpc-server.exe
+##### PHASE 4 (T5): wait for Q8 source, then 30B probe + depth-aware A/B #####
+D:              932G  868G   64G  94% /d
+--- reference Q4_K_M from Q8 ---
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q8_0.gguf'
+  ref-q4km:
+--- band probe: 48 layers, 4 bands, ffn->q2_k on Q4_K_M base ---
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q8_0.gguf'
+  b0_11:
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q8_0.gguf'
+  b12_23:
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q8_0.gguf'
+  b24_35:
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q8_0.gguf'
+  b36_47:
+--- community uniform Q2_K reference ppl ---
+  community-Q2_K: 1.34.223.445 I Final estimate: PPL = 11.2667 +/- 0.54608
+BAND CURVE COMPLETE -> depth-aware variant built next turn from the argmax band
+CHAIN DONE

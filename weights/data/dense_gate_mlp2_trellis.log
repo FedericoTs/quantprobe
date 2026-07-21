@@ -1,0 +1,9 @@
+Sliding Window Attention is enabled but not implemented for `sdpa`; unexpected results may be encountered.
+DENSE 2-bit GATE (Qwen2.5-7B, mlp2, codec=trellis): 3x1024 tok | quant ('gate_proj', 'up_proj', 'down_proj')
+  layer 0/28 (q=3) (439s)
+  layer 7/28 (q=3) (3511s)
+  layer 14/28 (q=3) (6580s)
+  layer 21/28 (q=3) (9648s)
+  layer 27/28 (q=3) (12277s)
+
+DENSE-GATE [mlp2 codec=trellis]: ppl=6.5228 | Qwen2.5-7B dense, 3x1024 enwik8

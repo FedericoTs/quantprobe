@@ -1,0 +1,12 @@
+=== locate a Q2-class GGUF of Qwen3-30B-A3B ===
+"path":"Qwen3-30B-A3B-Q2_K.gguf"
+"path":"Qwen3-30B-A3B-Q2_K_L.gguf"
+"path":"Qwen3-30B-A3B-UD-IQ2_M.gguf"
+"path":"Qwen3-30B-A3B-UD-IQ2_XXS.gguf"
+"path":"Qwen3-30B-A3B-UD-Q2_K_XL.gguf"
+"path":"Qwen_Qwen3-30B-A3B-IQ2_M.gguf"
+"path":"Qwen_Qwen3-30B-A3B-IQ2_S.gguf"
+"path":"Qwen_Qwen3-30B-A3B-IQ2_XS.gguf"
+"path":"Qwen_Qwen3-30B-A3B-IQ2_XXS.gguf"
+"path":"Qwen_Qwen3-30B-A3B-Q2_K.gguf"
+LOCATE DONE

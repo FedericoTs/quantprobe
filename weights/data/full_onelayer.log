@@ -1,0 +1,9 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+=== single-expert round-trip MSE (layer 5, expert 0) ===
+  expert0.gate_proj  (1408, 2048)  rel-MSE=6.8054e-02  @ 2.125b
+  expert0.up_proj    (1408, 2048)  rel-MSE=6.8006e-02  @ 2.125b
+  expert0.down_proj  (2048, 1408)  rel-MSE=6.8028e-02  @ 2.125b
+
+=== one-layer ablation: quantize MoE layer 5 only ===
+
+DeepSeek-V2-Lite ONE-LAYER(5) 2-bit, rest fp16: WikiText-2 ppl = 6.4501 (151 win, 2264s)

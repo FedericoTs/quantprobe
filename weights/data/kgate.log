@@ -1,0 +1,23 @@
+﻿cmd.exe : "vswhere.exe" non è riconosciuto come comando interno o esterno,
+In riga:1 car:25
++ ... VOQ_VCHUNK="128"; & cmd /c "tools\run_trellis.cmd kgate" 2>&1 | Out-F ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ("vswhere.exe" n...erno o esterno,:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ un programma eseguibile o un file batch.
+Using C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensions\torch_extensions\
+Cache\py312_cu124 as PyTorch extensions root...
+Detected CUDA files, patching ldflags
+Emitting ninja build file C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensio
+ns\torch_extensions\Cache\py312_cu124\evoq_f0\build.ninja...
+Building extension module evoq_f0...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module evoq_f0...
+built trellis_gemv kernel
+
+correctness 1024x2048: rel err 3.31e-07  PASS
+trellis_gemv: 0.052 ms/call | 12.0 GB/s = 6% util
+  weight traffic: trellis 623KB vs F0 1114KB = 0.56x (44% less DRAM)
+  -> 7B @ ~2.20 b/w (1.79 GB resident): ~6.7 tok/s (matmul-only; Q4_K_M 21.8 @ 4.56GB)

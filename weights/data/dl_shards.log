@@ -1,0 +1,67 @@
+[model-00001-of-000004.safetensors] 0.00/8.59 GB -> resuming
+[model-00001-of-000004.safetensors] 0.53/8.59 GB (6%) ~11.0 MB/s
+[model-00001-of-000004.safetensors] 1.06/8.59 GB (12%) ~11.7 MB/s
+[model-00001-of-000004.safetensors] 1.59/8.59 GB (18%) ~11.4 MB/s
+[model-00001-of-000004.safetensors] 2.11/8.59 GB (25%) ~9.4 MB/s
+[model-00001-of-000004.safetensors] 2.64/8.59 GB (31%) ~11.4 MB/s
+[model-00001-of-000004.safetensors] 3.17/8.59 GB (37%) ~10.9 MB/s
+[model-00001-of-000004.safetensors] 3.70/8.59 GB (43%) ~9.4 MB/s
+[model-00001-of-000004.safetensors] 4.23/8.59 GB (49%) ~7.5 MB/s
+[model-00001-of-000004.safetensors] 4.76/8.59 GB (55%) ~6.8 MB/s
+[model-00001-of-000004.safetensors] 5.28/8.59 GB (61%) ~6.0 MB/s
+[model-00001-of-000004.safetensors] 5.81/8.59 GB (68%) ~8.4 MB/s
+[model-00001-of-000004.safetensors] 6.34/8.59 GB (74%) ~11.3 MB/s
+[model-00001-of-000004.safetensors] 6.87/8.59 GB (80%) ~10.7 MB/s
+[model-00001-of-000004.safetensors] 7.40/8.59 GB (86%) ~8.6 MB/s
+[model-00001-of-000004.safetensors] 7.93/8.59 GB (92%) ~7.5 MB/s
+[model-00001-of-000004.safetensors] 8.46/8.59 GB (98%) ~6.9 MB/s
+[model-00001-of-000004.safetensors] DONE 8.59 GB
+[model-00002-of-000004.safetensors] 0.00/8.59 GB -> resuming
+[model-00002-of-000004.safetensors] 0.53/8.59 GB (6%) ~8.0 MB/s
+[model-00002-of-000004.safetensors] 1.06/8.59 GB (12%) ~6.4 MB/s
+[model-00002-of-000004.safetensors] 1.59/8.59 GB (18%) ~5.8 MB/s
+[model-00002-of-000004.safetensors] 2.11/8.59 GB (25%) ~4.0 MB/s
+[model-00002-of-000004.safetensors] 2.64/8.59 GB (31%) ~5.1 MB/s
+[model-00002-of-000004.safetensors] 3.17/8.59 GB (37%) ~10.5 MB/s
+[model-00002-of-000004.safetensors] 3.70/8.59 GB (43%) ~8.4 MB/s
+[model-00002-of-000004.safetensors] 4.23/8.59 GB (49%) ~6.6 MB/s
+[model-00002-of-000004.safetensors] 4.76/8.59 GB (55%) ~5.5 MB/s
+[model-00002-of-000004.safetensors] 5.28/8.59 GB (62%) ~3.8 MB/s
+[model-00002-of-000004.safetensors] 5.81/8.59 GB (68%) ~3.7 MB/s
+[model-00002-of-000004.safetensors] 6.34/8.59 GB (74%) ~6.3 MB/s
+[model-00002-of-000004.safetensors] 6.87/8.59 GB (80%) ~8.1 MB/s
+[model-00002-of-000004.safetensors] 7.40/8.59 GB (86%) ~6.4 MB/s
+[model-00002-of-000004.safetensors] 7.93/8.59 GB (92%) ~5.4 MB/s
+[model-00002-of-000004.safetensors] 8.46/8.59 GB (98%) ~4.8 MB/s
+[model-00002-of-000004.safetensors] DONE 8.59 GB
+[model-00003-of-000004.safetensors] 0.00/8.59 GB -> resuming
+[model-00003-of-000004.safetensors] 0.53/8.59 GB (6%) ~8.4 MB/s
+[model-00003-of-000004.safetensors] 1.06/8.59 GB (12%) ~8.2 MB/s
+[model-00003-of-000004.safetensors] 1.59/8.59 GB (18%) ~8.2 MB/s
+[model-00003-of-000004.safetensors] 2.11/8.59 GB (25%) ~8.2 MB/s
+[model-00003-of-000004.safetensors] 2.64/8.59 GB (31%) ~8.3 MB/s
+[model-00003-of-000004.safetensors] 3.17/8.59 GB (37%) ~8.7 MB/s
+[model-00003-of-000004.safetensors] 3.70/8.59 GB (43%) ~8.8 MB/s
+[model-00003-of-000004.safetensors] 4.23/8.59 GB (49%) ~8.8 MB/s
+[model-00003-of-000004.safetensors] 4.76/8.59 GB (55%) ~8.8 MB/s
+[model-00003-of-000004.safetensors] 5.28/8.59 GB (62%) ~9.0 MB/s
+[model-00003-of-000004.safetensors] 5.81/8.59 GB (68%) ~8.8 MB/s
+[model-00003-of-000004.safetensors] 6.34/8.59 GB (74%) ~8.8 MB/s
+[model-00003-of-000004.safetensors] 6.87/8.59 GB (80%) ~8.7 MB/s
+[model-00003-of-000004.safetensors] 7.40/8.59 GB (86%) ~8.5 MB/s
+[model-00003-of-000004.safetensors] 7.93/8.59 GB (92%) ~8.9 MB/s
+[model-00003-of-000004.safetensors] 8.46/8.59 GB (98%) ~8.6 MB/s
+[model-00003-of-000004.safetensors] DONE 8.59 GB
+[model-00004-of-000004.safetensors] 0.00/5.64 GB -> resuming
+[model-00004-of-000004.safetensors] 0.53/5.64 GB (9%) ~11.7 MB/s
+[model-00004-of-000004.safetensors] 1.06/5.64 GB (19%) ~11.4 MB/s
+[model-00004-of-000004.safetensors] 1.59/5.64 GB (28%) ~11.6 MB/s
+[model-00004-of-000004.safetensors] 2.11/5.64 GB (38%) ~11.9 MB/s
+[model-00004-of-000004.safetensors] 2.64/5.64 GB (47%) ~11.4 MB/s
+[model-00004-of-000004.safetensors] 3.17/5.64 GB (56%) ~11.7 MB/s
+[model-00004-of-000004.safetensors] 3.70/5.64 GB (66%) ~11.6 MB/s
+[model-00004-of-000004.safetensors] 4.23/5.64 GB (75%) ~11.8 MB/s
+[model-00004-of-000004.safetensors] 4.76/5.64 GB (84%) ~11.6 MB/s
+[model-00004-of-000004.safetensors] 5.28/5.64 GB (94%) ~11.6 MB/s
+[model-00004-of-000004.safetensors] DONE 5.64 GB
+ALL SHARDS DONE in 3977s

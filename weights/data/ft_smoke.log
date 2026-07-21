@@ -1,0 +1,6 @@
+FT PHASE 1: block-local FT 2/32 layers, K=3, down_k=3, 8x512 calib
+  FT layer  0/32 (767s) train 0.0136->0.0197 | heldout 0.0142->0.0127
+  FT layer  1/32 (1254s) train 0.0255->0.0079 | heldout 0.0261->0.0072
+FT PHASE 2: eval 2 windows on wikitext2_test
+
+Llama-2-7B QTIP-trellis FINE-TUNED (block-local, K=3 down_k=3 ftlayers=2): WikiText-2 ppl = 5.2462 @ ~2.44b (2 win) | PTQ baseline 6.454 | QuIP#-FT 6.19 | QTIP-FT 5.86 | fp16 5.47

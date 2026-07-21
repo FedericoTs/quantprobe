@@ -1,0 +1,60 @@
+{
+  "slice": "enwik8_1mb",
+  "n_bytes": 1000000,
+  "leaderboard": [
+    {
+      "name": "cmcore",
+      "in_bytes": 1000000,
+      "compressed": 260147,
+      "decompressor": 273920,
+      "prize_total": 534067,
+      "bpc": 2.081176,
+      "bpc_with_decompressor": 4.272536,
+      "roundtrip_ok": true,
+      "encode_MBps": 0.1573204847805088,
+      "decode_MBps": 0.16637978078384613
+    },
+    {
+      "name": "brotli-11",
+      "compressed": 281012,
+      "bpc": 2.248096,
+      "roundtrip_ok": true
+    },
+    {
+      "name": "bz2-9",
+      "compressed": 281323,
+      "bpc": 2.250584,
+      "roundtrip_ok": true
+    },
+    {
+      "name": "lzma-9",
+      "compressed": 290692,
+      "bpc": 2.325536,
+      "roundtrip_ok": true
+    },
+    {
+      "name": "zstd-19",
+      "compressed": 300075,
+      "bpc": 2.4006,
+      "roundtrip_ok": true
+    },
+    {
+      "name": "gzip-9",
+      "compressed": 355791,
+      "bpc": 2.846328,
+      "roundtrip_ok": true
+    }
+  ],
+  "cmcore_detail": {
+    "name": "cmcore",
+    "in_bytes": 1000000,
+    "compressed": 260147,
+    "decompressor": 273920,
+    "prize_total": 534067,
+    "bpc": 2.081176,
+    "bpc_with_decompressor": 4.272536,
+    "roundtrip_ok": true,
+    "encode_MBps": 0.1573204847805088,
+    "decode_MBps": 0.16637978078384613
+  }
+}

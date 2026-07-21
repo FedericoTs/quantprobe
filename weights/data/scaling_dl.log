@@ -1,0 +1,15 @@
+=== locate GLM-4.5-Air Q2-class GGUF ===
+"path":"GLM-4.5-Air-Q2_K.gguf"
+"path":"GLM-4.5-Air-Q2_K_L.gguf"
+"path":"GLM-4.5-Air-UD-IQ2_M.gguf"
+"path":"GLM-4.5-Air-UD-IQ2_XXS.gguf"
+"path":"GLM-4.5-Air-UD-Q2_K_XL.gguf"
+"path":"GLM-4.5-Air-UD-IQ2_M.gguf"
+"path":"GLM-4.5-Air-UD-IQ2_XXS.gguf"
+"path":"GLM-4.5-Air-UD-Q2_K_XL.gguf"
+=== download 1: DeepSeek-V2-Lite Q4_K_M (bits-scaling point, ~9GB) ===
+"path":"DeepSeek-Coder-V2-Lite-Base-Q4_K_M.gguf"
+  DeepSeek-Coder-V2-Lite-Base-Q4_K_M.gguf: 10.36 GB
+  DeepSeek-Coder-V2-Lite-Base-Q4_K_M.gguf: DONE
+CHECKPOINT OK: dsv2 q4 downloaded
+DOWNLOADS PHASE1 DONE

@@ -1,0 +1,96 @@
+"""quantprobe CLI — probe / plan / fetch."""
+from __future__ import annotations
+import argparse
+
+
+def main():
+    import sys
+    try:
+        sys.stdout.reconfigure(errors="replace")
+    except Exception:
+        pass
+    ap = argparse.ArgumentParser(
+        prog="quantprobe",
+        description="Probe-then-quantize for LLMs: fragility curves, placement plans, recipes. "
+                    "Laws + evidence: github.com/FedericoTs/quantprobe")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("probe", help="measure a GGUF's depth-fragility curve, emit the recipe (Law 3)")
+    p.add_argument("--gguf", required=True, help="f16/bf16 (or high-precision) source GGUF")
+    p.add_argument("--bands", type=int, default=4)
+    p.add_argument("--chunks", type=int, default=32)
+    p.add_argument("--eval", required=True, help="raw text eval file (e.g. wikitext-2 test)")
+    p.add_argument("--ngl", type=int, default=99, help="GPU layers for perplexity (0 for CPU)")
+    p.add_argument("--workdir", default=None)
+    p.add_argument("--llama-dir", default=None, help="dir containing llama-quantize/llama-perplexity")
+    p.add_argument("--dry-run", action="store_true")
+
+    q = sub.add_parser("plan", help="evaluate every bit/tier placement, predict tok/s (Law 4)")
+    q.add_argument("--model", default=None, help="preset: qwen3-30b deepseek-16b gemma-12b mistral-7b glm-air glm-744b")
+    q.add_argument("--machine", default=None, help="preset: 2016-xmp 2016 gaming ddr5 colibri")
+    q.add_argument("--bits", type=float, default=2.5, choices=[2.0, 2.5, 3.0, 4.5, 6.5, 8.5])
+    q.add_argument("--total", type=float, help="total params (B)")
+    q.add_argument("--active", type=float, help="active params per token (B)")
+    q.add_argument("--always-active", type=float, help="always-active (attention/embed) params (B)")
+    q.add_argument("--vram", type=float); q.add_argument("--vram-bw", type=float)
+    q.add_argument("--ram", type=float); q.add_argument("--ram-bw", type=float)
+    q.add_argument("--disk-bw", type=float)
+
+    def hwargs(sp):
+        sp.add_argument("--model", default=None); sp.add_argument("--machine", default=None)
+        sp.add_argument("--bits", type=float, default=2.5, choices=[2.0, 2.5, 3.0, 4.5, 6.5, 8.5])
+        sp.add_argument("--total", type=float); sp.add_argument("--active", type=float)
+        sp.add_argument("--always-active", type=float)
+        sp.add_argument("--vram", type=float); sp.add_argument("--vram-bw", type=float)
+        sp.add_argument("--ram", type=float); sp.add_argument("--ram-bw", type=float)
+        sp.add_argument("--disk-bw", type=float)
+        sp.add_argument("--llama-dir", default=None); sp.add_argument("--dry", action="store_true")
+
+    r = sub.add_parser("run", help="plan the best placement, then launch llama.cpp chat with those flags")
+    r.add_argument("--gguf", required=True); hwargs(r)
+    r.add_argument("--serve", action="store_true", help="launch llama-server instead of interactive chat")
+    r.add_argument("--extra", default=None, help="extra flags passed through to llama.cpp")
+
+    b = sub.add_parser("bench", help="measure real tok/s with the planned flags; print predicted vs measured")
+    b.add_argument("--gguf", required=True); hwargs(b)
+    b.add_argument("--reps", type=int, default=3)
+
+    d = sub.add_parser("dashboard", help="launch llama-server with planned flags + a live predicted-vs-measured chat page")
+    d.add_argument("--gguf", required=True); hwargs(d)
+    d.add_argument("--port", type=int, default=8077); d.add_argument("--server-port", type=int, default=8090)
+    d.add_argument("--no-open", action="store_true")
+
+    g = sub.add_parser("target", help="INVERSE planning: give a tok/s target, get the smartest feasible model + the speed-intelligence ladder")
+    g.add_argument("--tps", type=float, required=True, help="minimum tok/s you need")
+    hwargs(g)
+    g.add_argument("--ladder", action="store_true", help="print the full speed-vs-intelligence ladder")
+
+    f = sub.add_parser("fetch", help="robust HF download (Range-resume, retry)")
+    f.add_argument("repo", help="HF repo, or a preset: qwen3-30b, glm-air, deepseek-16b, qwen3-0.6b"); f.add_argument("dest"); f.add_argument("files", nargs="*")
+
+    a = ap.parse_args()
+    if a.cmd == "probe":
+        from . import probe
+        probe.run(a)
+    elif a.cmd == "plan":
+        from . import plan
+        plan.run(a)
+    elif a.cmd == "run":
+        from . import runtime
+        runtime.run(a)
+    elif a.cmd == "bench":
+        from . import runtime
+        runtime.bench(a)
+    elif a.cmd == "dashboard":
+        from . import dashboard
+        dashboard.dashboard(a)
+    elif a.cmd == "target":
+        from . import target
+        target.run(a)
+    else:
+        from . import fetch
+        fetch.run(a)
+
+
+if __name__ == "__main__":
+    main()

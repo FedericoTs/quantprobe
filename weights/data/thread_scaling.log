@@ -1,0 +1,5 @@
+=== thread-scaling: t=1,2,4 (EM=0). Perfect scaling => sync-free; sub-linear => barrier cost ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CPU        |       1 |            tg32 |          5.89 ± 0.50 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CPU        |       2 |            tg32 |          8.67 ± 0.85 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CPU        |       4 |            tg32 |          9.55 ± 0.63 |
+SCALING DONE

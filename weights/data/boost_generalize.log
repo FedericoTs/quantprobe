@@ -1,0 +1,25 @@
+##### PART 1: Gemma band-width sweep #####
+=== E: last-6 only @q4_k (is fragility concentrated in 42-47?) ===
+llama_quantize:    total time = 414584.18 ms
+=== F: graded ramp (36-41 q3_k, 42-47 q4_k) ===
+llama_quantize:    total time = 385385.42 ms
+  size: 4974513856 /d/evo-compress-data/gguf/gemma4-12b-E-last6.gguf
+  E-last6: 3.10.993.901 I Final estimate: PPL = 11.5482 +/- 0.32884
+  size: 5082341056 /d/evo-compress-data/gguf/gemma4-12b-F-ramp.gguf
+  F-ramp: 3.25.681.222 I Final estimate: PPL = 10.3276 +/- 0.28905
+##### PART 2: Qwen mechanism probe (untied head) #####
+=== convert Qwen2.5-7B base -> f16 GGUF ===
+ModuleNotFoundError: No module named 'sentencepiece'
+=== reference: base Q6_K (no 2-bit band) ===
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/qwen2.5-7b-f16.gguf'
+  ref-q6k:
+=== band probe: one 7-layer band ffn->q2_k at a time, rest q6_k (28 layers) ===
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/qwen2.5-7b-f16.gguf'
+  b0_6:
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/qwen2.5-7b-f16.gguf'
+  b7_13:
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/qwen2.5-7b-f16.gguf'
+  b14_20:
+llama_quantize: failed to quantize model from 'D:/evo-compress-data/gguf/qwen2.5-7b-f16.gguf'
+  b21_27:
+SWEEP AND PROBE DONE

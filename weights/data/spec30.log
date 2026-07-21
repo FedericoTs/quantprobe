@@ -1,0 +1,13 @@
+=== fetch Qwen3-0.6B Q8 draft (~0.6GB) ===
+  Qwen3-0.6B-Q8_0.gguf: 0.64 GB
+  Qwen3-0.6B-Q8_0.gguf: DONE
+CHECKPOINT OK: draft downloaded
+=== A: 30B CPU target + 0.6B GPU draft ===
+CHECKPOINT OK: server up
+  30B WITH 0.6B-GPU draft: predicted_per_second = 4.61
+OPERAZIONE RIUSCITA: il processo "llama-server.exe" con il PID 5840 è stato terminato.
+=== B: 30B CPU no draft (same protocol) ===
+CHECKPOINT OK: server up
+  30B NO draft: predicted_per_second = 10.4
+OPERAZIONE RIUSCITA: il processo "llama-server.exe" con il PID 11152 è stato terminato.
+CROSS-SPEC DONE

@@ -1,0 +1,39 @@
+  layer 0/48
+  layer 12/48
+  layer 24/48
+  layer 36/48
+
+SEMANTIC LOCALITY (per-domain neuron concentration + cross-domain overlap)
+  layer  dom     n90%   n99%   | top10% Jaccard vs other domains
+  L3     prose   72.3% 96.1%
+  L3     code    71.6% 96.1%
+  L3     encyc   72.0% 96.1%
+         prose~code: Jaccard=0.75
+         prose~encyc: Jaccard=0.70
+         code~encyc: Jaccard=0.78
+  L13    prose   72.8% 95.6%
+  L13    code    71.7% 95.3%
+  L13    encyc   73.9% 95.8%
+         prose~code: Jaccard=0.28
+         prose~encyc: Jaccard=0.29
+         code~encyc: Jaccard=0.33
+  L24    prose   83.7% 98.0%
+  L24    code    83.7% 98.1%
+  L24    encyc   83.1% 98.0%
+         prose~code: Jaccard=0.36
+         prose~encyc: Jaccard=0.31
+         code~encyc: Jaccard=0.35
+  L35    prose   74.1% 95.2%
+  L35    code    74.0% 95.1%
+  L35    encyc   76.6% 96.0%
+         prose~code: Jaccard=0.31
+         prose~encyc: Jaccard=0.34
+         code~encyc: Jaccard=0.33
+  L44    prose   82.1% 97.9%
+  L44    code    81.8% 97.9%
+  L44    encyc   83.9% 98.2%
+         prose~code: Jaccard=0.35
+         prose~encyc: Jaccard=0.35
+         code~encyc: Jaccard=0.45
+
+  PASS if n90 < ~25% and cross-domain Jaccard < ~0.5 -> semantic carve-out is real; run T2 oracle.

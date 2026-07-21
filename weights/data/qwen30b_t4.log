@@ -1,0 +1,13 @@
+=== T4: download Qwen3-30B-A3B Q2_K (unsloth) via hf_fetch ===
+    10.52/11.26 GB (7.2 MB/s)
+    10.67/11.26 GB (7.2 MB/s)
+    10.83/11.26 GB (7.2 MB/s)
+    10.98/11.26 GB (7.2 MB/s)
+    11.15/11.26 GB (7.2 MB/s)
+  Qwen3-30B-A3B-Q2_K.gguf: DONE
+=== bench: 30B MoE on the 6GB 1060 — attention on GPU, experts on CPU ===
+| model                          |       size |     params | backend    | ngl | ot                    |            test |                  t/s |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |            tg32 |          6.51 ± 2.49 |
+=== bench: pure CPU reference ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |            tg32 |         12.62 ± 0.92 |
+T4 DONE

@@ -1,0 +1,316 @@
+<style>
+  :root{
+    --ground:#fafaf7; --paper:#ffffff; --ink:#16181d; --sub:#5c6066; --line:#e5e4df;
+    --accent:#0f766e; --accent-soft:#e6f2f0; --warn:#b45309; --warn-soft:#fdf3e7;
+    --crit:#b91c1c; --crit-soft:#fdeaea; --good:#15803d;
+    --mono:Consolas,"Cascadia Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --ground:#14161a; --paper:#1c1f24; --ink:#e8e7e2; --sub:#9aa0a8; --line:#2e3238;
+      --accent:#35b8a6; --accent-soft:#12332f; --warn:#e0a458; --warn-soft:#33270f;
+      --crit:#e57373; --crit-soft:#391717; --good:#5dbb7a; }
+  }
+  :root[data-theme="dark"]{ --ground:#14161a; --paper:#1c1f24; --ink:#e8e7e2; --sub:#9aa0a8; --line:#2e3238;
+    --accent:#35b8a6; --accent-soft:#12332f; --warn:#e0a458; --warn-soft:#33270f;
+    --crit:#e57373; --crit-soft:#391717; --good:#5dbb7a; }
+  :root[data-theme="light"]{ --ground:#fafaf7; --paper:#ffffff; --ink:#16181d; --sub:#5c6066; --line:#e5e4df;
+    --accent:#0f766e; --accent-soft:#e6f2f0; --warn:#b45309; --warn-soft:#fdf3e7;
+    --crit:#b91c1c; --crit-soft:#fdeaea; --good:#15803d; }
+  .sim{ background:var(--ground); color:var(--ink); font-family:"Segoe UI",system-ui,sans-serif;
+    padding:28px 20px 40px; min-height:100vh; }
+  .wrap{ max-width:1080px; margin:0 auto; }
+  .hd h1{ font-size:26px; font-weight:650; margin:0 0 6px; letter-spacing:-0.01em; text-wrap:balance; }
+  .hd p{ margin:0 0 22px; color:var(--sub); font-size:14.5px; max-width:68ch; }
+  .law{ font-family:var(--mono); font-size:13px; color:var(--accent); margin-bottom:26px; }
+  .cols{ display:grid; grid-template-columns:320px 1fr; gap:22px; }
+  @media (max-width:840px){ .cols{ grid-template-columns:1fr; } }
+  .panel{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  .panel h2, .sect{ font-size:11.5px; text-transform:uppercase; letter-spacing:0.09em; color:var(--sub); margin:0 0 12px; font-weight:600; }
+  .sect{ margin:20px 0 8px; }
+  .fld{ margin-bottom:13px; }
+  .fld label{ display:block; font-size:12.5px; color:var(--sub); margin-bottom:5px; }
+  .fld select,.fld input{ width:100%; box-sizing:border-box; padding:8px 10px; font-size:14px;
+    background:var(--ground); color:var(--ink); border:1px solid var(--line); border-radius:7px; font-family:inherit; }
+  .fld select:focus,.fld input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .bits{ display:flex; gap:6px; flex-wrap:wrap; }
+  .bits button{ flex:1; min-width:42px; padding:8px 0; font-family:var(--mono); font-size:13.5px;
+    background:var(--ground); color:var(--ink); border:1px solid var(--line); border-radius:7px; cursor:pointer; }
+  .bits button[aria-pressed="true"]{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .bits button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .hero{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:4px; }
+  .hero .num{ font-family:var(--mono); font-size:62px; font-weight:700; letter-spacing:-0.02em;
+    font-variant-numeric:tabular-nums; line-height:1; color:var(--accent); }
+  .hero .unit{ font-size:16px; color:var(--sub); }
+  .verdict{ font-size:14px; margin:2px 0 14px; color:var(--sub); max-width:70ch; }
+  .chip{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; margin:0 6px 6px 0; }
+  .chip.ok{ background:var(--accent-soft); color:var(--accent); }
+  .chip.warn{ background:var(--warn-soft); color:var(--warn); }
+  .chip.crit{ background:var(--crit-soft); color:var(--crit); }
+  .tier{ margin-bottom:9px; }
+  .tier .lbl{ display:flex; justify-content:space-between; font-size:12px; color:var(--sub); margin-bottom:4px; font-family:var(--mono); }
+  .bar{ height:13px; background:var(--ground); border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .bar .fill{ height:100%; border-radius:6px 0 0 6px; background:var(--accent); transition:width .25s; }
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:10px; margin-top:14px; }
+  .stat{ background:var(--ground); border-radius:8px; padding:10px 12px; }
+  .stat .k{ font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:0.07em; }
+  .stat .v{ font-family:var(--mono); font-size:18px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums; }
+  .chartbox{ background:var(--ground); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .chartbox canvas{ display:block; width:100%; }
+  .foot{ margin-top:20px; font-size:12px; color:var(--sub); line-height:1.65; max-width:82ch; }
+  .foot a{ color:var(--accent); }
+</style>
+
+<div class="sim"><div class="wrap">
+  <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Interactive calculator predicting LLM decode speed and memory fit from the tiered decode law, with charts placing your machine among the validated measurements and showing the speed-memory trade-off.</h2>
+  <div class="hd">
+    <h1>Will it run — and how fast?</h1>
+    <p>Pick a model, a bit-width, and a machine. This calculator applies the <strong>tiered decode law</strong> — fitted and validated on measurements from 7B to 744B, including two pre-registered hardware tests — to predict decode speed, memory fit, and quality cost <em>before you download a single weight</em>.</p>
+    <div class="law">tok/s = η(tier) × bandwidth ÷ active-bytes-per-token</div>
+  </div>
+  <div class="cols">
+    <div class="panel">
+      <h2>Configuration</h2>
+      <div class="fld"><label for="model">Model</label><select id="model"></select></div>
+      <div class="grid2">
+        <div class="fld"><label for="tp">Total params (B)</label><input id="tp" type="number" step="0.1" min="0.1"></div>
+        <div class="fld"><label for="ap">Active params (B)</label><input id="ap" type="number" step="0.1" min="0.1"></div>
+      </div>
+      <div class="fld"><label>Expert/MLP bit-width</label>
+        <div class="bits" id="bits" role="group" aria-label="bit width"></div></div>
+      <div class="fld"><label for="hw">Machine</label><select id="hw"></select></div>
+      <div class="grid2">
+        <div class="fld"><label for="vc">VRAM (GB)</label><input id="vc" type="number" step="1" min="0"></div>
+        <div class="fld"><label for="vb">VRAM BW (GB/s)</label><input id="vb" type="number" step="10" min="0"></div>
+        <div class="fld"><label for="rc">RAM (GB)</label><input id="rc" type="number" step="1" min="1"></div>
+        <div class="fld"><label for="rb">RAM BW (GB/s)</label><input id="rb" type="number" step="1" min="1"></div>
+      </div>
+      <div class="fld"><label for="db">Disk read (GB/s)</label><input id="db" type="number" step="0.1" min="0.1"></div>
+      <div class="fld"><label for="tgt">Target speed (tok/s) — drawn on the trade-off chart</label><input id="tgt" type="number" step="1" min="1" value="15"></div>
+    </div>
+    <div class="panel">
+      <h2>Prediction</h2>
+      <div class="hero"><span class="num" id="tps">—</span><span class="unit">tok/s (decode)</span></div>
+      <div id="chips"></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="stats">
+        <div class="stat"><div class="k">model size</div><div class="v" id="sz">—</div></div>
+        <div class="stat"><div class="k">active bytes/token</div><div class="v" id="ab">—</div></div>
+        <div class="stat"><div class="k">est. quality cost</div><div class="v" id="q">—</div></div>
+      </div>
+      <div class="sect">All placements evaluated</div>
+      <div id="configs"></div>
+      <div id="advisor"></div>
+      <div class="sect">The ladder — smartest model per speed band on THIS machine (bar length = model size in params; your target highlighted)</div>
+      <div id="ladder"></div>
+      <div class="sect">Your machine on the validated law</div>
+      <div class="chartbox"><canvas id="lawC" height="240" role="img" aria-label="Log-log chart of predicted versus measured tokens per second: eight validated points on the diagonal, with your configuration marked on the prediction line.">Validated points lie on the diagonal; your config is marked on it.</canvas></div>
+      <div class="sect">Speed ⇄ memory trade-off (bit-width sweep, capacity cliffs marked)</div>
+      <div class="chartbox"><canvas id="tradeC" height="260" role="img" aria-label="Chart of predicted speed versus model memory across bit widths, showing the cliff where the model stops fitting in RAM.">Lower bits: less memory and more speed, until quality cost; past RAM capacity, speed falls off a cliff.</canvas></div>
+      <div class="foot">
+        Quality cost = perplexity gap-ratio vs fp16 with the <strong>depth-aware recipe</strong> (probe the fragile band, protect it). η bands are measured: VRAM/GPU per class · RAM ≈0.62 dense / ≈0.38 MoE · disk ≈0.95. Validation: 16B MoE 15.6 tok/s, 30B hybrid <strong>predicted 19 → measured 19.30 ± 0.88</strong>, 110B-from-SATA 0.19 (pre-registered 0.2–0.3), RAM overclock ×1.52 (pre-registered ×1.41+), colibri's published 744B tiers inside the same bands. Hybrid figures assume partitioned residency (<code>--no-mmap</code> + <code>-ot exps=CPU</code>). Estimates ±25%.
+        <br>By <a href="https://x.com/federico_sciuca">@federico_sciuca</a> — laws, probes, recipes and every raw log in the repo.
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+(function(){
+  const MODELS = [
+    {n:"Qwen3-30B-A3B (MoE)", t:30.5, a:3.3, ne:1.2, moe:1},
+    {n:"DeepSeek-V2-Lite 16B (MoE)", t:15.7, a:2.4, ne:1.3, moe:1},
+    {n:"Gemma 4 12B (dense)", t:11.9, a:11.9, ne:11.9, moe:0},
+    {n:"Mistral 7B (dense)", t:7.2, a:7.2, ne:7.2, moe:0},
+    {n:"GLM-4.5-Air 106B (MoE)", t:110, a:12, ne:2.7, moe:1},
+    {n:"GLM-5.2 744B (MoE)", t:744, a:32, ne:8, moe:1},
+    {n:"Custom…", t:13, a:13, ne:13, moe:0}
+  ];
+  const HW = [
+    {n:"2016 desktop · XMP on (ours)", vc:6, vb:192, rc:16, rb:48, db:0.45, geta:0.35, gl:0.04},
+    {n:"2016 desktop · XMP off", vc:6, vb:192, rc:16, rb:34, db:0.45, geta:0.35, gl:0.04},
+    {n:"Gaming PC · RTX 3060 + DDR4-3200", vc:12, vb:360, rc:32, rb:51, db:3.5, geta:0.5, gl:0.3},
+    {n:"Modern desktop · DDR5, no GPU", vc:0, vb:0, rc:64, rb:80, db:5, geta:0.5, gl:0.3},
+    {n:"colibri-class · 128 GB DDR5", vc:0, vb:0, rc:128, rb:60, db:5, geta:0.5, gl:0.3},
+    {n:"Custom…", vc:8, vb:300, rc:32, rb:50, db:2, geta:0.5, gl:0.3}
+  ];
+  const BITS = [2.0, 2.5, 3.0, 4.5, 6.5, 8.5];
+  const QUAL = { moe:{"2":1.10,"2.5":1.07,"3":1.05,"4.5":1.02,"6.5":1.01,"8.5":1.00},
+                 dense:{"2":1.45,"2.5":1.30,"3":1.12,"4.5":1.03,"6.5":1.01,"8.5":1.00} };
+  // validated (predicted, measured, label) — fixed anchors for the law chart
+  const VALID = [
+    [22.9,22.8,"7B·VRAM"], [10.1,10.9,"7B·CPU·XMP"], [12.0,12.6,"30B·CPU"],
+    [16.4,15.6,"16B·hybrid"], [19.0,19.3,"30B·hybrid"], [0.24,0.19,"110B·disk"],
+    [1.9,1.8,"colibri·128GB"], [0.08,0.07,"colibri·25GB"]
+  ];
+  const $ = id => document.getElementById(id);
+  const mSel=$("model"), hSel=$("hw"), bitsBox=$("bits");
+  MODELS.forEach((m,i)=>{const o=document.createElement("option");o.value=i;o.textContent=m.n;mSel.appendChild(o);});
+  HW.forEach((h,i)=>{const o=document.createElement("option");o.value=i;o.textContent=h.n;hSel.appendChild(o);});
+  let bits=2.5;
+  BITS.forEach(b=>{const btn=document.createElement("button");
+    btn.textContent = b===2?"2":(b===2.5?"2.5":(b===3?"3":(b===4.5?"~4":(b===6.5?"~6":"~8"))));
+    btn.dataset.b=b; btn.setAttribute("aria-pressed", b===bits);
+    btn.onclick=()=>{bits=b; bitsBox.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.b==b)); calc();};
+    bitsBox.appendChild(btn);});
+  function loadModel(){const m=MODELS[mSel.value]; $("tp").value=m.t; $("ap").value=m.a; calc();}
+  function loadHW(){const h=HW[hSel.value]; $("vc").value=h.vc; $("vb").value=h.vb; $("rc").value=h.rc; $("rb").value=h.rb; $("db").value=h.db; calc();}
+  mSel.onchange=loadModel; hSel.onchange=loadHW;
+  ["tp","ap","vc","vb","rc","rb","db","tgt"].forEach(id=>$(id).oninput=calc);
+  function fmt(x,d){return Number(x).toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:0});}
+  function css(v){return getComputedStyle(document.querySelector(".sim")).getPropertyValue(v).trim();}
+
+  function evalCore(t,a,ne,moe,bitsVal,H){
+    const AB=Math.max(bitsVal,4.5);
+    const size=(ne*AB/8+(t-ne)*bitsVal/8)*1.08;
+    const actNe=ne*AB/8*1.15, actEx=(a-ne)*bitsVal/8*1.15, act=actNe+actEx;
+    const ra=Math.max(H.rc-4,1), etaR=moe?0.38:0.62;
+    const gl=H.gl!==undefined?H.gl:H.geta*0.6;
+    const getaW=bitsVal>=4?H.geta:gl;
+    const cfgs=[];
+    if (H.vc>0 && size<=H.vc*0.90) cfgs.push({n:"all in VRAM", tps:getaW*H.vb/act});
+    if (moe && H.vc>0){ const vN=ne*AB/8*1.08+1.2, rN=size-ne*AB/8*1.08;
+      if (vN<=H.vc*0.95 && rN<=ra) cfgs.push({n:"hybrid: attention→VRAM, experts→RAM",
+        tps:1/(actNe/(H.geta*H.vb)+actEx/(etaR*H.rb)), warn:rN>ra*0.85?"RAM boundary":null}); }
+    if (!moe && H.vc>0 && size>H.vc*0.90 && size<=ra+H.vc*0.9){ const g=Math.min(0.95,H.vc*0.9/size);
+      cfgs.push({n:"split: "+Math.round(g*100)+"% layers→VRAM", tps:1/(g*act/(getaW*H.vb)+(1-g)*act/(etaR*H.rb))}); }
+    if (size<=ra) cfgs.push({n:"pure CPU (GPU idle)", tps:etaR*H.rb/act, warn:size>ra*0.85?"RAM boundary":null});
+    if (size>ra){ const ms=Math.max(0,1-(ra*0.9)/size);
+      const hot=moe?actNe:0, str=act-hot;
+      cfgs.push({n:"stream from disk (cold experts)", tps:0.95/(str*ms/H.db+(str*(1-ms)+hot)/(etaR*H.rb)),
+        warn:"exceeds RAM"}); }
+    cfgs.sort((x,y)=>y.tps-x.tps);
+    return {size, act, cfgs, best:cfgs[0]||{n:"—",tps:0}, moe, ra, vc:H.vc, q:(QUAL[moe?"moe":"dense"][String(bitsVal)]||1)};
+  }
+  function hwForm(){
+    const hwp=HW[hSel.value]||{};
+    return {vc:+$("vc").value||0, vb:+$("vb").value||0, rc:+$("rc").value||1, rb:+$("rb").value||1,
+            db:+$("db").value||0.3, geta:hwp.geta!==undefined?hwp.geta:0.45, gl:hwp.gl};
+  }
+  function evalAll(bitsVal){
+    const t=+$("tp").value||1, a=Math.min(+$("ap").value||1,t);
+    const m=MODELS[mSel.value]||{};
+    const ne=Math.min(m.ne!==undefined?m.ne:a, a);
+    const moe = a < t*0.9;
+    return evalCore(t,a,ne,moe,bitsVal,hwForm());
+  }
+  const CATALOG=[
+    {h:"Qwen3-4B (dense)",t:4,a:4,ne:4,moe:0},{h:"Mistral 7B (dense)",t:7.2,a:7.2,ne:7.2,moe:0},
+    {h:"Gemma 4 12B (dense)",t:11.9,a:11.9,ne:11.9,moe:0},{h:"Qwen3-14B (dense)",t:14.8,a:14.8,ne:14.8,moe:0},
+    {h:"DeepSeek-V2-Lite 16B (MoE)",t:15.7,a:2.4,ne:1.3,moe:1},{h:"Qwen3-30B-A3B (MoE)",t:30.5,a:3.3,ne:1.2,moe:1},
+    {h:"Mixtral 8x7B (MoE)",t:46.7,a:12.9,ne:1.6,moe:1},{h:"Llama-3 70B (dense)",t:70.6,a:70.6,ne:70.6,moe:0},
+    {h:"GLM-4.5-Air 106B (MoE)",t:110,a:12,ne:2.7,moe:1},{h:"Qwen3-235B-A22B (MoE)",t:235,a:22,ne:7,moe:1}];
+  function bestFor(target,H){
+    let win=null;
+    for (const m of CATALOG){
+      for (const b of [4.5,3.0,2.5,2.0]){
+        const e=evalCore(m.t,m.a,m.ne,!!m.moe,b,H);
+        if (e.best.tps>=target){
+          const cand={m,b,e};
+          if (!win || m.t>win.m.t || (m.t===win.m.t && b>win.b)) win=cand;
+          break; } } }
+    return win;
+  }
+  function drawLadder(){
+    const H=hwForm(), tgt=+$("tgt").value||5;
+    const rows=[30,20,10,5,2,0.5].map(band=>{
+      const w=bestFor(band,H);
+      const cur = tgt>=band && (band===30 || tgt<[30,20,10,5,2,0.5][[30,20,10,5,2,0.5].indexOf(band)-1]);
+      return {band, w, cur};
+    });
+    $("ladder").innerHTML = rows.map(r=>{
+      if (!r.w) return '<div class="tier"><div class="lbl"><span>'+r.band+'+ tok/s</span><span>—</span></div></div>';
+      const lab=r.w.m.h+" @ "+r.w.b+"-bit · ×"+r.w.e.q.toFixed(2);
+      const hl=r.cur?'style="color:var(--accent);font-weight:700"':'';
+      return '<div class="tier"><div class="lbl" '+hl+'><span>'+r.band+'+ tok/s → '+lab+'</span>'+
+             '<span>'+r.w.e.best.tps.toFixed(1)+' tok/s · '+r.w.e.size.toFixed(1)+' GB</span></div>'+
+             '<div class="bar"><div class="fill" style="width:'+Math.min(100,r.w.m.t/235*100)+'%;opacity:'+(r.cur?1:0.45)+'"></div></div></div>';
+    }).join("");
+  }
+  function drawLaw(myPred){
+    const cv=$("lawC"), dpr=window.devicePixelRatio||1, W=cv.clientWidth||600, H=240;
+    cv.width=W*dpr; cv.height=H*dpr; const c=cv.getContext("2d"); c.scale(dpr,dpr);
+    const ink=css("--ink"), sub=css("--sub"), line=css("--line"), acc=css("--accent"), crit=css("--crit");
+    const P={l:44,r:14,t:12,b:30}, lo=0.04, hi=60;
+    const X=v=>P.l+(Math.log10(v)-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*(W-P.l-P.r);
+    const Y=v=>H-P.b-(Math.log10(v)-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*(H-P.t-P.b);
+    c.clearRect(0,0,W,H);
+    c.strokeStyle=line; c.lineWidth=1;
+    [0.1,1,10].forEach(v=>{ c.beginPath(); c.moveTo(X(v),P.t); c.lineTo(X(v),H-P.b); c.stroke();
+      c.beginPath(); c.moveTo(P.l,Y(v)); c.lineTo(W-P.r,Y(v)); c.stroke();
+      c.fillStyle=sub; c.font="10px "+css("--mono"); c.fillText(String(v),X(v)-6,H-P.b+14); c.fillText(String(v),P.l-28,Y(v)+3); });
+    c.strokeStyle=sub; c.setLineDash([4,4]); c.beginPath(); c.moveTo(X(lo),Y(lo)); c.lineTo(X(hi),Y(hi)); c.stroke(); c.setLineDash([]);
+    c.fillStyle=sub; c.font="10.5px "+css("--mono");
+    c.fillText("measured",6,14); c.fillText("predicted →",W-92,H-6);
+    VALID.forEach(p=>{ c.fillStyle=acc; c.beginPath(); c.arc(X(p[0]),Y(p[1]),4.5,0,7); c.fill();
+      c.fillStyle=sub; c.font="9.5px "+css("--mono"); c.fillText(p[2],X(p[0])+6,Y(p[1])-4); });
+    if (myPred>lo && myPred<hi){
+      c.strokeStyle=crit; c.lineWidth=2; c.beginPath(); c.arc(X(myPred),Y(myPred),7,0,7); c.stroke();
+      c.fillStyle=crit; c.font="bold 11px "+css("--mono");
+      c.fillText("YOU · "+fmt(myPred,myPred>=10?0:1)+" tok/s",Math.min(X(myPred)+10,W-130),Y(myPred)+4);
+    }
+  }
+
+  function drawTrade(cur){
+    const cv=$("tradeC"), dpr=window.devicePixelRatio||1, W=cv.clientWidth||600, H=260;
+    cv.width=W*dpr; cv.height=H*dpr; const c=cv.getContext("2d"); c.scale(dpr,dpr);
+    const ink=css("--ink"), sub=css("--sub"), line=css("--line"), acc=css("--accent"), warn=css("--warn"), crit=css("--crit");
+    const pts=BITS.map(b=>{const e=evalAll(b); return {b, size:e.size, tps:e.best.tps, q:e.q, ra:e.ra, vc:e.vc};});
+    const maxS=Math.max.apply(null,pts.map(p=>p.size).concat([pts[0].ra*1.3])), maxT=Math.max.apply(null,pts.map(p=>p.tps))*1.25||1;
+    const P={l:44,r:14,t:14,b:32};
+    const X=v=>P.l+v/maxS*(W-P.l-P.r), Y=v=>H-P.b-v/maxT*(H-P.t-P.b);
+    c.clearRect(0,0,W,H);
+    c.strokeStyle=line; [0.25,0.5,0.75,1].forEach(f=>{c.beginPath();c.moveTo(P.l,Y(maxT*f));c.lineTo(W-P.r,Y(maxT*f));c.stroke();
+      c.fillStyle=sub;c.font="10px "+css("--mono");c.fillText(fmt(maxT*f,0),P.l-30,Y(maxT*f)+3);});
+    const ra=pts[0].ra, vc=pts[0].vc;
+    if (ra<maxS){ c.strokeStyle=crit; c.setLineDash([5,4]); c.beginPath(); c.moveTo(X(ra),P.t); c.lineTo(X(ra),H-P.b); c.stroke(); c.setLineDash([]);
+      c.fillStyle=crit; c.font="10px "+css("--mono"); c.fillText("RAM cap "+fmt(ra,0)+"GB",X(ra)+4,P.t+10); }
+    if (vc>0 && vc<maxS){ c.strokeStyle=sub; c.setLineDash([2,4]); c.beginPath(); c.moveTo(X(vc),P.t); c.lineTo(X(vc),H-P.b); c.stroke(); c.setLineDash([]);
+      c.fillStyle=sub; c.font="10px "+css("--mono"); c.fillText("VRAM "+fmt(vc,0)+"GB",X(vc)+4,P.t+22); }
+    const tgt=+$("tgt").value||0;
+    if (tgt>0 && tgt<maxT){ c.strokeStyle=acc; c.setLineDash([6,4]); c.beginPath(); c.moveTo(P.l,Y(tgt)); c.lineTo(W-P.r,Y(tgt)); c.stroke(); c.setLineDash([]);
+      c.fillStyle=acc; c.font="10px "+css("--mono"); c.fillText("target "+tgt,W-P.r-70,Y(tgt)-5); }
+    c.strokeStyle=acc; c.lineWidth=2; c.beginPath();
+    pts.forEach((p,i)=>{ i?c.lineTo(X(p.size),Y(p.tps)):c.moveTo(X(p.size),Y(p.tps)); }); c.stroke();
+    pts.forEach(p=>{ const isCur=Math.abs(p.b-cur)<0.01;
+      c.fillStyle = isCur?crit:acc; c.beginPath(); c.arc(X(p.size),Y(p.tps),isCur?6:4,0,7); c.fill();
+      c.fillStyle=isCur?crit:sub; c.font=(isCur?"bold ":"")+"10px "+css("--mono");
+      c.fillText((p.b<=3?p.b+"b":"~"+Math.round(p.b)+"b")+" ×"+p.q.toFixed(2),X(p.size)-14,Y(p.tps)-9); });
+    c.fillStyle=sub; c.font="10.5px "+css("--mono");
+    c.fillText("tok/s",6,14); c.fillText("model memory (GB) →",W-150,H-6);
+  }
+
+  function calc(){
+    const e=evalAll(bits), best=e.best;
+    $("tps").textContent = best.tps>=10?fmt(best.tps,0):fmt(best.tps,best.tps>=1?1:2);
+    $("chips").innerHTML = '<span class="chip ok">'+best.n+'</span>'+(e.moe?'<span class="chip ok">MoE</span>':'<span class="chip warn">dense</span>')+(best.warn?'<span class="chip warn">'+best.warn+'</span>':'');
+    $("verdict").textContent =
+      best.n.indexOf("hybrid")>=0 ? "Always-active weights served at VRAM speed, experts at RAM speed — the placement the law recommends (needs --no-mmap)." :
+      best.n==="all in VRAM" ? "Fully GPU-resident — fastest tier." :
+      best.n.indexOf("split")>=0 ? "Dense partial offload: each tier serves its share of layers." :
+      best.n.indexOf("CPU")>=0 ? (e.moe?"CPU-served MoE: only the active experts move per token.":"CPU-served dense: every weight moves every token.") :
+      "Bigger than RAM: cold experts re-stream from disk each token.";
+    $("sz").textContent=fmt(e.size,1)+" GB"; $("ab").textContent=fmt(e.act,2)+" GB";
+    $("q").textContent="×"+e.q.toFixed(2);
+    $("configs").innerHTML = e.cfgs.map((cf,i)=>{
+      const pct=Math.min(100,cf.tps/best.tps*100);
+      return '<div class="tier"><div class="lbl"><span>'+(i===0?"★ ":"")+cf.n+(cf.warn?" ⚠":"")+'</span><span>'+fmt(cf.tps,cf.tps>=10?0:1)+' tok/s</span></div>'+
+        '<div class="bar"><div class="fill" style="width:'+pct+'%;opacity:'+(i===0?1:0.5)+'"></div></div></div>'; }).join("");
+    // advisor
+    const vc=+$("vc").value||0, vb=+$("vb").value||0, rc=+$("rc").value||1, rb=+$("rb").value||1, db=+$("db").value||0.3;
+    function withHW(rc2,rb2,db2){ const o={rc:$("rc").value,rb:$("rb").value,db:$("db").value};
+      $("rc").value=rc2; $("rb").value=rb2; $("db").value=db2; const r=evalAll(bits).best.tps;
+      $("rc").value=o.rc; $("rb").value=o.rb; $("db").value=o.db; return r; }
+    const alts=[];
+    if (rb<40){ const v=withHW(rc,48,db); if(v>best.tps*1.08) alts.push(["Enable XMP (free)",v]); }
+    { const v=withHW(rc+16,rb,db); if(v>best.tps*1.08) alts.push(["+16 GB RAM (~€30 used)",v]); }
+    { const v=withHW(rc,rb,3.5); if(v>best.tps*1.08) alts.push(["NVMe SSD (~€70)",v]); }
+    $("advisor").innerHTML = alts.length? '<div class="sect">Upgrade advisor</div>'+
+      alts.map(x=>'<span class="chip ok">'+x[0]+' → ~'+fmt(x[1],x[1]>=10?0:1)+' tok/s</span>').join(" ") : "";
+    drawLaw(best.tps); drawTrade(bits); drawLadder();
+  }
+  if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>calc());
+  window.addEventListener("resize",()=>calc());
+  loadHW(); loadModel();
+})();
+</script>

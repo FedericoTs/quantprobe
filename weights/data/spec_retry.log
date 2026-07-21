@@ -1,0 +1,4 @@
+CHECKPOINT OK: draft server up
+  WITH draft: predicted_per_second = 22.86 | draft_n = None | accepted = None
+OPERAZIONE RIUSCITA: il processo "llama-server.exe" con il PID 13740 è stato terminato.
+SPEC RETRY DONE (reference NO-draft: 22.55)

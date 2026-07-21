@@ -1,0 +1,38 @@
+{
+  "spec": {
+    "transforms": [
+      {
+        "name": "float_split",
+        "params": {
+          "dtype": "f4"
+        }
+      }
+    ],
+    "backend": "lzma",
+    "level": 4
+  },
+  "describe": "[float_split(dtype=f4)] => lzma-4",
+  "held_out": {
+    "name": "evolved",
+    "pipeline": "[float_split(dtype=f4)] => lzma-4",
+    "spec": {
+      "transforms": [
+        {
+          "name": "float_split",
+          "params": {
+            "dtype": "f4"
+          }
+        }
+      ],
+      "backend": "lzma",
+      "level": 4
+    },
+    "ratio": 1.6045,
+    "encode_MBps": 2.67,
+    "decode_MBps": 13.72,
+    "roundtrip_ok": true,
+    "total_in": 409600,
+    "total_out": 255283
+  },
+  "verdict": "GO"
+}

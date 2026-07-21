@@ -1,0 +1,5 @@
+=== does llama-bench have the repack flag? ===
+=== A/B: default (repack on) vs --no-repack, 30B pure CPU ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |            tg32 |          5.80 ± 2.60 |
+error: invalid parameter for argument: --no-repack
+REPACK AB DONE

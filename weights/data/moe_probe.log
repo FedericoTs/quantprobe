@@ -1,0 +1,20 @@
+tensor            shape                K2 gs16       K2 int8       K3 gs16   (rel-MSE | b/w)
+L1.exp0.gate      (1408, 2048)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L1.exp0.down      (2048, 1408)   6.81e-02/2.12 6.81e-02/2.06 1.84e-02/3.12
+L13.exp31.up      (1408, 2048)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L13.exp31.down    (2048, 1408)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L26.exp63.gate    (1408, 2048)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L26.exp63.down    (2048, 1408)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L13.shared.down   (2048, 2816)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L13.attn.q        (3072, 2048)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L13.attn.kv_b     (4096, 512)    6.81e-02/2.12 6.81e-02/2.06 1.84e-02/3.12
+L13.attn.o        (2048, 2048)   6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L0.dense.gate     (10944, 2048)  6.80e-02/2.12 6.80e-02/2.06 1.84e-02/3.12
+L0.dense.down     (2048, 10944)   skip(not%128)  skip(not%128)  skip(not%128)
+
+mean rel-MSE by config:
+  K2 gs16    6.802e-02
+  K2 int8    6.803e-02
+  K3 gs16    1.837e-02
+
+INTERPRETATION: int8-gs should ~match gs16 at lower b/w (good). K3 should cut rel-MSE ~3-4x vs K2 (the residual-writer headroom for down_proj/o_proj).

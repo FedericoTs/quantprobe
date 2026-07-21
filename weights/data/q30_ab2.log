@@ -1,0 +1,5 @@
+=== CORRECTED depth-aware: ftype defaults + ONLY late-12 upgrade ===
+llama_quantize:    total time = 764108.30 ms
+CHECKPOINT OK: quantize (12711936576 bytes)
+  depthaware2 ppl: 1.34.740.217 I Final estimate: PPL = 12.4190 +/- 0.60965
+CORRECTED AB DONE

@@ -1,0 +1,9 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (299078 > 32768). Running this sequence through the model will result in indexing errors
+qwen ablation: keep ('o_proj', 'down_proj') at fp16 in uniform-2bit | cache D:\evo-compress-data\moe_cache\37f031e55776
+  layer 0/24 (12s) hfin=True
+  layer 6/24 (81s) hfin=True
+  layer 12/24 (151s) hfin=True
+  layer 18/24 (220s) hfin=True
+  layer 23/24 (278s) hfin=True
+
+QWEN ABLATION keep-fp16=o_proj+down_proj: uniform=11.9372 | this=8.2969 | fp16=6.2492 -> recovers 64% of the collapse

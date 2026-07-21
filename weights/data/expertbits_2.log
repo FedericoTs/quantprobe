@@ -1,0 +1,10 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+EXPERT-BITS [FAST]: routed experts -> 2-bit (per-channel uniform), rest fp16 | 60 win
+  layer 0/27 (9s)
+  layer 6/27 (118s)
+  layer 12/27 (225s)
+  layer 18/27 (331s)
+  layer 24/27 (437s)
+  layer 26/27 (472s)
+
+EXPERT-BITS [routed@2bit fast, rest fp16]: ppl=171.8674 (delta vs fp16 +165.5604) | weight rel-MSE@2bit=0.7947 (trellis@2bit=0.069) | fp16=6.3070

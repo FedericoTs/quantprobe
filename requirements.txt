@@ -1,0 +1,27 @@
+# Core dependencies for evo-compress. Pinned to the tested versions
+# (Python 3.13, win_amd64). Transitive deps are resolved by pip.
+numpy==2.4.6
+pandas==3.0.3
+zstandard==0.25.0
+brotli==1.2.0
+matplotlib==3.10.9
+pytest==9.0.3
+tqdm==4.67.3
+
+# Optional: LLM-driven search via OpenEvolve (NOT required to run the GA path).
+# openevolve>=0.1
+
+# Weights-track deps (LLM weight-tensor lossless compression under weights/).
+# Required for weights/*.py and the weights/ tests; NOT needed for the GA or
+# cmcore tracks. torch is the CUDA 12.4 build — install it from the PyTorch
+# index, e.g.:
+#   pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+# (for CPU-only, use the cpu index instead). The rest are plain PyPI.
+# NOTE: pin transformers to the 4.x line — transformers 5.x imports
+# torch.float8_e8m0fnu (added in torch 2.7), which torch 2.6.0 lacks, so
+# AutoModelForCausalLM fails to load Qwen2 under torch 2.6 + transformers 5.x.
+torch==2.6.0
+transformers==4.49.0
+tokenizers==0.21.4
+safetensors==0.7.0
+huggingface_hub==0.36.2

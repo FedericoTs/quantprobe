@@ -1,0 +1,17 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+GAUGE TEST [identity] | cache D:\evo-compress-data\moe_cache\a85fd89f48bf | 151 win
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Federico\Documents\evo-compress\weights\m1_gauge.py", line 110, in <module>
+    run()
+  File "C:\Users\Federico\Documents\evo-compress\weights\m1_gauge.py", line 71, in run
+    R = make_gauge(gauge, ka, kb)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\weights\m1_gauge.py", line 50, in make_gauge
+    return np.eye(d, np.float32)                         # identity
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\numpy\lib\_twodim_base_impl.py", line 235, in eye
+    m = zeros((N, M), dtype=dtype, order=order, device=device)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'type' object cannot be interpreted as an integer

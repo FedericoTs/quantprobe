@@ -1,0 +1,6 @@
+tensor               a=0    a.25 a.5(cur)    a.75     a=1  +out-gain  (out-MSE x1e3)
+8.down_proj       0.5529  0.4943   0.4720  0.4665  0.4898     0.4673   best-a=0.75
+16.gate_proj      8.0782  7.5943   7.5479  7.4215  7.5287     6.8553   best-a=0.75
+16.down_proj      2.2198  1.8149   1.6735  1.6762  1.7473     1.6514   best-a=0.5
+
+VERDICT: if a!=0.5 or +out-gain gives out-MSE meaningfully < the a=0.5(cur) column -> output-aware headroom exists -> build learned per-channel companding + 7B run. If a=0.5 ~ best and out-gain ~ no-op -> codec is output-optimal -> pivot to 2nd-model validation.

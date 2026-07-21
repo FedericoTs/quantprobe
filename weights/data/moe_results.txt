@@ -1,0 +1,98 @@
+DeepSeek-V2-Lite fp16 baseline: WikiText-2 ppl = 4.8373 (1 win, 164s)
+DeepSeek-V2-Lite fp16 baseline: WikiText-2 ppl = 5.6570 (8 win, 332s)
+DeepSeek-V2-Lite ONE-LAYER(5) 2-bit, rest fp16: WikiText-2 ppl = 7.3562 (4 win, 1652s)
+DeepSeek-V2-Lite ONE-LAYER(5) 2-bit, rest fp16: WikiText-2 ppl = 5.7640 (8 win, 1414s)
+DeepSeek-V2-Lite FULL 2-bit (DOWN_K=3 O_K=3 INT8_GS=True): WikiText-2 ppl = 11.7369 | quant 2.394 b/w over 15.26B params, 445M kept fp16 | resident = 5.46 GB (quant 4.57 + fp16 0.89) = 2.780 b/w whole-model | 8 win, 30322s
+[raw] ppl=nan bw=2.5004 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5) 8win 30439s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5)): WikiText-2 ppl = nan | quant 2.500 b/w over 15.26B params, 445M kept fp16 | resident = 5.66 GB (quant 4.77 + fp16 0.89) = 2.883 b/w whole-model | 8 win, 30439s
+[raw] ppl=4059122.7500 bw=2.5693 q=1228013568 kept=22689280 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5) 8win 2453s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5)): WikiText-2 ppl = 4059122.7500 | quant 2.569 b/w over 1.23B params, 442M kept fp16 | resident = 1.28 GB (quant 0.39 + fp16 0.88) = 6.125 b/w whole-model | 8 win, 2453s
+[raw] ppl=6.2483 bw=2.4904 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) 8win 30176s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5)): WikiText-2 ppl = 6.2483 | quant 2.490 b/w over 15.26B params, 445M kept fp16 | resident = 5.64 GB (quant 4.75 + fp16 0.89) = 2.874 b/w whole-model | 8 win, 30176s
+[raw] ppl=8131033.5000 bw=4.0625 q=58589184 kept=22417920 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) 1win 120s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5)): WikiText-2 ppl = 8131033.5000 | quant 4.062 b/w over 0.06B params, 442M kept fp16 | resident = 0.91 GB (quant 0.03 + fp16 0.88) = 14.602 b/w whole-model | 1 win, 120s
+[raw] ppl=8131545.5000 bw=4.0625 q=58589184 kept=22417920 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) 1win 1s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5)): WikiText-2 ppl = 8131545.5000 | quant 4.062 b/w over 0.06B params, 442M kept fp16 | resident = 0.91 GB (quant 0.03 + fp16 0.88) = 14.602 b/w whole-model | 1 win, 1s
+[raw] ppl=6.7741 bw=2.4904 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) 16win 14906s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5)): WikiText-2 ppl = 6.7741 | quant 2.490 b/w over 15.26B params, 445M kept fp16 | resident = 5.64 GB (quant 4.75 + fp16 0.89) = 2.874 b/w whole-model | 16 win, 14906s
+DeepSeek-V2-Lite fp16 baseline: WikiText-2 ppl = 6.1740 (16 win, 267s)
+[raw] ppl=6.0820 bw=2.5004 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5) STATIC 8win 32293s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5) STATIC): WikiText-2 ppl = 6.0820 | quant 2.500 b/w over 15.26B params, 445M kept fp16 | resident = 5.66 GB (quant 4.77 + fp16 0.89) = 2.883 b/w whole-model | 8 win, 32293s
+[raw] ppl=6.2188 bw=2.4437 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=3 SHARED_K=3 DENSE_K=3 INT8_GS=True AWQ=True(a=0.5) STATIC 8win 32183s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=3 SHARED_K=3 DENSE_K=3 INT8_GS=True AWQ=True(a=0.5) STATIC): WikiText-2 ppl = 6.2188 | quant 2.444 b/w over 15.26B params, 445M kept fp16 | resident = 5.55 GB (quant 4.66 + fp16 0.89) = 2.828 b/w whole-model | 8 win, 32183s
+Qwen1.5-MoE-A2.7B fp16 baseline: WikiText-2 ppl = 263533.6875 (1 win, 9s)
+Qwen1.5-MoE-A2.7B fp16 baseline: WikiText-2 ppl = 6.2492 (8 win, 182s)
+[raw qwen] ppl=6.7633 bw=2.5460 q=13690208256 qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True 8win 28927s
+Qwen1.5-MoE-A2.7B carve-out 2-bit (qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True): WikiText-2 ppl = 6.7633 | quant 2.546 b/w over 13.69B params, 626M kept fp16 | resident = 5.61 GB = 3.134 b/w whole-model | 8 win, 28927s
+[raw qwen] ppl=11.9372 bw=2.0625 q=13690208256 qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True 8win 28898s
+Qwen1.5-MoE-A2.7B carve-out 2-bit (qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True): WikiText-2 ppl = 11.9372 | quant 2.062 b/w over 13.69B params, 626M kept fp16 | resident = 4.78 GB = 2.672 b/w whole-model | 8 win, 28898s
+FORCED-ROUTING (DeepSeek): fp16=5.6570 | uniform-2bit=15.3798 | uniform+fp16-routing=13.8658 -> recovers 16% of the collapse gap
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 11.0206 | fp16=5.6570 -> recovers 45% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 6.1870 | fp16=5.6570 -> recovers 95% of the collapse (vs forced-routing's 16%)
+QWEN ABLATION keep-fp16=o_proj+down_proj: uniform=11.9372 | this=8.2969 | fp16=6.2492 -> recovers 64% of the collapse
+QWEN ABLATION keep-fp16=q_proj+k_proj+v_proj+gate_proj+up_proj: uniform=11.9372 | this=7.2564 | fp16=6.2492 -> recovers 82% of the collapse
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 7.0663 | fp16=5.6570 -> recovers 86% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 12.5505 | fp16=5.6570 -> recovers 29% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 13.1490 | fp16=5.6570 -> recovers 23% of the collapse (vs forced-routing's 16%)
+[raw] ppl=6.8205 bw=2.1415 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=2 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) WRITERS_K=2 8win 32266s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=2 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) WRITERS_K=2): WikiText-2 ppl = 6.8205 | quant 2.142 b/w over 15.26B params, 445M kept fp16 | resident = 4.98 GB (quant 4.09 + fp16 0.89) = 2.535 b/w whole-model | 8 win, 32266s
+FORCED-ROUTING (DeepSeek): fp16=5.6570 | uniform-2bit=15.3798 | uniform+fp16-routing=13.8658 -> recovers 16% of the collapse gap
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 11.0206 | fp16=5.6570 -> recovers 45% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 6.1870 | fp16=5.6570 -> recovers 95% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 7.0663 | fp16=5.6570 -> recovers 86% of the collapse (vs forced-routing's 16%)
+[raw] ppl=6.2478 bw=2.4904 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) 8win 306s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5)): WikiText-2 ppl = 6.2478 | quant 2.490 b/w over 15.26B params, 445M kept fp16 | resident = 5.64 GB (quant 4.75 + fp16 0.89) = 2.874 b/w whole-model | 8 win, 307s
+[raw qwen] ppl=6.7626 bw=2.5460 q=13690208256 qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True 8win 267s
+Qwen1.5-MoE-A2.7B carve-out 2-bit (qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True): WikiText-2 ppl = 6.7626 | quant 2.546 b/w over 13.69B params, 626M kept fp16 | resident = 5.61 GB = 3.134 b/w whole-model | 8 win, 267s
+[raw qwen] ppl=11.9350 bw=2.0625 q=13690208256 qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True 8win 266s
+Qwen1.5-MoE-A2.7B carve-out 2-bit (qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True): WikiText-2 ppl = 11.9350 | quant 2.062 b/w over 13.69B params, 626M kept fp16 | resident = 4.78 GB = 2.672 b/w whole-model | 8 win, 266s
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 12.5505 | fp16=5.6570 -> recovers 29% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 13.1490 | fp16=5.6570 -> recovers 23% of the collapse (vs forced-routing's 16%)
+[raw] ppl=6.2483 bw=2.4904 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) 8win 32225s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5)): WikiText-2 ppl = 6.2483 | quant 2.490 b/w over 15.26B params, 445M kept fp16 | resident = 5.64 GB (quant 4.75 + fp16 0.89) = 2.874 b/w whole-model | 8 win, 32225s
+DeepSeek-V2-Lite fp16 baseline: WikiText-2 ppl = 6.3070 (151 win, 1035s)
+[raw] ppl=6.9616 bw=2.4904 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) 151win 1203s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5)): WikiText-2 ppl = 6.9616 | quant 2.490 b/w over 15.26B params, 445M kept fp16 | resident = 5.64 GB (quant 4.75 + fp16 0.89) = 2.874 b/w whole-model | 151 win, 1203s
+[raw] ppl=7.6030 bw=2.1415 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=2 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) WRITERS_K=2 151win 1200s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=2 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=False(a=0.5) WRITERS_K=2): WikiText-2 ppl = 7.6030 | quant 2.142 b/w over 15.26B params, 445M kept fp16 | resident = 4.98 GB (quant 4.09 + fp16 0.89) = 2.535 b/w whole-model | 151 win, 1200s
+[raw] ppl=6.7680 bw=2.5004 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5) STATIC 151win 1201s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5) STATIC): WikiText-2 ppl = 6.7680 | quant 2.500 b/w over 15.26B params, 445M kept fp16 | resident = 5.66 GB (quant 4.77 + fp16 0.89) = 2.883 b/w whole-model | 151 win, 1201s
+[raw] ppl=6.9326 bw=2.4437 q=15261106176 kept=25945600 routed-gate/up=2 DOWN_K=3 ATTN_K=3 SHARED_K=3 DENSE_K=3 INT8_GS=True AWQ=True(a=0.5) STATIC 151win 1204s
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=3 SHARED_K=3 DENSE_K=3 INT8_GS=True AWQ=True(a=0.5) STATIC): WikiText-2 ppl = 6.9326 | quant 2.444 b/w over 15.26B params, 445M kept fp16 | resident = 5.55 GB (quant 4.66 + fp16 0.89) = 2.828 b/w whole-model | 151 win, 1204s
+FORCED-ROUTING (DeepSeek): fp16=6.3070 | uniform-2bit=18.3145 | uniform+fp16-routing=15.7445 -> recovers 21% of the collapse gap
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 12.4564 | fp16=5.6570 -> recovers 30% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 6.8951 | fp16=5.6570 -> recovers 87% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 7.8825 | fp16=5.6570 -> recovers 77% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 14.4950 | fp16=5.6570 -> recovers 9% of the collapse (vs forced-routing's 16%)
+WRITER-FP16 ABLATION (DeepSeek): uniform-2bit=15.3798 | writers(o_proj,down_proj)@fp16 = 15.5876 | fp16=5.6570 -> recovers -2% of the collapse (vs forced-routing's 16%)
+DeepSeek-V2-Lite ONE-LAYER(5) 2-bit, rest fp16: WikiText-2 ppl = 6.4501 (151 win, 2264s)
+Qwen1.5-MoE-A2.7B fp16 baseline: WikiText-2 ppl = 7.2174 (146 win, 880s)
+[raw qwen] ppl=7.7490 bw=2.5460 q=13690208256 qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True 146win 980s
+Qwen1.5-MoE-A2.7B carve-out 2-bit (qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True): WikiText-2 ppl = 7.7490 | quant 2.546 b/w over 13.69B params, 626M kept fp16 | resident = 5.61 GB = 3.134 b/w whole-model | 146 win, 980s
+[raw qwen] ppl=13.9914 bw=2.0625 q=13690208256 qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True 146win 976s
+Qwen1.5-MoE-A2.7B carve-out 2-bit (qwen-moe routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 INT8_GS=True): WikiText-2 ppl = 13.9914 | quant 2.062 b/w over 13.69B params, 626M kept fp16 | resident = 4.78 GB = 2.672 b/w whole-model | 146 win, 976s
+M1 KV-LATENT-AT-2BIT-IN-CARVEOUT (DeepSeek, full set, 151 win): carve-out=6.9616 | carve-out+kv@2bit=12.2320 (delta +5.2704) | fp16=6.3070 -> dropping just the 2 KV-latent tensors to 2-bit costs +5.270 ppl
+PARAM-MATCHED CONTROL (q_proj KV-sized slice @2bit, full set, 151 win): carve-out=6.9616 | q-slice@2bit=7.0852 (delta +0.1236) | KV-latent@2bit=12.2320 (+5.27) | fp16=6.3070 -> same param count, q-slice costs +0.124 vs KV-latent +5.27
+GAUGE TEST [diagbalance]: kv@2bit gauge=diagbalance -> ppl=13.1950 (delta vs carve-out +6.2334) | carve-out=6.9616 fp16=6.3070 | ref: kv@2bit identity gauge = +5.27
+GAUGE TEST [svd]: kv@2bit gauge=svd -> ppl=2785.8535 (delta vs carve-out +2778.8919) | carve-out=6.9616 fp16=6.3070 | ref: kv@2bit identity gauge = +5.27
+GAUGE TEST [hadamard]: kv@2bit gauge=hadamard -> ppl=1630.0370 (delta vs carve-out +1623.0754) | carve-out=6.9616 fp16=6.3070 | ref: kv@2bit identity gauge = +5.27
+GAUGE TEST [anti]: kv@2bit gauge=anti -> ppl=18.8907 (delta vs carve-out +11.9291) | carve-out=6.9616 fp16=6.3070 | ref: kv@2bit identity gauge = +5.27
+GAUGE TEST [fp16kv]: kv@fp16 (bottleneck kept 16-bit) -> ppl=6.8048 (delta vs carve-out -0.1568) | carve-out=6.9616 fp16=6.3070 | ref: kv@2bit identity gauge = +5.27
+KV-CACHE QUANT [16.0-bit c_KV]: ppl=6.8048 (delta vs fp16-kv-cache baseline) | carve-out(weights)=6.9616 fp16=6.3070 | compare to WEIGHT-quant kv@2bit=+5.27
+KV-CACHE QUANT [8.0-bit c_KV]: ppl=6.8227 (delta vs fp16-kv-cache baseline) | carve-out(weights)=6.9616 fp16=6.3070 | compare to WEIGHT-quant kv@2bit=+5.27
+KV-CACHE QUANT [4.0-bit c_KV]: ppl=11.6768 (delta vs fp16-kv-cache baseline) | carve-out(weights)=6.9616 fp16=6.3070 | compare to WEIGHT-quant kv@2bit=+5.27
+KV-CACHE QUANT [3.0-bit c_KV]: ppl=356.9703 (delta vs fp16-kv-cache baseline) | carve-out(weights)=6.9616 fp16=6.3070 | compare to WEIGHT-quant kv@2bit=+5.27
+KV-CACHE QUANT [2.0-bit c_KV]: ppl=1681.3077 (delta vs fp16-kv-cache baseline) | carve-out(weights)=6.9616 fp16=6.3070 | compare to WEIGHT-quant kv@2bit=+5.27
+DICHOTOMY [shared-MLP rot=identity, down@2bit]: ppl=7.0578 (delta vs carve-out +0.0962) | HIGH-rank intermediate (eff~1168.42442810572) | compare to KV-latent (low-rank) rot=hadamard +1623
+DICHOTOMY [shared-MLP rot=orth, down@2bit]: ppl=7.0641 (delta vs carve-out +0.1025) | HIGH-rank intermediate (eff~1168.42442810572) | compare to KV-latent (low-rank) rot=hadamard +1623
+KV-PROBE [kv_a@2bit]: ppl=9.9162 (delta vs carve-out +2.9546) | carve-out=6.9616 fp16=6.3070 | ref: both@2bit=+5.27
+KV-PROBE [kv_b@2bit]: ppl=7.2122 (delta vs carve-out +0.2506) | carve-out=6.9616 fp16=6.3070 | ref: both@2bit=+5.27
+EXPERT-BITS [routed@1bit fast, rest fp16]: ppl=259.8809 (delta vs fp16 +253.5739) | weight rel-MSE@1bit=0.3652 (trellis@2bit=0.069) | fp16=6.3070
+EXPERT-BITS [routed@2bit fast, rest fp16]: ppl=171.8674 (delta vs fp16 +165.5604) | weight rel-MSE@2bit=0.7947 (trellis@2bit=0.069) | fp16=6.3070
+EXPERT-BITS [routed@3bit fast, rest fp16]: ppl=7.6677 (delta vs fp16 +1.3607) | weight rel-MSE@3bit=0.1279 (trellis@2bit=0.069) | fp16=6.3070
+EXPERT-BITS [routed@1bit fast, layers 1-13, rest fp16]: ppl=108.6666 (delta vs fp16 +102.3596) | weight rel-MSE@1bit=0.3652 (trellis@2bit=0.069) | fp16=6.3070
+EXPERT-BITS [routed@1bit fast, layers 14-26, rest fp16]: ppl=11.8666 (delta vs fp16 +5.5596) | weight rel-MSE@1bit=nan (trellis@2bit=0.069) | fp16=6.3070
+EXPERT-BITS [routed@1bit fast, layers 20-26, rest fp16]: ppl=8.6974 (delta vs fp16 +2.3904) | weight rel-MSE@1bit=nan (trellis@2bit=0.069) | fp16=6.3070
+EXPERT-BITS [routed@1bit fast, layers 1-7, rest fp16]: ppl=72.3864 (delta vs fp16 +66.0794) | weight rel-MSE@1bit=nan (trellis@2bit=0.069) | fp16=6.3070
+EMBED-HARVEST [embed+lm_head@4bit per-128, rest carve-out]: ppl=7.4102 (delta vs carve-out +0.4486) | carve-out=6.9616 fp16=6.3070 | embed rel-MSE=0.0148 head rel-MSE=0.0148 | frees ~0.63GB
+EMBED-HARVEST [embed+lm_head@3bit per-128, rest carve-out]: ppl=9.8822 (delta vs carve-out +2.9206) | carve-out=6.9616 fp16=6.3070 | embed rel-MSE=0.0803 head rel-MSE=0.0802 | frees ~0.68GB

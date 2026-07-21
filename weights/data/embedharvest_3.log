@@ -1,0 +1,8 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+EMBED-HARVEST: embed+lm_head -> 3-bit per-128, rest=carve-out | 151 win | embed rel-MSE=0.0803
+  layer 0/27 (23s)
+  layer 9/27 (396s)
+  layer 18/27 (769s)
+  layer 26/27 (1100s)
+
+EMBED-HARVEST [embed+lm_head@3bit per-128, rest carve-out]: ppl=9.8822 (delta vs carve-out +2.9206) | carve-out=6.9616 fp16=6.3070 | embed rel-MSE=0.0803 head rel-MSE=0.0802 | frees ~0.68GB

@@ -1,0 +1,19 @@
+=== dump wikitext-2 TEST raw ===
+AttributeError: '_thread.RLock' object has no attribute '_recursion_count'
+=== quantize A: uniform (ffn q2_k, attn q4_k) ===
+llama_quantize: quantize time = 415107.78 ms
+llama_quantize:    total time = 415107.79 ms
+=== quantize B: depth-aware LATE-12 protected ===
+llama_quantize: quantize time = 400544.69 ms
+llama_quantize:    total time = 400544.69 ms
+=== quantize C: control EARLY-12 protected (byte-identical to B) ===
+llama_quantize: quantize time = 403830.15 ms
+llama_quantize:    total time = 403830.15 ms
+4725681856 /d/evo-compress-data/gguf/gemma4-12b-A-uniform.gguf
+5223345856 /d/evo-compress-data/gguf/gemma4-12b-B-late12.gguf
+5223345856 /d/evo-compress-data/gguf/gemma4-12b-C-early12.gguf
+=== perplexity A/B/C (same 32 chunks, GPU) ===
+  A-uniform: 3.02.077.817 I Final estimate: PPL = 14.4123 +/- 0.43433
+  B-late12: 2.59.559.190 I Final estimate: PPL = 10.0197 +/- 0.27936
+  C-early12: 3.15.757.425 I Final estimate: PPL = 12.2746 +/- 0.36399
+ABC EXPERIMENT DONE

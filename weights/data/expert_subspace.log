@@ -1,0 +1,12 @@
+EXPERT-SUBSPACE TEST (DeepSeek-V2-Lite, 64 routed experts/layer)
+If 'backbone' is high AND a few variation-modes capture most -> experts factorize (backbone + low-rank delta) -> the rearrangement is real.
+
+  L 3 gate_proj : backbone(mean)=  1.8% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   7/  14/  27/  53%
+  L 3 up_proj   : backbone(mean)=  1.6% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   7/  14/  27/  53%
+  L 3 down_proj : backbone(mean)=  1.6% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   7/  13/  26/  52%
+  L13 gate_proj : backbone(mean)=  1.7% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   8/  15/  29/  55%
+  L13 up_proj   : backbone(mean)=  1.6% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   8/  16/  30/  55%
+  L13 down_proj : backbone(mean)=  1.6% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   8/  15/  28/  54%
+  L24 gate_proj : backbone(mean)=  2.0% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   7/  14/  28/  54%
+  L24 up_proj   : backbone(mean)=  1.6% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   7/  14/  28/  54%
+  L24 down_proj : backbone(mean)=  1.6% of total energy | of the variation, top-1/4/8/16/32 of 64 modes =    2/   7/  14/  28/  54%

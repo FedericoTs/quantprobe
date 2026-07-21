@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantprobe"
+version = "0.1.0"
+description = "Probe-then-quantize for LLMs: measure a model's fragility curve, plan bit/tier placement by the tiered decode law, and emit ready-to-run llama.cpp recipes."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Federico Sciuca" }]
+requires-python = ">=3.9"
+dependencies = ["gguf>=0.9", "requests>=2.28"]
+keywords = ["llm", "quantization", "llama.cpp", "gguf", "inference", "moe"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/FedericoTs/quantprobe"
+
+[project.scripts]
+quantprobe = "quantprobe.cli:main"
+
+[tool.setuptools]
+packages = ["quantprobe"]

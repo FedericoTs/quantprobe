@@ -1,0 +1,8 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+KV-PROBE: quantize kv_b -> 2-bit (other kv half fp16) | 151 win
+  layer 0/27 (28s)
+  layer 9/27 (442s)
+  layer 18/27 (854s)
+  layer 26/27 (1221s)
+
+KV-PROBE [kv_b@2bit]: ppl=7.2122 (delta vs carve-out +0.2506) | carve-out=6.9616 fp16=6.3070 | ref: both@2bit=+5.27

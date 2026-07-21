@@ -1,0 +1,13 @@
+=== reference Q4_K_M from Q8 (with --allow-requantize) ===
+llama_quantize:    total time = 870952.21 ms
+  ref-q4km: 11.58.833.196 I Final estimate: PPL = 10.3912 +/- 0.50994
+=== band probe: 48 layers, 4 bands ===
+llama_quantize:    total time = 904156.04 ms
+  b0_11: 5.21.043.101 I Final estimate: PPL = 10.9819 +/- 0.53560
+llama_quantize:    total time = 892622.78 ms
+  b12_23: 4.46.481.963 I Final estimate: PPL = 10.4077 +/- 0.50328
+llama_quantize:    total time = 891206.95 ms
+  b24_35: 4.51.462.838 I Final estimate: PPL = 10.5264 +/- 0.51021
+llama_quantize:    total time = 898510.53 ms
+  b36_47: 4.19.845.045 I Final estimate: PPL = 11.7286 +/- 0.58891
+T5 BAND CURVE DONE

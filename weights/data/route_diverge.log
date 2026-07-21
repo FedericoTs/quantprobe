@@ -1,0 +1,92 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+routing-divergence: 2 win x 2048 tok = 4096 routing decisions/layer
+  cache: D:\evo-compress-data\moe_cache\a85fd89f48bf
+  [fp16 ] layer 0/27 dense done
+  [fp16 ] layer 1/27 MoE done
+  [fp16 ] layer 2/27 MoE done
+  [fp16 ] layer 3/27 MoE done
+  [fp16 ] layer 4/27 MoE done
+  [fp16 ] layer 5/27 MoE done
+  [fp16 ] layer 6/27 MoE done
+  [fp16 ] layer 7/27 MoE done
+  [fp16 ] layer 8/27 MoE done
+  [fp16 ] layer 9/27 MoE done
+  [fp16 ] layer 10/27 MoE done
+  [fp16 ] layer 11/27 MoE done
+  [fp16 ] layer 12/27 MoE done
+  [fp16 ] layer 13/27 MoE done
+  [fp16 ] layer 14/27 MoE done
+  [fp16 ] layer 15/27 MoE done
+  [fp16 ] layer 16/27 MoE done
+  [fp16 ] layer 17/27 MoE done
+  [fp16 ] layer 18/27 MoE done
+  [fp16 ] layer 19/27 MoE done
+  [fp16 ] layer 20/27 MoE done
+  [fp16 ] layer 21/27 MoE done
+  [fp16 ] layer 22/27 MoE done
+  [fp16 ] layer 23/27 MoE done
+  [fp16 ] layer 24/27 MoE done
+  [fp16 ] layer 25/27 MoE done
+  [fp16 ] layer 26/27 MoE done
+  [quant] layer 0/27 dense done
+  [quant] layer 1/27 MoE done
+  [quant] layer 2/27 MoE done
+  [quant] layer 3/27 MoE done
+  [quant] layer 4/27 MoE done
+  [quant] layer 5/27 MoE done
+  [quant] layer 6/27 MoE done
+  [quant] layer 7/27 MoE done
+  [quant] layer 8/27 MoE done
+  [quant] layer 9/27 MoE done
+  [quant] layer 10/27 MoE done
+  [quant] layer 11/27 MoE done
+  [quant] layer 12/27 MoE done
+  [quant] layer 13/27 MoE done
+  [quant] layer 14/27 MoE done
+  [quant] layer 15/27 MoE done
+  [quant] layer 16/27 MoE done
+  [quant] layer 17/27 MoE done
+  [quant] layer 18/27 MoE done
+  [quant] layer 19/27 MoE done
+  [quant] layer 20/27 MoE done
+  [quant] layer 21/27 MoE done
+  [quant] layer 22/27 MoE done
+  [quant] layer 23/27 MoE done
+  [quant] layer 24/27 MoE done
+  [quant] layer 25/27 MoE done
+  [quant] layer 26/27 MoE done
+
+# routing divergence (quant carve-out vs fp16), 4096 tok/layer, fp16 router both
+# overlap=mean|E_fp16 & E_quant|/k (1=identical) ; top1=highest-expert match ; div=1-overlap
+layer   overlap  top1_agree  divergence
+    1    0.9526      0.9346      0.0474
+    2    0.9272      0.8943      0.0728
+    3    0.9303      0.8857      0.0697
+    4    0.9333      0.8948      0.0667
+    5    0.9197      0.8545      0.0803
+    6    0.9128      0.8345      0.0872
+    7    0.9092      0.8274      0.0908
+    8    0.9045      0.8428      0.0955
+    9    0.9076      0.8276      0.0924
+   10    0.9044      0.8442      0.0956
+   11    0.9062      0.8354      0.0938
+   12    0.8914      0.8333      0.1086
+   13    0.8780      0.7891      0.1220
+   14    0.8816      0.8025      0.1184
+   15    0.8778      0.7896      0.1222
+   16    0.8699      0.7969      0.1301
+   17    0.8851      0.7930      0.1149
+   18    0.8660      0.7783      0.1340
+   19    0.8719      0.7883      0.1281
+   20    0.8482      0.7349      0.1518
+   21    0.8560      0.7314      0.1440
+   22    0.8566      0.8137      0.1434
+   23    0.8653      0.7854      0.1347
+   24    0.8630      0.7773      0.1370
+   25    0.8641      0.7842      0.1359
+   26    0.8820      0.8276      0.1180
+
+# early-half mean divergence = 0.0864 ; late-half mean = 0.1317 ; ratio late/early = 1.52x
+# first MoE layer div = 0.0474 ; last = 0.1180
+
+saved -> C:\Users\Federico\Documents\evo-compress\weights\data\route_diverge.txt

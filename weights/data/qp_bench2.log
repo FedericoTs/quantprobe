@@ -1,0 +1,6 @@
+[quantprobe] placement: all in VRAM | predicted 14.4 tok/s
+[quantprobe] bench: tools/llamacpp\llama-bench.exe -m D:/evo-compress-data/gguf/qwen7b-Q2_K.gguf -n 32 -p 0 -r 2 --mmap 1 -ngl 99
+
+[quantprobe] measured: 22.36 +/- 0.05 tok/s (predicted 14.4, +55%)
+[quantprobe] the tiered decode law just ran on your machine. Share your point: github.com/federicosciuca/placement-beats-budget
+BENCH2 DONE

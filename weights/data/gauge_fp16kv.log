@@ -1,0 +1,8 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+GAUGE TEST [fp16kv] | cache D:\evo-compress-data\moe_cache\a85fd89f48bf | 151 win
+  layer 0/27 (23s)
+  layer 9/27 (394s)
+  layer 18/27 (768s)
+  layer 26/27 (1100s)
+
+GAUGE TEST [fp16kv]: kv@fp16 (bottleneck kept 16-bit) -> ppl=6.8048 (delta vs carve-out -0.1568) | carve-out=6.9616 fp16=6.3070 | ref: kv@2bit identity gauge = +5.27

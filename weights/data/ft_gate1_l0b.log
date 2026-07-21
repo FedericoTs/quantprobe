@@ -1,0 +1,12 @@
+C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\nn\modules\module.py:1329: UserWarning: expandable_segments not supported on this platform (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\c10/cuda/CUDAAllocatorConfig.h:28.)
+  return t.to(
+GATE 0/1: FT layer 0, 8x512 calib tokens (train+held-out), K=100 steps
+    step   0  train rel-MSE 0.01360
+    step  20  train rel-MSE 0.00578
+    step  40  train rel-MSE 0.00255
+    step  60  train rel-MSE 0.00185
+    step  80  train rel-MSE 0.00168
+    step  99  train rel-MSE 0.00165
+
+GATE: train rel-MSE 0.01360->0.00165 (87.9% drop) | HELD-OUT 0.01417->0.00362 (74.4% drop)
+  PASS -> FT loop works AND generalizes (held-out drops) -> proceed to full 7B-FT

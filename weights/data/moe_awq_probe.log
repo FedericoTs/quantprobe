@@ -1,0 +1,20 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (107438 > 16384). Running this sequence through the model will result in indexing errors
+
+=== AWQ output-MSE probe, layer 13 (rel output-MSE, lower=better) ===
+tensor                                       rows   data-free     AWQ-0.5   gain%
+attn.q_proj                                   512  5.7834e-02  2.1939e-02   62.1%
+attn.kv_a_proj_with_mqa                       512  5.5658e-02  2.3365e-02   58.0%
+attn.kv_b_proj                                512  6.1522e-02  5.3504e-02   13.0%
+attn.o_proj                                   512  8.8026e-02  7.3486e-02   16.5%
+shared_experts.gate_proj                      512  2.2344e-02  2.1933e-02    1.8%
+shared_experts.up_proj                        512  6.4792e-02  5.8562e-02    9.6%
+shared_experts.down_proj                      512  4.8884e-02  4.3244e-02   11.5%
+experts.26.gate_proj                          385  2.8465e-02  2.6469e-02    7.0%
+experts.26.up_proj                            385  3.5000e-02  3.1421e-02   10.2%
+experts.26.down_proj                          385  5.9937e-02  3.1888e-02   46.8%
+experts.28.gate_proj                          184  3.2843e-02  2.9075e-02   11.5%
+experts.28.up_proj                            184  3.8474e-02  3.3677e-02   12.5%
+experts.28.down_proj                          184  7.0197e-02  3.8825e-02   44.7%
+
+MEAN rel output-MSE: data-free 5.1075e-02  AWQ 3.7491e-02  -> AWQ cuts output-MSE 26.6%
+VERDICT: >15% mean reduction -> AWQ likely helps ppl meaningfully -> run 8h AWQ. <5% -> AWQ not the lever; the +6 ppl is routing/depth compounding, not per-tensor error.

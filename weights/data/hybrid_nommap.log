@@ -1,0 +1,3 @@
+=== v2 prediction test: 30B hybrid, partitioned residency (predicted ~19, boundary risk) ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |            tg32 |         19.30 ± 0.88 |
+HYBRID NOMMAP DONE

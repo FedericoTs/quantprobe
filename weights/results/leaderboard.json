@@ -1,0 +1,1434 @@
+{
+  "entries": [
+    {
+      "codec": "raw-gzip9",
+      "config": {
+        "type": "raw",
+        "backend": "gzip",
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 24432073,
+        "ratio": 1.1462,
+        "save_pct": 12.76,
+        "enc_MBps": 4.9,
+        "dec_MBps": 56.4,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 8128635,
+          "ratio": 1.2569,
+          "save_pct": 20.44,
+          "enc_MBps": 3.5,
+          "dec_MBps": 52.6,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2442650,
+          "ratio": 1.0833,
+          "save_pct": 7.69,
+          "enc_MBps": 8.3,
+          "dec_MBps": 58.3,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 13860788,
+          "ratio": 1.0924,
+          "save_pct": 8.46,
+          "enc_MBps": 6.1,
+          "dec_MBps": 58.9,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 15:57:11",
+      "note": "baseline"
+    },
+    {
+      "codec": "raw-lzma9",
+      "config": {
+        "type": "raw",
+        "backend": "lzma",
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 23513876,
+        "ratio": 1.191,
+        "save_pct": 16.04,
+        "enc_MBps": 1.2,
+        "dec_MBps": 6.5,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7394852,
+          "ratio": 1.3816,
+          "save_pct": 27.62,
+          "enc_MBps": 1.0,
+          "dec_MBps": 7.1,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2393072,
+          "ratio": 1.1057,
+          "save_pct": 9.56,
+          "enc_MBps": 1.2,
+          "dec_MBps": 6.1,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 13725952,
+          "ratio": 1.1032,
+          "save_pct": 9.35,
+          "enc_MBps": 1.4,
+          "dec_MBps": 6.3,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 15:57:38",
+      "note": "baseline"
+    },
+    {
+      "codec": "raw-zstd19",
+      "config": {
+        "type": "raw",
+        "backend": "zstd",
+        "level": 19
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 24221267,
+        "ratio": 1.1562,
+        "save_pct": 13.51,
+        "enc_MBps": 2.0,
+        "dec_MBps": 187.7,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7960955,
+          "ratio": 1.2834,
+          "save_pct": 22.08,
+          "enc_MBps": 1.6,
+          "dec_MBps": 143.7,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2435358,
+          "ratio": 1.0865,
+          "save_pct": 7.96,
+          "enc_MBps": 2.6,
+          "dec_MBps": 233.9,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 13824954,
+          "ratio": 1.0953,
+          "save_pct": 8.7,
+          "enc_MBps": 2.3,
+          "dec_MBps": 226.7,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 15:57:52",
+      "note": "baseline"
+    },
+    {
+      "codec": "zipnn-zstd19",
+      "config": {
+        "type": "byte-split",
+        "backend": "zstd",
+        "level": 19
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21896023,
+        "ratio": 1.279,
+        "save_pct": 21.81,
+        "enc_MBps": 1.4,
+        "dec_MBps": 131.5,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7054142,
+          "ratio": 1.4484,
+          "save_pct": 30.96,
+          "enc_MBps": 1.1,
+          "dec_MBps": 105.2,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2240066,
+          "ratio": 1.1812,
+          "save_pct": 15.34,
+          "enc_MBps": 2.2,
+          "dec_MBps": 128.3,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12601815,
+          "ratio": 1.2016,
+          "save_pct": 16.78,
+          "enc_MBps": 1.6,
+          "dec_MBps": 159.1,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 15:58:12",
+      "note": "baseline"
+    },
+    {
+      "codec": "split-lzma9",
+      "config": {
+        "type": "byte-split",
+        "backend": "lzma",
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21832300,
+        "ratio": 1.2827,
+        "save_pct": 22.04,
+        "enc_MBps": 1.1,
+        "dec_MBps": 26.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7031124,
+          "ratio": 1.4531,
+          "save_pct": 31.18,
+          "enc_MBps": 0.9,
+          "dec_MBps": 23.4,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2253868,
+          "ratio": 1.174,
+          "save_pct": 14.82,
+          "enc_MBps": 1.3,
+          "dec_MBps": 12.7,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12547308,
+          "ratio": 1.2068,
+          "save_pct": 17.14,
+          "enc_MBps": 1.2,
+          "dec_MBps": 35.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 15:58:40",
+      "note": "baseline"
+    },
+    {
+      "codec": "split-brotli11",
+      "config": {
+        "type": "byte-split",
+        "backend": "brotli",
+        "level": 11
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21530943,
+        "ratio": 1.3007,
+        "save_pct": 23.12,
+        "enc_MBps": 0.3,
+        "dec_MBps": 58.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 6866682,
+          "ratio": 1.4879,
+          "save_pct": 32.79,
+          "enc_MBps": 0.3,
+          "dec_MBps": 51.0,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2235808,
+          "ratio": 1.1835,
+          "save_pct": 15.5,
+          "enc_MBps": 0.3,
+          "dec_MBps": 47.5,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12428453,
+          "ratio": 1.2183,
+          "save_pct": 17.92,
+          "enc_MBps": 0.4,
+          "dec_MBps": 66.8,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:00:08",
+      "note": "baseline"
+    },
+    {
+      "codec": "perplane-zstd-lzma",
+      "config": {
+        "type": "per-plane",
+        "plane_backends": [
+          "zstd",
+          "lzma"
+        ],
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21859948,
+        "ratio": 1.2811,
+        "save_pct": 21.94,
+        "enc_MBps": 1.4,
+        "dec_MBps": 32.7,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7045641,
+          "ratio": 1.4501,
+          "save_pct": 31.04,
+          "enc_MBps": 1.1,
+          "dec_MBps": 28.7,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2253480,
+          "ratio": 1.1742,
+          "save_pct": 14.83,
+          "enc_MBps": 1.9,
+          "dec_MBps": 14.3,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12560827,
+          "ratio": 1.2055,
+          "save_pct": 17.05,
+          "enc_MBps": 1.6,
+          "dec_MBps": 48.1,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:00:29",
+      "note": "baseline"
+    },
+    {
+      "codec": "raw-gzip9",
+      "config": {
+        "type": "raw",
+        "backend": "gzip",
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 24432073,
+        "ratio": 1.1462,
+        "save_pct": 12.76,
+        "enc_MBps": 4.6,
+        "dec_MBps": 56.8,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 8128635,
+          "ratio": 1.2569,
+          "save_pct": 20.44,
+          "enc_MBps": 3.4,
+          "dec_MBps": 52.8,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2442650,
+          "ratio": 1.0833,
+          "save_pct": 7.69,
+          "enc_MBps": 6.9,
+          "dec_MBps": 56.4,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 13860788,
+          "ratio": 1.0924,
+          "save_pct": 8.46,
+          "enc_MBps": 5.6,
+          "dec_MBps": 60.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:06:46",
+      "note": "baseline"
+    },
+    {
+      "codec": "raw-lzma9",
+      "config": {
+        "type": "raw",
+        "backend": "lzma",
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 23513876,
+        "ratio": 1.191,
+        "save_pct": 16.04,
+        "enc_MBps": 1.4,
+        "dec_MBps": 7.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7394852,
+          "ratio": 1.3816,
+          "save_pct": 27.62,
+          "enc_MBps": 1.2,
+          "dec_MBps": 7.6,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2393072,
+          "ratio": 1.1057,
+          "save_pct": 9.56,
+          "enc_MBps": 1.4,
+          "dec_MBps": 6.7,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 13725952,
+          "ratio": 1.1032,
+          "save_pct": 9.35,
+          "enc_MBps": 1.6,
+          "dec_MBps": 6.7,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:07:09",
+      "note": "baseline"
+    },
+    {
+      "codec": "raw-zstd19",
+      "config": {
+        "type": "raw",
+        "backend": "zstd",
+        "level": 19
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 24221267,
+        "ratio": 1.1562,
+        "save_pct": 13.51,
+        "enc_MBps": 2.3,
+        "dec_MBps": 191.4,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7960955,
+          "ratio": 1.2834,
+          "save_pct": 22.08,
+          "enc_MBps": 1.8,
+          "dec_MBps": 144.9,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2435358,
+          "ratio": 1.0865,
+          "save_pct": 7.96,
+          "enc_MBps": 3.0,
+          "dec_MBps": 245.2,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 13824954,
+          "ratio": 1.0953,
+          "save_pct": 8.7,
+          "enc_MBps": 2.6,
+          "dec_MBps": 232.8,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:07:22",
+      "note": "baseline"
+    },
+    {
+      "codec": "zipnn-zstd19",
+      "config": {
+        "type": "byte-split",
+        "backend": "zstd",
+        "level": 19
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21896023,
+        "ratio": 1.279,
+        "save_pct": 21.81,
+        "enc_MBps": 1.6,
+        "dec_MBps": 136.7,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7054142,
+          "ratio": 1.4484,
+          "save_pct": 30.96,
+          "enc_MBps": 1.3,
+          "dec_MBps": 111.6,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2240066,
+          "ratio": 1.1812,
+          "save_pct": 15.34,
+          "enc_MBps": 2.2,
+          "dec_MBps": 122.2,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12601815,
+          "ratio": 1.2016,
+          "save_pct": 16.78,
+          "enc_MBps": 1.8,
+          "dec_MBps": 165.2,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:07:40",
+      "note": "baseline"
+    },
+    {
+      "codec": "split-lzma9",
+      "config": {
+        "type": "byte-split",
+        "backend": "lzma",
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21832300,
+        "ratio": 1.2827,
+        "save_pct": 22.04,
+        "enc_MBps": 1.1,
+        "dec_MBps": 28.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7031124,
+          "ratio": 1.4531,
+          "save_pct": 31.18,
+          "enc_MBps": 1.0,
+          "dec_MBps": 25.2,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2253868,
+          "ratio": 1.174,
+          "save_pct": 14.82,
+          "enc_MBps": 1.4,
+          "dec_MBps": 13.6,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12547308,
+          "ratio": 1.2068,
+          "save_pct": 17.14,
+          "enc_MBps": 1.3,
+          "dec_MBps": 38.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:08:06",
+      "note": "baseline"
+    },
+    {
+      "codec": "split-brotli11",
+      "config": {
+        "type": "byte-split",
+        "backend": "brotli",
+        "level": 11
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21530943,
+        "ratio": 1.3007,
+        "save_pct": 23.12,
+        "enc_MBps": 0.3,
+        "dec_MBps": 62.2,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 6866682,
+          "ratio": 1.4879,
+          "save_pct": 32.79,
+          "enc_MBps": 0.3,
+          "dec_MBps": 51.2,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2235808,
+          "ratio": 1.1835,
+          "save_pct": 15.5,
+          "enc_MBps": 0.3,
+          "dec_MBps": 56.5,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12428453,
+          "ratio": 1.2183,
+          "save_pct": 17.92,
+          "enc_MBps": 0.4,
+          "dec_MBps": 74.2,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:09:27",
+      "note": "baseline"
+    },
+    {
+      "codec": "perplane-zstd-lzma",
+      "config": {
+        "type": "per-plane",
+        "plane_backends": [
+          "zstd",
+          "lzma"
+        ],
+        "level": 9
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21859948,
+        "ratio": 1.2811,
+        "save_pct": 21.94,
+        "enc_MBps": 1.5,
+        "dec_MBps": 33.8,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7045641,
+          "ratio": 1.4501,
+          "save_pct": 31.04,
+          "enc_MBps": 1.2,
+          "dec_MBps": 30.0,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2253480,
+          "ratio": 1.1742,
+          "save_pct": 14.83,
+          "enc_MBps": 2.0,
+          "dec_MBps": 14.5,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12560827,
+          "ratio": 1.2055,
+          "save_pct": 17.05,
+          "enc_MBps": 1.8,
+          "dec_MBps": 49.3,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:09:46",
+      "note": "baseline"
+    },
+    {
+      "codec": "smart-zstd19",
+      "config": {
+        "type": "smart-split",
+        "exp_backend": "zstd",
+        "level": 19,
+        "mantissa": "stored-raw"
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21783540,
+        "ratio": 1.2856,
+        "save_pct": 22.22,
+        "enc_MBps": 2.3,
+        "dec_MBps": 263.8,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 6874536,
+          "ratio": 1.4862,
+          "save_pct": 32.71,
+          "enc_MBps": 1.5,
+          "dec_MBps": 252.1,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2239301,
+          "ratio": 1.1816,
+          "save_pct": 15.37,
+          "enc_MBps": 3.7,
+          "dec_MBps": 169.9,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12669703,
+          "ratio": 1.1951,
+          "save_pct": 16.33,
+          "enc_MBps": 3.1,
+          "dec_MBps": 302.6,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:09:59",
+      "note": "baseline"
+    },
+    {
+      "codec": "smart-brotli11",
+      "config": {
+        "type": "smart-split",
+        "exp_backend": "brotli",
+        "level": 11,
+        "mantissa": "stored-raw"
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 21768696,
+        "ratio": 1.2865,
+        "save_pct": 22.27,
+        "enc_MBps": 0.7,
+        "dec_MBps": 125.3,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 6867210,
+          "ratio": 1.4878,
+          "save_pct": 32.79,
+          "enc_MBps": 0.5,
+          "dec_MBps": 101.9,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2235661,
+          "ratio": 1.1835,
+          "save_pct": 15.51,
+          "enc_MBps": 0.7,
+          "dec_MBps": 98.9,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12665825,
+          "ratio": 1.1955,
+          "save_pct": 16.35,
+          "enc_MBps": 1.1,
+          "dec_MBps": 156.9,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:10:37",
+      "note": "baseline"
+    },
+    {
+      "codec": "smart-lzma9",
+      "config": {
+        "type": "smart-split",
+        "exp_backend": "lzma",
+        "level": 9,
+        "mantissa": "stored-raw"
+      },
+      "overall": {
+        "in_bytes": 28004864,
+        "out_bytes": 22091504,
+        "ratio": 1.2677,
+        "save_pct": 21.12,
+        "enc_MBps": 1.8,
+        "dec_MBps": 34.6,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 10216960,
+          "out_bytes": 7045360,
+          "ratio": 1.4502,
+          "save_pct": 31.04,
+          "enc_MBps": 1.2,
+          "dec_MBps": 30.2,
+          "rt_ok": true
+        },
+        "fp16": {
+          "in_bytes": 2646016,
+          "out_bytes": 2253388,
+          "ratio": 1.1742,
+          "save_pct": 14.84,
+          "enc_MBps": 2.0,
+          "dec_MBps": 14.3,
+          "rt_ok": true
+        },
+        "fp32": {
+          "in_bytes": 15141888,
+          "out_bytes": 12792756,
+          "ratio": 1.1836,
+          "save_pct": 15.51,
+          "enc_MBps": 2.5,
+          "dec_MBps": 53.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 40,
+      "timestamp": "2026-06-04 16:10:54",
+      "note": "baseline"
+    },
+    {
+      "codec": "delta-brotli11@full eps=1%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "brotli",
+          "level": 11
+        },
+        "scenario": "full eps=1%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 1490217,
+        "ratio": 2.9905,
+        "save_pct": 66.56,
+        "enc_MBps": 0.0,
+        "dec_MBps": 71.3,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 1490217,
+          "ratio": 2.9905,
+          "save_pct": 66.56,
+          "dec_MBps": 71.3,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:12:37",
+      "note": "delta vs standalone 50%"
+    },
+    {
+      "codec": "delta-zstd19@full eps=1%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "zstd",
+          "level": 19
+        },
+        "scenario": "full eps=1%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 1505429,
+        "ratio": 2.9603,
+        "save_pct": 66.22,
+        "enc_MBps": 0.0,
+        "dec_MBps": 136.3,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 1505429,
+          "ratio": 2.9603,
+          "save_pct": 66.22,
+          "dec_MBps": 136.3,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:12:45",
+      "note": "delta vs standalone 50%"
+    },
+    {
+      "codec": "delta-brotli11@full eps=5%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "brotli",
+          "level": 11
+        },
+        "scenario": "full eps=5%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 2176268,
+        "ratio": 2.0477,
+        "save_pct": 51.17,
+        "enc_MBps": 0.0,
+        "dec_MBps": 57.2,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 2176268,
+          "ratio": 2.0477,
+          "save_pct": 51.17,
+          "dec_MBps": 57.2,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:13:08",
+      "note": "delta vs standalone 73%"
+    },
+    {
+      "codec": "delta-zstd19@full eps=5%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "zstd",
+          "level": 19
+        },
+        "scenario": "full eps=5%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 2176918,
+        "ratio": 2.0471,
+        "save_pct": 51.15,
+        "enc_MBps": 0.0,
+        "dec_MBps": 119.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 2176918,
+          "ratio": 2.0471,
+          "save_pct": 51.15,
+          "dec_MBps": 119.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:13:15",
+      "note": "delta vs standalone 73%"
+    },
+    {
+      "codec": "delta-brotli11@sparse 10%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "brotli",
+          "level": 11
+        },
+        "scenario": "sparse 10%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 537889,
+        "ratio": 8.2851,
+        "save_pct": 87.93,
+        "enc_MBps": 0.0,
+        "dec_MBps": 68.6,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 537889,
+          "ratio": 8.2851,
+          "save_pct": 87.93,
+          "dec_MBps": 68.6,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:13:45",
+      "note": "delta vs standalone 18%"
+    },
+    {
+      "codec": "delta-zstd19@sparse 10%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "zstd",
+          "level": 19
+        },
+        "scenario": "sparse 10%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 554027,
+        "ratio": 8.0437,
+        "save_pct": 87.57,
+        "enc_MBps": 0.0,
+        "dec_MBps": 123.4,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 554027,
+          "ratio": 8.0437,
+          "save_pct": 87.57,
+          "dec_MBps": 123.4,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:13:53",
+      "note": "delta vs standalone 19%"
+    },
+    {
+      "codec": "delta-brotli11@sparse 1%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "brotli",
+          "level": 11
+        },
+        "scenario": "sparse 1%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 78945,
+        "ratio": 56.45,
+        "save_pct": 98.23,
+        "enc_MBps": 0.0,
+        "dec_MBps": 102.3,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 78945,
+          "ratio": 56.45,
+          "save_pct": 98.23,
+          "dec_MBps": 102.3,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:14:17",
+      "note": "delta vs standalone 3%"
+    },
+    {
+      "codec": "delta-zstd19@sparse 1%",
+      "config": {
+        "type": "delta",
+        "inner": {
+          "type": "byte-split",
+          "backend": "zstd",
+          "level": 19
+        },
+        "scenario": "sparse 1%"
+      },
+      "overall": {
+        "in_bytes": 4456448,
+        "out_bytes": 89854,
+        "ratio": 49.5965,
+        "save_pct": 97.98,
+        "enc_MBps": 0.0,
+        "dec_MBps": 156.2,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 4456448,
+          "out_bytes": 89854,
+          "ratio": 49.5965,
+          "save_pct": 97.98,
+          "dec_MBps": 156.2,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 3,
+      "timestamp": "2026-06-04 16:14:24",
+      "note": "delta vs standalone 3%"
+    },
+    {
+      "codec": "delta-real@1000steps",
+      "config": {
+        "type": "delta-real",
+        "repo": "EleutherAI/pythia-70m",
+        "gap_steps": 1000,
+        "tensors": 76,
+        "dtype": "fp32"
+      },
+      "overall": {
+        "in_bytes": 281706496,
+        "out_bytes": 89940554,
+        "ratio": 3.1321,
+        "save_pct": 68.07,
+        "enc_MBps": 0.0,
+        "dec_MBps": 0.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "fp32": {
+          "in_bytes": 281706496,
+          "out_bytes": 89940554,
+          "ratio": 3.1321,
+          "save_pct": 68.07,
+          "dec_MBps": 0.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 76,
+      "timestamp": "2026-06-04 16:44:39",
+      "note": "REAL checkpoint delta, 1000 training steps apart; standalone=16.9%"
+    },
+    {
+      "codec": "delta-real@1000steps",
+      "config": {
+        "type": "delta-real",
+        "repo": "EleutherAI/pythia-70m",
+        "gap_steps": 1000,
+        "tensors": 76,
+        "dtype": "fp32"
+      },
+      "overall": {
+        "in_bytes": 281706496,
+        "out_bytes": 88313144,
+        "ratio": 3.1899,
+        "save_pct": 68.07,
+        "enc_MBps": 0.0,
+        "dec_MBps": 0.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "fp32": {
+          "in_bytes": 281706496,
+          "out_bytes": 88313144,
+          "ratio": 3.1899,
+          "save_pct": 68.07,
+          "dec_MBps": 0.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 76,
+      "timestamp": "2026-06-04 17:08:00",
+      "note": "REAL checkpoint delta, 1000 training steps apart; standalone=16.9%"
+    },
+    {
+      "codec": "finetune-delta@SmolLM-135M",
+      "config": {
+        "type": "finetune-delta",
+        "base": "SmolLM-135M",
+        "ft": "SmolLM-135M-Instruct",
+        "ref_dtype": "bf16"
+      },
+      "overall": {
+        "in_bytes": 269030016,
+        "out_bytes": 137278820,
+        "ratio": 1.9597,
+        "save_pct": 48.97,
+        "enc_MBps": 0.0,
+        "dec_MBps": 0.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 269030016,
+          "out_bytes": 137278820,
+          "ratio": 1.9597,
+          "save_pct": 48.97,
+          "dec_MBps": 0.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 272,
+      "timestamp": "2026-06-04 18:42:53",
+      "note": "REAL fine-tune delta; standalone=32.9%; 97% elems changed"
+    },
+    {
+      "codec": "wcodec-delta@Qwen2.5-0.5B-abliterated",
+      "config": {
+        "type": "delta-real",
+        "base": "Qwen2.5-0.5B-Instruct",
+        "variant": "abliterated",
+        "dtype": "bf16"
+      },
+      "overall": {
+        "in_bytes": 1036000000,
+        "out_bytes": 94300000,
+        "ratio": 10.99,
+        "save_pct": 90.9,
+        "enc_MBps": 3.0,
+        "dec_MBps": 104.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 1036000000,
+          "out_bytes": 94300000,
+          "ratio": 10.99,
+          "save_pct": 90.9,
+          "dec_MBps": 104.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 290,
+      "timestamp": "2026-06-04 19:36:32",
+      "note": "REAL light edit (abliteration); 76% tensors identical; TARGET HIT 90.9%"
+    },
+    {
+      "codec": "wcodec-delta@pythia-bf16-1000step",
+      "config": {
+        "type": "delta-real",
+        "model": "pythia-70m",
+        "dtype": "bf16",
+        "gap": 1000
+      },
+      "overall": {
+        "in_bytes": 140900000,
+        "out_bytes": 54500000,
+        "ratio": 2.59,
+        "save_pct": 61.3,
+        "enc_MBps": 2.0,
+        "dec_MBps": 77.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 140900000,
+          "out_bytes": 54500000,
+          "ratio": 2.59,
+          "save_pct": 61.3,
+          "dec_MBps": 77.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 77,
+      "timestamp": "2026-06-04 20:29:19",
+      "note": "bf16 checkpoint delta = SOTA regime; 61.3% ~= published 62%; fp32 same delta 68.6%"
+    },
+    {
+      "codec": "wcodec-lowrank@Qwen2.5-0.5B-abliterated",
+      "config": {
+        "type": "delta-lowrank",
+        "base": "Qwen2.5-0.5B-Instruct",
+        "variant": "abliterated",
+        "dtype": "bf16"
+      },
+      "overall": {
+        "in_bytes": 1036000000,
+        "out_bytes": 24500000,
+        "ratio": 42.22,
+        "save_pct": 97.6,
+        "enc_MBps": 19.0,
+        "dec_MBps": 155.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 1036000000,
+          "out_bytes": 24500000,
+          "ratio": 42.22,
+          "save_pct": 97.6,
+          "dec_MBps": 155.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 290,
+      "timestamp": "2026-06-04 20:53:11",
+      "note": "LOW-RANK mode; abliteration rank-<=4 delta; 90.9->97.6% (42x)"
+    },
+    {
+      "codec": "wcodec-lowrank-adaptive@Qwen2.5-0.5B-abliterated",
+      "config": {
+        "type": "delta-lowrank",
+        "base": "Qwen2.5-0.5B-Instruct",
+        "variant": "abliterated",
+        "dtype": "bf16",
+        "rank": "numerical"
+      },
+      "overall": {
+        "in_bytes": 1036000000,
+        "out_bytes": 9400000,
+        "ratio": 109.27,
+        "save_pct": 99.1,
+        "enc_MBps": 19.0,
+        "dec_MBps": 150.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 1036000000,
+          "out_bytes": 9400000,
+          "ratio": 109.27,
+          "save_pct": 99.1,
+          "dec_MBps": 150.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 290,
+      "timestamp": "2026-06-04 21:03:29",
+      "note": "adaptive numerical-rank low-rank; abliteration 99.1% / 109x"
+    },
+    {
+      "codec": "wcodec-lowrank@Qwen2.5-1.5B-abliterated",
+      "config": {
+        "type": "delta-lowrank",
+        "base": "Qwen2.5-1.5B-Instruct",
+        "variant": "abliterated",
+        "dtype": "bf16",
+        "scale": "1.5B"
+      },
+      "overall": {
+        "in_bytes": 3236000000,
+        "out_bytes": 38500000,
+        "ratio": 84.19,
+        "save_pct": 98.8,
+        "enc_MBps": 14.0,
+        "dec_MBps": 82.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 3236000000,
+          "out_bytes": 38500000,
+          "ratio": 84.19,
+          "save_pct": 98.8,
+          "dec_MBps": 82.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 338,
+      "timestamp": "2026-06-04 22:42:06",
+      "note": "SCALE 1.5B (3GB model, 3.5GB free RAM via mmap+streaming); abliteration 98.8%/84x"
+    },
+    {
+      "codec": "wcodec-lowrank@Qwen2.5-3B-abliterated",
+      "config": {
+        "type": "delta-lowrank",
+        "base": "Qwen2.5-3B-Instruct",
+        "variant": "abliterated",
+        "dtype": "bf16",
+        "scale": "3B",
+        "cross_sharded": true
+      },
+      "overall": {
+        "in_bytes": 6472000000,
+        "out_bytes": 81300000,
+        "ratio": 79.56,
+        "save_pct": 98.7,
+        "enc_MBps": 9.0,
+        "dec_MBps": 123.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "bf16": {
+          "in_bytes": 6472000000,
+          "out_bytes": 81300000,
+          "ratio": 79.56,
+          "save_pct": 98.7,
+          "dec_MBps": 123.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 434,
+      "timestamp": "2026-06-05 03:18:25",
+      "note": "SCALE 3B (6.2GB model, 3.5GB free RAM, cross-sharded base/ablit); abliteration 98.7%/80x"
+    },
+    {
+      "codec": "wcodec-delta@Qwen0.5B-abliterated-int8",
+      "config": {
+        "type": "delta-quantized",
+        "dtype": "int8",
+        "base": "Qwen2.5-0.5B-Instruct",
+        "variant": "abliterated"
+      },
+      "overall": {
+        "in_bytes": 518000000,
+        "out_bytes": 13300000,
+        "ratio": 38.9,
+        "save_pct": 97.4,
+        "enc_MBps": 0.0,
+        "dec_MBps": 0.0,
+        "rt_ok": true
+      },
+      "by_dtype": {
+        "int8": {
+          "in_bytes": 518000000,
+          "out_bytes": 13300000,
+          "ratio": 38.9,
+          "save_pct": 97.4,
+          "dec_MBps": 0.0,
+          "rt_ok": true
+        }
+      },
+      "n_tensors": 290,
+      "timestamp": "2026-06-05 03:31:45",
+      "note": "QUANTIZED int8 variant delta survives quantization; 97.4% (38x); 244/290 tensors identical"
+    }
+  ]
+}

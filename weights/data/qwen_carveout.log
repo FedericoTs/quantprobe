@@ -1,0 +1,20 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (299078 > 32768). Running this sequence through the model will result in indexing errors
+Qwen1.5-MoE-A2.7B carve-out 2-bit: 8 win, qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True
+  cache: D:\evo-compress-data\moe_cache\868a26de9c0f
+  layer 0/24 quant+fwd (1203s) hfin=True
+  layer 2/24 quant+fwd (3614s) hfin=True
+  layer 4/24 quant+fwd (6034s) hfin=True
+  layer 6/24 quant+fwd (8452s) hfin=True
+  layer 8/24 quant+fwd (10863s) hfin=True
+  layer 10/24 quant+fwd (13272s) hfin=True
+  layer 12/24 quant+fwd (15681s) hfin=True
+  layer 14/24 quant+fwd (18090s) hfin=True
+  layer 16/24 quant+fwd (20499s) hfin=True
+  layer 18/24 quant+fwd (22906s) hfin=True
+  layer 20/24 quant+fwd (25314s) hfin=True
+  layer 22/24 quant+fwd (27721s) hfin=True
+  layer 23/24 quant+fwd (28927s) hfin=True
+
+[raw] ppl=6.7633 (saved defensively)
+
+Qwen1.5-MoE-A2.7B carve-out 2-bit (qwen-moe routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 INT8_GS=True): WikiText-2 ppl = 6.7633 | quant 2.546 b/w over 13.69B params, 626M kept fp16 | resident = 5.61 GB = 3.134 b/w whole-model | 8 win, 28927s

@@ -1,0 +1,9 @@
+=== U: ours-uniform (ftype Q2_K + attn q4k + embd q4k, data-free from Q8) ===
+llama_quantize:    total time = 779925.61 ms
+CHECKPOINT OK: U quantize (11491185216)
+  U-uniform ppl: 1.33.304.491 I Final estimate: PPL = 11.8553 +/- 0.58725
+=== D: identical + ONLY late-12 ffn q4_k ===
+llama_quantize:    total time = 832929.36 ms
+CHECKPOINT OK: D quantize (12944511552)
+  D-depth ppl: 1.36.171.661 I Final estimate: PPL = 11.0840 +/- 0.54055
+UD PAIR DONE

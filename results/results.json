@@ -1,0 +1,140 @@
+{
+  "meta": {
+    "domain": "time-series",
+    "engine": "ga",
+    "seed": 0,
+    "population": 80,
+    "generations": 40,
+    "objective": "max_ratio",
+    "n_train": 13,
+    "n_test": 5,
+    "champion": "[float_split(dtype=f4)] => lzma-4",
+    "champion_spec": {
+      "transforms": [
+        {
+          "name": "float_split",
+          "params": {
+            "dtype": "f4"
+          }
+        }
+      ],
+      "backend": "lzma",
+      "level": 4
+    },
+    "evaluated": 597
+  },
+  "leaderboard": [
+    {
+      "name": "evolved",
+      "pipeline": "[float_split(dtype=f4)] => lzma-4",
+      "spec": {
+        "transforms": [
+          {
+            "name": "float_split",
+            "params": {
+              "dtype": "f4"
+            }
+          }
+        ],
+        "backend": "lzma",
+        "level": 4
+      },
+      "ratio": 1.6045,
+      "encode_MBps": 2.67,
+      "decode_MBps": 13.72,
+      "roundtrip_ok": true,
+      "total_in": 409600,
+      "total_out": 255283
+    },
+    {
+      "name": "lzma-9",
+      "pipeline": "[(none)] => lzma-9",
+      "spec": {
+        "transforms": [],
+        "backend": "lzma",
+        "level": 9
+      },
+      "ratio": 1.5077,
+      "encode_MBps": 1.26,
+      "decode_MBps": 12.99,
+      "roundtrip_ok": true,
+      "total_in": 409600,
+      "total_out": 271669
+    },
+    {
+      "name": "brotli-11",
+      "pipeline": "[(none)] => brotli-11",
+      "spec": {
+        "transforms": [],
+        "backend": "brotli",
+        "level": 11
+      },
+      "ratio": 1.4112,
+      "encode_MBps": 0.19,
+      "decode_MBps": 58.51,
+      "roundtrip_ok": true,
+      "total_in": 409600,
+      "total_out": 290246
+    },
+    {
+      "name": "zstd-19",
+      "pipeline": "[(none)] => zstd-19",
+      "spec": {
+        "transforms": [],
+        "backend": "zstd",
+        "level": 19
+      },
+      "ratio": 1.3296,
+      "encode_MBps": 4.79,
+      "decode_MBps": 278.39,
+      "roundtrip_ok": true,
+      "total_in": 409600,
+      "total_out": 308055
+    },
+    {
+      "name": "bz2-9",
+      "pipeline": "[(none)] => bz2-9",
+      "spec": {
+        "transforms": [],
+        "backend": "bz2",
+        "level": 9
+      },
+      "ratio": 1.2828,
+      "encode_MBps": 6.97,
+      "decode_MBps": 15.52,
+      "roundtrip_ok": true,
+      "total_in": 409600,
+      "total_out": 319310
+    },
+    {
+      "name": "gzip-9",
+      "pipeline": "[(none)] => gzip-9",
+      "spec": {
+        "transforms": [],
+        "backend": "gzip",
+        "level": 9
+      },
+      "ratio": 1.2749,
+      "encode_MBps": 8.09,
+      "decode_MBps": 88.55,
+      "roundtrip_ok": true,
+      "total_in": 409600,
+      "total_out": 321276
+    },
+    {
+      "name": "store",
+      "pipeline": "[(none)] => store-0",
+      "spec": {
+        "transforms": [],
+        "backend": "store",
+        "level": 0
+      },
+      "ratio": 0.9993,
+      "encode_MBps": 3860.51,
+      "decode_MBps": 6681.9,
+      "roundtrip_ok": true,
+      "total_in": 409600,
+      "total_out": 409870
+    }
+  ]
+}

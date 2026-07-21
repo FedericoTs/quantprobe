@@ -1,0 +1,2 @@
+FT PHASE 1: block-local FT 32/32 layers, K=50, down_k=3, 8x512 calib
+  FT layer  0/32 (5984s) train 0.0136->0.0027 | heldout 0.0142->0.0051

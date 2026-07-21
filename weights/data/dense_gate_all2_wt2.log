@@ -1,0 +1,10 @@
+Sliding Window Attention is enabled but not implemented for `sdpa`; unexpected results may be encountered.
+Token indices sequence length is longer than the specified maximum sequence length for this model (299078 > 131072). Running this sequence through the model will result in indexing errors
+DENSE GATE (Qwen2.5-7B, all2, codec=trellis): 16x2048 WikiText-2
+  layer 0/28 (q=7) (513s)
+  layer 7/28 (q=7) (4083s)
+  layer 14/28 (q=7) (7629s)
+  layer 21/28 (q=7) (11182s)
+  layer 27/28 (q=7) (14226s)
+
+DENSE-GATE [all2 codec=trellis]: ppl=11.2740 | Qwen2.5-7B dense, 16x2048 WikiText-2

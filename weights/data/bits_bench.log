@@ -1,0 +1,6 @@
+CHECKPOINT OK: q4 file (10364416768)
+=== BITS-SCALING BENCH: same model, same tier (exps=CPU), 2.31bpw vs 4.85bpw ===
+  PRE-REGISTERED PREDICTION: law says Q4 ~= 11.8 x 2.31/4.85 ~= 5.6 tok/s
+| deepseek2 16B Q4_K - Medium    |   9.65 GiB |    15.71 B | CUDA       |  99 | exps=CPU              |            tg32 |          7.64 ± 3.92 |
+| deepseek2 16B IQ2_XS - 2.3125 bpw |   5.55 GiB |    15.71 B | CUDA       |  99 | exps=CPU              |            tg32 |          7.39 ± 3.28 |
+BITS BENCH DONE

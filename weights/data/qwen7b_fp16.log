@@ -1,0 +1,8 @@
+Sliding Window Attention is enabled but not implemented for `sdpa`; unexpected results may be encountered.
+Token indices sequence length is longer than the specified maximum sequence length for this model (299078 > 131072). Running this sequence through the model will result in indexing errors
+  qwen layer 0/28 (8s) AWQ=False OGAIN=False qmax=0
+  qwen layer 7/28 (65s) AWQ=False OGAIN=False qmax=0
+  qwen layer 14/28 (122s) AWQ=False OGAIN=False qmax=0
+  qwen layer 21/28 (178s) AWQ=False OGAIN=False qmax=0
+
+Qwen2.5-7B QTIP-trellis L=12 AWQ=False(a=0.5) OGAIN=False pout=0.0 qmax=0: WikiText-2 ppl = 6.0011 @ ~16.000b (8 win) | GENERALITY vs Llama-2-7B trellis +1.4 over fp16

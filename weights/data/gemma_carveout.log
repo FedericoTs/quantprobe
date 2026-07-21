@@ -1,0 +1,10 @@
+EVOQ-GEMMA [carveout]: 8x2048 WikiText-2 | hidden=3840 layers=48
+  layer 0/48 (q=7, slid) (488s)
+  layer 8/48 (q=7, slid) (4430s)
+  layer 16/48 (q=7, slid) (8373s)
+  layer 24/48 (q=7, slid) (12358s)
+  layer 32/48 (q=7, slid) (16293s)
+  layer 40/48 (q=7, slid) (20209s)
+  layer 47/48 (q=6, full) (23678s)
+
+EVOQ-GEMMA [carveout]: ppl=14.0599 | Gemma-4-12B dense, 8x2048 WikiText-2

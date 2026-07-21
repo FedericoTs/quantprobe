@@ -1,0 +1,8 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+DeepSeek-V2-Lite carve-out 2-bit: 8 win, routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5)
+  layer 0/27 quantized+fwd (121s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+  layer 2/27 quantized+fwd (2450s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True
+
+[raw] ppl=4059122.7500 (saved defensively before formatting)
+
+DeepSeek-V2-Lite carve-out 2-bit (routed-gate/up=2 DOWN_K=3 ATTN_K=4 SHARED_K=4 DENSE_K=4 INT8_GS=True AWQ=True(a=0.5)): WikiText-2 ppl = 4059122.7500 | quant 2.569 b/w over 1.23B params, 442M kept fp16 | resident = 1.28 GB (quant 0.39 + fp16 0.88) = 6.125 b/w whole-model | 8 win, 2453s

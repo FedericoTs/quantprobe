@@ -1,0 +1,40 @@
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True pout=0.005: WikiText-2 ppl = 6.8759 @ ~2.365b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True pout=0.005: WikiText-2 ppl = 5.9796 @ ~2.365b (8 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True pout=0.0: WikiText-2 ppl = 6.2057 @ ~2.125b (8 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True pout=0.0: WikiText-2 ppl = 7.1266 @ ~2.125b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.75) OGAIN=True pout=0.005: WikiText-2 ppl = 3.9090 @ ~2.365b (1 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=True pout=0.005: WikiText-2 ppl = 6.8342 @ ~2.365b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Qwen2.5-7B QTIP-trellis L=12 AWQ=False(a=0.5) OGAIN=False pout=0.0 qmax=0: WikiText-2 ppl = 6.0011 @ ~16.000b (8 win) | GENERALITY vs Llama-2-7B trellis +1.4 over fp16
+
+Qwen2.5-7B QTIP-trellis L=12 AWQ=True(a=0.5) OGAIN=False pout=0.005 qmax=99: WikiText-2 ppl = 7.9100 @ ~2.365b (8 win) | GENERALITY vs Llama-2-7B trellis +1.4 over fp16
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=3 pout=0.005: WikiText-2 ppl = 3.9035 @ ~2.591b (1 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=3 pout=0.005: WikiText-2 ppl = 6.5279 @ ~2.591b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0097: WikiText-2 ppl = 6.7357 @ ~2.593b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 6.6859 @ ~2.404b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 6.9256 @ ~2.401b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 6.4721 @ ~2.507b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 6.3308 @ ~2.813b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 3.8975 @ ~2.444b (1 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 6.4539 @ ~2.444b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 3.8981 @ ~2.444b (1 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis L=12 BC=False AWQ=True(a=0.5) OGAIN=False DOWN_K=2 pout=0.0: WikiText-2 ppl = 6.7741 @ ~2.444b (16 win) | vs champion 9.63 | QTIP-noFT ~6.8 | fp16 5.47
+
+Llama-2-7B QTIP-trellis FINE-TUNED (block-local, K=3 down_k=3 ftlayers=2): WikiText-2 ppl = 5.2462 @ ~2.44b (2 win) | PTQ baseline 6.454 | QuIP#-FT 6.19 | QTIP-FT 5.86 | fp16 5.47

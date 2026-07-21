@@ -1,0 +1,3 @@
+Sliding Window Attention is enabled but not implemented for `sdpa`; unexpected results may be encountered.
+0.5B trellis p_out=0.0: ppl 15.4101 @ 2.125b  (fp16 3.9332; champ-scalar+out@2.16b=60.35)
+0.5B trellis p_out=0.005: ppl 13.5447 @ 2.365b  (fp16 3.9332; champ-scalar+out@2.16b=60.35)

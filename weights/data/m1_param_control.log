@@ -1,0 +1,11 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+PARAM-MATCHED CONTROL: KV-sized slice of q_proj -> 2-bit | cache D:\evo-compress-data\moe_cache\a85fd89f48bf | 151 win
+  q_proj [3072,2048]: first 1600 rows @2bit (~3.28M params = KV 3.28M); rest @4bit
+  layer 0/27 (29s) hfin=True
+  layer 6/27 (321s) hfin=True
+  layer 12/27 (612s) hfin=True
+  layer 18/27 (904s) hfin=True
+  layer 24/27 (1195s) hfin=True
+  layer 26/27 (1293s) hfin=True
+
+PARAM-MATCHED CONTROL (q_proj KV-sized slice @2bit, full set, 151 win): carve-out=6.9616 | q-slice@2bit=7.0852 (delta +0.1236) | KV-latent@2bit=12.2320 (+5.27) | fp16=6.3070 -> same param count, q-slice costs +0.124 vs KV-latent +5.27

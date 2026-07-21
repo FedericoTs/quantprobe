@@ -1,0 +1,898 @@
+{
+ "0.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "0.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "0.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "0.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "0.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "0.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "0.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "1.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "1.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "1.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "1.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "1.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "1.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "1.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "2.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "2.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "2.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "2.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "2.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "2.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "2.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "3.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "3.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "3.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "3.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "3.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "3.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "3.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "4.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "4.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "4.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "4.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "4.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "4.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "4.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "5.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "5.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "5.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "5.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "5.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "5.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "5.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "6.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "6.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "6.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "6.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "6.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "6.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "6.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "7.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "7.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "7.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "7.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "7.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "7.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "7.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "8.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "8.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "8.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "8.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "8.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "8.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "8.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "9.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "9.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "9.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "9.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "9.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "9.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "9.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "10.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "10.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "10.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "10.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "10.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "10.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "10.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "11.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "11.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "11.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "11.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "11.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "11.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "11.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "12.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "12.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "12.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "12.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "12.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "12.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "12.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "13.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "13.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "13.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "13.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "13.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "13.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "13.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "14.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "14.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "14.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "14.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "14.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "14.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "14.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "15.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "15.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "15.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "15.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "15.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "15.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "15.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "16.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "16.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "16.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "16.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "16.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "16.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "16.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "17.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "17.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "17.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "17.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "17.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "17.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "17.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "18.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "18.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "18.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "18.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "18.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "18.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "18.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "19.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "19.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "19.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "19.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "19.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "19.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "19.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "20.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "20.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "20.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "20.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "20.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "20.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "20.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "21.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "21.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "21.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "21.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "21.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "21.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "21.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "22.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "22.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "22.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "22.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "22.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "22.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "22.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "23.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "23.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "23.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "23.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "23.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "23.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "23.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "24.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "24.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "24.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "24.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "24.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "24.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "24.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "25.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "25.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "25.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "25.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "25.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "25.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "25.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "26.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "26.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "26.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "26.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "26.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "26.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "26.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "27.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "27.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "27.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "27.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "27.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "27.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "27.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "28.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "28.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "28.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "28.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "28.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "28.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "28.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "29.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "29.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "29.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "29.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "29.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "29.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "29.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "30.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "30.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "30.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "30.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "30.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "30.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "30.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "31.self_attn.q_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "31.self_attn.k_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "31.self_attn.v_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "31.self_attn.o_proj": {
+  "K": 4,
+  "p_out": 0.005
+ },
+ "31.mlp.gate_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "31.mlp.up_proj": {
+  "K": 2,
+  "p_out": 0.0
+ },
+ "31.mlp.down_proj": {
+  "K": 4,
+  "p_out": 0.005
+ }
+}

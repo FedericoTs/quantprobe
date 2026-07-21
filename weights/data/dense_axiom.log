@@ -1,0 +1,15 @@
+AXIOM A1 PROBE -- is the DENSE bulk 2-bit-compressible near the RD floor (0.069)?
+
+  [MoE baseline -- known at the floor]
+  routed expert gate (MoE)          : 2bit rel-MSE=0.0680  kurt=+0.17  flatness=0.570  [AT FLOOR]
+  routed expert down (MoE)          : 2bit rel-MSE=0.0680  kurt=+0.04  flatness=0.627  [AT FLOOR]
+  [DENSE proxies for Gemma-4-12B]
+  shared expert gate (DENSE MLP)    : 2bit rel-MSE=0.0680  kurt=+3.06  flatness=0.405  [AT FLOOR]
+  shared expert up   (DENSE MLP)    : 2bit rel-MSE=0.0680  kurt=+1.11  flatness=0.587  [AT FLOOR]
+  shared expert down (DENSE MLP)    : 2bit rel-MSE=0.0680  kurt=+4.22  flatness=0.558  [AT FLOOR]
+  layer-0 dense MLP gate            : 2bit rel-MSE=0.0680  kurt=+0.76  flatness=0.379  [AT FLOOR]
+  layer-0 dense MLP down            : FAILED (cannot reshape array of size 22413312 into shape (2048,newaxis,128))
+  attention q_proj (dense)          : 2bit rel-MSE=0.0680  kurt=+0.52  flatness=0.357  [AT FLOOR]
+  attention o_proj (dense writer)   : 2bit rel-MSE=0.0680  kurt=+0.15  flatness=0.416  [AT FLOOR]
+
+  VALIDATE: dense MLP near the floor -> A1 holds for dense Gemma; else dense 2-bit is at risk.

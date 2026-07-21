@@ -1,0 +1,32 @@
+{
+  "machine": "GTX 1060 6GB (sm_61, 192GB/s, 6143MiB, ~5197MiB free w/ display), 10C CPU, 16GB DDR4, Win10",
+  "llama_cpp_build": "b9596 (18ef86ece), cuda-12.4 prebuilt, sm_61 native",
+  "date": "2026-06-11",
+  "baselines": {
+    "Q4_K_M_7B": {
+      "file": "Qwen2.5-7B-Instruct-Q4_K_M.gguf", "size_gib": 4.36, "ngl": 99,
+      "tg128_tok_s": 21.97, "tg128_std": 0.03, "pp512_tok_s": 395.53, "pp512_std": 1.25,
+      "note": "IQ3_M download active during run; variance tiny, treat as valid; re-run clean before flagship comparison"
+    },
+    "IQ3_M_7B": {
+      "file": "Qwen2.5-7B-Instruct-IQ3_M.gguf", "size_gib": 3.32, "bpw_reported": 3.66, "ngl": 99,
+      "tg128_tok_s": 19.38, "tg128_std": 0.04, "pp512_tok_s": 387.81, "pp512_std": 0.54,
+      "eff_bw_gbs": 69, "eff_vs_peak": 0.36
+    },
+    "IQ3_XS_7B": {
+      "file": "Qwen2.5-7B-Instruct-IQ3_XS.gguf", "size_gib": 3.11, "bpw_reported": 3.3, "ngl": 99,
+      "tg128_tok_s": 19.86, "tg128_std": 0.03, "pp512_tok_s": 392.16, "pp512_std": 0.95,
+      "eff_bw_gbs": 66, "eff_vs_peak": 0.34
+    },
+    "headline_insight": "all llama.cpp sub-4-bit formats lose ~40% kernel efficiency to decode complexity on sm_61 (54% -> 34-36%); the ~3-bit bracket is winnable by a dp4a-efficient decode at ~3.0-3.4GB resident; beat 22.0 tok/s to win the whole table"
+  },
+  "derived_gates": {
+    "effective_bw_q4km_gbs": 103,
+    "kernel_efficiency_vs_peak": 0.54,
+    "evoq_3p3gb_projection_tok_s": 29,
+    "A1_dense_fused_viable_Gw_s": 114,
+    "A1_dense_fused_viable_Gpairs_s": 57,
+    "A1_kill_below_Gw_s": 25,
+    "pair_tans_gate": "PASSED +0.0002 b/w (budget 0.03); container indices ~2.853 b/w all-in @4096w substreams"
+  }
+}

@@ -1,0 +1,9 @@
+=== rebuild with E2c patch ===
+[100%] Linking CXX executable ../../bin/llama-bench.exe
+[100%] Built target llama-bench
+CHECKPOINT OK: rebuilt
+=== same-binary A/B: EM off vs on (3 reps each; marker confirms path) ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CPU        |       4 |            tg32 |          9.59 ± 0.59 |
+[mmid] expert-major dispatch: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CPU        |       4 |            tg32 |          9.13 ± 0.92 |
+E2C AB DONE

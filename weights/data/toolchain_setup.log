@@ -1,0 +1,15 @@
+=== 1. locate latest official assets ===
+  w64devkit: https://github.com/skeeto/w64devkit/releases/download/v2.8.0/w64devkit-x64-2.8.0.7z.exe
+  cmake: https://github.com/Kitware/CMake/releases/download/v4.3.3/cmake-4.3.3-windows-x86_64.zip
+CHECKPOINT OK: urls
+=== 2. download ===
+  w64devkit: 60043168 bytes
+  cmake: 52967828 bytes
+CHECKPOINT OK: downloads
+=== 3. extract ===
+  gcc: tools/w64devkit/bin/gcc.exe
+  cmake: tools/cmake-4.3.3-windows-x86_64/bin/cmake.exe
+CHECKPOINT OK: extracted
+gcc.exe (GCC) 16.1.0
+cmake version 4.3.3
+TOOLCHAIN READY

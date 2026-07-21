@@ -1,0 +1,43 @@
+0.00.121.986 I llama_completion: llama backend init
+0.00.121.992 I llama_completion: load the model and apply lora adapter, if any
+0.00.122.001 I common_init_result: fitting params to device memory ...
+0.00.122.002 I common_init_result: (for bugs during this step try to reproduce them with -fit off, or provide --verbose logs if the bug only occurs with -fit on)
+0.00.673.019 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
+0.00.895.370 W load: control-looking token: 100004 '<｜fim▁end｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.00.897.495 W load: control-looking token: 100002 '<｜fim▁hole｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.00.897.689 W load: control-looking token: 100003 '<｜fim▁begin｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.04.783.371 W llama_context: setting new yarn_attn_factor = 1.0000 (mscale == 0.7, mscale_all_dim = 0.7)
+0.04.783.382 W llama_context: n_ctx_seq (512) < n_ctx_train (163840) -- the full capacity of the model will not be utilized
+0.04.812.601 W sched_reserve: layer 0 is assigned to device CUDA0 but the Flash Attention tensor is assigned to device CPU (usually due to missing support)
+0.04.812.606 W sched_reserve: Flash Attention was auto, set to disabled
+0.04.820.068 I common_init_from_params: warming up the model with an empty run - please wait ... (--no-warmup to disable)
+0.05.202.677 I llama_completion: llama threadpool init, n_threads = 4
+0.05.202.690 I 
+0.05.202.712 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | PEER_MAX_BATCH_SIZE = 128 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.05.202.713 I 
+0.05.202.855 I sampler seed: 42
+0.05.202.869 I sampler params: 
+	repeat_last_n = 64, repeat_penalty = 1.000, frequency_penalty = 0.000, presence_penalty = 0.000
+	dry_multiplier = 0.000, dry_base = 1.750, dry_allowed_length = 2, dry_penalty_last_n = -1
+	top_k = 40, top_p = 0.900, min_p = 0.050, xtc_probability = 0.000, xtc_threshold = 0.100, typical_p = 1.000, top_n_sigma = -1.000, temp = 0.700
+	mirostat = 0, mirostat_lr = 0.100, mirostat_ent = 5.000, adaptive_target = -1.000, adaptive_decay = 0.900
+0.05.202.877 I sampler chain: logits -> ?penalties -> ?dry -> ?top-n-sigma -> top-k -> ?typical -> top-p -> min-p -> ?xtc -> temp-ext -> dist 
+0.05.202.877 I generate: n_ctx = 512, n_batch = 2048, n_predict = 128, n_keep = 1
+0.05.202.877 I 
+The history of computing began as early as the invention of the abacus. The earliest form of this device existed as far back as the 
+
+## How to Calculate:
+
+To calculate a percentage of a number, multiply the number by 0.01. Example: 27% = 27 * 0.01 = 0.27
+
+- A percentage is a number or ratio expressed as a fraction of 100.
+- The word "per cent" is derived from the Latin "per centum", meaning "by the hundred". The sign for "percent" evolved from the similar Latin "
+
+0.29.462.471 I common_perf_print:    sampling time =      26.27 ms
+0.29.462.472 I common_perf_print:    samplers time =      10.02 ms /   134 tokens
+0.29.462.473 I common_perf_print:        load time =    4357.95 ms
+0.29.462.489 I common_perf_print: prompt eval time =     415.84 ms /     6 tokens (   69.31 ms per token,    14.43 tokens per second)
+0.29.462.491 I common_perf_print:        eval time =   23812.78 ms /   127 runs   (  187.50 ms per token,     5.33 tokens per second)
+0.29.462.492 I common_perf_print:       total time =   24259.80 ms /   133 tokens
+0.29.462.493 I common_perf_print: unaccounted time =       4.92 ms /   0.0 %      (total - sampling - prompt eval - eval) / (total)
+0.29.462.502 I common_perf_print:    graphs reused =        126

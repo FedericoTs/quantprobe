@@ -1,0 +1,8 @@
+DENSE-GATE [fp16 codec=fast]: ppl=5.1314 | Qwen2.5-7B dense, 3x1024 enwik8
+DENSE-GATE [mlp2 codec=fast]: ppl=28119.2129 | Qwen2.5-7B dense, 3x1024 enwik8
+DENSE-GATE [all2 codec=fast]: ppl=1200171.8750 | Qwen2.5-7B dense, 3x1024 enwik8
+DENSE-GATE [mlp2 codec=trellis]: ppl=6.5228 | Qwen2.5-7B dense, 3x1024 enwik8
+DENSE-GATE [attn2 codec=trellis]: ppl=5.6823 | Qwen2.5-7B dense, 3x1024 enwik8
+DENSE-GATE [fp16 codec=trellis]: ppl=6.9585 | Qwen2.5-7B dense, 16x2048 WikiText-2
+DENSE-GATE [carveout codec=trellis]: ppl=9.6923 | Qwen2.5-7B dense, 16x2048 WikiText-2
+DENSE-GATE [all2 codec=trellis]: ppl=11.2740 | Qwen2.5-7B dense, 16x2048 WikiText-2

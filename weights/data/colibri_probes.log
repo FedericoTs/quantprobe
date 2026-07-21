@@ -1,0 +1,10 @@
+=== T1a: PCIe host->VRAM bandwidth (the RAM->GPU streaming tier) ===
+  H2D pinned: 12.2 GB/s
+=== T1b: disk sequential read (the disk->RAM streaming tier) ===
+  disk read: 0.45 GB/s
+=== T3: llama.cpp expert-offload smoke (DeepSeek IQ2_XS: full-GPU vs experts-on-CPU) ===
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |
+| deepseek2 16B IQ2_XS - 2.3125 bpw |   5.55 GiB |    15.71 B | CUDA       |  99 |            tg32 |          7.67 ± 0.11 |
+| model                          |       size |     params | backend    | ngl | ot                    |            test |                  t/s |
+| deepseek2 16B IQ2_XS - 2.3125 bpw |   5.55 GiB |    15.71 B | CUDA       |  99 | exps=CPU              |            tg32 |         11.81 ± 1.24 |
+PROBES DONE

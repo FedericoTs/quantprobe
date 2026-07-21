@@ -1,0 +1,24 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+forced-routing causal test: 8 win, uniform cache D:\evo-compress-data\moe_cache\a5877fc5e500
+  [capture] layer 0/27
+  [capture] layer 6/27
+  [capture] layer 12/27
+  [capture] layer 18/27
+  [capture] layer 24/27
+  [capture] layer 26/27
+  fp16 ppl = 5.6570 (sanity ~5.66)
+  [plain] layer 0/27
+  [plain] layer 6/27
+  [plain] layer 12/27
+  [plain] layer 18/27
+  [plain] layer 24/27
+  [plain] layer 26/27
+  uniform-2bit ppl = 15.3798 (sanity ~11.74)
+  [force] layer 0/27
+  [force] layer 6/27
+  [force] layer 12/27
+  [force] layer 18/27
+  [force] layer 24/27
+  [force] layer 26/27
+
+FORCED-ROUTING (DeepSeek): fp16=5.6570 | uniform-2bit=15.3798 | uniform+fp16-routing=13.8658 -> recovers 16% of the collapse gap

@@ -1,0 +1,77 @@
+  got config.json (1 KB)
+  got model.safetensors.index.json (416 KB)
+  got tokenizer.json (7028 KB)
+  got tokenizer_config.json (1 KB)
+  got vocab.json (2777 KB)
+  got merges.txt (1672 KB)
+  got generation_config.json (0 KB)
+8 shard(s): model-00001-of-00008.safetensors .. model-00008-of-00008.safetensors
+[model-00001-of-00008.safetensors] 0.00/4.00 GB -> resume
+[model-00001-of-00008.safetensors] 0.53/4.00 (13%) ~9.3 MB/s
+[model-00001-of-00008.safetensors] 1.06/4.00 (26%) ~9.0 MB/s
+[model-00001-of-00008.safetensors] 1.59/4.00 (40%) ~9.2 MB/s
+[model-00001-of-00008.safetensors] 2.11/4.00 (53%) ~7.4 MB/s
+[model-00001-of-00008.safetensors] 2.64/4.00 (66%) ~9.3 MB/s
+[model-00001-of-00008.safetensors] 3.17/4.00 (79%) ~9.8 MB/s
+[model-00001-of-00008.safetensors] 3.70/4.00 (92%) ~9.8 MB/s
+[model-00001-of-00008.safetensors] DONE 4.00 GB
+[model-00002-of-00008.safetensors] 0.00/4.00 GB -> resume
+[model-00002-of-00008.safetensors] 0.53/4.00 (13%) ~7.5 MB/s
+[model-00002-of-00008.safetensors] 1.06/4.00 (26%) ~7.5 MB/s
+[model-00002-of-00008.safetensors] 1.59/4.00 (40%) ~7.3 MB/s
+[model-00002-of-00008.safetensors] 2.11/4.00 (53%) ~7.6 MB/s
+[model-00002-of-00008.safetensors] 2.64/4.00 (66%) ~7.6 MB/s
+[model-00002-of-00008.safetensors] 3.17/4.00 (79%) ~7.6 MB/s
+[model-00002-of-00008.safetensors] 3.70/4.00 (92%) ~7.5 MB/s
+[model-00002-of-00008.safetensors] DONE 4.00 GB
+[model-00003-of-00008.safetensors] 0.00/3.99 GB -> resume
+[model-00003-of-00008.safetensors] 0.53/3.99 (13%) ~7.4 MB/s
+[model-00003-of-00008.safetensors] 1.06/3.99 (26%) ~7.6 MB/s
+[model-00003-of-00008.safetensors] 1.59/3.99 (40%) ~7.6 MB/s
+[model-00003-of-00008.safetensors] 2.11/3.99 (53%) ~7.5 MB/s
+[model-00003-of-00008.safetensors] 2.64/3.99 (66%) ~7.5 MB/s
+[model-00003-of-00008.safetensors] 3.17/3.99 (79%) ~7.4 MB/s
+[model-00003-of-00008.safetensors] 3.70/3.99 (93%) ~7.4 MB/s
+[model-00003-of-00008.safetensors] DONE 3.99 GB
+[model-00004-of-00008.safetensors] 0.00/4.00 GB -> resume
+[model-00004-of-00008.safetensors] 0.53/4.00 (13%) ~9.5 MB/s
+[model-00004-of-00008.safetensors] 1.06/4.00 (26%) ~9.7 MB/s
+[model-00004-of-00008.safetensors] 1.59/4.00 (40%) ~9.6 MB/s
+[model-00004-of-00008.safetensors] 2.11/4.00 (53%) ~9.9 MB/s
+[model-00004-of-00008.safetensors] 2.64/4.00 (66%) ~9.7 MB/s
+[model-00004-of-00008.safetensors] 3.17/4.00 (79%) ~9.5 MB/s
+[model-00004-of-00008.safetensors] 3.70/4.00 (92%) ~9.8 MB/s
+[model-00004-of-00008.safetensors] DONE 4.00 GB
+[model-00005-of-00008.safetensors] 0.00/3.99 GB -> resume
+[model-00005-of-00008.safetensors] 0.53/3.99 (13%) ~9.9 MB/s
+[model-00005-of-00008.safetensors] 1.06/3.99 (26%) ~10.0 MB/s
+[model-00005-of-00008.safetensors] 1.59/3.99 (40%) ~9.8 MB/s
+[model-00005-of-00008.safetensors] 2.11/3.99 (53%) ~9.9 MB/s
+[model-00005-of-00008.safetensors] 2.64/3.99 (66%) ~10.0 MB/s
+[model-00005-of-00008.safetensors] 3.17/3.99 (79%) ~9.9 MB/s
+[model-00005-of-00008.safetensors] 3.70/3.99 (93%) ~9.7 MB/s
+[model-00005-of-00008.safetensors] DONE 3.99 GB
+[model-00006-of-00008.safetensors] 0.00/4.00 GB -> resume
+[model-00006-of-00008.safetensors] 0.53/4.00 (13%) ~9.3 MB/s
+[model-00006-of-00008.safetensors] 1.06/4.00 (26%) ~10.1 MB/s
+[model-00006-of-00008.safetensors] 1.59/4.00 (40%) ~10.2 MB/s
+[model-00006-of-00008.safetensors] 2.11/4.00 (53%) ~10.0 MB/s
+[model-00006-of-00008.safetensors] 2.64/4.00 (66%) ~9.8 MB/s
+[model-00006-of-00008.safetensors] stall at 2.85 GB: ChunkedEncodingError -> retry
+[model-00006-of-00008.safetensors] stall at 2.85 GB: ConnectionError -> retry
+[model-00006-of-00008.safetensors] 3.17/4.00 (79%) ~3.9 MB/s
+[model-00006-of-00008.safetensors] 3.70/4.00 (92%) ~10.1 MB/s
+[model-00006-of-00008.safetensors] DONE 4.00 GB
+[model-00007-of-00008.safetensors] 0.00/3.99 GB -> resume
+[model-00007-of-00008.safetensors] 0.53/3.99 (13%) ~9.7 MB/s
+[model-00007-of-00008.safetensors] 1.06/3.99 (26%) ~10.1 MB/s
+[model-00007-of-00008.safetensors] 1.59/3.99 (40%) ~10.2 MB/s
+[model-00007-of-00008.safetensors] 2.11/3.99 (53%) ~10.1 MB/s
+[model-00007-of-00008.safetensors] 2.64/3.99 (66%) ~10.1 MB/s
+[model-00007-of-00008.safetensors] 3.17/3.99 (79%) ~9.8 MB/s
+[model-00007-of-00008.safetensors] 3.70/3.99 (93%) ~10.0 MB/s
+[model-00007-of-00008.safetensors] DONE 3.99 GB
+[model-00008-of-00008.safetensors] 0.00/0.67 GB -> resume
+[model-00008-of-00008.safetensors] 0.53/0.67 (79%) ~10.1 MB/s
+[model-00008-of-00008.safetensors] DONE 0.67 GB
+ALL DONE in 3287s

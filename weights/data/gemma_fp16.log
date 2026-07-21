@@ -1,0 +1,10 @@
+EVOQ-GEMMA [fp16]: 4x1024 WikiText-2 | hidden=3840 layers=48
+  layer 0/48 (q=0, slid) (3s)
+  layer 8/48 (q=0, slid) (24s)
+  layer 16/48 (q=0, slid) (49s)
+  layer 24/48 (q=0, slid) (71s)
+  layer 32/48 (q=0, slid) (94s)
+  layer 40/48 (q=0, slid) (118s)
+  layer 47/48 (q=0, full) (141s)
+
+EVOQ-GEMMA [fp16]: ppl=11.1485 | Gemma-4-12B dense, 4x1024 WikiText-2

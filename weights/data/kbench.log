@@ -1,0 +1,30 @@
+﻿cmd.exe : "vswhere.exe" non è riconosciuto come comando interno o esterno,
+In riga:1 car:1
++ & cmd /c "tools\run_trellis.cmd kbench" 2>&1 | Out-File -FilePath wei ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ("vswhere.exe" n...erno o esterno,:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ un programma eseguibile o un file batch.
+Using C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensions\torch_extensions\
+Cache\py312_cu124 as PyTorch extensions root...
+Detected CUDA files, patching ldflags
+Emitting ninja build file C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensio
+ns\torch_extensions\Cache\py312_cu124\evoq_f0\build.ninja...
+Building extension module evoq_f0...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module evoq_f0...
+=== Llama-2-7B shape sweep: 2-bit trellis_gemv vs 4-bit F0 (GTX 1060, sm_61) ===
+shape     outxin      trel ms   F0 ms  speedup trel util
+q        4096x4096      0.312   0.104    0.33x        8%
+k        4096x4096      0.260   0.104    0.40x       10%
+v        4096x4096      0.260   0.104    0.40x       10%
+o        4096x4096      0.260   0.104    0.40x       10%
+gate    11008x4096      0.625   0.260    0.42x       11%
+up      11008x4096      0.625   0.260    0.42x       11%
+down     4096x11008     0.638   0.312    0.49x       11%
+
+PER-TOKEN matmul (x32 layers): trellis 95.4 ms -> 10.5 tok/s | F0 40.0 ms -> 25.0 tok/s | speedup 0.42x
+7B RESIDENT: trellis 1.82 GB (2.162 b/w) vs F0 4-bit 3.44 GB (4.084 b/w) | fp16 13.5 GB
+  >>> 2-bit trellis: QTIP-parity quality (6.88 ppl) at 1.82 GB resident, matmul 10 tok/s on a 6GB GTX 1060 (Q4_K_M 21.8 t/s @ 4.56 GB).

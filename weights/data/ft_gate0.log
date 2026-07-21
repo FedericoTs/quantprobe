@@ -1,0 +1,9 @@
+GATE 0: FT layer 0, 8x512 calib tokens, K=100 steps
+    step   0  rel-MSE 0.01448
+    step  20  rel-MSE 0.01971
+    step  40  rel-MSE 0.03216
+    step  60  rel-MSE 0.00507
+    step  80  rel-MSE 0.01424
+    step  99  rel-MSE 0.00498
+
+GATE 0: block rel-MSE 0.01448 -> 0.00498  (65.6% drop)  PASS (>=30% drop -> codebook gather-grad works, FT loop sound)

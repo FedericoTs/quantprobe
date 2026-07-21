@@ -1,0 +1,8 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+DeepSeek-V2-Lite carve-out 2-bit: 8 win, routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 DENSE_K=2 INT8_GS=True AWQ=True(a=0.5) STATIC
+  [awq-prepass] layer 0/27 captured
+  [awq-prepass] layer 8/27 captured
+  [awq-prepass] layer 16/27 captured
+  [awq-prepass] layer 24/27 captured
+  cache: D:\evo-compress-data\moe_cache\c0cdad62df76
+  layer 0/27 quantized+fwd (127s) fallbacks: awq_skip=0 nan=0 fp16=0 hfin=True

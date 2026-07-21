@@ -1,0 +1,111 @@
+"""quantprobe plan - the tiered decode law as a CLI.
+
+tok/s = eta(tier) x bandwidth / active-bytes-per-token.
+Evaluates every placement (full-VRAM, hybrid attention->VRAM + experts->RAM, dense layer-split,
+pure CPU, disk-stream), predicts speed for each, prints the winner WITH the llama.cpp command to
+run it, plus an upgrade advisor. eta bands are fitted from published measurements (7B..744B),
+validated by pre-registered predictions (30B hybrid: predicted 19, measured 19.30 +/- 0.88).
+"""
+from __future__ import annotations
+
+MODELS = {
+    "qwen3-30b":  dict(t=30.5, a=3.3,  ne=1.2,  moe=True,  hint="Qwen3-30B-A3B"),
+    "deepseek-16b": dict(t=15.7, a=2.4, ne=1.3,  moe=True,  hint="DeepSeek-V2-Lite"),
+    "gemma-12b":  dict(t=11.9, a=11.9, ne=11.9, moe=False, hint="Gemma 4 12B"),
+    "mistral-7b": dict(t=7.2,  a=7.2,  ne=7.2,  moe=False, hint="Mistral 7B"),
+    "glm-air":    dict(t=110,  a=12,   ne=2.7,  moe=True,  hint="GLM-4.5-Air 106B"),
+    "glm-744b":   dict(t=744,  a=32,   ne=8,    moe=True,  hint="GLM-5.2 744B"),
+}
+MACHINES = {
+    "2016-xmp":   dict(vc=6,  vb=192, rc=16,  rb=48, db=0.45, geta=0.35, gl=0.04, hint="2016 desktop, XMP on"),
+    "2016":       dict(vc=6,  vb=192, rc=16,  rb=34, db=0.45, geta=0.35, gl=0.04, hint="2016 desktop, XMP off"),
+    "gaming":     dict(vc=12, vb=360, rc=32,  rb=51, db=3.5,  geta=0.5,  gl=0.3,  hint="RTX 3060 + DDR4-3200"),
+    "ddr5":       dict(vc=0,  vb=0,   rc=64,  rb=80, db=5,    geta=0.5,  gl=0.3,  hint="modern DDR5, no GPU"),
+    "colibri":    dict(vc=0,  vb=0,   rc=128, rb=60, db=5,    geta=0.5,  gl=0.3,  hint="128 GB DDR5"),
+}
+QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00},
+        False: {2.0: 1.45, 2.5: 1.30, 3.0: 1.12, 4.5: 1.03, 6.5: 1.01, 8.5: 1.00}}
+
+
+def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None):
+    ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
+    size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
+    act_ne = ne * ab / 8 * 1.15 * act_scale
+    act_ex = (a - ne) * bits / 8 * 1.15 * act_scale
+    act = act_ne + act_ex
+    ra = max(rc - 4, 1)
+    eta_r = 0.38 if moe else 0.62
+    if gl is None: gl = geta * 0.6
+    geta_w = geta if bits >= 4 else gl                 # decode-util law: low-bit GPU decode collapses on weak GPUs
+    out = []
+    if vc > 0 and size <= vc * 0.90:
+        out.append(("all in VRAM", geta_w * vb / act, None,
+                    "-ngl 99"))
+    if moe and vc > 0:
+        v_need = ne * ab / 8 * 1.08 + 1.2
+        r_need = size - ne * ab / 8 * 1.08
+        if v_need <= vc * 0.95 and r_need <= ra:
+            warn = "RAM boundary - needs --no-mmap; can be unstable" if r_need > ra * 0.85 else None
+            out.append(("hybrid: attention->VRAM, experts->RAM",
+                        1 / (act_ne / (geta * vb) + act_ex / (eta_r * rb)), warn,
+                        '-ngl 99 -ot "exps=CPU" --no-mmap'))
+    if (not moe) and vc > 0 and size > vc * 0.90 and size <= ra + vc * 0.9:
+        g = min(0.95, vc * 0.9 / size)
+        out.append((f"split: {g:.0%} layers->VRAM, rest->RAM",
+                    1 / (g * act / (geta_w * vb) + (1 - g) * act / (eta_r * rb)), None,
+                    f"-ngl {int(g * 99)}"))
+    if size <= ra:
+        warn = "RAM boundary - expect bimodal speed" if size > ra * 0.85 else None
+        out.append(("pure CPU (GPU idle)", eta_r * rb / act, warn, "-ngl 0"))
+    if size > ra:
+        miss = max(0.0, 1 - (ra * 0.9) / size)
+        hot = act_ne if moe else 0.0                       # MoE attention stays LRU-hot; dense has no hot set
+        streamable = act - hot
+        tps = 0.95 / (streamable * miss / db + (streamable * (1 - miss) + hot) / (eta_r * rb))
+        out.append(("stream from disk (cold experts)", tps, "exceeds RAM - capacity demo", "-ngl 0"))
+    out.sort(key=lambda x: -x[1])
+    return size, act, out
+
+
+def run(args):
+    m = dict(MODELS[args.model]) if args.model in MODELS else {}
+    t = args.total or m.get("t") or 13.0
+    a = args.active or m.get("a") or t
+    ne = args.always_active or m.get("ne") or (a if a >= t * 0.9 else a * 0.35)
+    moe = m.get("moe", a < t * 0.9)
+    hw = dict(MACHINES[args.machine]) if args.machine in MACHINES else {}
+    vc = hw.get("vc", args.vram); vb = hw.get("vb", args.vram_bw)
+    rc = hw.get("rc", args.ram);  rb = hw.get("rb", args.ram_bw)
+    db = hw.get("db", args.disk_bw); geta = hw.get("geta", 0.45)
+    if args.vram is not None: vc = args.vram
+    if args.vram_bw is not None: vb = args.vram_bw
+    if args.ram is not None: rc = args.ram
+    if args.ram_bw is not None: rb = args.ram_bw
+    if args.disk_bw is not None: db = args.disk_bw
+    vc = vc or 0; vb = vb or 0; rc = rc or 16; rb = rb or 40; db = db or 0.5
+
+    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta)
+    q = QUAL[moe].get(args.bits, 1.0)
+    print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
+          f"on {hw.get('hint', 'custom machine')}")
+    print(f"  model {size:.1f} GB | active {act:.2f} GB/token | est. quality cost x{q:.2f} "
+          f"(depth-aware recipe)\n")
+    for i, (name, tps, warn, flags) in enumerate(cfgs):
+        star = "*" if i == 0 else " "
+        w = f"   [{warn}]" if warn else ""
+        print(f"  {star} {tps:6.1f} tok/s  {name}{w}")
+    best = cfgs[0]
+    print(f"\n  run it:  llama-server -m model.gguf {best[3]}")
+    # upgrade advisor
+    alts = []
+    if rb < 40:
+        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta)
+        if c2[0][1] > best[1] * 1.08: alts.append(("enable XMP (free)", c2[0][1]))
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta)
+    if c2[0][1] > best[1] * 1.08: alts.append(("+16 GB RAM", c2[0][1]))
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta)
+    if c2[0][1] > best[1] * 1.08: alts.append(("NVMe SSD", c2[0][1]))
+    if alts:
+        print("  upgrade advisor: " + " | ".join(f"{n} -> ~{v:.1f} tok/s" for n, v in alts))
+    print("\n  (eta bands fitted from published measurements; estimates +/-25%. "
+          "Hybrid needs --no-mmap.)")

@@ -1,0 +1,10 @@
+GATE 0/1: FT layer 16, 8x512 calib tokens (train+held-out), K=100 steps
+    step   0  train rel-MSE 0.23549  (111.3s, 6 seqs)
+    step   1  train rel-MSE 2.15825  (110.9s, 6 seqs)
+    step   2  train rel-MSE 0.57488  (111.9s, 6 seqs)
+    step   3  train rel-MSE 0.41204  (114.7s, 6 seqs)
+    step   4  train rel-MSE 0.38078  (114.9s, 6 seqs)
+    step   5  train rel-MSE 0.36844  (113.3s, 6 seqs)
+
+GATE: train rel-MSE 0.23549->0.36844 (-56.5% drop) | HELD-OUT 0.21418->0.30375 (-41.8% drop)
+  PARTIAL (train -56%, held-out -42%)

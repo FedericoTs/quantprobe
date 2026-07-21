@@ -1,0 +1,75 @@
+﻿cmd.exe : "vswhere.exe" non è riconosciuto come comando interno o esterno,
+In riga:4 car:1
++ & cmd /c "tools\run_trellis.cmd kcompile" 2>&1 | Out-File weights\dat ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ("vswhere.exe" n...erno o esterno,:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ un programma eseguibile o un file batch.
+Using C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensions\torch_extensions\
+Cache\py312_cu124 as PyTorch extensions root...
+Creating extension directory C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_exten
+sions\torch_extensions\Cache\py312_cu124\evoq_f0...
+Detected CUDA files, patching ldflags
+Emitting ninja build file C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensio
+ns\torch_extensions\Cache\py312_cu124\evoq_f0\build.ninja...
+Building extension module evoq_f0...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+[1/2] C:\Users\Federico\Documents\evo-compress\tools\cuda_portable\bin\nvcc --generate-dependencies-with-compile --dependency-output evoq_kernel.cuda.o.d -Xcudafe --diag_suppress=dll_interface_conflict_dllexport_assumed -Xcudafe --diag_suppress=dll_interface_conflict_none_assumed -Xcudafe --diag_suppress=field_without_dll_interface -Xcudafe --diag_suppress=base_class_has_different_dll_interface -Xcompiler /EHsc -Xcompiler /wd4068 -Xcompiler /wd4067 -Xcompiler /wd4624 -Xcompiler /wd4190 -Xcompiler /wd4018 -Xcompiler /wd4275 -Xcompiler /wd4267 -Xcompiler /wd4244 -Xcompiler /wd4251 -Xcompiler /wd4819 -Xcompiler /MD -DTORCH_EXTENSION_NAME=evoq_f0 -DTORCH_API_INCLUDE_EXTENSION_H -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include\torch\csrc\api\include -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include\TH -IC:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\include\THC -IC:\Users\Federico\Documents\evo-compress\tools\cuda_portable\include -IC:\Python312\Include -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_61,code=sm_61 -std=c++17 -O3 -gencode=arch=compute_61,code=sm_61 -Xptxas=-v -c C:\Users\Federico\Documents\evo-compress\weights\evoq_kernel.cu -o evoq_kernel.cuda.o 
+C:\Users\Federico\Documents\evo-compress\weights\evoq_kernel.cu(426): warning #177-D: variable "acc" was declared but never referenced
+      int acc[2];
+          ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+ptxas info    : 3 bytes gmem, 24 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z21trellis_gemv3i_kernelPKhPKfS2_Pfiiiff' for 'sm_61'
+ptxas info    : Function properties for _Z21trellis_gemv3i_kernelPKhPKfS2_Pfiiiff
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, 372 bytes cmem[0], 4 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z20trellis_gemv2_kernelPKhPKfS2_S2_Pfiiii' for 'sm_61'
+ptxas info    : Function properties for _Z20trellis_gemv2_kernelPKhPKfS2_S2_Pfiiii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, 1024 bytes smem, 376 bytes cmem[0], 4 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z19trellis_gemv_kernelPKhPKfS2_S2_Pfiiii' for 'sm_61'
+ptxas info    : Function properties for _Z19trellis_gemv_kernelPKhPKfS2_S2_Pfiiii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, 376 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z16int8_gemv_kernelPKaS0_PKffPfii' for 'sm_61'
+ptxas info    : Function properties for _Z16int8_gemv_kernelPKaS0_PKffPfii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 31 registers, 368 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z14d0_gemv_kernelPKhPKaPKfS2_S4_fPfii' for 'sm_61'
+ptxas info    : Function properties for _Z14d0_gemv_kernelPKhPKaPKfS2_S4_fPfii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, 128 bytes smem, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z18csr_outlier_kernelPKfPKiS2_S0_Pfi' for 'sm_61'
+ptxas info    : Function properties for _Z18csr_outlier_kernelPKfPKiS2_S0_Pfi
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, 364 bytes cmem[0], 4 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z16fwht_prep_kernelPKfS0_S0_Pfi' for 'sm_61'
+ptxas info    : Function properties for _Z16fwht_prep_kernelPKfS0_S0_Pfi
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, 512 bytes smem, 356 bytes cmem[0], 12 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z15f0_gemv4_kernelPKhPKfS2_S2_Pfii' for 'sm_61'
+ptxas info    : Function properties for _Z15f0_gemv4_kernelPKhPKfS2_S2_Pfii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, 2048 bytes smem, 368 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z15f0_gemv3_kernelPKhPKfS2_S2_Pfii' for 'sm_61'
+ptxas info    : Function properties for _Z15f0_gemv3_kernelPKhPKfS2_S2_Pfii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, 512 bytes smem, 368 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z15f0_gemv2_kernelPKhPKfS2_S2_Pfii' for 'sm_61'
+ptxas info    : Function properties for _Z15f0_gemv2_kernelPKhPKfS2_S2_Pfii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, 512 bytes smem, 368 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z14f0_gemv_kernelPKhPKfS2_S2_Pfii' for 'sm_61'
+ptxas info    : Function properties for _Z14f0_gemv_kernelPKhPKfS2_S2_Pfii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, 512 bytes smem, 368 bytes cmem[0]
+evoq_kernel.cu
+tmpxft_000001f8_00000000-10_evoq_kernel.cudafe1.cpp
+[2/2] "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64/link.exe" evoq_kernel.cuda.o /nologo /DLL c10.lib c10_cuda.lib torch_cpu.lib torch_cuda.lib -INCLUDE:?warp_size@cuda@at@@YAHXZ torch.lib /LIBPATH:C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\lib torch_python.lib /LIBPATH:C:\Python312\libs /LIBPATH:C:\Users\Federico\Documents\evo-compress\tools\cuda_portable\lib\x64 cudart.lib /out:evoq_f0.pyd
+   Creazione della libreria evoq_f0.lib e dell'oggetto evoq_f0.exp
+Loading extension module evoq_f0...
+COMPILE OK: ['csr_outlier', 'd0_gemv', 'f0_gemv', 'f0_gemv2', 'f0_gemv3', 'f0_gemv4', 'fwht_prep', 'int8_gemv', 'trellis_gemv', 'trellis_gemv2', 'trellis_gemv3i']

@@ -1,0 +1,13 @@
+=== E0 configure: CPU-only, native codegen, no CUDA/curl ===
+-- Generating done (0.9s)
+-- Build files have been written to: C:/Users/Federico/Documents/evo-compress/tools/llama.cpp-src/build-cpu
+CHECKPOINT OK: configured
+=== E0 build llama-bench (-j4, ~10 min) ===
+[ 98%] Building CXX object tools/llama-bench/CMakeFiles/llama-bench.dir/main.cpp.obj
+[100%] Linking CXX executable ../../bin/llama-bench.exe
+[100%] Built target llama-bench
+CHECKPOINT OK: built tools/llama.cpp-src/build-cpu/bin/llama-bench.exe
+=== E0 A/B (same-session, relative only): official vs native, 30B CPU ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |            tg32 |         12.14 ± 1.17 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CPU        |       4 |            tg32 |          9.48 ± 0.75 |
+E0 DONE

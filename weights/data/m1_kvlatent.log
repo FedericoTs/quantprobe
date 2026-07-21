@@ -1,0 +1,10 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+M1: carve-out with kv_a/kv_b dropped to 2-bit | cache D:\evo-compress-data\moe_cache\a85fd89f48bf | 151 win
+  layer 0/27 (30s) hfin=True
+  layer 6/27 (320s) hfin=True
+  layer 12/27 (609s) hfin=True
+  layer 18/27 (897s) hfin=True
+  layer 24/27 (1185s) hfin=True
+  layer 26/27 (1282s) hfin=True
+
+M1 KV-LATENT-AT-2BIT-IN-CARVEOUT (DeepSeek, full set, 151 win): carve-out=6.9616 | carve-out+kv@2bit=12.2320 (delta +5.2704) | fp16=6.3070 -> dropping just the 2 KV-latent tensors to 2-bit costs +5.270 ppl

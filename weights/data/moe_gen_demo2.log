@@ -1,0 +1,49 @@
+0.00.131.374 I llama_completion: llama backend init
+0.00.131.379 I llama_completion: load the model and apply lora adapter, if any
+0.00.131.387 I common_init_result: fitting params to device memory ...
+0.00.131.387 I common_init_result: (for bugs during this step try to reproduce them with -fit off, or provide --verbose logs if the bug only occurs with -fit on)
+0.00.671.254 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
+0.00.892.518 W load: control-looking token: 100004 '<｜fim▁end｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.00.894.824 W load: control-looking token: 100002 '<｜fim▁hole｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.00.895.028 W load: control-looking token: 100003 '<｜fim▁begin｜>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.04.770.950 W llama_context: setting new yarn_attn_factor = 1.0000 (mscale == 0.7, mscale_all_dim = 0.7)
+0.04.770.962 W llama_context: n_ctx_seq (512) < n_ctx_train (163840) -- the full capacity of the model will not be utilized
+0.04.798.902 W sched_reserve: layer 0 is assigned to device CUDA0 but the Flash Attention tensor is assigned to device CPU (usually due to missing support)
+0.04.798.905 W sched_reserve: Flash Attention was auto, set to disabled
+0.04.806.671 I common_init_from_params: warming up the model with an empty run - please wait ... (--no-warmup to disable)
+0.05.156.362 I llama_completion: llama threadpool init, n_threads = 4
+0.05.156.389 I 
+0.05.156.410 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | PEER_MAX_BATCH_SIZE = 128 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.05.156.411 I 
+0.05.156.563 I sampler seed: 7
+0.05.156.591 I sampler params: 
+	repeat_last_n = 64, repeat_penalty = 1.000, frequency_penalty = 0.000, presence_penalty = 0.000
+	dry_multiplier = 0.000, dry_base = 1.750, dry_allowed_length = 2, dry_penalty_last_n = -1
+	top_k = 40, top_p = 0.900, min_p = 0.050, xtc_probability = 0.000, xtc_threshold = 0.100, typical_p = 1.000, top_n_sigma = -1.000, temp = 0.700
+	mirostat = 0, mirostat_lr = 0.100, mirostat_ent = 5.000, adaptive_target = -1.000, adaptive_decay = 0.900
+0.05.156.598 I sampler chain: logits -> ?penalties -> ?dry -> ?top-n-sigma -> top-k -> ?typical -> top-p -> min-p -> ?xtc -> temp-ext -> dist 
+0.05.156.599 I generate: n_ctx = 512, n_batch = 2048, n_predict = 160, n_keep = 1
+0.05.156.599 I 
+The history of computing began long before there were computers. The first computers were made in the 
+				late 19th century. 
+			</p>
+			<p>
+				Computers began as a way for scientists to do calculations. They are a way for humans to do calculations. 
+				Computers have evolved to do much more than simply calculations. 
+			</p>
+			<p>
+				Computers have many uses. Computers have been used for entertainment, 
+				education, scientific research, business, and communications. 
+				Computers have been used to play games, create art, and many more.
+			</p>
+			<p>
+				The first computers were made of relays, and used electricity
+
+0.34.541.095 I common_perf_print:    sampling time =      33.16 ms
+0.34.541.096 I common_perf_print:    samplers time =      12.69 ms /   166 tokens
+0.34.541.097 I common_perf_print:        load time =    4313.57 ms
+0.34.541.113 I common_perf_print: prompt eval time =     411.71 ms /     6 tokens (   68.62 ms per token,    14.57 tokens per second)
+0.34.541.115 I common_perf_print:        eval time =   28933.79 ms /   159 runs   (  181.97 ms per token,     5.50 tokens per second)
+0.34.541.116 I common_perf_print:       total time =   29384.74 ms /   165 tokens
+0.34.541.117 I common_perf_print: unaccounted time =       6.08 ms /   0.0 %      (total - sampling - prompt eval - eval) / (total)
+0.34.541.127 I common_perf_print:    graphs reused =        158

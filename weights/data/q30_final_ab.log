@@ -1,0 +1,11 @@
+=== FINAL A/B: depth-aware 30B (late-12 experts @q4_k, rest q2_k, attn q4_k) ===
+llama_quantize:    total time = 924508.21 ms
+CHECKPOINT OK: quantize (12208411200 bytes)
+  depthaware ppl: 1.29.695.078 I Final estimate: PPL = 11.5454 +/- 0.55584
+CHECKPOINT: ppl step attempted
+=== tg bench: depth-aware vs community (pure CPU, the winning tier) ===
+| qwen3moe 30B.A3B Q2_K - Medium |  11.36 GiB |    30.53 B | CUDA       |   0 |            tg32 |         10.07 ± 1.11 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |            tg32 |          5.02 ± 2.16 |
+11258610240 /d/evo-compress-data/gguf/Qwen3-30B-A3B-Q2_K.gguf
+12208411200 /d/evo-compress-data/gguf/qwen3-30b-depthaware.gguf
+FINAL AB DONE

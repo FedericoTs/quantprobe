@@ -1,0 +1,189 @@
+{
+ "_fp16": 3.942704677581787,
+ "champ (4.934 wall)": {
+  "hash": "a87acd0b",
+  "bpw": 3.2810024806431364,
+  "ppl": 4.934382915496826,
+  "cost": "med"
+ },
+ "resid 2+1 additive": {
+  "hash": "e088eb19",
+  "bpw": 3.411002945113968,
+  "ppl": 453272.625,
+  "cost": "high"
+ },
+ "resid 2+1 no-act": {
+  "hash": "49cbad0b",
+  "bpw": 3.402490469125601,
+  "ppl": 468905.25,
+  "cost": "high"
+ },
+ "resid 2+1 +out1%": {
+  "hash": "a16dce10",
+  "bpw": 3.561001704289363,
+  "ppl": 927405.9375,
+  "cost": "high"
+ },
+ "lloyd-learned levels": {
+  "hash": "29ac8ab6",
+  "bpw": 3.2960038740556317,
+  "ppl": 4.6362810134887695,
+  "cost": "med"
+ },
+ "lloyd + learned resid": {
+  "hash": "5f6e27f0",
+  "bpw": 5.421003874055632,
+  "ppl": 4.021900653839111,
+  "cost": "high"
+ },
+ "lloyd mixed f.50 4/2": {
+  "hash": "df59eb2d",
+  "bpw": 3.308654561584249,
+  "ppl": 5.0289835929870605,
+  "cost": "med"
+ },
+ "lloyd mixed f.25 4/2": {
+  "hash": "47a1aba9",
+  "bpw": 2.809619319482601,
+  "ppl": 6.345787525177002,
+  "cost": "med"
+ },
+ "lloyd mixed f.33 4/3": {
+  "hash": "1f7b7f18",
+  "bpw": 3.639853676596841,
+  "ppl": 4.275264263153076,
+  "cost": "med"
+ },
+ "entropy-coded 8lev": {
+  "hash": "f32c0074",
+  "bpw": 3.183104193913811,
+  "ppl": 4.6362810134887695,
+  "cost": "high"
+ },
+ "entropy-coded 16lev": {
+  "hash": "243fd9df",
+  "bpw": 4.241924557794068,
+  "ppl": 4.108561038970947,
+  "cost": "high"
+ },
+ "entropy-coded 32lev": {
+  "hash": "9292c329",
+  "bpw": 5.273207961631122,
+  "ppl": 3.9712531566619873,
+  "cost": "high"
+ },
+ "ECVQ lambda.020": {
+  "hash": "d124d686",
+  "bpw": 2.3880357310282605,
+  "ppl": 7.47902250289917,
+  "cost": "high"
+ },
+ "ECVQ lambda.008": {
+  "hash": "1f842689",
+  "bpw": 3.1252904928829075,
+  "ppl": 4.482634544372559,
+  "cost": "high"
+ },
+ "ECVQ lambda.003": {
+  "hash": "c6947080",
+  "bpw": 3.907060167174178,
+  "ppl": 4.169429779052734,
+  "cost": "high"
+ },
+ "ECVQ lambda.005": {
+  "hash": "3d9ac509",
+  "bpw": 3.521338625647282,
+  "ppl": 4.286621570587158,
+  "cost": "high"
+ },
+ "ECVQ lambda.006": {
+  "hash": "334f3a3e",
+  "bpw": 3.378346161993102,
+  "ppl": 4.446662425994873,
+  "cost": "high"
+ },
+ "ECVQ additive": {
+  "hash": "620007dc",
+  "bpw": 5.891256675430238,
+  "ppl": 3.9426538944244385,
+  "cost": "high"
+ },
+ "sigma-delta noise-shape": {
+  "hash": "1d8cae91",
+  "bpw": 3.1495879120879122,
+  "ppl": 98825.1328125,
+  "cost": "med"
+ },
+ "ECVQ adaptive/layer": {
+  "hash": "8983b77b",
+  "bpw": 2.898186010517589,
+  "ppl": 5.398965835571289,
+  "cost": "high"
+ },
+ "ECVQ lambda.012": {
+  "hash": "ededac52",
+  "bpw": 2.8036548905696352,
+  "ppl": 5.199436187744141,
+  "cost": "high"
+ },
+ "sigma-delta leaky": {
+  "hash": "145f1e08",
+  "bpw": 3.1495879120879122,
+  "ppl": 3134822.75,
+  "cost": "med"
+ },
+ "ECVQ+lowrank r8": {
+  "hash": "982c753c",
+  "bpw": 3.0003581872729317,
+  "ppl": 5.1613264083862305,
+  "cost": "high"
+ },
+ "ECVQ+lowrank r16": {
+  "hash": "2e835750",
+  "bpw": 3.197061483976229,
+  "ppl": 5.1010260581970215,
+  "cost": "high"
+ },
+ "ECVQ+lowrank r32": {
+  "hash": "dcd459f0",
+  "bpw": 3.590468077382821,
+  "ppl": 5.02317476272583,
+  "cost": "high"
+ },
+ "E8-lattice q.08": {
+  "hash": "20a64f7c",
+  "bpw": 5.3562436562362645,
+  "ppl": 4.019603252410889,
+  "cost": "high"
+ },
+ "E8-lattice q.14": {
+  "hash": "5ace5cd4",
+  "bpw": 4.558149944918528,
+  "ppl": 4.15074348449707,
+  "cost": "high"
+ },
+ "E8-lattice q.22": {
+  "hash": "59e94ed5",
+  "bpw": 3.9196599167645148,
+  "ppl": 4.535261631011963,
+  "cost": "high"
+ },
+ "E8-lattice q.28": {
+  "hash": "7b68ae11",
+  "bpw": 3.584412093856862,
+  "ppl": 4.94395637512207,
+  "cost": "high"
+ },
+ "D4-lattice q.16": {
+  "hash": "edd88787",
+  "bpw": 3.3711358581836404,
+  "ppl": 4.536581039428711,
+  "cost": "high"
+ },
+ "D4-lattice q.20": {
+  "hash": "9f088374",
+  "bpw": 3.061632497625691,
+  "ppl": 4.854605674743652,
+  "cost": "high"
+ }
+}

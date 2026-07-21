@@ -1,0 +1,12 @@
+Token indices sequence length is longer than the specified maximum sequence length for this model (311126 > 16384). Running this sequence through the model will result in indexing errors
+DeepSeek-V2-Lite carve-out 2-bit: 151 win, routed-gate/up=2 DOWN_K=2 ATTN_K=2 SHARED_K=2 DENSE_K=2 INT8_GS=True AWQ=False(a=0.5)
+  cache: D:\evo-compress-data\moe_cache\a5877fc5e500
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Federico\Documents\evo-compress\weights\evoq_moe.py", line 448, in <module>
+    {"baseline": baseline, "validate": validate, "measure": measure}.get(mode, baseline)()
+  File "C:\Users\Federico\Documents\evo-compress\weights\evoq_moe.py", line 389, in measure
+    d = _json.load(open(lm)); rep["bits"] += d["bits"]; rep["q"] += d["q"]; rep["kept"] += d["kept"]
+                                             ~^^^^^^^^
+KeyError: 'bits'

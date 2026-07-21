@@ -1,0 +1,8 @@
+=== definitive XMP table: warm-up discarded, second run measured (r=4) ===
+--- dense-7B (measured pass) ---
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |   0 |            tg32 |         10.88 ± 0.60 |
+--- dsv2-moe (measured pass) ---
+| deepseek2 16B IQ2_XS - 2.3125 bpw |   5.55 GiB |    15.71 B | CUDA       |  99 | exps=CPU              |            tg32 |         15.58 ± 1.69 |
+--- 30b-moe (measured pass) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |            tg32 |          5.97 ± 1.28 |
+DEFINITIVE XMP DONE

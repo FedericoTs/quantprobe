@@ -1,0 +1,14 @@
+=== convert Qwen2.5-7B -> f16 GGUF (retry) ===
+INFO:hf-to-gguf:Model successfully exported to D:\evo-compress-data\gguf\qwen2.5-7b-f16.gguf
+=== reference Q6_K ===
+llama_quantize:    total time = 180588.86 ms
+  ref-q6k: 1.45.063.504 I Final estimate: PPL = 6.1496 +/- 0.17469
+llama_quantize:    total time = 192443.26 ms
+  b0_6: 1.05.046.781 I Final estimate: PPL = 7.0325 +/- 0.20883
+llama_quantize:    total time = 194769.42 ms
+  b7_13: 1.05.451.900 I Final estimate: PPL = 6.6902 +/- 0.19241
+llama_quantize:    total time = 195468.00 ms
+  b14_20: 1.04.981.770 I Final estimate: PPL = 6.7310 +/- 0.19412
+llama_quantize:    total time = 194909.61 ms
+  b21_27: 1.05.415.498 I Final estimate: PPL = 8.0041 +/- 0.24425
+QWEN PROBE DONE

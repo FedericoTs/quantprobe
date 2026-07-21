@@ -1,0 +1,18 @@
+===== tok/s benchmark (run with Claude/apps CLOSED) =====
+
+--- free VRAM before load (more free = more of the model on GPU) ---
+324 MiB, 5706 MiB, 6144 MiB
+
+--- llama-bench: IQ2_XS, full GPU offload (-ngl 99), 128-token generation ---
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
+  Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
+load_backend: loaded CUDA backend from D:\evo-compress-data\llamacpp\ggml-cuda.dll
+load_backend: loaded RPC backend from D:\evo-compress-data\llamacpp\ggml-rpc.dll
+load_backend: loaded CPU backend from D:\evo-compress-data\llamacpp\ggml-cpu-haswell.dll
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| deepseek2 16B IQ2_XS - 2.3125 bpw |   5.55 GiB |    15.71 B | CUDA       |  99 |           tg128 |          6.34 ± 0.01 |
+
+build: 18ef86ece (9596)
+
+===== DONE -- reopen Claude and say: read tokps_result.log =====

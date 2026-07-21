@@ -1,0 +1,23 @@
+  sens layer 0/32 (42s)
+  sens layer 7/32 (333s)
+  sens layer 14/32 (624s)
+  sens layer 21/32 (916s)
+  sens layer 28/32 (1207s)
+
+sens_db -> C:\Users\Federico\Documents\evo-compress\weights\data\sens_db.json (224 tensors). TOP-10 most sensitive (outmse2 x1e3):
+  27.self_attn.k_proj           46.1346  (k_proj)
+  30.self_attn.k_proj           45.7421  (k_proj)
+  27.self_attn.q_proj           44.7660  (q_proj)
+  28.self_attn.k_proj           43.6056  (k_proj)
+  24.self_attn.k_proj           42.4610  (k_proj)
+  25.self_attn.k_proj           42.1325  (k_proj)
+  26.self_attn.k_proj           41.7442  (k_proj)
+  28.self_attn.q_proj           41.7433  (q_proj)
+  30.self_attn.q_proj           41.6957  (q_proj)
+  22.self_attn.k_proj           41.5571  (k_proj)
+BOTTOM-5 (least sensitive):
+  2.self_attn.o_proj             0.0137  (o_proj)
+  0.self_attn.v_proj             0.0097  (v_proj)
+  1.self_attn.o_proj             0.0074  (o_proj)
+  0.mlp.down_proj                0.0026  (down_proj)
+  0.self_attn.o_proj             0.0011  (o_proj)

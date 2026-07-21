@@ -1,0 +1,46 @@
+GATE 0/1: FT layer 0, 8x512 calib tokens (train+held-out), K=100 steps
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Federico\Documents\evo-compress\weights\trellis_ft.py", line 206, in <module>
+    {"gate0": gate0}.get(mode, gate0)()
+  File "C:\Users\Federico\Documents\evo-compress\weights\trellis_ft.py", line 193, in gate0
+    _, mse0, mse1, ho_ptq, ho_ft = ft_layer(li, h, cfg, smap, rot, K_steps=int(os.environ.get("EVOQ_FT_K", "100")))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\weights\trellis_ft.py", line 173, in ft_layer
+    loss = sum(((ftlayer(layer_in[i:i+1], attention_mask=mask, position_embeddings=cos_sin)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\weights\trellis_ft.py", line 173, in <genexpr>
+    loss = sum(((ftlayer(layer_in[i:i+1], attention_mask=mask, position_embeddings=cos_sin)[0]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\transformers\models\llama\modeling_llama.py", line 352, in forward
+    hidden_states = self.mlp(hidden_states)
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\transformers\models\llama\modeling_llama.py", line 190, in forward
+    down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\.venv\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\weights\trellis_ft.py", line 83, in forward
+    return F.linear(x, self.weight_hat(), self.bias)
+                       ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\Documents\evo-compress\weights\trellis_ft.py", line 77, in weight_hat
+    Rq = Xq * self.gs                                                       # [ng_total, G]
+         ~~~^~~~~~~~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 172.00 MiB. GPU 0 has a total capacity of 6.00 GiB of which 0 bytes is free. Of the allocated memory 12.51 GiB is allocated by PyTorch, and 238.67 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

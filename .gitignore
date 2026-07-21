@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+.venv-gemma/
+venv/
+
+# Rust build artifacts
+cmcore/target/
+**/*.rs.bk
+
+# Downloaded / generated corpora (reproducible via data/fetch_data.py)
+data/corpora/
+
+# OS cruft
+Thumbs.db
+.DS_Store
+
+# Keep results/ (results.json, pareto.png, champion.json) committed as run evidence.
+
+# LLM weight dataset (downloaded models + packed binaries; regenerable) —
+# but KEEP result logs, figures, and notes: they are the paper's run evidence.
+weights/data/*
+!weights/data/*.log
+!weights/data/*.txt
+!weights/data/*.md
+!weights/data/*.png
+!weights/data/*.json
+
+# third-party llama.cpp binaries (re-downloadable, ~1.8GB)
+tools/llamacpp/
+tools/llama.cpp-src/
+# portable build toolchain (approved download, re-fetchable)
+tools/w64devkit/
+tools/w64devkit.pkg
+tools/cmake-*/
+tools/cmake.zip
+tools/llama.cpp-src/build*/
+
+# python build artifacts
+build/
+dist/
+*.egg-info/

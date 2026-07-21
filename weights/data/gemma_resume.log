@@ -1,0 +1,20 @@
+partial: xGOKKLRSlIhH692hSVvI1-gpoa8=.fe054ae05ff7f44318fd8ae90d58992531455c7ed31356704088f0f2d8c8009a.5a985312.incomplete
+start: 22,156,664,401 / 23,919,549,408
+  22.33 GB  (11.3 MB/s)
+  22.50 GB  (11.2 MB/s)
+  22.66 GB  (11.0 MB/s)
+  22.80 GB  (10.6 MB/s)
+  22.97 GB  (10.8 MB/s)
+  break at 23,108,771,409 - retry 1: ('Connection broken: IncompleteRead(952774308 bytes read, 810110699 mo
+  break at 23,108,771,409 - retry 2: HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exce
+  23.26 GB  (10.3 MB/s)
+  23.43 GB  (10.6 MB/s)
+  23.60 GB  (10.8 MB/s)
+  23.78 GB  (11.0 MB/s)
+download loop done: 23,919,549,408 / 23,919,549,408  (tries=2)
+verifying sha256 (a few min)...
+sha256: fe054ae05ff7f44318fd8ae90d58992531455c7ed31356704088f0f2d8c8009a
+expect: fe054ae05ff7f44318fd8ae90d58992531455c7ed31356704088f0f2d8c8009a
+-> MATCH
+MOVED -> D:/evo-compress-data/gemma-4-12b/model.safetensors
+GEMMA DOWNLOAD COMPLETE

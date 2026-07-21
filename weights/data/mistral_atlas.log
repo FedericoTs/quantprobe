@@ -1,0 +1,86 @@
+=== fetch 3 shards (manual Range, retry) ===
+  model-00001-of-00003.safetensors: 4.95 GB
+    0.21/4.95 GB (10.1 MB/s)
+    0.41/4.95 GB (10.1 MB/s)
+    0.63/4.95 GB (10.4 MB/s)
+    0.84/4.95 GB (10.4 MB/s)
+    1.06/4.95 GB (10.4 MB/s)
+    1.28/4.95 GB (10.5 MB/s)
+    1.50/4.95 GB (10.6 MB/s)
+    1.72/4.95 GB (10.6 MB/s)
+    1.94/4.95 GB (10.7 MB/s)
+    2.16/4.95 GB (10.7 MB/s)
+    2.38/4.95 GB (10.7 MB/s)
+    2.60/4.95 GB (10.7 MB/s)
+    2.83/4.95 GB (10.8 MB/s)
+    3.06/4.95 GB (10.8 MB/s)
+    3.28/4.95 GB (10.8 MB/s)
+    3.50/4.95 GB (10.8 MB/s)
+    3.72/4.95 GB (10.8 MB/s)
+    3.95/4.95 GB (10.8 MB/s)
+    4.16/4.95 GB (10.8 MB/s)
+    4.39/4.95 GB (10.9 MB/s)
+    4.61/4.95 GB (10.9 MB/s)
+    4.83/4.95 GB (10.9 MB/s)
+  model-00001-of-00003.safetensors: DONE
+  model-00002-of-00003.safetensors: 5.00 GB
+    0.22/5.00 GB (11.1 MB/s)
+    0.44/5.00 GB (11.0 MB/s)
+    0.68/5.00 GB (11.2 MB/s)
+    0.91/5.00 GB (11.2 MB/s)
+    1.13/5.00 GB (11.2 MB/s)
+    1.35/5.00 GB (11.1 MB/s)
+    1.57/5.00 GB (11.2 MB/s)
+    1.79/5.00 GB (11.1 MB/s)
+    2.01/5.00 GB (11.1 MB/s)
+    2.24/5.00 GB (11.1 MB/s)
+    2.47/5.00 GB (11.1 MB/s)
+    2.69/5.00 GB (11.1 MB/s)
+    2.92/5.00 GB (11.2 MB/s)
+    3.15/5.00 GB (11.1 MB/s)
+    3.37/5.00 GB (11.1 MB/s)
+    3.59/5.00 GB (11.1 MB/s)
+    3.82/5.00 GB (11.1 MB/s)
+    4.04/5.00 GB (11.1 MB/s)
+    4.27/5.00 GB (11.1 MB/s)
+    4.49/5.00 GB (11.1 MB/s)
+    4.72/5.00 GB (11.2 MB/s)
+    4.95/5.00 GB (11.1 MB/s)
+  model-00002-of-00003.safetensors: DONE
+  model-00003-of-00003.safetensors: 4.55 GB
+    0.22/4.55 GB (10.8 MB/s)
+    0.44/4.55 GB (10.9 MB/s)
+    0.67/4.55 GB (11.0 MB/s)
+    0.90/4.55 GB (11.1 MB/s)
+    1.12/4.55 GB (11.1 MB/s)
+    1.35/4.55 GB (11.1 MB/s)
+    1.57/4.55 GB (11.1 MB/s)
+    1.80/4.55 GB (11.1 MB/s)
+    2.02/4.55 GB (11.1 MB/s)
+    2.24/4.55 GB (11.1 MB/s)
+    2.46/4.55 GB (11.1 MB/s)
+    2.68/4.55 GB (11.0 MB/s)
+    2.90/4.55 GB (11.1 MB/s)
+    3.12/4.55 GB (11.0 MB/s)
+    3.36/4.55 GB (11.1 MB/s)
+    3.58/4.55 GB (11.1 MB/s)
+    3.81/4.55 GB (11.1 MB/s)
+    4.03/4.55 GB (11.1 MB/s)
+    4.26/4.55 GB (11.1 MB/s)
+    4.49/4.55 GB (11.1 MB/s)
+  model-00003-of-00003.safetensors: DONE
+=== convert -> f16 GGUF ===
+INFO:hf-to-gguf:Model successfully exported to D:\evo-compress-data\gguf\mistral-7b-f16.gguf
+=== reference Q6_K ===
+llama_quantize:    total time = 163996.22 ms
+  ref-q6k: 1.44.644.107 I Final estimate: PPL = 5.2055 +/- 0.12818
+=== band probe (32 layers, 4 bands of 8) ===
+llama_quantize:    total time = 177897.02 ms
+  b0_7: 1.05.726.598 I Final estimate: PPL = 11.7305 +/- 0.33681
+llama_quantize:    total time = 192314.62 ms
+  b8_15: 1.06.092.043 I Final estimate: PPL = 5.3535 +/- 0.13182
+llama_quantize:    total time = 177041.90 ms
+  b16_23: 1.06.066.712 I Final estimate: PPL = 5.4303 +/- 0.13440
+llama_quantize:    total time = 176721.42 ms
+  b24_31: 1.06.229.470 I Final estimate: PPL = 5.4642 +/- 0.13582
+MISTRAL ATLAS ENTRY DONE

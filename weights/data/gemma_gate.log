@@ -1,0 +1,12 @@
+EVOQ-GEMMA [fp16]: ppl=14.1190 | Gemma-4-12B dense, 4x1024 WikiText-2
+EVOQ-GEMMA [fp16]: ppl=11.1485 | Gemma-4-12B dense, 4x1024 WikiText-2
+EVOQ-GEMMA [fp16]: ppl=7.3659 | Gemma-4-12B dense, 8x2048 WikiText-2
+EVOQ-GEMMA [carveout]: ppl=14.0599 | Gemma-4-12B dense, 8x2048 WikiText-2
+EVOQ-GEMMA [fp16 band=0-11]: ppl=11.9196 | Gemma-4-12B dense, 4x2048 WikiText-2
+EVOQ-GEMMA [fp16 band=12-23]: ppl=12.9944 | Gemma-4-12B dense, 4x2048 WikiText-2
+EVOQ-GEMMA [fp16 band=24-35]: ppl=12.9408 | Gemma-4-12B dense, 4x2048 WikiText-2
+EVOQ-GEMMA [fp16]: ppl=9.7758 | Gemma-4-12B dense, 4x2048 WikiText-2
+EVOQ-GEMMA [fp16 band=36-47]: ppl=17.7601 | Gemma-4-12B dense, 4x2048 WikiText-2
+EVOQ-GEMMA [fp16 band=0-35]: ppl=30.5821 | Gemma-4-12B dense, 4x2048 WikiText-2
+EVOQ-GEMMA [fp16 band=0-47]: ppl=58.4148 | Gemma-4-12B dense, 4x2048 WikiText-2
+EVOQ-GEMMA [flipped]: ppl=10.7055 | Gemma-4-12B dense, 8x2048 WikiText-2
