@@ -8,7 +8,7 @@
 
 <p align="center"><img src="weights/data/hero_placement.svg" width="880" alt="Placement across memory tiers: disk 2-bit cold experts, RAM 2-bit experts + probed fragile band at 4-bit, VRAM 4-bit attention — one law ties them"></p>
 
-> **▶ Try the interactive calculator: [Will it run — and how fast?](https://claude.ai/code/artifact/795f0169-a08b-4c80-aaf3-9777a63d47a9)**
+> **▶ Try the interactive calculator: [Will it run — and how fast?](https://federicots.github.io/quantprobe/)**
 > Pick any model + your machine → predicted tok/s, memory fit, quality cost, and your cheapest next upgrade — from the law below, with your config plotted against every validated measurement.
 
 ---
