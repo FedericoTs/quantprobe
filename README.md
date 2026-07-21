@@ -53,6 +53,8 @@ Full statements, each with its establishing measurement and a falsifiable predic
 <p align="center"><img src="weights/data/x_chart_E_scalinglaw.png" width="700" alt="One scaling law, 7B to 744B, predicted vs measured, including colibri's published tiers"></p>
 <p align="center"><img src="weights/data/x_chart_F_tradeoff.png" width="700" alt="Speed vs memory trade-off with the RAM capacity cliff — fewer bits mean less memory and more speed until the model stops fitting"></p>
 
+<p align="center"><img src="weights/data/x_chart_D_placement.png" width="700" alt="Byte-identical GGUF files, 2.25 perplexity apart — placement is worth twice the byte budget"></p>
+
 ## The machine — and every speed it ran at
 
 All of this happened on one desktop I already owned. Exact specs, because reproducibility starts with honesty about hardware:
@@ -168,6 +170,8 @@ The question colibri made everyone ask: *what would GLM-5.2 (744B-A32B) cost to 
 | 4× DGX Spark + **this work's recipe** (probed 2-bit experts, 4-bit attention) | active bytes 20.7 → 12.9 GB/token (×1.6) | **~55–67 predicted** — or the same 42.5-class speed on **2 Sparks (~half the cost)**, or several-fold more KV/context |
 
 Three honest caveats: (1) 2-bit quality on a 744B is *itself* a probe-first question — the fragility atlas says find the fragile band before trusting any recipe, and MoEs of this class have absorbed 2-bit at ~1.10× so far; (2) the streaming rows assume naive LRU — colibri-style lookahead prefetch (91–99% predictable, measured) is exactly what closes the gap between my naive-streaming numbers and its engine's; (3) the biggest model I have *measured* is 110B — everything above it is the law extrapolating, which is precisely what the pre-registration culture here is for: these numbers are on the record before anyone runs them.
+
+<p align="center"><img src="weights/data/x_chart_G_744b.png" width="720" alt="Running a 744B at home: cost versus speed, measured points versus pre-registered predictions, with the placement dividend shown at fixed cost"></p>
 
 ## Honest limitations
 

@@ -16,6 +16,7 @@ BLUE, TEAL, RED, AMBER = "#2a78d6", "#1baf7a", "#d73027", "#eda100"
 PTS = [
     ("7B Q4 · VRAM (1060)",        "VRAM", 192,  4.68,  22.77, True),
     ("7B Q2 · CPU",                "RAM",  35,   3.01,  7.18,  True),
+    ("7B Q2 · CPU · XMP",      "RAM",  48,   3.01,  10.88, True),
     ("7B Q4 · CPU",                "RAM",  35,   4.68,  5.08,  True),
     ("30B-A3B Q2 · CPU",           "RAM",  35,   1.11,  12.62, True),
     ("16B-A2.4 IQ2 · exps=CPU",    "RAM",  35,   0.85,  11.81, True),
