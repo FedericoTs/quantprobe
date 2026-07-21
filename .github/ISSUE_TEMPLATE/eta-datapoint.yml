@@ -1,0 +1,20 @@
+name: "η data point"
+description: "Submit a predicted-vs-measured decode speed from your machine"
+title: "[η] MODEL on HARDWARE"
+labels: ["eta-datapoint"]
+body:
+  - type: input
+    id: hw
+    attributes: { label: "Hardware (CPU/GPU/RAM speed/disk)" }
+    validations: { required: true }
+  - type: input
+    id: model
+    attributes: { label: "Model + quant (e.g. Qwen3-30B-A3B Q2_K)" }
+    validations: { required: true }
+  - type: input
+    id: numbers
+    attributes: { label: "Predicted vs measured tok/s (quantprobe bench output)" }
+    validations: { required: true }
+  - type: textarea
+    id: notes
+    attributes: { label: "Placement used + anything odd" }

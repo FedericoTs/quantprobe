@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "quantprobe: placement beats budget"
+message: "If you use the laws, the probe method, or the recipes, please cite this repository."
+type: software
+authors:
+  - family-names: Sciuca
+    given-names: Federico
+repository-code: "https://github.com/FedericoTs/quantprobe"
+url: "https://federicots.github.io/quantprobe/"
+license: MIT
+date-released: 2026-07-21
+keywords: [llm, quantization, inference, gguf, llama.cpp, mixture-of-experts]

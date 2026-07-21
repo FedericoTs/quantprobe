@@ -4,7 +4,7 @@
 
 **Where your bits sit — which layers, which memory tier — matters more than how many you have. Four falsification-tested laws for running big LLMs on hardware you already own, every number measured on one 2016 desktop (GTX 1060 6 GB · 16 GB DDR4 · SATA SSD).**
 
-![license](https://img.shields.io/badge/license-MIT-0f766e) ![hardware](https://img.shields.io/badge/measured_on-2016_GTX_1060_6GB-d73027) ![data--free](https://img.shields.io/badge/quantization-data--free-1d9e70) ![models](https://img.shields.io/badge/validated-7B_→_744B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
+![smoke](https://github.com/FedericoTs/quantprobe/actions/workflows/smoke.yml/badge.svg) ![license](https://img.shields.io/badge/license-MIT-0f766e) ![hardware](https://img.shields.io/badge/measured_on-2016_GTX_1060_6GB-d73027) ![data--free](https://img.shields.io/badge/quantization-data--free-1d9e70) ![models](https://img.shields.io/badge/validated-7B_→_744B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
 
 <p align="center"><img src="weights/data/hero_placement.png" width="880" alt="Placement across memory tiers: disk 2-bit cold experts, RAM 2-bit experts + probed fragile band at 4-bit, VRAM 4-bit attention — one law ties them"></p>
 
@@ -84,7 +84,7 @@ The RAM line is the story in miniature: one free BIOS toggle, predicted in advan
 Prerequisite: [llama.cpp binaries](https://github.com/ggml-org/llama.cpp/releases) on PATH (or pass `--llama-dir`).
 
 ```bash
-pip install -e .                                   # this repo (PyPI release pending)
+pip install git+https://github.com/FedericoTs/quantprobe   # (PyPI release pending)
 quantprobe fetch qwen3-30b ./models                # known-good GGUF, robust download (~10.5 GB)
 quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf --model qwen3-30b --machine 2016-xmp
 ```
@@ -94,7 +94,7 @@ That last command plans the optimal placement for your machine, prints the predi
 ## Install
 
 ```bash
-pip install -e .        # from this repo (PyPI release pending)
+pip install git+https://github.com/FedericoTs/quantprobe
 ```
 
 Three commands, each implementing a law:

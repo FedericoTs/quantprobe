@@ -1,0 +1,17 @@
+name: "Fragility atlas entry"
+description: "Submit a depth-fragility band curve for a new model family"
+title: "[atlas] MODEL"
+labels: ["atlas"]
+body:
+  - type: input
+    id: model
+    attributes: { label: "Model (family, size, dense/MoE, tied head?)" }
+    validations: { required: true }
+  - type: textarea
+    id: curve
+    attributes: { label: "Band curve (quantprobe probe output: per-band ppl deltas)" }
+    validations: { required: true }
+  - type: input
+    id: direction
+    attributes: { label: "Fragile end (early/late/U/flat) and ratio" }
+    validations: { required: true }
