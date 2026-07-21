@@ -69,13 +69,13 @@ The RAM line is the story in miniature: one free BIOS toggle, predicted in advan
 
 ### Projections — what the law says the next euro buys
 
-| upgrade | cost | predicted effect |
+| upgrade | cost (mid-2026 market*) | predicted effect |
 |---|---|---|
-| +16 GB used DDR4 | ~€30 | 30B hybrid leaves the RAM boundary → stable ~19–21 tok/s; caches half a 110B |
-| NVMe SSD (Gen3 ×4 is enough — board caps there) | ~€70 | disk tier 0.45 → ~3.5 GB/s: the 110B goes 0.19 → **~1.5 tok/s** |
-| Both | ~€100 | a 2016 desktop serving a 30B at reading speed and a 110B at demo speed |
+| +16 GB DDR4 | ~€35–50 used · €90–130 new | 30B hybrid leaves the RAM boundary → stable ~19–21 tok/s; caches half a 110B |
+| NVMe SSD, 1 TB (Gen3 ×4 is enough — board caps there) | ~€150–190 new right now; worth waiting for <€100 deals | disk tier 0.45 → ~3.5 GB/s: the 110B goes 0.19 → **~1.5 tok/s** |
+| Both | ~€200–320 at today's prices | a 2016 desktop serving a 30B at reading speed and a 110B at demo speed |
 
-These are pre-registered the same way everything else here was: when the hardware arrives, the numbers go in this table next to the predictions.
+\* The 2026 AI-driven NAND/DRAM shortage has inflated component prices (~2× the 2024 floor) and they're volatile — the used DDR4 market is the value play, and NVMe deals reward patience. The *predictions* don't change with the prices; when the hardware arrives, measured numbers go in this table next to them.
 
 ## Quickstart — zero to chatting, three commands
 
@@ -127,18 +127,30 @@ llama-quantize \
 
 More recipes + the full fragility atlas: **[weights/GGUF_DEPTH_RECIPE.md](weights/GGUF_DEPTH_RECIPE.md)**.
 
-## How this relates to colibri (and everything else)
+## What's actually new here — and what isn't
 
-Different axes, complementary results — [colibri](https://github.com/JustVugg/colibri)'s engine inspired the tier-streaming work here, and our scaling law retrodicts its published throughput.
+**Not mine (I build on it, gratefully):** [llama.cpp](https://github.com/ggml-org/llama.cpp) and its k-quants; the incoherence-codec line (QuIP#/QTIP/QuaRot); [colibri](https://github.com/JustVugg/colibri)'s tier-streaming engine, which inspired the streaming experiments.
 
-| | vanilla llama.cpp | colibri | this work |
+**Mine (measured here, to my knowledge first):**
+1. The four laws — rank-conditional rotation, density-everywhere, probe-not-predict fragility, and the tiered decode equation with fitted η bands.
+2. **Probe-then-quantize** as a method + the `quantprobe` tool implementing it end-to-end.
+3. The **byte-identical placement experiment** (same size, 2.25 ppl apart) — the cleanest control I've seen for placement effects.
+4. **Pre-registration as methodology** for systems benchmarks (predict → then measure, in public).
+5. The depth-aware GGUF recipes, the placement solver (forward + inverse), and the live self-scoring dashboard.
+
+## Where I stand at parity — same hardware, same model, same bytes
+
+Head-to-head under identical conditions (my box, WikiText-2, same eval windows):
+
+| comparison at parity | baseline | this work | delta |
 |---|---|---|---|
-| optimizes for | general inference | max model per RAM (744B on 25 GB) | placement laws + speed on commodity HW |
-| quantization | uniform / imatrix | uniform int4 experts | **data-free, fragility-probed, depth-aware** |
-| speed evidence | benchmarks | throughput + logs | **pre-registered predictions, confirmed** |
-| the "why" | — | empirical | **a law that retrodicts both** |
+| **Placement only** (Gemma 4 12B, byte-identical 5.22 GB files) | first-12 protected: 12.27 ppl | last-12 protected: **10.02** | **−2.25 ppl, same bytes** |
+| **vs llama.cpp naive best** (Qwen3-30B, same GGUF, same box) | pure CPU: 12.6 tok/s | planned hybrid: **19.3** | **+53%, zero cost** |
+| **Data-free vs calibrated** (Qwen3-30B, Q2-class) | imatrix-calibrated community: 11.27 ppl | data-free depth-aware: **11.08** | parity **without calibration data** (+15% size) |
+| **vs calibrated SOTA** (DeepSeek-V2-Lite, 2-bit) | MxMoE (calibrated): 1.18× gap | data-free carve-out: **1.10×** | better, with zero data |
+| Uniform vs depth-aware (Gemma, 2-bit class) | uniform Q2_K: 14.41 ppl | depth-aware: **10.02** | **−4.4 ppl for +0.5 GB** |
 
-My concrete, falsifiable offer to colibri: a probed 2-bit expert tier should give **~2× on its disk-bound tiers** and ~1.5–1.7× on RAM tiers, quality held by keeping the fragile band at int4.
+**And colibri?** No parity comparison is possible or fair — different hardware ($16k tiers vs my $0-upgrade desktop), different model (744B vs my largest, 110B). What I can say honestly: normalized by the law, colibri's published tiers land **inside my measured η bands** (his 0.48 and 0.88) — same physics, complementary work — and my concrete, falsifiable offer stands: a probed 2-bit expert tier should give **~2× on its disk-bound tiers** and ~1.5–1.7× on RAM tiers, quality held by keeping the fragile band at int4.
 
 ## Honest limitations
 
