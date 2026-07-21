@@ -152,6 +152,22 @@ Head-to-head under identical conditions (my box, WikiText-2, same eval windows):
 
 **And colibri?** No parity comparison is possible or fair — different hardware ($16k tiers vs my $0-upgrade desktop), different model (744B vs my largest, 110B). What I can say honestly: normalized by the law, colibri's published tiers land **inside my measured η bands** (his 0.48 and 0.88) — same physics, complementary work — and my concrete, falsifiable offer stands: a probed 2-bit expert tier should give **~2× on its disk-bound tiers** and ~1.5–1.7× on RAM tiers, quality held by keeping the fragile band at int4.
 
+## Projection: running the 744B locally
+
+The question colibri made everyone ask: *what would GLM-5.2 (744B-A32B) cost to run at home?* The law answers it per hardware class and placement strategy — same equation, same η bands, error bars ±25–40% at this extrapolation distance:
+
+| setup | strategy | predicted tok/s |
+|---|---|---|
+| My 2016 desktop (16 GB, SATA) | probed 2-bit, naive streaming | **~0.07** — it *runs*; that's the whole claim |
+| My desktop + NVMe (~€180 today) | probed 2-bit, naive streaming | **~0.5** — demo class |
+| 128 GB DDR5 desktop | colibri engine, int4 (its published measurement) | 1.8 |
+| 128 GB DDR5 desktop | colibri + **probed 2-bit experts** (my open, falsifiable offer) | **~3.5** |
+| 256 GB used workstation, ~200 GB/s (Epyc/Threadripper, ~€2–3k) | probed 2-bit, RAM-resident hybrid | **~9** — the cheapest *usable* 744B |
+| 512 GB Mac Studio (~800 GB/s unified) | probed 2-bit, resident | **~40–50** |
+| 4× DGX Spark, TP4 (measured by [tonyd2wild](https://github.com/tonyd2wild/GLM-5.2-NVFP4-KV-4x-DGX-Spark-300kctx-42tok-s)) | W4 + NVFP4 KV | 42.5 |
+
+Three honest caveats: (1) 2-bit quality on a 744B is *itself* a probe-first question — the fragility atlas says find the fragile band before trusting any recipe, and MoEs of this class have absorbed 2-bit at ~1.10× so far; (2) the streaming rows assume naive LRU — colibri-style lookahead prefetch (91–99% predictable, measured) is exactly what closes the gap between my naive-streaming numbers and its engine's; (3) the biggest model I have *measured* is 110B — everything above it is the law extrapolating, which is precisely what the pre-registration culture here is for: these numbers are on the record before anyone runs them.
+
 ## Honest limitations
 
 - Perplexity on WikiText-2 is my primary metric; I haven't run task-level evals (MMLU/HellaSwag) yet.
@@ -181,7 +197,7 @@ Every headline number has its generating script and raw log in-tree — see [wei
 
 ## Credits
 
-[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Research by one human directing AI agents (Claude) on one desktop; every claim is measured, and every negative that redirected the work is documented.
+[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Independent research by Federico Sciuca, AI-supported, on one desktop; every claim is measured, and every negative that redirected the work is documented.
 
 ## License
 
