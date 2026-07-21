@@ -165,6 +165,7 @@ The question colibri made everyone ask: *what would GLM-5.2 (744B-A32B) cost to 
 | 256 GB used workstation, ~200 GB/s (Epyc/Threadripper, ~€2–3k) | probed 2-bit, RAM-resident hybrid | **~9** — the cheapest *usable* 744B |
 | 512 GB Mac Studio (~800 GB/s unified) | probed 2-bit, resident | **~40–50** |
 | 4× DGX Spark, TP4 (measured by [tonyd2wild](https://github.com/tonyd2wild/GLM-5.2-NVFP4-KV-4x-DGX-Spark-300kctx-42tok-s)) | W4 + NVFP4 KV | 42.5 |
+| 4× DGX Spark + **this work's recipe** (probed 2-bit experts, 4-bit attention) | active bytes 20.7 → 12.9 GB/token (×1.6) | **~55–67 predicted** — or the same 42.5-class speed on **2 Sparks (~half the cost)**, or several-fold more KV/context |
 
 Three honest caveats: (1) 2-bit quality on a 744B is *itself* a probe-first question — the fragility atlas says find the fragile band before trusting any recipe, and MoEs of this class have absorbed 2-bit at ~1.10× so far; (2) the streaming rows assume naive LRU — colibri-style lookahead prefetch (91–99% predictable, measured) is exactly what closes the gap between my naive-streaming numbers and its engine's; (3) the biggest model I have *measured* is 110B — everything above it is the law extrapolating, which is precisely what the pre-registration culture here is for: these numbers are on the record before anyone runs them.
 
