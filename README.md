@@ -6,7 +6,7 @@
 
 ![license](https://img.shields.io/badge/license-MIT-0f766e) ![hardware](https://img.shields.io/badge/measured_on-2016_GTX_1060_6GB-d73027) ![data--free](https://img.shields.io/badge/quantization-data--free-1d9e70) ![models](https://img.shields.io/badge/validated-7B_→_744B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
 
-<p align="center"><img src="weights/data/hero_placement.svg" width="880" alt="Placement across memory tiers: disk 2-bit cold experts, RAM 2-bit experts + probed fragile band at 4-bit, VRAM 4-bit attention — one law ties them"></p>
+<p align="center"><img src="weights/data/hero_placement.png" width="880" alt="Placement across memory tiers: disk 2-bit cold experts, RAM 2-bit experts + probed fragile band at 4-bit, VRAM 4-bit attention — one law ties them"></p>
 
 > **▶ Try the interactive calculator: [Will it run — and how fast?](https://federicots.github.io/quantprobe/)**
 > Pick any model + your machine → predicted tok/s, memory fit, quality cost, and your cheapest next upgrade — from the law below, with your config plotted against every validated measurement.
@@ -15,7 +15,7 @@
 
 ## What this is
 
-A 2016 desktop can't run frontier models the way a datacenter does — so instead of brute force, this project asks *where* every bit and byte should go, and answers it by measurement. The result is four laws, a 30-minute probe tool, copy-paste llama.cpp recipes, and one equation that predicts decode speed from 7B to 744B — validated against its own pre-registered predictions and against [colibri](https://github.com/JustVugg/colibri)'s independently published 744B numbers.
+My 2016 desktop can't run frontier models the way a datacenter does — so instead of brute force, I asked *where* every bit and byte should go, and answered it by measurement. Months of experiments later, the result is four laws, a 30-minute probe tool, copy-paste llama.cpp recipes, and one equation that predicts decode speed from 7B to 744B — validated against my own pre-registered predictions and against [colibri](https://github.com/JustVugg/colibri)'s independently published 744B numbers.
 
 ## Headline results
 
@@ -30,7 +30,7 @@ A 2016 desktop can't run frontier models the way a datacenter does — so instea
 
 ## Why the evidence is unusually strong
 
-Most benchmark posts report what happened. This one reports what was **predicted before it happened** — the strongest form of empirical evidence, and something no comparable project does:
+Most benchmark posts report what happened. I report what I **predicted before it happened** — I wrote the number down, then ran the hardware, and this is the strongest form of empirical evidence I know how to produce:
 
 | prediction (made first) | measured (after) |
 |---|---|
@@ -52,6 +52,30 @@ Full statements, each with its establishing measurement and a falsifiable predic
 
 <p align="center"><img src="weights/data/x_chart_E_scalinglaw.png" width="700" alt="One scaling law, 7B to 744B, predicted vs measured, including colibri's published tiers"></p>
 <p align="center"><img src="weights/data/x_chart_F_tradeoff.png" width="700" alt="Speed vs memory trade-off with the RAM capacity cliff — fewer bits mean less memory and more speed until the model stops fitting"></p>
+
+## The machine — and every speed it ran at
+
+All of this happened on one desktop I already owned. Exact specs, because reproducibility starts with honesty about hardware:
+
+| component | spec | measured bandwidth / effect |
+|---|---|---|
+| CPU | Intel i5-7600K (4c/4t, 2017) | MoE decode saturates at 2 threads (memory-bound, measured) |
+| GPU | GTX 1060 6 GB (Pascal, 2016) | 192 GB/s VRAM · η ≈ 0.35 at ≥4-bit, **0.04 at 2-bit** (decode-util collapse, measured) |
+| RAM | 16 GB DDR4 Corsair Vengeance | **2133 MT/s → 3000 (XMP): dense +52%, MoE +32% — pre-registered ×1.41, measured ×1.52** |
+| SSD | Crucial MX500 (SATA) | 0.45 GB/s sequential (measured) — the 110B streaming tier |
+| PCIe | 3.0 ×16 | 12.2 GB/s host→device (measured) |
+
+The RAM line is the story in miniature: one free BIOS toggle, predicted in advance by the law, delivered within 8% — and it *moved the bottleneck* (the 30B went from bandwidth-bound to capacity-bound, exactly as a tiered system should behave).
+
+### Projections — what the law says the next euro buys
+
+| upgrade | cost | predicted effect |
+|---|---|---|
+| +16 GB used DDR4 | ~€30 | 30B hybrid leaves the RAM boundary → stable ~19–21 tok/s; caches half a 110B |
+| NVMe SSD (Gen3 ×4 is enough — board caps there) | ~€70 | disk tier 0.45 → ~3.5 GB/s: the 110B goes 0.19 → **~1.5 tok/s** |
+| Both | ~€100 | a 2016 desktop serving a 30B at reading speed and a 110B at demo speed |
+
+These are pre-registered the same way everything else here was: when the hardware arrives, the numbers go in this table next to the predictions.
 
 ## Quickstart — zero to chatting, three commands
 
@@ -114,12 +138,12 @@ Different axes, complementary results — [colibri](https://github.com/JustVugg/
 | speed evidence | benchmarks | throughput + logs | **pre-registered predictions, confirmed** |
 | the "why" | — | empirical | **a law that retrodicts both** |
 
-Our concrete, falsifiable offer to colibri (filed as a proposal): a probed 2-bit expert tier should give **~2× on its disk-bound tiers** and ~1.5–1.7× on RAM tiers, quality held by keeping the fragile band at int4.
+My concrete, falsifiable offer to colibri: a probed 2-bit expert tier should give **~2× on its disk-bound tiers** and ~1.5–1.7× on RAM tiers, quality held by keeping the fragile band at int4.
 
 ## Honest limitations
 
-- Perplexity on WikiText-2 is the primary metric; task-level evals (MMLU/HellaSwag) are not yet run.
-- The fragility atlas covers four model families — enough to *disprove* universality, not to chart every architecture.
+- Perplexity on WikiText-2 is my primary metric; I haven't run task-level evals (MMLU/HellaSwag) yet.
+- My fragility atlas covers four model families — enough to *disprove* universality, not to chart every architecture.
 - 0.19 tok/s for a 110B is a **capacity demonstration, not usable inference** — the honest speed only arrives with faster storage.
 - Speed numbers are single-stream decode on one machine (±25% across environments); the tiered-decode η values are fitted, not derived.
 - No custom runtime: everything rides stock llama.cpp and streaming eval harnesses. The one CUDA kernel is verified in reference, not built.
