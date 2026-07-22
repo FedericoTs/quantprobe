@@ -214,6 +214,16 @@ Three honest caveats: (1) 2-bit quality on a 744B is *itself* a probe-first ques
 
 > The day after Laguna S 2.1 (117.6B MoE) launched, I predicted its single-Spark decode from the config alone — **~47 tok/s base, matched within 1%** by the published ×2 per-stream number — and the load-decay curve is the [spec-decode × MoE antagonism](LAWS.md) made visible. Three independent GB10 measurements, three models, one η.
 
+## What measures what (the three verbs people mix up)
+
+| command | what it does | measured or computed? |
+|---|---|---|
+| `plan` / `--machine` | **describes your hardware** — preset or raw `--vram/--ram/...` numbers; prediction is *computed* from the decode law | computed (no run, no cache) |
+| `probe` | **measures your model** — which layers break under low-bit quantization (quality, not speed) | measured (~30 min, llama.cpp) |
+| `bench` | **measures your machine** — real tok/s vs the law's prediction, side by side | measured (llama-bench) |
+
+`--machine` is never learned from `probe` and nothing is cached between them. The only dynamic input: passing `--gguf` calibrates bytes-per-token to your actual file size on disk.
+
 ## A note on llama.cpp versions
 
 quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionally renames flags between releases — while building this I hit four (`--allow-requantize`, `--no-mmap`, `--draft-max`→`--spec-draft-n-max`, `--no-cnv` vs `-no-cnv`). quantprobe targets stable, widely-supported flags, but:

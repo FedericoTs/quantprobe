@@ -130,6 +130,16 @@ quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionall
 - If a `run`/`bench`/`quantize` command errors with *"invalid/unknown argument"*, your llama.cpp is a different vintage — check that binary's `--help` for the current flag name. Use `--dry` to see the exact command quantprobe would run before it runs it.
 - For exact reproduction of the numbers in this repo, use b9596.
 
+## What measures what (the three verbs people mix up)
+
+| command | what it does | measured or computed? |
+|---|---|---|
+| `plan` / `--machine` | **describes your hardware** — preset or raw `--vram/--ram/...` numbers; prediction is *computed* from the decode law | computed (no run, no cache) |
+| `probe` | **measures your model** — which layers break under low-bit quantization (quality, not speed) | measured (~30 min, llama.cpp) |
+| `bench` | **measures your machine** — real tok/s vs the law's prediction, side by side | measured (llama-bench) |
+
+`--machine` is never learned from `probe` and nothing is cached between them. The only dynamic input: passing `--gguf` calibrates bytes-per-token to your actual file size on disk.
+
 ## What each command does
 
 | command | needs llama.cpp? | what it does |
