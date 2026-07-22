@@ -83,9 +83,9 @@ The RAM line is the story in miniature: one free BIOS toggle, predicted in advan
 
 \* The 2026 AI-driven NAND/DRAM shortage has inflated component prices (~2× the 2024 floor) and they're volatile — the used DDR4 market is the value play, and NVMe deals reward patience. The *predictions* don't change with the prices; when the hardware arrives, measured numbers go in this table next to them.
 
-## Quickstart — zero to chatting, three commands
+## Quickstart — from a model to running, a few commands
 
-Prerequisite: [llama.cpp binaries](https://github.com/ggml-org/llama.cpp/releases) on PATH (or pass `--llama-dir`).
+**What's automated vs. what you set up once (honestly):** quantprobe automates the *decisions* — which bits to spend where (compression) and which memory tier serves what (placement). You handle three one-time setup steps: (1) **install [llama.cpp](https://github.com/ggml-org/llama.cpp/releases)** and point quantprobe at it (`--llama-dir`/`QUANTPROBE_LLAMA_DIR`/`PATH`) — not needed for `plan`/`target`/the web calculator; (2) **convert HF safetensors → GGUF** once with llama.cpp's `convert_hf_to_gguf.py` *only if the model has no community GGUF*; (3) **pick a `--machine` preset or pass your specs** — hardware isn't auto-detected yet. The memory-speed strategy itself is applied autonomously; a one-command `quantprobe auto` (auto-detect → convert → compress → run) is on the roadmap. Full guide: [QUICKSTART.md](QUICKSTART.md).
 
 ```bash
 pip install git+https://github.com/FedericoTs/quantprobe   # (PyPI release pending)
