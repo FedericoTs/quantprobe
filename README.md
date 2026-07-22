@@ -11,6 +11,10 @@
 > **▶ Try the interactive calculator: [Will it run — and how fast?](https://federicots.github.io/quantprobe/)**
 > Pick any model + your machine → predicted tok/s, memory fit, quality cost, and your cheapest next upgrade — from the law below, with your config plotted against every validated measurement.
 
+
+**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds.** Two tiers: `plan`/`target` and the web calculator need *nothing* installed; `probe`/`run`/`bench`/`dashboard` drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). Preview any command without llama.cpp using `--dry`.
+
+
 ---
 
 ## What this is

@@ -72,6 +72,30 @@ def t_law_invariants():
     assert vr4 < vr5, "low-bit VRAM eta collapse not applied"
 
 
+def t_llama_commands_parse_and_fail_gracefully():
+    # probe/run/bench/dashboard must ACCEPT their args and fail with a CLEAR message when llama.cpp
+    # is absent — never a traceback. (CI has no llama.cpp; this guarantees the stranger experience.)
+    for args in (
+        ["run", "--gguf", "x.gguf", "--model", "qwen3-30b", "--machine", "2016-xmp", "--dry"],
+        ["bench", "--gguf", "x.gguf", "--model", "qwen3-30b", "--machine", "2016-xmp", "--dry"],
+    ):
+        rc, out = cli(*args)
+        # --dry prints the plan without touching llama.cpp: must succeed and name the placement
+        assert "placement" in out.lower() or "tok/s" in out.lower(), f"{args[0]} --dry broke: {out[:200]}"
+
+def t_probe_help_and_missing_llama_message():
+    rc, out = cli("probe", "--help")
+    assert rc == 0 and "--gguf" in out and "--eval" in out
+    # missing llama.cpp must be a clean SystemExit message, not a traceback
+    rc2, out2 = cli("probe", "--gguf", "nope.gguf", "--eval", "nope.txt", "--llama-dir", "/definitely/not/here")
+    assert "not found" in out2.lower() and "Traceback" not in out2, f"probe missing-llama not graceful: {out2[:200]}"
+
+def t_all_subcommands_present():
+    rc, out = cli("--help")
+    for c in ("plan", "target", "fetch", "probe", "run", "bench", "dashboard"):
+        assert c in out, f"subcommand {c} missing from --help"
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

@@ -58,7 +58,8 @@ def best_flags(a):
 def run(a):
     best, flags = best_flags(a)
     tool = "llama-server" if a.serve else "llama-cli"
-    binp = find_llama(a.llama_dir, tool)
+    # --dry previews the plan + command WITHOUT requiring llama.cpp installed
+    binp = tool if a.dry else find_llama(a.llama_dir, tool)
     cmd = [binp, "-m", a.gguf] + flags
     if not a.serve:
         cmd += ["-cnv"]
@@ -74,7 +75,7 @@ def run(a):
 
 def bench(a):
     best, flags = best_flags(a)
-    binp = find_llama(a.llama_dir, "llama-bench")
+    binp = "llama-bench" if getattr(a, "dry", False) else find_llama(a.llama_dir, "llama-bench")
     # llama-bench uses --mmap 0 rather than --no-mmap
     bflags = ["--mmap", "0" if "--no-mmap" in flags else "1"]
     for i, f in enumerate(flags):
