@@ -13,5 +13,5 @@ Run `quantprobe probe --gguf <model-f16.gguf> --eval wiki.test.raw` on a model f
 A model whose fragile end breaks the current pattern is a finding, not a failure.
 
 ## Code
-PRs welcome for the `quantprobe` package (keep `python tests/smoke.py` green). For claims/laws,
+PRs welcome for the `quantprobe` package (plan/target/fetch/quantize/probe/run/bench/dashboard) (keep `python tests/smoke.py` green). For claims/laws,
 open an issue with data first — the bar for prose is measurements.

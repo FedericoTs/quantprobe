@@ -12,7 +12,7 @@
 > Pick any model + your machine → predicted tok/s, memory fit, quality cost, and your cheapest next upgrade — from the law below, with your config plotted against every validated measurement.
 
 
-**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds.** Two tiers: `plan`/`target` and the web calculator need *nothing* installed; `probe`/`run`/`bench`/`dashboard` drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). Preview any command without llama.cpp using `--dry`.
+**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds.** Two tiers: `plan`/`target` and the web calculator need *nothing* installed; `quantize`/`probe`/`run`/`bench`/`dashboard` drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). Preview any command without llama.cpp using `--dry`. 16 machine presets ship in (`--machine`): GTX 1060 → RTX 5090, Apple `mac-m2/m3/m4-*`, DGX Spark, Epyc — or pass raw specs.
 
 
 ---
@@ -104,9 +104,12 @@ pip install git+https://github.com/FedericoTs/quantprobe
 Three commands, each implementing a law:
 
 ```bash
-quantprobe plan  --model qwen3-30b --machine 2016-xmp     # Law 4: best placement + predicted tok/s + the command
-quantprobe fetch unsloth/Qwen3-30B-A3B-GGUF ./models Qwen3-30B-A3B-Q2_K.gguf   # robust download
-quantprobe run   --gguf model.gguf --model qwen3-30b --machine 2016-xmp        # plan, then LAUNCH llama.cpp chat with the optimal flags
+quantprobe plan     --model qwen3-30b --machine 2016-xmp   # Law 4: best placement + predicted tok/s + the command
+quantprobe target   --tps 5 --machine gaming --ladder     # inverse: tok/s target -> smartest model + ladder
+quantprobe fetch    unsloth/Qwen3-30B-A3B-GGUF ./models Qwen3-30B-A3B-Q2_K.gguf   # robust download
+quantprobe quantize --gguf model-f16.gguf --out model-2bit.gguf   # COMPRESS: build a depth-aware ~2-bit GGUF
+quantprobe run      --gguf model.gguf --model qwen3-30b --machine 2016-xmp        # plan, then LAUNCH llama.cpp chat
+quantprobe bench    --gguf model.gguf --model qwen3-30b --machine 2016-xmp --contribute   # measure + optionally share a data point
 quantprobe bench --gguf model.gguf --model qwen3-30b --machine 2016-xmp        # measure YOUR box: predicted vs measured, file-calibrated
 quantprobe probe --gguf model-f16.gguf --eval wiki.test.raw                    # Law 3: fragility curve -> depth-aware recipe
 quantprobe dashboard --gguf model.gguf --model qwen3-30b --machine 2016-xmp    # THE LAW, LIVE: chat in your browser while every reply is scored predicted-vs-measured
