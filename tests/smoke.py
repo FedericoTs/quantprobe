@@ -96,11 +96,14 @@ def t_all_subcommands_present():
         assert c in out, f"subcommand {c} missing from --help"
 
 
-def t_quantize_dry_no_llama():
-    # quantize --dry must preview the command even with NO/bad llama.cpp (accessibility)
-    rc, out = cli("quantize", "--gguf", "x.gguf", "--out", "o.gguf", "--llama-dir", "/definitely/not/here",
-                  "--protect-late", "12", "--dry")
-    assert "building depth-aware" in out.lower() and "Traceback" not in out, f"quantize --dry broke: {out[:200]}"
+def t_quantize_missing_file_graceful():
+    # quantize on a missing GGUF must give a CLEAN error, never a traceback
+    rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")
+    assert "not found" in out.lower() and "Traceback" not in out, f"quantize missing-file not graceful: {out[:200]}"
+
+def t_quantize_help():
+    rc, out = cli("quantize", "--help")
+    assert rc == 0 and "--gguf" in out and "--protect-late" in out
 
 def t_version():
     import quantprobe

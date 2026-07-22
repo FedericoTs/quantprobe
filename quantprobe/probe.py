@@ -138,6 +138,8 @@ def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
 
 def quantize(a):
     """Standalone compress: build a depth-aware GGUF from an explicit band (no probing)."""
+    if not os.path.isfile(a.gguf):
+        raise SystemExit(f"GGUF not found: {a.gguf}  (point --gguf at a real high-precision GGUF: f16/bf16/Q8)")
     n_lay = n_layers(a.gguf)
     if a.protect:
         lo, hi = (int(x) for x in a.protect.split("-"))
