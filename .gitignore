@@ -46,3 +46,4 @@ tools/llama.cpp-src/build*/
 build/
 dist/
 *.egg-info/
+weights/data/community_etas.json

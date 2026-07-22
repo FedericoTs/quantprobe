@@ -62,5 +62,22 @@ fig.text(0.07, 0.915, "tok/s = η · bandwidth ÷ active-bytes per token — cir
 leg = [plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=c, markersize=11, label=t) for t, c in COL.items()]
 ax.legend(handles=leg, frameon=False, fontsize=11, loc="upper left")
 fig.subplots_adjust(left=0.09, right=0.96, top=0.87, bottom=0.09)
+
+# overlay community-contributed points (from quantprobe bench --contribute -> ingest_datapoints.py)
+import json as _json
+_cf = os.path.join(DATA, "community_etas.json")
+if os.path.exists(_cf):
+    try:
+        _cpts = _json.load(open(_cf))
+        for _p in _cpts:
+            ax.scatter([_p["predicted"]], [_p["measured"]], s=90, facecolor="none",
+                       edgecolor="#e8901c", lw=2, marker="^", zorder=4)
+        if _cpts:
+            ax.scatter([], [], s=90, facecolor="none", edgecolor="#e8901c", lw=2, marker="^",
+                       label=f"community ({len(_cpts)})")
+            ax.legend(frameon=False, fontsize=10.5, loc="upper left")
+    except Exception:
+        pass
+
 fig.savefig(os.path.join(DATA, "x_chart_E_scalinglaw.png"), facecolor="white")
 print("saved x_chart_E_scalinglaw.png")

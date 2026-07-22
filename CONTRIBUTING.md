@@ -3,7 +3,7 @@
 The most valuable contribution is a **measurement**. This project runs on falsifiable numbers.
 
 ## Contribute an η data point (10 minutes)
-Run `quantprobe bench --gguf <model> --model <preset> [--vram N --vram-bw N --ram N --ram-bw N --disk-bw N]`
+Easiest path: `quantprobe bench ... --contribute` prints a pre-filled, opt-in issue (you review before submitting; nothing auto-sent). Or manually: run `quantprobe bench --gguf <model> --model <preset> [--vram N --vram-bw N --ram N --ram-bw N --disk-bw N]`
 and open an issue with the "η data point" template: your hardware, the model/bits, predicted vs measured.
 Points that land outside the bands are MORE valuable than ones that confirm them.
 

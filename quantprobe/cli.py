@@ -54,6 +54,7 @@ def main():
     b = sub.add_parser("bench", help="measure real tok/s with the planned flags; print predicted vs measured")
     b.add_argument("--gguf", required=True); hwargs(b)
     b.add_argument("--reps", type=int, default=3)
+    b.add_argument("--contribute", action="store_true", help="print a pre-filled, opt-in GitHub issue with your predicted-vs-measured point (you review before submitting; nothing auto-sent)")
 
     d = sub.add_parser("dashboard", help="launch llama-server with planned flags + a live predicted-vs-measured chat page")
     d.add_argument("--gguf", required=True); hwargs(d)

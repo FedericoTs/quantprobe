@@ -88,6 +88,16 @@ quantprobe probe --gguf your-model-f16.gguf --eval wiki.test.raw
 
 ---
 
+## Help grow the law (optional, opt-in)
+
+Every `bench` is a test of the tiered decode law on hardware I may never have touched. If you want to contribute your point:
+
+```bash
+quantprobe bench --gguf model.gguf --model qwen3-30b --machine mac-m2-ultra --contribute
+```
+
+It prints **exactly** what would be shared — your hardware label, model, predicted vs measured tok/s — and a pre-filled GitHub issue link. You review it, edit if you like, and submit. **Nothing is ever sent automatically; no system scan, no IP, no hidden fields.** Contributed points get plotted on the law chart (orange triangles) — and points that miss the prediction are the *most* valuable, because they sharpen the law. That's the whole feedback loop: measure → review → submit → the law improves.
+
 ## What each command does
 
 | command | needs llama.cpp? | what it does |

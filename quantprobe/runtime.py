@@ -101,8 +101,12 @@ def bench(a):
         delta = (meas / best[1] - 1) * 100 if best[1] else 0
         print(f"\n[quantprobe] measured: {meas:.2f} +/- {err:.2f} tok/s "
               f"(predicted {best[1]:.1f}, {delta:+.0f}%)")
-        print("[quantprobe] the tiered decode law just ran on your machine. "
-              "Share your point: github.com/FedericoTs/quantprobe")
+        if getattr(a, "contribute", False):
+            _emit_contribution(a, best, meas, err, delta)
+        else:
+            print("[quantprobe] the tiered decode law just ran on your machine.")
+            print("[quantprobe] help grow the law: re-run with --contribute for a one-click, "
+                  "pre-filled data point (you review it first; nothing is sent automatically).")
     else:
         print("\n[quantprobe] could not parse llama-bench output; raw tail:")
         print("\n".join(txt.strip().splitlines()[-6:]))
@@ -125,3 +129,30 @@ def tier_view(a, best):
     if name.startswith("pure CPU"):
         return [("VRAM (idle)", vc, 0), ("RAM", rc, size)]
     return [("RAM (cache)", rc, rc - 4), ("disk (streaming)", max(size * 1.2, 1), size)]
+
+
+def _emit_contribution(a, best, meas, err, delta):
+    import urllib.parse
+    from . import __version__
+    hw = (dict(planmod.MACHINES.get(getattr(a, "machine", "") or "", {})).get("hint")
+          or f"vram={a.vram} vram_bw={a.vram_bw} ram={a.ram} ram_bw={a.ram_bw} disk_bw={a.disk_bw}")
+    model = getattr(a, "model", None) or f"total={a.total} active={a.active}"
+    lines = [
+        f"hardware: {hw}",
+        f"model: {model} @ {a.bits:g}-bit",
+        f"placement: {best[0]}",
+        f"predicted: {best[1]:.1f} tok/s",
+        f"measured: {meas:.2f} +/- {err:.2f} tok/s ({delta:+.0f}%)",
+        f"quantprobe: v{__version__}",
+        "",
+        "Notes (optional): ",
+    ]
+    body = "\n".join(lines)
+    title = f"[eta] {model} {a.bits:g}-bit on {str(hw)[:40]}"
+    url = ("https://github.com/FedericoTs/quantprobe/issues/new?labels=eta-datapoint"
+           f"&title={urllib.parse.quote(title)}&body={urllib.parse.quote(body)}")
+    print("\n[quantprobe] Contribute this data point (OPT-IN). It contains ONLY what you see below --")
+    print("             no system scan, no IP, nothing auto-collected. Review, then submit:\n")
+    print(body)
+    print("\n  Open to submit (you can edit first):\n  " + url + "\n")
+    print("  Points that land OUTSIDE the predicted bands are the most valuable -- they refine the law.")
