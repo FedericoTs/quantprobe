@@ -80,11 +80,23 @@ quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf --model qwen3-30b --machi
 quantprobe bench --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf --model qwen3-30b --machine 2016-xmp
 ```
 
-Want a better quant than the community default? Probe your model's fragile layers (~30 min) and get a copy-paste recipe:
+### Make your own compressed model (the full pipeline)
 
 ```bash
-quantprobe probe --gguf your-model-f16.gguf --eval wiki.test.raw
+# A. compress directly — protect the last 12 layers (good default for most late-fragile models)
+quantprobe quantize --gguf your-model-f16.gguf --out your-model-2bit.gguf
+#    -> produces a depth-aware ~2-bit GGUF you can run immediately
+
+# B. or probe first (measure YOUR model's fragile band, ~30 min) then build it in one step
+quantprobe probe --gguf your-model-f16.gguf --eval wiki.test.raw --apply --out your-model-2bit.gguf
+
+# C. then run it
+quantprobe run --gguf your-model-2bit.gguf --model <preset> --machine <preset>
 ```
+
+`quantize` and `probe --apply` **actually build the file** (they run llama.cpp's quantizer for you) — you don't copy-paste anything. `--dry` shows the exact command first if you want to inspect it.
+
+**Starting from a HuggingFace model (safetensors)?** Convert it to a high-precision GGUF once with llama.cpp's `convert_hf_to_gguf.py` (ships in the [llama.cpp repo](https://github.com/ggml-org/llama.cpp)), then feed that `.gguf` to `quantize`/`probe`. A one-command `quantprobe convert` wrapper is on the roadmap.
 
 ---
 
@@ -105,7 +117,8 @@ It prints **exactly** what would be shared — your hardware label, model, predi
 | `plan` | no | predict decode speed + best placement for a model on your machine |
 | `target` | no | inverse: give a tok/s target, get the smartest model + a speed↔intelligence ladder |
 | `fetch` | no (network) | robust model download (resumes, retries) |
-| `probe` | **yes** | measure a model's fragility curve → emit the depth-aware quant recipe |
+| `quantize` | **yes** | **compress**: build a depth-aware ~2-bit GGUF (protect the fragile band, rest 2-bit) |
+| `probe` | **yes** | measure a model's fragility curve → emit (or `--apply` to build) the depth-aware GGUF |
 | `run` | **yes** | plan the placement, then launch llama.cpp chat with those flags |
 | `bench` | **yes** | measure real tok/s and print predicted-vs-measured |
 | `dashboard` | **yes** | a local web page: chat while every reply is scored against the prediction |

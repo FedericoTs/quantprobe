@@ -23,6 +23,8 @@ def main():
     p.add_argument("--ngl", type=int, default=99, help="GPU layers for perplexity (0 for CPU)")
     p.add_argument("--workdir", default=None)
     p.add_argument("--llama-dir", default=None, help="dir containing llama-quantize/llama-perplexity")
+    p.add_argument("--apply", action="store_true", help="after probing, BUILD the recommended depth-aware GGUF")
+    p.add_argument("--out", default=None, help="output path for --apply (default: <model>-depthaware.gguf)")
     p.add_argument("--dry-run", action="store_true")
 
     q = sub.add_parser("plan", help="evaluate every bit/tier placement, predict tok/s (Law 4)")
@@ -66,6 +68,14 @@ def main():
     hwargs(g)
     g.add_argument("--ladder", action="store_true", help="print the full speed-vs-intelligence ladder")
 
+    z = sub.add_parser("quantize", help="COMPRESS: build a depth-aware GGUF from a model (protect the fragile band, rest 2-bit)")
+    z.add_argument("--gguf", required=True, help="high-precision source GGUF (f16/bf16/Q8)")
+    z.add_argument("--out", default=None, help="output path (default: <model>-depthaware.gguf)")
+    z.add_argument("--protect-late", type=int, default=12, help="protect the last N layers at 4-bit (default 12)")
+    z.add_argument("--protect", default=None, help="protect an explicit band LO-HI (e.g. 36-47) instead of --protect-late")
+    z.add_argument("--llama-dir", default=None)
+    z.add_argument("--dry", action="store_true")
+
     f = sub.add_parser("fetch", help="robust HF download (Range-resume, retry)")
     f.add_argument("repo", help="HF repo, or a preset: qwen3-30b, glm-air, deepseek-16b, qwen3-0.6b"); f.add_argument("dest"); f.add_argument("files", nargs="*")
 
@@ -88,6 +98,9 @@ def main():
     elif a.cmd == "target":
         from . import target
         target.run(a)
+    elif a.cmd == "quantize":
+        from . import probe
+        probe.quantize(a)
     else:
         from . import fetch
         fetch.run(a)

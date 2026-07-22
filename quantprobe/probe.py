@@ -98,3 +98,49 @@ def run(a):
     print(f'  llama-quantize {flags} --tensor-type "{band_regex(lo, hi)}=q4_k" '
           f'--tensor-type "attn_.*=q4_k" --token-embedding-type q4_k \\\n'
           f'    {os.path.basename(a.gguf)} out-depthaware.gguf Q2_K 8', flush=True)
+    if getattr(a, "apply", False):
+        out = a.out or os.path.splitext(a.gguf)[0] + "-depthaware.gguf"
+        print("\n[quantprobe] --apply: building the recommended GGUF now...", flush=True)
+        build_depthaware(a.llama_dir, a.gguf, out, lo, hi, bands[-1][1] + 1, dry=a.dry_run)
+    else:
+        print("\n  (re-run with  --apply --out model-2bit.gguf  to BUILD this GGUF automatically)", flush=True)
+
+
+def _band_re(lo, hi):
+    return "blk\\.(" + "|".join(str(i) for i in range(lo, hi + 1)) + ")\\.ffn_.*"
+
+
+def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
+                     base="Q2_K", protect="q4_k", dry=False):
+    """Actually PRODUCE the compressed GGUF: base bits everywhere, fragile band + attention + embed protected."""
+    q = os.path.join(find_llama(llama_dir), exe("llama-quantize"))
+    cmd = [q, "--allow-requantize"]
+    if protect_lo > 0:
+        cmd += ["--tensor-type", f"{_band_re(0, protect_lo - 1)}=q2_k"]
+    if protect_hi < n_lay - 1:
+        cmd += ["--tensor-type", f"{_band_re(protect_hi + 1, n_lay - 1)}=q2_k"]
+    cmd += ["--tensor-type", f"{_band_re(protect_lo, protect_hi)}={protect}",
+            "--tensor-type", "attn_.*=q4_k", "--token-embedding-type", "q4_k",
+            src, out, base, "8"]
+    print(f"[quantprobe] building depth-aware GGUF: protect layers {protect_lo}-{protect_hi} @ {protect}")
+    print("  $ " + " ".join(cmd))
+    if dry:
+        return out
+    rc = subprocess.call(cmd)
+    if rc == 0 and os.path.exists(out):
+        print(f"[quantprobe] done -> {out} ({os.path.getsize(out)/1e9:.2f} GB). "
+              f"Run it:  quantprobe run --gguf {out} --model <preset> --machine <preset>")
+    else:
+        print(f"[quantprobe] quantize failed (exit {rc}).")
+    return out
+
+
+def quantize(a):
+    """Standalone compress: build a depth-aware GGUF from an explicit band (no probing)."""
+    n_lay = n_layers(a.gguf)
+    if a.protect:
+        lo, hi = (int(x) for x in a.protect.split("-"))
+    else:
+        lo, hi = n_lay - a.protect_late, n_lay - 1
+    out = a.out or os.path.splitext(a.gguf)[0] + "-depthaware.gguf"
+    build_depthaware(a.llama_dir, a.gguf, out, lo, hi, n_lay, dry=getattr(a, "dry", False))
