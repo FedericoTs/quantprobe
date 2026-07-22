@@ -113,7 +113,8 @@ def _band_re(lo, hi):
 def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
                      base="Q2_K", protect="q4_k", dry=False):
     """Actually PRODUCE the compressed GGUF: base bits everywhere, fragile band + attention + embed protected."""
-    q = os.path.join(find_llama(llama_dir), exe("llama-quantize"))
+    # --dry previews the exact command WITHOUT requiring llama.cpp installed
+    q = exe("llama-quantize") if dry else os.path.join(find_llama(llama_dir), exe("llama-quantize"))
     cmd = [q, "--allow-requantize"]
     if protect_lo > 0:
         cmd += ["--tensor-type", f"{_band_re(0, protect_lo - 1)}=q2_k"]

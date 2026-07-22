@@ -96,6 +96,12 @@ def t_all_subcommands_present():
         assert c in out, f"subcommand {c} missing from --help"
 
 
+def t_quantize_dry_no_llama():
+    # quantize --dry must preview the command even with NO/bad llama.cpp (accessibility)
+    rc, out = cli("quantize", "--gguf", "x.gguf", "--out", "o.gguf", "--llama-dir", "/definitely/not/here",
+                  "--protect-late", "12", "--dry")
+    assert "building depth-aware" in out.lower() and "Traceback" not in out, f"quantize --dry broke: {out[:200]}"
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__
