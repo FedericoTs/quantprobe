@@ -91,6 +91,7 @@ def bench(a):
     print("[quantprobe] bench:", " ".join(cmd))
     if a.dry:
         return
+    print("[quantprobe] benchmarking (30-90s; llama-bench runs quietly, then prints the number)...", flush=True)
     out = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
     txt = out.stdout + out.stderr
     mm = re.findall(r"tg\d+\s*\|\s*([0-9.]+)\s*(?:Â?±|\+/-)\s*([0-9.]+)", txt)

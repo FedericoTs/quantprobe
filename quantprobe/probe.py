@@ -46,7 +46,7 @@ def sh(cmd, dry, capture=False):
 
 
 def ppl(perp, gguf, eval_file, chunks, ngl, dry):
-    print("  $", perp, "-m", gguf, "-f", eval_file, "--chunks", str(chunks), "-ngl", str(ngl), flush=True)
+    print(f"  measuring perplexity on {chunks} chunks (this can take 1-3 min; llama.cpp is quiet while it works)...", flush=True)
     if dry:
         return None
     p = subprocess.run([perp, "-m", gguf, "-f", eval_file, "--chunks", str(chunks), "-ngl", str(ngl)],
