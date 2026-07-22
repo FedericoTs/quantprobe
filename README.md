@@ -204,6 +204,10 @@ Three honest caveats: (1) 2-bit quality on a 744B is *itself* a probe-first ques
 
 <p align="center"><img src="weights/data/x_chart_G_744b.png" width="720" alt="Running a 744B at home: cost versus speed, measured points versus pre-registered predictions, with the placement dividend shown at fixed cost"></p>
 
+<p align="center"><img src="weights/data/x_chart_H_laguna.png" width="720" alt="The tiered decode law predicted Laguna S 2.1 decode within 1% from its config alone; the spec-decode x MoE antagonism explains the decay under load"></p>
+
+> The day after Laguna S 2.1 (117.6B MoE) launched, I predicted its single-Spark decode from the config alone — **~47 tok/s base, matched within 1%** by the published ×2 per-stream number — and the load-decay curve is the [spec-decode × MoE antagonism](LAWS.md) made visible. Three independent GB10 measurements, three models, one η.
+
 ## Honest limitations
 
 - Perplexity on WikiText-2 is my primary metric; I haven't run task-level evals (MMLU/HellaSwag) yet.
