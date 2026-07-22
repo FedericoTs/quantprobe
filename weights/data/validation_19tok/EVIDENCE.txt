@@ -1,0 +1,29 @@
+﻿# Public validation bundle: Qwen3-30B-A3B @ ~19 tok/s on a 2016 desktop
+# Generated: 2026-07-23 01:44 local. Every section below is raw tool output.
+
+== 1. HARDWARE (raw OS/driver queries) ==
+--- CPU ---
+Intel(R) Core(TM) i5-7600K CPU @ 3.80GHz
+--- RAM sticks: size / configured speed ---
+8GB @ 3000 MT/s (Corsair)
+8GB @ 3000 MT/s (Corsair)
+--- GPU (nvidia-smi) ---
+NVIDIA GeForce GTX 1060 6GB, 6144 MiB, 582.28
+
+== 2. MODEL FILE (identity + hash) ==
+file: Qwen3-30B-A3B-Q2_K.gguf  size_bytes: 11258610240
+sha256:
+DB3CE897CCC9E7D9DBF17FE083CAE7880A2092AA473B45EBA8B77715AA9CA170
+
+== 3. THE RUN - raw llama-bench output, unedited (build + device rows are llama-bench's own) ==
+command: llama-bench -m Qwen3-30B-A3B-Q2_K.gguf -n 32 -p 0 -r 5 --mmap 0 -ngl 99 -ot exps=CPU
+| model                          |       size |     params | backend    | ngl | ot                    | mmap |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------------- | ---: | --------------: | -------------------: |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |            tg32 |         19.26 ± 0.45 |
+
+build: 18ef86ece (9596)
+
+== 4. REPRODUCE IT YOURSELF ==
+pip install git+https://github.com/FedericoTs/quantprobe
+quantprobe bench --gguf <same-file> --model qwen3-30b --machine 2016-xmp --reps 5
+Any GTX-1060-class GPU + dual-channel DDR4 box should land 17-21 tok/s. If yours doesn't, open an issue - that datapoint improves the law.
