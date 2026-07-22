@@ -122,6 +122,14 @@ quantprobe bench --gguf model.gguf --model qwen3-30b --machine mac-m2-ultra --co
 
 It prints **exactly** what would be shared — your hardware label, model, predicted vs measured tok/s — and a pre-filled GitHub issue link. You review it, edit if you like, and submit. **Nothing is ever sent automatically; no system scan, no IP, no hidden fields.** Contributed points get plotted on the law chart (orange triangles) — and points that miss the prediction are the *most* valuable, because they sharpen the law. That's the whole feedback loop: measure → review → submit → the law improves.
 
+## A note on llama.cpp versions
+
+quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionally renames flags between releases — while building this I hit four (`--allow-requantize`, `--no-mmap`, `--draft-max`→`--spec-draft-n-max`, `--no-cnv` vs `-no-cnv`). quantprobe targets stable, widely-supported flags, but:
+
+- **Validated on llama.cpp build b9596+** (needs `--tensor-type` regex support in `llama-quantize`).
+- If a `run`/`bench`/`quantize` command errors with *"invalid/unknown argument"*, your llama.cpp is a different vintage — check that binary's `--help` for the current flag name. Use `--dry` to see the exact command quantprobe would run before it runs it.
+- For exact reproduction of the numbers in this repo, use b9596.
+
 ## What each command does
 
 | command | needs llama.cpp? | what it does |

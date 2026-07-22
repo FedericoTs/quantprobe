@@ -215,6 +215,14 @@ Three honest caveats: (1) 2-bit quality on a 744B is *itself* a probe-first ques
 
 > The day after Laguna S 2.1 (117.6B MoE) launched, I predicted its single-Spark decode from the config alone — **~47 tok/s base, matched within 1%** by the published ×2 per-stream number — and the load-decay curve is the [spec-decode × MoE antagonism](LAWS.md) made visible. Three independent GB10 measurements, three models, one η.
 
+## A note on llama.cpp versions
+
+quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionally renames flags between releases — while building this I hit four (`--allow-requantize`, `--no-mmap`, `--draft-max`→`--spec-draft-n-max`, `--no-cnv` vs `-no-cnv`). quantprobe targets stable, widely-supported flags, but:
+
+- **Validated on llama.cpp build b9596+** (needs `--tensor-type` regex support in `llama-quantize`).
+- If a `run`/`bench`/`quantize` command errors with *"invalid/unknown argument"*, your llama.cpp is a different vintage — check that binary's `--help` for the current flag name. Use `--dry` to see the exact command quantprobe would run before it runs it.
+- For exact reproduction of the numbers in this repo, use b9596.
+
 ## Honest limitations
 
 - Perplexity on WikiText-2 is my primary metric; I haven't run task-level evals (MMLU/HellaSwag) yet.
