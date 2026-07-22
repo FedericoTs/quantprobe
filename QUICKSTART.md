@@ -35,8 +35,26 @@ Don't have a preset for your machine? Pass raw numbers:
 quantprobe plan --model qwen3-30b --vram 8 --vram-bw 300 --ram 32 --ram-bw 50 --disk-bw 2
 ```
 
-**Machine presets:** `2016-xmp` `2016` `gaming` `ddr5` `colibri`
-**Model presets:** `qwen3-30b` `deepseek-16b` `gemma-12b` `mistral-7b` `glm-air` `glm-744b` (or use `--total/--active/--always-active` for any model)
+**Machine presets** (`--machine`): `2016-xmp` `2016` `rtx-3060` `rtx-3090` `rtx-4090` `rtx-5090` `laptop-8gb` `mac-m2-max` `mac-m3-max` `mac-m4-max` `mac-m2-ultra` `mac-m3-ultra` `ddr5` `colibri` `epyc-256` `dgx-spark`
+**Model presets** (`--model`): `qwen3-30b` `deepseek-16b` `gemma-12b` `mistral-7b` `glm-air` `glm-744b`
+
+> Presets marked `[est]` are the law's predictions on hardware I haven't personally measured (Mac numbers especially — I've never run one). They're falsifiable: run `quantprobe bench` on your box and [open an issue](https://github.com/FedericoTs/quantprobe/issues) with predicted-vs-measured. Only `2016*` are measured by me; `dgx-spark` is validated against published benchmarks.
+
+### Don't know your numbers? (for `--vram-bw` / `--ram-bw`)
+
+You rarely need these — pick the closest preset above. But if you go custom, here are the common ones (GB/s):
+
+| your hardware | memory bandwidth |
+|---|---|
+| DDR4-2400 / 3200 dual-channel | ~38 / ~51 |
+| DDR5-4800 / 6400 dual-channel | ~77 / ~102 |
+| GTX 1060 / RTX 3060 / 3090 / 4090 / 5090 (VRAM) | 192 / 360 / 936 / 1008 / 1792 |
+| Apple M2/M3 Max · M2 Ultra · M3/M4 Ultra (unified) | ~400 · 800 · ~819 |
+| SATA SSD / NVMe Gen3 / Gen4 (disk) | ~0.5 / ~3.5 / ~7 |
+
+### Multi-GPU / multi-device?
+
+quantprobe models a single device. For tensor-parallel rigs (e.g. 2× 3090, or a DGX cluster), approximate: set `--vram` to the **summed** VRAM and `--vram-bw` to the **aggregate** bandwidth (the law held on a 4× DGX Spark cluster this way — its published number lands in the eta bands).
 
 ---
 

@@ -16,12 +16,30 @@ MODELS = {
     "glm-air":    dict(t=110,  a=12,   ne=2.7,  moe=True,  hint="GLM-4.5-Air 106B"),
     "glm-744b":   dict(t=744,  a=32,   ne=8,    moe=True,  hint="GLM-5.2 744B"),
 }
+# eta values: MEASURED on 2016-xmp/2016 (my box); ESTIMATED for the rest (help validate: run `quantprobe bench`).
+# Mac uses unified memory -> modeled as one high-bandwidth pool the GPU serves from (the "all in VRAM" path).
 MACHINES = {
-    "2016-xmp":   dict(vc=6,  vb=192, rc=16,  rb=48, db=0.45, geta=0.35, gl=0.04, hint="2016 desktop, XMP on"),
-    "2016":       dict(vc=6,  vb=192, rc=16,  rb=34, db=0.45, geta=0.35, gl=0.04, hint="2016 desktop, XMP off"),
-    "gaming":     dict(vc=12, vb=360, rc=32,  rb=51, db=3.5,  geta=0.5,  gl=0.3,  hint="RTX 3060 + DDR4-3200"),
-    "ddr5":       dict(vc=0,  vb=0,   rc=64,  rb=80, db=5,    geta=0.5,  gl=0.3,  hint="modern DDR5, no GPU"),
-    "colibri":    dict(vc=0,  vb=0,   rc=128, rb=60, db=5,    geta=0.5,  gl=0.3,  hint="128 GB DDR5"),
+    # --- measured on my hardware ---
+    "2016-xmp":    dict(vc=6,  vb=192,  rc=16,  rb=48,  db=0.45, geta=0.35, gl=0.04, hint="2016 desktop (GTX 1060 6GB), XMP on [measured]"),
+    "2016":        dict(vc=6,  vb=192,  rc=16,  rb=34,  db=0.45, geta=0.35, gl=0.04, hint="2016 desktop, XMP off [measured]"),
+    # --- estimated: consumer GPUs ---
+    "rtx-3060":    dict(vc=12, vb=360,  rc=32,  rb=51,  db=3.5,  geta=0.5,  gl=0.3,  hint="RTX 3060 12GB + DDR4-3200 [est]"),
+    "rtx-3090":    dict(vc=24, vb=936,  rc=64,  rb=51,  db=3.5,  geta=0.6,  gl=0.4,  hint="RTX 3090 24GB + DDR4 [est]"),
+    "rtx-4090":    dict(vc=24, vb=1008, rc=64,  rb=83,  db=5,    geta=0.62, gl=0.42, hint="RTX 4090 24GB + DDR5 [est]"),
+    "rtx-5090":    dict(vc=32, vb=1792, rc=64,  rb=90,  db=5,    geta=0.62, gl=0.42, hint="RTX 5090 32GB + DDR5 [est]"),
+    "laptop-8gb":  dict(vc=8,  vb=256,  rc=16,  rb=45,  db=2,    geta=0.45, gl=0.28, hint="gaming laptop, 8GB GPU + DDR5 [est]"),
+    "gaming":      dict(vc=12, vb=360,  rc=32,  rb=51,  db=3.5,  geta=0.5,  gl=0.3,  hint="RTX 3060 12GB + DDR4-3200 [est] (alias of rtx-3060)"),
+    # --- estimated: Apple Silicon (unified memory; I have NOT measured a Mac - these are predictions) ---
+    "mac-m2-max":  dict(vc=64,  vb=400, rc=8,   rb=400, db=5,    geta=0.26, gl=0.24, hint="Mac M2 Max, 400 GB/s unified [est, unvalidated]"),
+    "mac-m3-max":  dict(vc=96,  vb=400, rc=8,   rb=400, db=5,    geta=0.26, gl=0.24, hint="Mac M3 Max, 400 GB/s unified [est, unvalidated]"),
+    "mac-m4-max":  dict(vc=128, vb=546, rc=8,   rb=546, db=5,    geta=0.26, gl=0.24, hint="Mac M4 Max, 546 GB/s unified [est, unvalidated]"),
+    "mac-m2-ultra":dict(vc=192, vb=800, rc=8,   rb=800, db=5,    geta=0.25, gl=0.23, hint="Mac M2 Ultra, 800 GB/s unified [est, unvalidated]"),
+    "mac-m3-ultra":dict(vc=512, vb=819, rc=8,   rb=819, db=5,    geta=0.25, gl=0.23, hint="Mac M3 Ultra 512GB, 819 GB/s [est, unvalidated]"),
+    # --- estimated: big-RAM / server ---
+    "ddr5":        dict(vc=0,  vb=0,    rc=64,  rb=80,  db=5,    geta=0.5,  gl=0.3,  hint="modern desktop DDR5, no GPU [est]"),
+    "colibri":     dict(vc=0,  vb=0,    rc=128, rb=60,  db=5,    geta=0.5,  gl=0.3,  hint="128 GB DDR5 workstation [est]"),
+    "epyc-256":    dict(vc=0,  vb=0,    rc=256, rb=200, db=5,    geta=0.5,  gl=0.3,  hint="Epyc/Threadripper, 256GB, ~200 GB/s [est]"),
+    "dgx-spark":   dict(vc=128,vb=273,  rc=8,   rb=273, db=5,    geta=0.79, gl=0.6,  hint="NVIDIA DGX Spark / GB10, 128GB unified [validated vs published]"),
 }
 QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00},
         False: {2.0: 1.45, 2.5: 1.30, 3.0: 1.12, 4.5: 1.03, 6.5: 1.01, 8.5: 1.00}}
