@@ -79,7 +79,7 @@ The commands that touch real weights (`probe`, `run`, `bench`, `dashboard`) driv
 
 If quantprobe can't find llama.cpp it tells you exactly this — it never fails silently.
 
-Then, zero to chatting:
+Then, from model to chatting (llama.cpp installed above):
 
 ```bash
 # 1. download a known-good model (robust, resumes if interrupted)

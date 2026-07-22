@@ -101,18 +101,17 @@ That last command plans the optimal placement for your machine, prints the predi
 pip install git+https://github.com/FedericoTs/quantprobe
 ```
 
-Three commands, each implementing a law:
+Eight commands. `plan`/`target` need nothing installed; the rest drive llama.cpp:
 
 ```bash
 quantprobe plan     --model qwen3-30b --machine 2016-xmp   # Law 4: best placement + predicted tok/s + the command
-quantprobe target   --tps 5 --machine gaming --ladder     # inverse: tok/s target -> smartest model + ladder
+quantprobe target   --tps 5 --machine gaming --ladder      # inverse: tok/s target -> smartest model + ladder
 quantprobe fetch    unsloth/Qwen3-30B-A3B-GGUF ./models Qwen3-30B-A3B-Q2_K.gguf   # robust download
-quantprobe quantize --gguf model-f16.gguf --out model-2bit.gguf   # COMPRESS: build a depth-aware ~2-bit GGUF
-quantprobe run      --gguf model.gguf --model qwen3-30b --machine 2016-xmp        # plan, then LAUNCH llama.cpp chat
-quantprobe bench    --gguf model.gguf --model qwen3-30b --machine 2016-xmp --contribute   # measure + optionally share a data point
-quantprobe bench --gguf model.gguf --model qwen3-30b --machine 2016-xmp        # measure YOUR box: predicted vs measured, file-calibrated
-quantprobe probe --gguf model-f16.gguf --eval wiki.test.raw                    # Law 3: fragility curve -> depth-aware recipe
-quantprobe dashboard --gguf model.gguf --model qwen3-30b --machine 2016-xmp    # THE LAW, LIVE: chat in your browser while every reply is scored predicted-vs-measured
+quantprobe quantize --gguf model-f16.gguf --out model-2bit.gguf   # COMPRESS: build a depth-aware ~2-bit GGUF (verified: loads + generates)
+quantprobe probe    --gguf model-f16.gguf --eval wiki.test.raw    # Law 3: fragility curve -> recipe (--apply to build it)
+quantprobe run      --gguf model-2bit.gguf --model qwen3-30b --machine 2016-xmp   # plan the placement, then LAUNCH llama.cpp chat
+quantprobe bench    --gguf model-2bit.gguf --model qwen3-30b --machine 2016-xmp   # measure YOUR box: predicted vs measured (add --contribute to share)
+quantprobe dashboard --gguf model-2bit.gguf --model qwen3-30b --machine 2016-xmp # THE LAW, LIVE: chat while every reply is scored predicted-vs-measured
 quantprobe target --tps 5 --machine 2016-xmp --ladder                          # INVERSE: "I need 5 tok/s - what's the smartest model I can run?" + the speed-intelligence ladder
 ```
 
