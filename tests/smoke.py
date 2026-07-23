@@ -159,6 +159,15 @@ def t_bench_depth_dry():
                   "--depth", "16384", "--dry")
     assert "-d 16384" in out and "placement" in out.lower(), f"bench --depth --dry broke: {out[:200]}"
 
+def t_plan_uses_preset_gl():
+    # plan CLI must apply the preset's MEASURED low-bit collapse (gl), not geta*0.6
+    # 2016-xmp gl=0.04: dense 7B @2.5 all-in-VRAM ~1.7 tok/s; the geta*0.6 bug gave ~8.7
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "2.5")
+    import re
+    m = re.search(r"([0-9.]+) tok/s\s+all in VRAM", out)
+    assert m, f"no all-in-VRAM row: {out[:200]}"
+    assert float(m.group(1)) < 3.0, f"preset gl ignored: VRAM row {m.group(1)} tok/s (expected ~1.7)"
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")

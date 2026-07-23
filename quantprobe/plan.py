@@ -107,7 +107,7 @@ def run(args):
     hw = dict(MACHINES[args.machine]) if args.machine in MACHINES else {}
     vc = hw.get("vc", args.vram); vb = hw.get("vb", args.vram_bw)
     rc = hw.get("rc", args.ram);  rb = hw.get("rb", args.ram_bw)
-    db = hw.get("db", args.disk_bw); geta = hw.get("geta", 0.45)
+    db = hw.get("db", args.disk_bw); geta = hw.get("geta", 0.45); gl = hw.get("gl", None)
     if args.vram is not None: vc = args.vram
     if args.vram_bw is not None: vb = args.vram_bw
     if args.ram is not None: rc = args.ram
@@ -118,7 +118,7 @@ def run(args):
     kvp = (args.kv_per_pos * 1024 if getattr(args, "kv_per_pos", None)
            else m.get("kvp", DEFAULT_KVP))
 
-    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, ctx=ctx, kvp=kvp)
+    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp)
     q = QUAL[moe].get(args.bits, 1.0)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
           f"on {hw.get('hint', 'custom machine')}")
@@ -135,11 +135,11 @@ def run(args):
     # upgrade advisor
     alts = []
     if rb < 40:
-        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, ctx=ctx, kvp=kvp)
+        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp)
         if c2[0][1] > best[1] * 1.08: alts.append(("enable XMP (free)", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, ctx=ctx, kvp=kvp)
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp)
     if c2[0][1] > best[1] * 1.08: alts.append(("+16 GB RAM", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, ctx=ctx, kvp=kvp)
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp)
     if c2[0][1] > best[1] * 1.08: alts.append(("NVMe SSD", c2[0][1]))
     if alts:
         print("  upgrade advisor: " + " | ".join(f"{n} -> ~{v:.1f} tok/s" for n, v in alts))
