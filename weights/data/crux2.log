@@ -1,5 +1,0 @@
-=== CRUX (fixed): compress -> load -> generate SINGLE-SHOT ===
-[quantprobe] done -> D:/evo-compress-data/gguf/qp-crux2.gguf (3.48 GB). Run it:  quantprobe run --gguf D:/evo-compress-data/gguf/qp-crux2.gguf --model <preset> --machine <preset>
---- generate (does the compressed model produce coherent text?) ---
-
-CRUX2 DONE
