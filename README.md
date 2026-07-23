@@ -48,6 +48,8 @@ Add to that: a **byte-identical control** (two GGUFs the same size, 2.25 ppl apa
 <p align="center"><img src="weights/data/validation_19tok/live_run_20tps.png" width="880" alt="One frame: Task Manager showing 16 GB DDR4-3000 and the GTX 1060 6GB beside llama.cpp chatting Qwen3-30B-A3B live at 20.4 tok/s generation"></p>
 <p align="center"><em>One frame, no cuts: Task Manager (16 GB @ 3000 MT/s, GTX 1060 6 GB, RAM at 91% — the hybrid placement using the whole machine) beside llama.cpp chatting Qwen3-30B-A3B at <b>20.4 tok/s generation</b> — above the pre-registered 19. Raw logs, hardware attestation + GGUF SHA256: <a href="weights/data/validation_19tok/EVIDENCE.txt">EVIDENCE.txt</a>. Third bench run: 19.26 ± 0.45 (series 19.30 → 19.55 → 19.26).</em></p>
 
+**Open pre-registrations** — predictions staked publicly *before* measurement: [colibri v1.1, five falsifiable predictions (2026-07-23)](preregistrations/2026-07-23-colibri-v1.1.md) — dual-SSD scaling, int3 speedup, lattice-vs-scalar, AVX-512 tier-scoping, MTP×MoE antagonism.
+
 
 ## The four placement laws
 
