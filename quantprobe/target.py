@@ -32,12 +32,14 @@ def hw_of(a):
 
 def feasible(a, tps_target):
     """All (model, bits, placement) meeting the target, best-first."""
+    ctx = getattr(a, "ctx", 0) or 0
     hw, vc, vb, rc, rb, db, geta, gl = hw_of(a)
     rows = []
     for key, m in CATALOG.items():
         for bits in BITS_LADDER:
             size, act, cfgs = planmod.evaluate(m["t"], m["a"], m["ne"], m["moe"],
-                                               bits, vc, vb, rc, rb, db, geta, 1.0, gl)
+                                               bits, vc, vb, rc, rb, db, geta, 1.0, gl,
+                                               ctx=ctx, kvp=m.get("kvp", planmod.DEFAULT_KVP))
             best = cfgs[0]
             if best[1] >= tps_target:
                 q = planmod.QUAL[m["moe"]].get(bits, 1.0)

@@ -58,12 +58,13 @@ Full statements, each with its establishing measurement and a falsifiable predic
 1. **Rotation is rank-conditional.** Incoherence rotation (QuIP#/QTIP/QuaRot) helps full-rank tensors (+0.006 ppl) and destroys low-rank bottlenecks (+1623 ppl) — a ~270,000× swing on effective rank alone.
 2. **Trained networks are dense everywhere.** Experts sit *exactly* at the rate-distortion floor; routing is flat (even across domains — Jaccard 1.00 prose vs code); activations are diffuse. **2-bit is the floor.**
 3. **Fragility is measurable, not predictable.** Gemma late-fragile 4×, Mistral **early-fragile 25×** — architectural near-twins pointing opposite ways. Weight statistics mislead. **Only a 30-minute functional probe decides.**
-4. **The tiered decode law.** `tok/s = η(tier)·BW ÷ active-bytes`, η collapsing per tier across 7B→744B and both projects' hardware.
+4. **The tiered decode law.** `tok/s = η(tier)·BW ÷ active-bytes`, η collapsing per tier across 7B→744B and both projects' hardware. **v1.1 adds the context term**: each generated token also re-reads the whole KV cache from *its* tier — `--ctx` prices it, `bench --depth` measures it (measured here: 20.02 → 16.12 tok/s at 16k depth).
 
 <p align="center"><img src="weights/data/x_chart_E_scalinglaw.png" width="700" alt="One scaling law, 7B to 744B, predicted vs measured, including colibri's published tiers"></p>
 <p align="center"><img src="weights/data/x_chart_F_tradeoff.png" width="700" alt="Speed vs memory trade-off with the RAM capacity cliff — fewer bits mean less memory and more speed until the model stops fitting"></p>
 
 <p align="center"><img src="weights/data/x_chart_D_placement.png" width="700" alt="Byte-identical GGUF files, 2.25 perplexity apart — placement is worth twice the byte budget"></p>
+<p align="center"><img src="weights/data/x_chart_I_kvdepth.png" width="700" alt="Decode speed versus context depth: measured 20.02 tok/s at depth zero falling to 16.12 at 16384, on the Law 4 v2 curve with eta_kv 0.70"></p>
 
 ## The machine — and every speed it ran at
 
@@ -267,7 +268,7 @@ Every headline number has its generating script and raw log in-tree — see [wei
 
 ## Credits
 
-[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Independent research by Federico Sciuca, AI-supported, on one desktop; every claim is measured, and every negative that redirected the work is documented.
+[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Independent research by Federico Sciuca, AI-supported, on one desktop; every claim is measured, and every negative that redirected the work is documented. The Law 4 context term (v1.1) was prompted by **u/RogerAI--fyi** (Reddit), who correctly observed the original formulation omitted per-token KV reads — measured, confirmed, and shipped within a day.
 
 ## License
 

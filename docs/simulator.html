@@ -86,6 +86,7 @@
         <div class="fld"><label for="rb">RAM BW (GB/s)</label><input id="rb" type="number" step="1" min="1"></div>
       </div>
       <div class="fld"><label for="db">Disk read (GB/s)</label><input id="db" type="number" step="0.1" min="0.1"></div>
+      <div class="fld"><label for="ctx">Context depth (tokens) — 0 = short-context law; adds KV reads + KV memory (Law 4 v2)</label><input id="ctx" type="number" step="1024" min="0" value="0"></div>
       <div class="fld"><label for="tgt">Target speed (tok/s) — drawn on the trade-off chart</label><input id="tgt" type="number" step="1" min="1" value="15"></div>
     </div>
     <div class="panel">
@@ -108,7 +109,7 @@
       <div class="sect">Speed ⇄ memory trade-off (bit-width sweep, capacity cliffs marked)</div>
       <div class="chartbox"><canvas id="tradeC" height="260" role="img" aria-label="Chart of predicted speed versus model memory across bit widths, showing the cliff where the model stops fitting in RAM.">Lower bits: less memory and more speed, until quality cost; past RAM capacity, speed falls off a cliff.</canvas></div>
       <div class="foot">
-        Quality cost = perplexity gap-ratio vs fp16 with the <strong>depth-aware recipe</strong> (probe the fragile band, protect it). η bands are measured: VRAM/GPU per class · RAM ≈0.62 dense / ≈0.38 MoE · disk ≈0.95. Validation: 16B MoE 15.6 tok/s, 30B hybrid <strong>predicted 19 → measured 19.30 ± 0.88</strong>, 110B-from-SATA 0.19 (pre-registered 0.2–0.3), RAM overclock ×1.52 (pre-registered ×1.41+), colibri's published 744B tiers inside the same bands. Hybrid figures assume partitioned residency (<code>--no-mmap</code> + <code>-ot exps=CPU</code>). Estimates ±25%.
+        Quality cost = perplexity gap-ratio vs fp16 with the <strong>depth-aware recipe</strong> (probe the fragile band, protect it). η bands are measured: VRAM/GPU per class · RAM ≈0.62 dense / ≈0.38 MoE · disk ≈0.95. Validation: 16B MoE 15.6 tok/s, 30B hybrid <strong>predicted 19 → measured 19.30 ± 0.88</strong>, 110B-from-SATA 0.19 (pre-registered 0.2–0.3), RAM overclock ×1.52 (pre-registered ×1.41+), colibri's published 744B tiers inside the same bands. Hybrid figures assume partitioned residency (<code>--no-mmap</code> + <code>-ot exps=CPU</code>). Estimates ±25%. <strong>v1.1 context term:</strong> each generated token re-reads the whole KV cache from the tier KV lives on (η<sub>kv</sub>≈0.7, single-point calibration: measured 20.02→16.12 tok/s at depth 16384; term prompted by u/RogerAI--fyi). MLA models cache ~10× less; SWA long-context slopes use global layers only [est].
         <br>By <a href="https://x.com/federico_sciuca">@federico_sciuca</a> — laws, probes, recipes and every raw log in the repo.
       </div>
     </div>
@@ -118,12 +119,12 @@
 <script>
 (function(){
   const MODELS = [
-    {n:"Qwen3-30B-A3B (MoE)", t:30.5, a:3.3, ne:1.2, moe:1},
-    {n:"DeepSeek-V2-Lite 16B (MoE)", t:15.7, a:2.4, ne:1.3, moe:1},
-    {n:"Gemma 4 12B (dense)", t:11.9, a:11.9, ne:11.9, moe:0},
-    {n:"Mistral 7B (dense)", t:7.2, a:7.2, ne:7.2, moe:0},
-    {n:"GLM-4.5-Air 106B (MoE)", t:110, a:12, ne:2.7, moe:1},
-    {n:"GLM-5.2 744B (MoE)", t:744, a:32, ne:8, moe:1},
+    {n:"Qwen3-30B-A3B (MoE)", t:30.5, a:3.3, ne:1.2, moe:1, kvp:98304},
+    {n:"DeepSeek-V2-Lite 16B (MoE)", t:15.7, a:2.4, ne:1.3, moe:1, kvp:31104},
+    {n:"Gemma 4 12B (dense)", t:11.9, a:11.9, ne:11.9, moe:0, kvp:65536},
+    {n:"Mistral 7B (dense)", t:7.2, a:7.2, ne:7.2, moe:0, kvp:131072},
+    {n:"GLM-4.5-Air 106B (MoE)", t:110, a:12, ne:2.7, moe:1, kvp:94208},
+    {n:"GLM-5.2 744B (MoE)", t:744, a:32, ne:8, moe:1, kvp:188416},
     {n:"Custom…", t:13, a:13, ne:13, moe:0}
   ];
   const HW = [
@@ -141,6 +142,8 @@
     {n:"Custom…", vc:8, vb:300, rc:32, rb:50, db:2, geta:0.5, gl:0.3}
   ];
   const BITS = [2.0, 2.5, 3.0, 4.5, 6.5, 8.5];
+  const DEFAULT_KVP = 98304;   // KV bytes/pos for customs (Qwen3-30B-class GQA)
+  const ETA_KV = 0.70;         // single-point calibration: d0->d16384 = 20.02 -> 16.12 measured
   const QUAL = { moe:{"2":1.10,"2.5":1.07,"3":1.05,"4.5":1.02,"6.5":1.01,"8.5":1.00},
                  dense:{"2":1.45,"2.5":1.30,"3":1.12,"4.5":1.03,"6.5":1.01,"8.5":1.00} };
   // validated (predicted, measured, label) — fixed anchors for the law chart
@@ -162,31 +165,34 @@
   function loadModel(){const m=MODELS[mSel.value]; $("tp").value=m.t; $("ap").value=m.a; calc();}
   function loadHW(){const h=HW[hSel.value]; $("vc").value=h.vc; $("vb").value=h.vb; $("rc").value=h.rc; $("rb").value=h.rb; $("db").value=h.db; calc();}
   mSel.onchange=loadModel; hSel.onchange=loadHW;
-  ["tp","ap","vc","vb","rc","rb","db","tgt"].forEach(id=>$(id).oninput=calc);
+  ["tp","ap","vc","vb","rc","rb","db","ctx","tgt"].forEach(id=>$(id).oninput=calc);
   function fmt(x,d){return Number(x).toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:0});}
   function css(v){return getComputedStyle(document.querySelector(".sim")).getPropertyValue(v).trim();}
 
-  function evalCore(t,a,ne,moe,bitsVal,H){
+  function evalCore(t,a,ne,moe,bitsVal,H,ctx,kvp){
     const AB=Math.max(bitsVal,4.5);
     const size=(ne*AB/8+(t-ne)*bitsVal/8)*1.08;
     const actNe=ne*AB/8*1.15, actEx=(a-ne)*bitsVal/8*1.15, act=actNe+actEx;
+    // Law 4 v2: each token re-reads the whole KV cache from KV's tier; KV also consumes capacity
+    const kvGb=(ctx>0?(ctx*(kvp||DEFAULT_KVP))/1e9:0);
     const ra=Math.max(H.rc-4,1), etaR=moe?0.38:0.62;
     const gl=H.gl!==undefined?H.gl:H.geta*0.6;
     const getaW=bitsVal>=4?H.geta:gl;
     const cfgs=[];
-    if (H.vc>0 && size<=H.vc*0.90) cfgs.push({n:"all in VRAM", tps:getaW*H.vb/act});
-    if (moe && H.vc>0){ const vN=ne*AB/8*1.08+1.2, rN=size-ne*AB/8*1.08;
+    if (H.vc>0 && size+kvGb<=H.vc*0.90) cfgs.push({n:"all in VRAM", tps:1/(act/(getaW*H.vb)+kvGb/(ETA_KV*H.vb))});
+    if (moe && H.vc>0){ const vN=ne*AB/8*1.08+1.2+kvGb, rN=size-ne*AB/8*1.08;
       if (vN<=H.vc*0.95 && rN<=ra) cfgs.push({n:"hybrid: attention→VRAM, experts→RAM",
-        tps:1/(actNe/(H.geta*H.vb)+actEx/(etaR*H.rb)), warn:rN>ra*0.85?"RAM boundary":null}); }
-    if (!moe && H.vc>0 && size>H.vc*0.90 && size<=ra+H.vc*0.9){ const g=Math.min(0.95,H.vc*0.9/size);
-      cfgs.push({n:"split: "+Math.round(g*100)+"% layers→VRAM", tps:1/(g*act/(getaW*H.vb)+(1-g)*act/(etaR*H.rb))}); }
-    if (size<=ra) cfgs.push({n:"pure CPU (GPU idle)", tps:etaR*H.rb/act, warn:size>ra*0.85?"RAM boundary":null});
-    if (size>ra){ const ms=Math.max(0,1-(ra*0.9)/size);
+        tps:1/(actNe/(H.geta*H.vb)+actEx/(etaR*H.rb)+kvGb/(ETA_KV*H.vb)), warn:rN>ra*0.85?"RAM boundary":null}); }
+    if (!moe && H.vc>0 && size+kvGb>H.vc*0.90 && size+kvGb<=ra+H.vc*0.9){ const g=Math.min(0.95,H.vc*0.9/(size+kvGb));
+      const kvT=g*kvGb/(ETA_KV*H.vb)+(1-g)*kvGb/(ETA_KV*H.rb);
+      cfgs.push({n:"split: "+Math.round(g*100)+"% layers→VRAM", tps:1/(g*act/(getaW*H.vb)+(1-g)*act/(etaR*H.rb)+kvT)}); }
+    if (size+kvGb<=ra) cfgs.push({n:"pure CPU (GPU idle)", tps:1/(act/(etaR*H.rb)+kvGb/(ETA_KV*H.rb)), warn:size+kvGb>ra*0.85?"RAM boundary":null});
+    if (size+kvGb>ra){ const raEff=Math.max(ra-kvGb,1), ms=Math.max(0,1-(raEff*0.9)/size);
       const hot=moe?actNe:0, str=act-hot;
-      cfgs.push({n:"stream from disk (cold experts)", tps:0.95/(str*ms/H.db+(str*(1-ms)+hot)/(etaR*H.rb)),
+      cfgs.push({n:"stream from disk (cold experts)", tps:0.95/(str*ms/H.db+(str*(1-ms)+hot)/(etaR*H.rb)+kvGb/(ETA_KV*H.rb)),
         warn:"exceeds RAM"}); }
     cfgs.sort((x,y)=>y.tps-x.tps);
-    return {size, act, cfgs, best:cfgs[0]||{n:"—",tps:0}, moe, ra, vc:H.vc, q:(QUAL[moe?"moe":"dense"][String(bitsVal)]||1)};
+    return {size, act, kvGb, cfgs, best:cfgs[0]||{n:"—",tps:0}, moe, ra, vc:H.vc, q:(QUAL[moe?"moe":"dense"][String(bitsVal)]||1)};
   }
   function hwForm(){
     const hwp=HW[hSel.value]||{};
@@ -198,7 +204,8 @@
     const m=MODELS[mSel.value]||{};
     const ne=Math.min(m.ne!==undefined?m.ne:a, a);
     const moe = a < t*0.9;
-    return evalCore(t,a,ne,moe,bitsVal,hwForm());
+    const ctx=+$("ctx").value||0;
+    return evalCore(t,a,ne,moe,bitsVal,hwForm(),ctx,m.kvp);
   }
   const CATALOG=[
     {h:"Qwen3-4B (dense)",t:4,a:4,ne:4,moe:0},{h:"Mistral 7B (dense)",t:7.2,a:7.2,ne:7.2,moe:0},
@@ -210,7 +217,7 @@
     let win=null;
     for (const m of CATALOG){
       for (const b of [4.5,3.0,2.5,2.0]){
-        const e=evalCore(m.t,m.a,m.ne,!!m.moe,b,H);
+        const e=evalCore(m.t,m.a,m.ne,!!m.moe,b,H,+$("ctx").value||0,m.kvp);
         if (e.best.tps>=target){
           const cand={m,b,e};
           if (!win || m.t>win.m.t || (m.t===win.m.t && b>win.b)) win=cand;

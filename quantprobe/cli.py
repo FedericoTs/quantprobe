@@ -37,6 +37,8 @@ def main():
     q.add_argument("--vram", type=float); q.add_argument("--vram-bw", type=float)
     q.add_argument("--ram", type=float); q.add_argument("--ram-bw", type=float)
     q.add_argument("--disk-bw", type=float)
+    q.add_argument("--ctx", type=int, default=0, help="context depth: adds KV reads/token + KV memory to the prediction (Law 4 v2)")
+    q.add_argument("--kv-per-pos", type=float, default=None, help="KV bytes per position in KB (default: model preset, or 96)")
 
     def hwargs(sp):
         sp.add_argument("--model", default=None); sp.add_argument("--machine", default=None)
@@ -46,6 +48,8 @@ def main():
         sp.add_argument("--vram", type=float); sp.add_argument("--vram-bw", type=float)
         sp.add_argument("--ram", type=float); sp.add_argument("--ram-bw", type=float)
         sp.add_argument("--disk-bw", type=float)
+        sp.add_argument("--ctx", type=int, default=0, help="context depth for the prediction (Law 4 v2)")
+        sp.add_argument("--kv-per-pos", type=float, default=None, help="KV bytes per position in KB")
         sp.add_argument("--llama-dir", default=None); sp.add_argument("--dry", action="store_true")
 
     r = sub.add_parser("run", help="plan the best placement, then launch llama.cpp chat with those flags")
@@ -56,6 +60,7 @@ def main():
     b = sub.add_parser("bench", help="measure real tok/s with the planned flags; print predicted vs measured")
     b.add_argument("--gguf", required=True); hwargs(b)
     b.add_argument("--reps", type=int, default=3)
+    b.add_argument("--depth", type=int, default=None, help="bench at KV depth N (llama-bench -d): measures the Law 4 v2 context term on YOUR box")
     b.add_argument("--contribute", action="store_true", help="print a pre-filled, opt-in GitHub issue with your predicted-vs-measured point (you review before submitting; nothing auto-sent)")
 
     d = sub.add_parser("dashboard", help="launch llama-server with planned flags + a live predicted-vs-measured chat page")

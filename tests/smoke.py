@@ -96,6 +96,69 @@ def t_all_subcommands_present():
         assert c in out, f"subcommand {c} missing from --help"
 
 
+def t_ctx_zero_identity():
+    # Law 4 v2 regression guarantee: --ctx 0 (and flag absent) must reproduce v1.0 numbers EXACTLY
+    rc1, out1 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    rc2, out2 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--ctx", "0")
+    assert rc1 == 0 and out1 == out2, "ctx=0 is not an identity"
+
+def t_ctx_monotonic():
+    from quantprobe.plan import evaluate, MODELS
+    m = MODELS["qwen3-30b"]
+    tps = []
+    for ctx in (0, 8192, 32768):
+        _, _, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], 4.5, 0, 0, 64, 48, 3.5, 0.5,
+                              ctx=ctx, kvp=m["kvp"])
+        cpu = [c for c in cfgs if c[0].startswith("pure CPU")]
+        assert cpu, f"pure CPU missing at ctx={ctx}"
+        tps.append(cpu[0][1])
+    assert tps[0] > tps[1] > tps[2], f"tok/s not monotonic in ctx: {tps}"
+
+def t_ctx_placement_dependence():
+    # KV on a slow tier must hurt more: pure-CPU (KV@RAM 48) degrades steeper than hybrid (KV@VRAM 192)
+    from quantprobe.plan import evaluate, MODELS
+    m = MODELS["qwen3-30b"]
+    def ratio(placement_prefix, vc, vb, rc):
+        r = []
+        for ctx in (0, 16384):
+            _, _, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], 2.5, vc, vb, rc, 48, 3.5,
+                                  0.35, gl=0.04, ctx=ctx, kvp=m["kvp"])
+            hit = [c for c in cfgs if c[0].startswith(placement_prefix)]
+            assert hit, f"{placement_prefix} missing at ctx={ctx}"
+            r.append(hit[0][1])
+        return r[1] / r[0]
+    r_hybrid = ratio("hybrid", 6, 192, 32)      # 32 GB RAM so both placements exist at 16k
+    r_cpu = ratio("pure CPU", 0, 0, 32)
+    assert r_cpu < r_hybrid, f"CPU-placed KV should degrade steeper: cpu {r_cpu:.3f} vs hybrid {r_hybrid:.3f}"
+
+def t_ctx_calibration_anchor():
+    # the law must retrodict its own calibration: measured d16384/d0 = 16.12/20.02 = 0.805 on 2016-xmp
+    from quantprobe.plan import evaluate, MODELS, MACHINES
+    m, hw = MODELS["qwen3-30b"], MACHINES["2016-xmp"]
+    r = []
+    for ctx in (0, 16384):
+        _, _, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], 2.5, hw["vc"], hw["vb"],
+                              hw["rc"], hw["rb"], hw["db"], hw["geta"], gl=hw["gl"],
+                              ctx=ctx, kvp=m["kvp"])
+        hy = [c for c in cfgs if c[0].startswith("hybrid")]
+        assert hy, f"hybrid missing at ctx={ctx}"
+        r.append(hy[0][1])
+    ratio = r[1] / r[0]
+    assert 0.75 < ratio < 0.90, f"calibration anchor off: predicted ratio {ratio:.3f} vs measured 0.805"
+
+def t_ctx_fit_flip():
+    # KV memory must count against capacity: at 16k the 30B no longer fits 16GB RAM as pure-CPU
+    rc0, out0 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    rc1, out1 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--ctx", "16384")
+    assert "pure CPU" in out0, "baseline should list pure CPU"
+    assert "pure CPU" not in out1, "16k KV must evict the pure-CPU placement on a 16GB box"
+    assert "tok/s" in out1, "planner must still return a feasible placement"
+
+def t_bench_depth_dry():
+    rc, out = cli("bench", "--gguf", "x.gguf", "--model", "qwen3-30b", "--machine", "2016-xmp",
+                  "--depth", "16384", "--dry")
+    assert "-d 16384" in out and "placement" in out.lower(), f"bench --depth --dry broke: {out[:200]}"
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")

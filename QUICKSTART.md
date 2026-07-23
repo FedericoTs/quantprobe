@@ -25,6 +25,9 @@ quantprobe plan --model qwen3-30b --machine 2016-xmp
 
 # "I need at least 5 tok/s — what's the smartest model I can run?"
 quantprobe target --tps 5 --machine gaming --ladder
+
+# planning long-context work (coding agents, RAG)? add --ctx: it prices the KV reads AND the KV memory
+quantprobe plan --model qwen3-30b --machine 2016-xmp --ctx 16384
 ```
 
 Don't have a preset for your machine? Pass raw numbers:

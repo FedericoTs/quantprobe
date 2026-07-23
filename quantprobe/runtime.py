@@ -50,7 +50,11 @@ def best_flags(a):
             act_scale = size_real / size_pred
             print(f"[quantprobe] calibrated to file: {size_real:.2f} GB on disk "
                   f"(preset assumed {size_pred:.2f} GB, scale {act_scale:.2f})")
-    _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl)
+    ctx = getattr(a, "ctx", 0) or 0
+    kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None)
+           else m.get("kvp", planmod.DEFAULT_KVP))
+    _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
+                                  ctx=ctx, kvp=kvp)
     best = cfgs[0]
     return best, best[3].replace('"', "").split()
 
@@ -61,6 +65,8 @@ def run(a):
     # --dry previews the plan + command WITHOUT requiring llama.cpp installed
     binp = tool if a.dry else find_llama(a.llama_dir, tool)
     cmd = [binp, "-m", a.gguf] + flags
+    if (getattr(a, "ctx", 0) or 0) > 0:
+        cmd += ["-c", str(a.ctx)]                         # launch with the context you planned for
     if not a.serve:
         cmd += ["-cnv"]
     if a.extra:
@@ -74,6 +80,8 @@ def run(a):
 
 
 def bench(a):
+    if getattr(a, "depth", None):
+        a.ctx = a.depth                                   # prediction at the benched depth
     best, flags = best_flags(a)
     binp = "llama-bench" if getattr(a, "dry", False) else find_llama(a.llama_dir, "llama-bench")
     # llama-bench uses --mmap 0 rather than --no-mmap
@@ -87,6 +95,8 @@ def bench(a):
         pass
     # normalize: flags like ['-ngl','99','-ot','exps=CPU','--no-mmap']
     cmd = [binp, "-m", a.gguf, "-n", "32", "-p", "0", "-r", str(a.reps)] + bflags
+    if getattr(a, "depth", None):
+        cmd += ["-d", str(a.depth)]
     print(f"[quantprobe] placement: {best[0]} | predicted {best[1]:.1f} tok/s")
     print("[quantprobe] bench:", " ".join(cmd))
     if a.dry:
@@ -94,7 +104,7 @@ def bench(a):
     print("[quantprobe] benchmarking (30-90s; llama-bench runs quietly, then prints the number)...", flush=True)
     out = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
     txt = out.stdout + out.stderr
-    mm = re.findall(r"tg\d+\s*\|\s*([0-9.]+)\s*(?:Â?±|\+/-)\s*([0-9.]+)", txt)
+    mm = re.findall(r"tg\d+(?:\s*@\s*d\d+)?\s*\|\s*([0-9.]+)\s*(?:Â?±|\+/-)\s*([0-9.]+)", txt)
     if not mm:
         mm = re.findall(r"\|\s*([0-9.]+)\s*(?:Â?±)\s*([0-9.]+)\s*\|\s*$", txt, re.M)
     if mm:
