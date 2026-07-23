@@ -2,20 +2,6 @@
 
 Three levels. Pick where you want to stop.
 
-> ### What quantprobe decides for you — and what you set up once
->
-> **Automated (the hard part):** *which bits go where* (depth-aware compression) and *which memory tier serves what* (the placement that turns a model that merely fits into one that runs fast). `quantize`/`probe` pick the bits; `run` picks the placement and launches — you never hand-tune a flag.
->
-> **You do these once (plumbing, not strategy):**
-> 1. **Install llama.cpp** — download the [prebuilt binaries](https://github.com/ggml-org/llama.cpp/releases) once; point quantprobe at them (`--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). *(Not needed for `plan`/`target`/the web calculator.)*
-> 2. **Convert a HuggingFace model to GGUF** — only if you're compressing a model that has no community GGUF. Run llama.cpp's `convert_hf_to_gguf.py` once, then feed the `.gguf` to `quantize`. Models with an existing GGUF skip this entirely.
-> 3. **Tell it your hardware** — pick a `--machine` preset or pass `--vram/--ram/...`. quantprobe does **not** auto-detect your specs yet.
->
-> So: **the memory-speed strategy is applied autonomously; the one-time setup is on you.** A single hands-off `quantprobe auto <hf-model>` (auto-detect hardware → convert → compress → run) is on the roadmap.
-
-
----
-
 ## Level 0 — nothing to install (10 seconds)
 
 Open the calculator in your browser and type in your machine:
@@ -67,6 +53,20 @@ You rarely need these — pick the closest preset above. But if you go custom, h
 ### Multi-GPU / multi-device?
 
 quantprobe models a single device. For tensor-parallel rigs (e.g. 2× 3090, or a DGX cluster), approximate: set `--vram` to the **summed** VRAM and `--vram-bw` to the **aggregate** bandwidth (the law held on a 4× DGX Spark cluster this way — its published number lands in the eta bands).
+
+---
+
+> ### What quantprobe decides for you — and what you set up once
+>
+> **Automated (the hard part):** *which bits go where* (depth-aware compression) and *which memory tier serves what* (the placement that turns a model that merely fits into one that runs fast). `quantize`/`probe` pick the bits; `run` picks the placement and launches — you never hand-tune a flag.
+>
+> **You do these once (plumbing, not strategy):**
+> 1. **Install llama.cpp** — download the [prebuilt binaries](https://github.com/ggml-org/llama.cpp/releases) once; point quantprobe at them (`--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). *(Not needed for `plan`/`target`/the web calculator.)*
+> 2. **Convert a HuggingFace model to GGUF** — only if you're compressing a model that has no community GGUF. Run llama.cpp's `convert_hf_to_gguf.py` once, then feed the `.gguf` to `quantize`. Models with an existing GGUF skip this entirely.
+> 3. **Tell it your hardware** — pick a `--machine` preset or pass `--vram/--ram/...`. quantprobe does **not** auto-detect your specs yet.
+>
+> So: **the memory-speed strategy is applied autonomously; the one-time setup is on you.** A single hands-off `quantprobe auto <hf-model>` (auto-detect hardware → convert → compress → run) is on the roadmap.
+
 
 ---
 
