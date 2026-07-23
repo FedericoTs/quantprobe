@@ -115,6 +115,19 @@ quantprobe run --gguf your-model-2bit.gguf --model <preset> --machine <preset>
 
 ---
 
+### Already using Ollama? Your models are GGUFs already
+
+Ollama stores every model as a standard GGUF blob — quantprobe can point straight at it, no re-download:
+
+```bash
+# 1. find the blob path of a model you already pulled
+ollama show qwen2.5-coder:7b --modelfile     # the FROM line shows ...blobs/sha256-<hash>
+# 2. bench it (works even though the file has no .gguf extension - verified)
+quantprobe bench --gguf ~/.ollama/models/blobs/sha256-<hash> --total 7.2 --active 7.2 --bits 4.5 --vram 0 --ram 32 --ram-bw 45 --disk-bw 2
+```
+
+(Windows: `C:\Users\<you>\.ollama\models\blobs\`.) Two Ollama gotchas the law keeps exposing in the wild: Ollama's **default context window (~4k) is smaller than coding-agent payloads** — Continue/Cline overflow it, truncation breaks prompt-cache reuse, and every request re-prefills from zero (minutes on CPU). Either raise it (`PARAMETER num_ctx 16384` in a Modelfile / `OLLAMA_CONTEXT_LENGTH`) or serve with `quantprobe run --serve --extra "-c 16384"` instead. And on CPU-only boxes, prefer MoE models — dense 14B decodes ~3 tok/s where a 30B-A3B does ~8 with more intelligence (`plan` shows this per-box).
+
 ## Help grow the law (optional, opt-in)
 
 Every `bench` is a test of the tiered decode law on hardware I may never have touched. If you want to contribute your point:
