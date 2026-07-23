@@ -28,12 +28,23 @@ def find_llama(explicit, tool):
 
 def best_flags(a):
     """Run the planner, return (best_config, flags_list) for the winning placement."""
+    from . import spec as specmod
+    specmod.apply(a)
+    if getattr(a, "bits", None) is None:
+        a.bits = 2.5
     m = dict(planmod.MODELS[a.model]) if getattr(a, "model", None) in planmod.MODELS else {}
     t = getattr(a, "total", None) or m.get("t") or 13.0
     ac = getattr(a, "active", None) or m.get("a") or t
     ne = getattr(a, "always_active", None) or m.get("ne") or (ac if ac >= t * 0.9 else ac * 0.35)
     moe = m.get("moe", ac < t * 0.9)
     hw = dict(planmod.MACHINES[a.machine]) if getattr(a, "machine", None) in planmod.MACHINES else {}
+    if not hw and all(getattr(a, k, None) is None for k in ("vram", "vram_bw", "ram", "ram_bw", "disk_bw")):
+        from . import detect as detmod
+        auto, _ = detmod.detect()
+        hw = dict(vc=auto["vram"], vb=auto["vram_bw"], rc=auto["ram"], rb=auto["ram_bw"],
+                  db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"))
+        print("[quantprobe] hardware auto-detected (run `quantprobe hw` for details; "
+              "pass --machine/flags to estimate a different box)")
     vc = a.vram if a.vram is not None else hw.get("vc", 0)
     vb = a.vram_bw if a.vram_bw is not None else hw.get("vb", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
@@ -126,6 +137,13 @@ def bench(a):
 def tier_view(a, best):
     """Rough (capacity, used) per tier for the dashboard's placement panel."""
     hw = dict(planmod.MACHINES[a.machine]) if getattr(a, "machine", None) in planmod.MACHINES else {}
+    if not hw and all(getattr(a, k, None) is None for k in ("vram", "vram_bw", "ram", "ram_bw", "disk_bw")):
+        from . import detect as detmod
+        auto, _ = detmod.detect()
+        hw = dict(vc=auto["vram"], vb=auto["vram_bw"], rc=auto["ram"], rb=auto["ram_bw"],
+                  db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"))
+        print("[quantprobe] hardware auto-detected (run `quantprobe hw` for details; "
+              "pass --machine/flags to estimate a different box)")
     vc = a.vram if a.vram is not None else hw.get("vc", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
     size = os.path.getsize(a.gguf) / 1e9 if a.gguf and os.path.isfile(a.gguf) else 0

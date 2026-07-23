@@ -42,7 +42,7 @@ def feasible(a, tps_target):
                                                ctx=ctx, kvp=m.get("kvp", planmod.DEFAULT_KVP))
             best = cfgs[0]
             if best[1] >= tps_target:
-                q = planmod.QUAL[m["moe"]].get(bits, 1.0)
+                q = planmod.qual_of(m["moe"], bits)
                 rows.append(dict(key=key, hint=m["hint"], t=m["t"], bits=bits, q=q,
                                  size=size, tps=best[1], place=best[0], warn=best[2], flags=best[3]))
                 break                          # highest feasible bits for this model = its best entry

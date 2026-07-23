@@ -168,6 +168,31 @@ def t_plan_uses_preset_gl():
     assert m, f"no all-in-VRAM row: {out[:200]}"
     assert float(m.group(1)) < 3.0, f"preset gl ignored: VRAM row {m.group(1)} tok/s (expected ~1.7)"
 
+def t_hw_command():
+    rc, out = cli("hw")
+    assert rc == 0 and "equivalent flags" in out and "--ram" in out, f"hw broke: {out[:200]}"
+
+def t_auto_hardware_no_flags():
+    # no machine, no hw flags -> auto-detect (works on CI via /proc/meminfo + defaults)
+    rc, out = cli("plan", "--total", "7", "--active", "7", "--bits", "4.5")
+    assert rc == 0 and "auto-detected" in out and "tok/s" in out
+
+def t_bits_continuous():
+    rc, out = cli("plan", "--total", "7", "--active", "7", "--bits", "2.88",
+                  "--vram", "0", "--ram", "32", "--ram-bw", "45", "--disk-bw", "2")
+    assert rc == 0 and "2.88-bit" in out, f"continuous bits rejected: {out[:150]}"
+
+def t_autospec_from_gguf():
+    import os
+    g = "D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q2_K.gguf"
+    if not os.path.isfile(g):
+        return  # CI has no model files; runs on the reference box
+    from quantprobe.spec import from_gguf
+    s = from_gguf(g)
+    assert 29 < s["t"] < 32 and 3.0 < s["a"] < 3.8 and s["moe"], f"autospec params off: {s}"
+    assert abs(s["kvp"] - 98304) < 2048, f"kvp should be ~98304 exact, got {s['kvp']}"
+    assert 2.5 < s["bits"] < 3.3, f"effective bits off: {s['bits']}"
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")

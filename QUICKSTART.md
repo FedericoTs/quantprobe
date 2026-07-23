@@ -17,6 +17,16 @@ It predicts decode speed, memory fit, quality cost, and your cheapest upgrade fo
 pip install git+https://github.com/FedericoTs/quantprobe
 ```
 
+**New in v1.2: zero flags needed on your own machine.** `quantprobe hw` shows what it detected (GPU, RAM speed, every value tagged with its source); any command with no hardware flags uses it automatically. And `--gguf model.gguf` reads the model's parameters from the file itself (total/active params, true effective bits, exact KV bytes). The minimal commands are now:
+
+```bash
+quantprobe hw                                  # what the tool sees (override anything with flags)
+quantprobe plan --gguf your-model.gguf         # THIS machine + THAT file: nothing else to type
+quantprobe bench --gguf your-model.gguf        # predicted vs measured, zero configuration
+```
+
+Presets and explicit flags still work exactly as before — use them to estimate a machine you're NOT running on.
+
 Now these work immediately — they're pure calculators, no model download, no llama.cpp:
 
 ```bash
@@ -66,7 +76,7 @@ quantprobe models a single device. For tensor-parallel rigs (e.g. 2× 3090, or a
 > **You do these once (plumbing, not strategy):**
 > 1. **Install llama.cpp** — download the [prebuilt binaries](https://github.com/ggml-org/llama.cpp/releases) once; point quantprobe at them (`--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). *(Not needed for `plan`/`target`/the web calculator.)*
 > 2. **Convert a HuggingFace model to GGUF** — only if you're compressing a model that has no community GGUF. Run llama.cpp's `convert_hf_to_gguf.py` once, then feed the `.gguf` to `quantize`. Models with an existing GGUF skip this entirely.
-> 3. **Tell it your hardware** — pick a `--machine` preset or pass `--vram/--ram/...`. quantprobe does **not** auto-detect your specs yet.
+> 3. ~~Tell it your hardware~~ **auto-detected since v1.2** (`quantprobe hw` shows what it sees; flags/`--machine` only needed to estimate a different machine).
 >
 > So: **the memory-speed strategy is applied autonomously; the one-time setup is on you.** A single hands-off `quantprobe auto <hf-model>` (auto-detect hardware → convert → compress → run) is on the roadmap.
 

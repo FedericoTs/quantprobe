@@ -98,13 +98,31 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     return size, act, out
 
 
+def qual_of(moe, bits):
+    keys = sorted(QUAL[moe])
+    return QUAL[moe][min(keys, key=lambda k: abs(k - bits))]
+
+
 def run(args):
+    from . import spec as specmod
+    specmod.apply(args)
+    if getattr(args, "bits", None) is None:
+        args.bits = 2.5
     m = dict(MODELS[args.model]) if args.model in MODELS else {}
     t = args.total or m.get("t") or 13.0
     a = args.active or m.get("a") or t
     ne = args.always_active or m.get("ne") or (a if a >= t * 0.9 else a * 0.35)
     moe = m.get("moe", a < t * 0.9)
     hw = dict(MACHINES[args.machine]) if args.machine in MACHINES else {}
+    if not hw and all(getattr(args, k, None) is None for k in ("vram", "vram_bw", "ram", "ram_bw", "disk_bw")):
+        from . import detect as detmod
+        auto, _ = detmod.detect()
+        hw = dict(vc=auto["vram"], vb=auto["vram_bw"], rc=auto["ram"], rb=auto["ram_bw"],
+                  db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"),
+                  hint="THIS machine [auto-detected - run `quantprobe hw` for details]")
+        print("[quantprobe] no hardware flags: auto-detected this machine "
+              f"(vram {hw['vc']:g}GB@{hw['vb']:g} | ram {hw['rc']:g}GB@{hw['rb']:g} | disk {hw['db']:g} GB/s). "
+              "Pass --machine/flags to estimate a different box.")
     vc = hw.get("vc", args.vram); vb = hw.get("vb", args.vram_bw)
     rc = hw.get("rc", args.ram);  rb = hw.get("rb", args.ram_bw)
     db = hw.get("db", args.disk_bw); geta = hw.get("geta", 0.45); gl = hw.get("gl", None)
@@ -119,7 +137,7 @@ def run(args):
            else m.get("kvp", DEFAULT_KVP))
 
     size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp)
-    q = QUAL[moe].get(args.bits, 1.0)
+    q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
           f"on {hw.get('hint', 'custom machine')}")
     kvline = (f" | ctx {ctx}: +{ctx * kvp / 1e9:.2f} GB KV read/token"

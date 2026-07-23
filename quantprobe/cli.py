@@ -30,19 +30,20 @@ def main():
     q = sub.add_parser("plan", help="evaluate every bit/tier placement, predict tok/s (Law 4)")
     q.add_argument("--model", default=None, help="preset: qwen3-30b deepseek-16b gemma-12b mistral-7b glm-air glm-744b")
     q.add_argument("--machine", default=None, help="preset: 2016-xmp 2016 gaming ddr5 colibri")
-    q.add_argument("--bits", type=float, default=2.5, choices=[2.0, 2.5, 3.0, 4.5, 6.5, 8.5])
+    q.add_argument("--bits", type=float, default=None, help="effective bits/weight (default: read from --gguf, else 2.5)")
     q.add_argument("--total", type=float, help="total params (B)")
     q.add_argument("--active", type=float, help="active params per token (B)")
     q.add_argument("--always-active", type=float, help="always-active (attention/embed) params (B)")
     q.add_argument("--vram", type=float); q.add_argument("--vram-bw", type=float)
     q.add_argument("--ram", type=float); q.add_argument("--ram-bw", type=float)
     q.add_argument("--disk-bw", type=float)
+    q.add_argument("--gguf", default=None, help="optional: read total/active/bits/KV exactly from this GGUF")
     q.add_argument("--ctx", type=int, default=0, help="context depth: adds KV reads/token + KV memory to the prediction (Law 4 v2)")
     q.add_argument("--kv-per-pos", type=float, default=None, help="KV bytes per position in KB (default: model preset, or 96)")
 
     def hwargs(sp):
         sp.add_argument("--model", default=None); sp.add_argument("--machine", default=None)
-        sp.add_argument("--bits", type=float, default=2.5, choices=[2.0, 2.5, 3.0, 4.5, 6.5, 8.5])
+        sp.add_argument("--bits", type=float, default=None, help="effective bits/weight (default: read from --gguf, else 2.5)")
         sp.add_argument("--total", type=float); sp.add_argument("--active", type=float)
         sp.add_argument("--always-active", type=float)
         sp.add_argument("--vram", type=float); sp.add_argument("--vram-bw", type=float)
@@ -81,6 +82,9 @@ def main():
     z.add_argument("--llama-dir", default=None)
     z.add_argument("--dry", action="store_true")
 
+    hwp = sub.add_parser("hw", help="detect THIS machine's memory tiers (no flags needed); every value tagged with its source")
+    hwp.add_argument("--measure", default=None, metavar="FILE", help="also MEASURE sequential disk read on a real file (e.g. a GGUF)")
+
     f = sub.add_parser("fetch", help="robust HF download (Range-resume, retry)")
     f.add_argument("repo", help="HF repo, or a preset: qwen3-30b, glm-air, deepseek-16b, qwen3-0.6b"); f.add_argument("dest"); f.add_argument("files", nargs="*")
 
@@ -103,6 +107,9 @@ def main():
     elif a.cmd == "target":
         from . import target
         target.run(a)
+    elif a.cmd == "hw":
+        from . import detect
+        detect.run(a)
     elif a.cmd == "quantize":
         from . import probe
         probe.quantize(a)
