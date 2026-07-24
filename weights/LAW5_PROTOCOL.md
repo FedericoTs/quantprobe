@@ -107,3 +107,21 @@ free; consistent with the dynamic-top-k dead end and Lucebox's admitted trade). 
 novel design this bounds: **asymmetric top-k** (prefill at k=4, decode at k=8) — if context
 ingestion tolerates reduced k better than generation does, agents get +40% prefill nearly free.
 Not expressible in stock llama.cpp (no per-phase k); requires a small patch; designed, not run.
+
+### Phase 2 — scored (same day, logs in weights/data/law5_phase2.log)
+
+- **H3a HIT, and a discovery:** the ngl sweep is wildly non-monotonic — 273 (ngl0) → **322.5
+  (ngl16, the peak)** → 180 (ngl32) → 166 (ngl99). **Prefill-optimal offload is PARTIAL** on this
+  card: +18% over stream-everything, +94% over full offload. Nobody sweeps ngl for prefill;
+  decode-optimal and prefill-optimal placements are different configurations — the phase-dependent
+  placement corollary now has its first measured demonstration.
+- **H3b MISS:** ub-1024 at ngl99 recovered only 166→181.7, far short of the staked ≥200. The
+  buffer-squeeze mechanism is minor at best. Revised hypothesis for Phase 3 (unstaked, to be
+  staked before testing): the ngl16 peak is CPU+GPU **pipeline overlap** — partially-resident
+  layers compute on both devices concurrently; full offload serializes onto the weaker GPU.
+- **H6 quality HIT:** k=4 override costs **+20.7%** WikiText ppl (8.31 → 10.03), inside the staked
+  +8–25%. k-halving is not free — the asymmetric-top-k design's value now hinges entirely on
+  whether *context ingestion* tolerates what generation doesn't (the patch-gated experiment).
+- **H6 speed: blocked by tooling** — `--override-kv` is supported by llama-perplexity (the quality
+  runs prove it) but not llama-bench; speed endpoint recovered via perplexity prompt-timing
+  (law5_h6speed.log).
