@@ -131,6 +131,8 @@ quantprobe run --gguf your-model-2bit.gguf --model <preset> --machine <preset>
 
 `quantize` and `probe --apply` **actually build the file** (they run llama.cpp's quantizer for you) — you don't copy-paste anything. `--dry` shows the exact command first if you want to inspect it.
 
+**"How do I pick the bits?"** — `quantize` has no bits flag *on purpose*: it always builds the one validated recipe (body ~2-bit, fragile band at 4-bit ≈ 2.5 effective bits). Its knobs control *where* the protection goes: `--protect-late N` (default 12) or `--protect LO-HI`, and `probe` measures your model's real fragile band instead of assuming. Want a **standard** quant at a specific level instead (Q4_K_M, Q5, Q8)? That's `auto <model> --tps <target>` (the optimizer picks the bits for your speed target) or `fetch` (you pick the file) — at 4-bit and up, community quants are fine as-is; the depth-aware recipe earns its keep below ~2.5 bits, where uniform quantization falls off the quality cliff. Full manual control: `--dry` prints the llama.cpp command — edit the format token and run it yourself.
+
 **Starting from a HuggingFace model (safetensors)?** Convert it to a high-precision GGUF once with llama.cpp's `convert_hf_to_gguf.py` (ships in the [llama.cpp repo](https://github.com/ggml-org/llama.cpp)), then feed that `.gguf` to `quantize`/`probe`. A one-command `quantprobe convert` wrapper is on the roadmap.
 
 ---
