@@ -1,0 +1,27 @@
+=== LAW 5 PILOT MATRIX 19:15 — protocol: weights/LAW5_PROTOCOL.md (committed first) ===
+--- P1 dense 7B Q4, CPU-pure ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 | none         |            pp32 |        16.77 ± 14.88 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 | none         |           pp512 |         28.72 ± 0.02 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         27.13 ± 0.08 |
+--- P2 dense 7B Q2, CPU-pure (bits-invariance arm) ---
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |   0 | none         |            pp32 |         17.92 ± 0.03 |
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |   0 | none         |           pp512 |         18.12 ± 0.07 |
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         17.60 ± 0.08 |
+--- P3 dense 7B Q4, GPU-assist ngl0 ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |            pp32 |        42.41 ± 10.16 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |           pp512 |        276.71 ± 2.45 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |          pp2048 |        272.73 ± 0.96 |
+--- P4 dense 7B Q4, all-in-VRAM ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |            pp32 |        234.60 ± 0.52 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |           pp512 |        217.26 ± 1.34 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |          pp2048 |        166.20 ± 0.77 |
+--- P5 MoE 30B Q2, CPU-pure ---
+--- P6 MoE 30B Q2, hybrid (H2: does hybrid HURT prefill?) ---
+--- P7 Bonsai 27B Q1 linear-hybrid, CPU-pure then all-in-VRAM ---
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |   0 | none         |            pp32 |          4.56 ± 0.06 |
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |   0 | none         |           pp512 |          4.54 ± 0.01 |
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |   0 | none         |          pp2048 |          4.53 ± 0.00 |
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |  99 |            pp32 |         87.45 ± 0.33 |
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |  99 |           pp512 |        115.22 ± 0.20 |
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |  99 |          pp2048 |        110.86 ± 0.56 |
+=== PILOT DONE 20:00 ===

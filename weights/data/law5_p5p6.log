@@ -1,0 +1,10 @@
+=== P5/P6 RERUN with full error capture 20:01 ===
+--- P5 MoE 30B Q2, CPU-pure (mmap default this time) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 | none         |            pp32 |          6.52 ± 1.71 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 | none         |           pp512 |         32.06 ± 0.22 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 | none         |          pp2048 |         31.58 ± 0.15 |
+--- P6 MoE 30B Q2, hybrid ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |            pp32 |         23.60 ± 2.99 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |           pp512 |       201.35 ± 12.05 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |          pp2048 |        193.24 ± 5.15 |
+=== P5/P6 DONE 20:06 ===
