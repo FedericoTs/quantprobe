@@ -58,6 +58,31 @@ the utilization constant η collapsing per memory tier.**
 - *The prediction:* measure any machine's tier bandwidths and any model's active bytes, and this
   equation prices its decode speed before you download a single weight.
 
+### Law 4, general form (v1.3–v1.4, 2026-07-24) — a restatement, not a revision
+
+Every formulation below NESTS: the v1.0 statement is the single-dominant-tier special case, v2 adds
+the KV term, and the general form covers any tier set. **No measured anchor moved at any step** —
+the anchor suite re-proves all of them on every commit.
+
+**General form.** For a machine described as memory tiers *i* (aggregated devices count as one tier:
+multi-GPU bandwidth sums x ~0.85 tensor-parallel efficiency [est], striped disks x ~0.75 [est,
+from the RAID-0 eta 0.66 datapoint]), and a placement assigning bytes to tiers:
+
+**tok/s = [ Σ_i  bytes-read-per-token from tier i ÷ (η_i · BW_i) ]⁻¹**
+
+where bytes-per-token = always-active weights + routed-expert reads (hit-rate = resident fraction,
+by routing flatness, Law 2) + ctx · kv-bytes/pos on KV's tier. Fit is checked per tier with KV
+counted. The v1.0 form is recovered when one tier dominates the sum.
+
+**Corollary (tier boundaries).** Speed is a step function of placement, so the marginal value of a
+gigabyte is ~zero mid-tier and enormous at a boundary (measured: a one-quant-step shave across our
+RAM boundary is worth x4-6). All size levers should be priced by boundary distance.
+
+**Corollary (lever gates).** Lever validity is hardware-conditional — Law 1's shape recurring at the
+systems level. Measured example: quantized K-cache costs -83% at 16k depth on Pascal-class GPUs
+(no flash attention -> per-token dequant tax) while being a plausible win on FA-capable hardware
+[est]. Optimizers over the law must carry measured gates, not assume levers are universal.
+
 ### Law 4 v2 — the context term (v1.1, 2026-07-23)
 
 The formulation above is the **short-context law**. u/RogerAI--fyi (Reddit) correctly observed it
