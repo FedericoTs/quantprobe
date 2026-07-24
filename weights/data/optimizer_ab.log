@@ -1,0 +1,12 @@
+=== OPTIMIZER-WORTH A/B — same model (Qwen3-Coder-30B-A3B), same box, two files ===
+--- what v1.4 says about the Q2_K_L file (full zero-config pipeline) ---
+[quantprobe] read from GGUF: 30.5B total, 3.4B active, 2.97 effective bits, KV 96 KB/pos
+  *   19.0 tok/s  stream from disk (VRAM+RAM expert cache)   [needs an expert-caching runtime (ktransformers/colibri-class) - stock llama.cpp gets the RAM-cache row]
+      17.5 tok/s  hybrid: attention->VRAM, experts->RAM   [RAM boundary - needs --no-mmap; can be unstable]
+       3.1 tok/s  stream from disk (cold experts)   [exceeds RAM - capacity demo]
+
+--- MEASURE the v1.4 pick (hybrid, Q2_K_L) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.55 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |            tg32 |         18.32 ± 0.17 |
+
+--- reference: v1.0-era recommendation on the Q3_K_M file (measured 2026-07-24): 3.38 +/- 2.66 (RAM-boundary thrash) ---
+=== A/B DONE ===
