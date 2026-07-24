@@ -1,0 +1,28 @@
+=== text proof take 3: llama-server + one completion request (no interactive surface) ===
+0.00.126.731 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.215.129 I srv          init: The UI is disabled
+0.00.215.134 I srv          init: Use --ui/--no-ui (or deprecated --webui/--no-webui) to enable/disable
+0.00.215.300 W srv  llama_server: -----------------
+0.00.215.301 W srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+0.00.215.303 W srv  llama_server: this can be a security risk (cross-origin attacks)
+0.00.215.303 W srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+0.00.215.304 W srv  llama_server: -----------------
+0.00.224.446 I srv    load_model: loading model 'D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf'
+0.00.658.283 W load: special_eos_id is not in special_eog_ids - the tokenizer config may be incorrect
+0.00.658.287 W load: special_eot_id is not in special_eog_ids - the tokenizer config may be incorrect
+0.12.618.182 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 512, kv_unified = 'true'
+0.12.658.448 I srv          init: chat template supports preserving reasoning, consider enabling it via --reasoning-preserve
+0.12.659.108 I srv  llama_server: model loaded
+0.12.659.112 I srv  llama_server: listening on http://127.0.0.1:8123
+--- server healthy after ~20s; requesting 16 tokens ---
+0.15.727.530 I slot get_availabl: id  3 | task -1 | selected slot by LRU, t_last = -1
+0.15.728.038 I slot launch_slot_: id  3 | task 0 | processing task, is_child = 0
+0.22.430.795 I slot print_timing: id  3 | task 0 | prompt processing, n_tokens =      3, progress = 0.43, t =   6.70 s / 0.45 tokens per second
+0.57.419.839 I slot print_timing: id  3 | task 0 | prompt eval time =   14827.40 ms /     7 tokens ( 2118.20 ms per token,     0.47 tokens per second)
+0.57.420.014 I slot print_timing: id  3 | task 0 |        eval time =   26861.05 ms /    16 tokens ( 1678.82 ms per token,     0.60 tokens per second)
+0.57.420.231 I slot print_timing: id  3 | task 0 |       total time =   41688.45 ms /    23 tokens
+0.57.420.237 I slot print_timing: id  3 | task 0 |    graphs reused =         15
+0.57.428.369 I slot      release: id  3 | task 0 | stop processing: n_tokens = 22, truncated = 0
+GENERATED: ' A survey of efficient methods for on-device machine learning in computer vision\n\nYong'
+decode: 0.60 tok/s | prefill: 0.47 tok/s
+=== TAKE3 DONE 03:15 ===

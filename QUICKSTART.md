@@ -155,6 +155,11 @@ quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionall
 - **Validated on llama.cpp build b9596+** (needs `--tensor-type` regex support in `llama-quantize`).
 - If a `run`/`bench`/`quantize` command errors with *"invalid/unknown argument"*, your llama.cpp is a different vintage — check that binary's `--help` for the current flag name. Use `--dry` to see the exact command quantprobe would run before it runs it.
 - For exact reproduction of the numbers in this repo, use b9596.
+- **Scripting single-shot generations? Use `llama-server` + one HTTP request, not `llama-cli`.** Models
+  that ship a chat template can silently force llama-cli into interactive conversation mode (overriding
+  `--no-conversation` on some builds) — with no terminal attached it spins forever printing prompts.
+  This cost me three takes on a 118B run; the server path has no interactive surface and returns
+  timing telemetry in the JSON.
 
 ## What measures what (the three verbs people mix up)
 
