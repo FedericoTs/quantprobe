@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 — 2026-07-24
+
+**Tier-boundary advisor.** Corollary of Law 4 made explicit: decode speed is a step function of
+placement, so the marginal value of a gigabyte is ~zero mid-tier and enormous at a boundary. When a
+config sits within 30% over a tier boundary, `plan` now names the gap and prices the promotion
+("1.6 GB over the VRAM boundary - shave it -> ~67.6 tok/s (x4.3)"). Works for any shave lever:
+quant step, tighter probed band, pruned variant, KV quantization. Validated on the pre-reg #8 REAP
+pair: fires on the 14.7 GB parent, silent on the promoted 11.5 GB prune. 32 smoke tests.
+
 ## 1.3.0 — 2026-07-24
 
 **Any hardware combination.** Prompted by a wild 744B rig (72 GB VRAM + 128 GB RAM + RAID-0 Gen5

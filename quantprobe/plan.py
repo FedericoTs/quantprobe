@@ -204,5 +204,24 @@ def run(args):
     if c2[0][1] > best[1] * 1.08: alts.append(("NVMe SSD", c2[0][1]))
     if alts:
         print("  upgrade advisor: " + " | ".join(f"{n} -> ~{v:.1f} tok/s" for n, v in alts))
+    # tier-boundary advisor: the biggest cliffs sit at tier boundaries (REAP finding, pre-reg #8 P-c).
+    # If a modest shave of the FILE crosses one, say so and price it.
+    kvg = ctx * kvp / 1e9 if ctx > 0 else 0.0
+    size_now = size
+    for tier_name, cap, lever in (("VRAM (all-in-VRAM)", vc * 0.90, "next quant step down / tighter probed band / pruned variant"),
+                                  ("RAM (pure-CPU)", max(rc - 4, 1), "next quant step down / tighter probed band")):
+        if cap <= 0 or size_now + kvg <= cap:
+            continue
+        gap = size_now + kvg - cap
+        if gap > size_now * 0.30:
+            continue                                   # not a "shave" - a different model class
+        fit_scale = max(0.05, (cap - kvg) / size_now) * 0.995
+        _, _, c9 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, fit_scale, gl,
+                            ctx=ctx, kvp=kvp)
+        promoted = [x for x in c9 if x[0].startswith("all in VRAM")] if "VRAM" in tier_name else                    [x for x in c9 if x[0].startswith("pure CPU")]
+        if promoted and promoted[0][1] > best[1] * 1.15:
+            print(f"  tier-boundary advisor: this config is {gap:.1f} GB over the {tier_name} boundary - "
+                  f"shave it ({lever}) -> ~{promoted[0][1]:.1f} tok/s (x{promoted[0][1]/best[1]:.1f})")
+        break                                          # nearest boundary only
     print("\n  (eta bands fitted from published measurements; estimates +/-25%. "
           "Hybrid needs --no-mmap.)")

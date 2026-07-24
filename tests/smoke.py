@@ -219,6 +219,17 @@ def t_anchor_matrix_v13():
     v = float(re.search(r"([0-9.]+) tok/s\s+stream from disk \(cold", out).group(1))
     assert 0.2 <= v <= 0.5, f"laguna anchor drifted: {v}"
 
+def t_tier_boundary_advisor():
+    # file just over the VRAM boundary -> advisor names the shave and prices the promotion
+    rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
+                  "--bits", "3.6", "--vram", "16", "--vram-bw", "448", "--ram", "32",
+                  "--ram-bw", "45", "--disk-bw", "2")
+    assert "tier-boundary advisor" in out and "x" in out, f"advisor missing: {out[-300:]}"
+    # comfortably-fitting config -> no advisor
+    rc2, out2 = cli("plan", "--total", "7", "--active", "7", "--bits", "4.5", "--vram", "16",
+                    "--vram-bw", "448", "--ram", "32", "--ram-bw", "45", "--disk-bw", "2")
+    assert "tier-boundary advisor" not in out2, "advisor fired on a fitting config"
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")
