@@ -20,6 +20,7 @@ pip install quantprobe
 **New in v1.2: zero flags needed on your own machine.** `quantprobe hw` shows what it detected (GPU, RAM speed, every value tagged with its source); any command with no hardware flags uses it automatically. And `--gguf model.gguf` reads the model's parameters from the file itself (total/active params, true effective bits, exact KV bytes). The minimal commands are now:
 
 ```bash
+quantprobe auto qwen3-coder --tps 15 --run     # ONE command: bits chosen, quant fetched, chat running
 quantprobe hw                                  # what the tool sees (override anything with flags)
 quantprobe plan --gguf your-model.gguf         # THIS machine + THAT file: nothing else to type
 quantprobe bench --gguf your-model.gguf        # predicted vs measured, zero configuration
@@ -179,6 +180,7 @@ quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionall
 | `plan` | no | predict decode speed + best placement for a model on your machine |
 | `target` | no | inverse: give a tok/s target, get the smartest model + a speed↔intelligence ladder |
 | `optimize` | no | cheapest path to a target speed: bits × placement × KV × hardware searched over the law, measured lever gates |
+| `auto` | network | ONE command: optimizer picks the bits, closest community quant fetched, run command printed (`--run` launches) |
 | `fetch` | no (network) | robust model download (resumes, retries) |
 | `quantize` | **yes** | **compress**: build a depth-aware ~2-bit GGUF (protect the fragile band, rest 2-bit) |
 | `probe` | **yes** | measure a model's fragility curve → emit (or `--apply` to build) the depth-aware GGUF |

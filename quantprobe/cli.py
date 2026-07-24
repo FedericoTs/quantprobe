@@ -91,6 +91,17 @@ def main():
     o.add_argument("--allow-prune", action="store_true", help="include REAP-class pruned variants (domain-specialized: +39%% out-of-domain ppl measured)")
     hwargs(o)
 
+    au = sub.add_parser("auto", help="ONE command: model in, running setup out - optimizer picks the bits, the closest quant is fetched, run command printed")
+    au.add_argument("target", help="model preset (qwen3-30b, qwen3-coder, glm-air, laguna-s, gemma-12b, mistral-7b) or a HF GGUF repo id")
+    au.add_argument("--dir", default="./models", help="download directory (default ./models)")
+    au.add_argument("--run", action="store_true", help="launch chat immediately after the download")
+    hwargs(au)
+    au.add_argument("--tps", type=float, default=None, help="target tok/s for the optimizer")
+    au.add_argument("--max-quality", type=float, default=None)
+    au.add_argument("--allow-prune", action="store_true"); au.add_argument("--any-runtime", action="store_true")
+    au.add_argument("--serve", action="store_true", help="with --run: llama-server instead of chat")
+    au.add_argument("--extra", default=None)
+
     hwp = sub.add_parser("hw", help="detect THIS machine's memory tiers (no flags needed); every value tagged with its source")
     hwp.add_argument("--measure", default=None, metavar="FILE", help="also MEASURE sequential disk read on a real file (e.g. a GGUF)")
 
@@ -116,6 +127,9 @@ def main():
     elif a.cmd == "target":
         from . import target
         target.run(a)
+    elif a.cmd == "auto":
+        from . import auto
+        auto.run(a)
     elif a.cmd == "optimize":
         from . import optimize
         optimize.run(a)

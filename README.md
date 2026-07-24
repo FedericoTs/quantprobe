@@ -67,15 +67,17 @@ Full statements, each with its establishing measurement and a falsifiable predic
 <p align="center"><img src="weights/data/x_chart_I_kvdepth.png" width="700" alt="Decode speed versus context depth: measured 20.02 tok/s at depth zero falling to 16.12 at 16384, on the Law 4 v2 curve with eta_kv 0.70"></p>
 
 
-## Install — and the ten commands
+## Install — and the eleven commands
 
 ```bash
 pip install quantprobe
+quantprobe auto qwen3-coder --tps 15 --run   # empty machine -> optimal quant chosen, fetched, chatting
 ```
 
-**Zero-config on your own box**: `quantprobe plan --gguf model.gguf` auto-detects the machine and reads the model from the file. Presets/flags estimate any *other* machine. `hw`/`plan`/`target`/`optimize` need nothing else installed; the rest drive stock [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point at it with `--llama-dir`/`QUANTPROBE_LLAMA_DIR`/`PATH`; preview any command with `--dry`).
+**Zero-config on your own box**: `quantprobe plan --gguf model.gguf` auto-detects the machine and reads the model from the file. Presets/flags estimate any *other* machine. `hw`/`plan`/`target`/`optimize` need nothing else installed (`auto` needs network for the fetch); the rest drive stock [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point at it with `--llama-dir`/`QUANTPROBE_LLAMA_DIR`/`PATH`; preview any command with `--dry`).
 
 ```bash
+quantprobe auto qwen3-30b --tps 15                       # ONE command: optimizer picks bits, closest quant fetched, run command printed
 quantprobe hw                                            # what the law sees on THIS machine (every value source-tagged)
 quantprobe plan     --gguf model.gguf                    # zero-config prediction: placement + tok/s + the launch command
 quantprobe optimize --tps 20                             # CHEAPEST PATH to a target: bits x placement x hardware, Pareto-ranked
@@ -85,7 +87,7 @@ quantprobe quantize --gguf f16.gguf --out 2bit.gguf      # COMPRESS: depth-aware
 quantprobe probe    --gguf f16.gguf --eval wiki.test.raw # measure YOUR model's fragile band (~30 min); --apply builds it
 quantprobe run      --gguf 2bit.gguf                     # plan the placement, then LAUNCH llama.cpp chat
 quantprobe bench    --gguf 2bit.gguf --contribute        # predicted vs measured on your box; opt-in datapoint
-quantprobe dashboard --gguf 2bit.gguf                    # chat while every reply is scored against the prediction
+quantprobe dashboard --gguf 2bit.gguf                    # the law LIVE: neuron galaxy + thinking toggle, every reply scored vs prediction
 ```
 
 The loop is self-validating: `plan` predicted 17.5 for a file we then measured at **18.32 ± 0.17**; the config months of research converged to is what `optimize` picks blind. A measured example of what that's worth: the same model, mis-specified vs law-routed, is **3.38 vs 18.32 tok/s (×5.4)** — [worked examples](docs/EXAMPLES.md).

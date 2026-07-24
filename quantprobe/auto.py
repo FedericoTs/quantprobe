@@ -1,0 +1,106 @@
+"""quantprobe auto — one command: model in, running setup out.
+
+    quantprobe auto qwen3-30b --tps 15          # preset
+    quantprobe auto unsloth/Qwen3-30B-A3B-GGUF  # any HF GGUF repo (params read from filenames' size)
+
+The two-speed design:
+  FAST PATH (this command): detect the machine -> ask the optimizer for the best effective-bits ->
+  scan the HF repo's file list and pick the closest-matching quant BY SIZE (bits = size*8/params —
+  no fragile name parsing) -> fetch it -> print the prediction and the run command (--run launches).
+  CUSTOM PATH (the actual product, printed at the end): probe YOUR model's fragile band and build a
+  depth-aware GGUF at the same bits — better quality at the same bytes. `probe --apply` does it.
+"""
+from __future__ import annotations
+import json, urllib.request
+
+from . import plan as planmod
+from . import optimize as optmod
+
+# preset -> (repo, total params B, active B, always-active B, moe)
+MODEL_REPOS = {
+    "qwen3-30b":  ("unsloth/Qwen3-30B-A3B-GGUF", 30.5, 3.3, 1.2, True),
+    "qwen3-coder": ("unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF", 30.5, 3.3, 1.2, True),
+    "glm-air":    ("unsloth/GLM-4.5-Air-GGUF", 110, 12, 2.7, True),
+    "laguna-s":   ("unsloth/Laguna-S-2.1-GGUF", 117.6, 8, 2.5, True),
+    "gemma-12b":  ("unsloth/gemma-4-12b-it-GGUF", 11.9, 11.9, 11.9, False),
+    "mistral-7b": ("unsloth/Mistral-7B-Instruct-v0.3-GGUF", 7.2, 7.2, 7.2, False),
+}
+
+
+def list_ggufs(repo):
+    """[(path, size_bytes)] for a HF repo, via the public tree API."""
+    req = urllib.request.Request(f"https://huggingface.co/api/models/{repo}/tree/main",
+                                 headers={"User-Agent": "quantprobe-auto"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return [(f["path"], f.get("size", 0)) for f in json.load(r)
+                if f["path"].endswith(".gguf") and f.get("size", 0) > 1e8
+                and "mmproj" not in f["path"].lower() and "draft" not in f["path"].lower()]
+
+
+def run(a):
+    target = a.target
+    if target in MODEL_REPOS:
+        repo, t, ac, ne, moe = MODEL_REPOS[target]
+    else:
+        repo = target
+        if not getattr(a, "total", None):
+            raise SystemExit(f"'{target}' is not a preset ({', '.join(MODEL_REPOS)}) - for a raw HF "
+                             "repo also pass --total (B params) and, for MoE, --active/--always-active")
+        t, ac = a.total, a.active or a.total
+        ne = a.always_active or (ac if ac >= t * 0.9 else ac * 0.35)
+        moe = ac < t * 0.9
+    a.total, a.active, a.always_active, a.model = t, ac, ne, None
+
+    # 1. what does the optimizer want on THIS machine?
+    a.gguf = None
+    ranked = optmod.run(a)
+    want_bits = ranked[0]["bits"]
+    _, _, _, _, _, (vc, vb, rc, rb, db, geta, gl), ctx, kvp = optmod.resolve(a)
+
+    # 2. pick the closest file BY SIZE (bits = size*8/params; honest, format-agnostic)
+    try:
+        files = list_ggufs(repo)
+    except Exception as e:
+        raise SystemExit(f"could not list {repo}: {e}")
+    if not files:
+        raise SystemExit(f"no GGUF files found in {repo}")
+    scored = []
+    for path, size in files:
+        bits = size * 8 / (t * 1e9)
+        if bits < 1.0 or bits > 9:
+            continue
+        _, _, cfgs = planmod.evaluate(t, ac, ne, moe, bits, vc, vb, rc, rb, db, geta, 1.0, gl,
+                                      ctx=ctx, kvp=kvp)
+        cfgs = [c for c in cfgs if "expert cache" not in c[0]]
+        if not cfgs:
+            continue
+        scored.append((abs(bits - want_bits), -cfgs[0][1], path, size, bits, cfgs[0]))
+    if not scored:
+        raise SystemExit("no usable quant in that repo for this machine")
+    scored.sort()
+    _, _, path, size, bits, best = scored[0]
+    print(f"\n[quantprobe auto] optimizer wants ~{want_bits:g}-bit; closest file in {repo}:")
+    print(f"  {path}  ({size/1e9:.1f} GB, {bits:.2f} effective bits)")
+    print(f"  predicted on this machine: {best[1]:.1f} tok/s  ({best[0]})")
+    if getattr(a, "dry", False):
+        print("  (--dry: nothing downloaded)")
+        return path
+    # 3. fetch it (resumable), then hand off
+    from . import fetch as fetchmod
+    dest = getattr(a, "dir", None) or "./models"
+    import os
+    os.makedirs(dest, exist_ok=True)
+    ok = fetchmod.fetch(repo, dest, path, fetchmod.token())
+    if not ok:
+        raise SystemExit("download failed (it resumes: re-run the same command)")
+    full = os.path.join(dest, os.path.basename(path))
+    print(f"\n[quantprobe auto] ready. Run it:")
+    print(f"  quantprobe run --gguf {full}")
+    print(f"\n  Want better quality at the SAME size? That's the custom path (the actual product):")
+    print(f"  fetch the f16, then:  quantprobe probe --gguf <f16>.gguf --eval wiki.test.raw --apply")
+    if getattr(a, "run", False):
+        from . import runtime
+        a.gguf = full
+        a.bits = None                              # let autospec read the real file
+        runtime.run(a)
+    return full

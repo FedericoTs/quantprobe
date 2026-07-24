@@ -266,6 +266,17 @@ def t_gpu_table_lookup():
     assert gpu_lookup("NVIDIA GeForce GTX 1060 6GB")[0] == 192
     assert "default" in gpu_lookup("Mystery GPU 9000")[3]
 
+def t_auto_dry_picks_a_file():
+    # auto --dry: optimizer -> HF file-list match -> prediction, NO download. Tolerant of offline CI.
+    rc, out = cli("auto", "qwen3-30b", "--tps", "10", "--machine", "2016-xmp", "--dry")
+    if "could not list" in out:
+        return                                   # no network in this environment
+    assert ".gguf" in out and "predicted on this machine" in out and "nothing downloaded" in out, out[-300:]
+
+def t_auto_unknown_target_graceful():
+    rc, out = cli("auto", "not-a-real-preset-or-repo", "--dry")
+    assert rc != 0 and ("not a preset" in out or "could not list" in out)
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")

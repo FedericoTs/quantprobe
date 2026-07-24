@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.5.0 — 2026-07-25
+
+**One command from empty machine to running model — and the law, watchable.**
+
+- `quantprobe auto <model> [--tps N] [--run]`: machine auto-detected -> optimizer picks the
+  effective bits -> the HF repo's file list is scanned and the closest quant matched BY SIZE
+  (bits = size x 8 / params; format-agnostic) -> resumable fetch -> run command (or --run
+  launches). First live run picked the exact file independently measured at 18.32 tok/s.
+  The custom probe path (better quality at the same bytes) is advertised on every run.
+- Dashboard v2.1: single-viewport app (fixed sidebar, internal chat scroll), streaming replies
+  with VISIBLE thinking, a thinking TOGGLE + per-reply anatomy (TTFT / thinking / answer), and
+  the NEURON GALAXY - every expert of every layer as a dot, lit per generated token, colored by
+  its memory tier. Honesty printed on the panel: uniform sampling is the statistically exact
+  picture under the measured flat-routing law; stock llama.cpp exposes no router telemetry.
+- Hardening from real use: completion-probe readiness (llama-server reports healthy before
+  weights load), exclusive port bind (Windows silently allowed double-binds), RTX 50-series in
+  the detect table, per-card multi-GPU bandwidth aggregation.
+- 40 smoke tests. Eleven commands.
+
 ## 1.4.0 — 2026-07-24
 
 **`quantprobe optimize` — the cheapest path to a target speed.** A pure search layer over the
