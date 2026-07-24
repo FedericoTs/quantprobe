@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.2 — 2026-07-25
+
+- **Unknown preset names now fail loudly.** `plan/target/optimize --model <unknown>` used to fall
+  back silently to a 13B default and produce plausible-looking wrong numbers (found while
+  answering a real user question). Now: clean error listing the presets, plus the two escape
+  hatches (`--total/--active` to describe any model, `--gguf` to read the exact spec from the
+  file). Same for `--machine`. 4 new tests (45 total).
+- Docs: the one-command pipeline (`auto <model> --custom --run`) is now the first thing in
+  QUICKSTART; bit-level selection clarified (quantize = fixed validated recipe, `auto`/`fetch`
+  = standard quants).
+
 ## 1.5.1 — 2026-07-25
 
 **`auto --custom` — the personalized recipe, now truly one command.** Fetches the best

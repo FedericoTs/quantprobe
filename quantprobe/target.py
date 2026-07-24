@@ -52,6 +52,8 @@ def feasible(a, tps_target):
 
 
 def run(a):
+    from . import plan as planmod
+    planmod.check_presets(a)
     hw, vc, vb, rc, rb, db, geta, gl = hw_of(a)
     rows = feasible(a, a.tps)
     print(f"\nquantprobe target - smartest model meeting >= {a.tps:g} tok/s "

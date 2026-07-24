@@ -8,4 +8,4 @@ Three commands, all grounded in measured laws (see LAWS.md in the repo):
 Every constant in `plan` is fitted from measurements published in the repo, including two
 pre-registered hardware predictions confirmed within 8%.
 """
-__version__ = "1.5.1"
+__version__ = "1.5.2"

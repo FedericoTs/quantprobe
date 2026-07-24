@@ -144,9 +144,27 @@ def qual_of(moe, bits):
     return QUAL[moe][min(keys, key=lambda k: abs(k - bits))]
 
 
+def check_presets(args):
+    """Refuse unknown preset names LOUDLY instead of silently falling back to defaults."""
+    mdl = getattr(args, "model", None)
+    if mdl and mdl not in MODELS and not getattr(args, "total", None):
+        raise SystemExit(
+            "unknown --model '%s' (and no --total to describe it).\n"
+            "  presets: %s\n"
+            "  or describe it:      --total <B> --active <B> [--always-active <B>]\n"
+            "  or point at a file:  --gguf model.gguf   (exact spec read from the GGUF)" % (mdl, ", ".join(sorted(MODELS))))
+    mac = getattr(args, "machine", None)
+    if mac and mac not in MACHINES:
+        raise SystemExit(
+            "unknown --machine '%s'.\n"
+            "  presets: %s\n"
+            "  or pass flags: --vram/--vram-bw/--ram/--ram-bw/--disk-bw   (no flags = auto-detect this box)" % (mac, ", ".join(sorted(MACHINES))))
+
+
 def run(args):
     from . import spec as specmod
     specmod.apply(args)
+    check_presets(args)
     if getattr(args, "bits", None) is None:
         args.bits = 2.5
     m = dict(MODELS[args.model]) if args.model in MODELS else {}
