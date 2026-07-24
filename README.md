@@ -12,7 +12,7 @@
 > Pick any model + your machine → predicted tok/s, memory fit, quality cost, and your cheapest next upgrade — from the law below, with your config plotted against every validated measurement.
 
 
-**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds.** Two tiers: `plan`/`target` and the web calculator need *nothing* installed; `quantize`/`probe`/`run`/`bench`/`dashboard` drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). Preview any command without llama.cpp using `--dry`. 16 machine presets ship in (`--machine`): GTX 1060 → RTX 5090, Apple `mac-m2/m3/m4-*`, DGX Spark, Epyc — or pass raw specs. Multi-GPU / RAID? Comma lists aggregate: `--vram 24,24 --disk-bw 14,14`. Big-VRAM + disk-streaming rigs get the three-tier expert-cache row (v1.3).
+**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds — or just `pip install quantprobe && quantprobe auto qwen3-coder --run`.** The calculators (`hw`/`plan`/`target`/`optimize`) need nothing installed; the weight-touching commands drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`; preview anything with `--dry`). 16 machine presets ship in (`--machine`): GTX 1060 → RTX 5090, Apple `mac-m2/m3/m4-*`, DGX Spark, Epyc — or pass raw specs. Multi-GPU / RAID? Comma lists aggregate: `--vram 24,24 --disk-bw 14,14`. Big-VRAM + disk-streaming rigs get the three-tier expert-cache row (v1.3).
 
 
 ---
@@ -49,7 +49,7 @@ Add to that: a **byte-identical control** (two GGUFs the same size, 2.25 ppl apa
 <p align="center"><img src="weights/data/validation_19tok/live_run_20tps.png" width="880" alt="One frame: Task Manager showing 16 GB DDR4-3000 and the GTX 1060 6GB beside llama.cpp chatting Qwen3-30B-A3B live at 20.4 tok/s generation"></p>
 <p align="center"><em>One frame, no cuts: Task Manager (16 GB @ 3000 MT/s, GTX 1060 6 GB, RAM at 91% — the hybrid placement using the whole machine) beside llama.cpp chatting Qwen3-30B-A3B at <b>20.4 tok/s generation</b> — above the pre-registered 19. Raw logs, hardware attestation + GGUF SHA256: <a href="weights/data/validation_19tok/EVIDENCE.txt">EVIDENCE.txt</a>. Third bench run: 19.26 ± 0.45 (series 19.30 → 19.55 → 19.26).</em></p>
 
-**Open pre-registrations** — predictions staked publicly *before* measurement: [colibri v1.1, five falsifiable predictions (2026-07-23)](preregistrations/2026-07-23-colibri-v1.1.md) — dual-SSD scaling, int3 speedup, lattice-vs-scalar, AVX-512 tier-scoping, MTP×MoE antagonism.
+**Open pre-registrations** — predictions staked publicly *before* measurement: [colibri v1.1, five falsifiable predictions (2026-07-23)](preregistrations/2026-07-23-colibri-v1.1.md) — dual-SSD scaling, int3 speedup, lattice-vs-scalar, AVX-512 tier-scoping, MTP×MoE antagonism — plus open bands on the CPU-only context slope and expert-pruning decode ([all verdicts](preregistrations/)).
 
 
 ## The four placement laws
@@ -101,14 +101,14 @@ The loop is self-validating: `plan` predicted 17.5 for a file we then measured a
 
 | | |
 |---|---|
-| [QUICKSTART.md](QUICKSTART.md) | 60-second start, three levels; Ollama interop; llama.cpp version notes |
+| [QUICKSTART.md](QUICKSTART.md) | 60-second start, three levels; recipes (own fine-tune, coding agents, hardware buying); Ollama interop |
 | [LAWS.md](LAWS.md) | the four laws — statements, measurements, falsifiable predictions, the general form |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | worked examples with real outputs: zero-config, the ×5.4 optimizer A/B, probe walkthrough, troubleshooting |
 | [docs/HARDWARE.md](docs/HARDWARE.md) | the 2016 box: exact specs, measured bandwidths, what the next euro buys |
 | [docs/DEEP-DIVE.md](docs/DEEP-DIVE.md) | what's new vs. what's built-on, parity tables, the 744B-at-home projection, repository map |
 | [preregistrations/](preregistrations/) | every staked prediction with its verdict — hits, the near-miss, and the honest miss |
 | [papers/arxiv/](papers/arxiv/) | the paper (submission-ready LaTeX) |
-| [CHANGELOG.md](CHANGELOG.md) | v1.0 → v1.4, every release |
+| [CHANGELOG.md](CHANGELOG.md) | v1.0 → v1.5, every release |
 
 ## Honest limitations
 
