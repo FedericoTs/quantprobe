@@ -288,3 +288,21 @@ just hygiene.
   (193.2 published was ~8% low, inside today's noise band); P6 pp32 re-cell (6.8) flagged as
   cold-cache warm-up artifact, excluded pending a warmed re-run. CPU-pure numbers unaffected
   by construction. H12 running.
+- **H12 scored: one hit, two misses, and a mechanism correction (log law5_h12_formats.log).**
+  CPU-pure pp2048, dense 7B: **Q4_K_M 27.49** (fastest) > Q4_0 23.73 > Q2_K 17.71 ≈ Q8_0 17.64
+  > Q5_0 12.43 >> **IQ3_S 3.74 / IQ3_XS 4.04**. Q8_0-fastest: **MISS** (−36% vs Q4_K_M).
+  Q4_0 ≥ Q4_K_M: **MISS** (−14%). IQ-slowest: **HIT at x3.4 the staked magnitude** (−85% vs
+  staked ≥−25%). The staked mechanism ("simpler dequant wins") is refuted by its own table:
+  Q8_0 (simplest) lands mid-pack and Q5_0 is slower than Q8_0 despite fewer bytes — so neither
+  instruction simplicity nor byte count dominates. What is left standing: **kernel tuning
+  quality** — K-quants carry the best-optimized AVX2 GEMM paths, legacy _0 formats are
+  second-class, LUT-based IQ formats are vector-hostile. η_pp(format) is an empirical lookup
+  column, not derivable arithmetic. Recipe: on AVX2-era CPUs keep CPU-resident tensors in
+  K-quants; never IQ (a sensible-looking IQ3 pick silently costs x7 on CPU prefill).
+  Reproduction check inside the batch: Q2_K 17.71 vs pilot 17.60 ✓. Requant cells disclosed
+  as speed-only (requantized from Q4_K_M; no quality claims).
+
+**Phase 3 final ledger: 6 hits (H7a, H7b, H8, H10 x2, H11, H12-IQ), 4 misses published
+(H7c, H9, H12-Q8_0, H12-Q4_0), one void (interleave), one retraction handled with controlled
+reproduction (H3a), one quantified replacement law (co-residency knee), contamination audit
+clean on all CPU-path and ngl0-class numbers.**

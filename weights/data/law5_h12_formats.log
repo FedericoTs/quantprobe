@@ -1,0 +1,17 @@
+=== H12 FORMAT x DEVICE eta_pp TABLE 21:56 ===
+--- requantize (speed-only cells, requant-from-Q4_K_M, disclosed) ---
+llama_quantize:    total time = 32396.60 ms
+llama_quantize:    total time = 50352.26 ms
+llama_quantize:    total time = 91276.42 ms
+4.2G C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/qwen7b-Q4_0.gguf
+5.0G C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/qwen7b-Q5_0.gguf
+7.6G C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/qwen7b-Q8_0.gguf
+--- CPU-pure pp2048 cells (-dev none -ngl 0, r2) ---
+| qwen2 7B Q4_0                  |   4.12 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         23.73 ± 0.07 |
+| qwen2 7B Q5_0                  |   4.94 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         12.43 ± 0.00 |
+| qwen2 7B Q8_0                  |   7.54 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         17.64 ± 0.03 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         27.49 ± 0.04 |
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         17.71 ± 0.22 |
+| qwen2 7B IQ3_S mix - 3.66 bpw  |   3.32 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |          3.74 ± 0.01 |
+| qwen2 7B IQ3_XS - 3.3 bpw      |   3.11 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |          4.04 ± 0.00 |
+=== H12 DONE 23:22 ===
