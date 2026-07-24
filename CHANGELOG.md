@@ -12,7 +12,7 @@ The full-customization pipeline, delivered as one decision-making command:
   hardware, the surgery doesn't pay (Laws 1–2: the fragile-band fix matters below ~3 bits) —
   auto says so and fetches the optimal standard quant instead. `--force-custom` overrides.
   The same command on a 6 GB/16 GB box still builds the depth-aware file, because there it wins.
-- 4 new tests (49 total): gate, force-override, wizard with piped answers, wizard EOF.
+- 4 new tests (45 total, recounted: the historical "41" was itself off by 4 — real ladder 37 → 41 → 45): gate, force-override, wizard with piped answers, wizard EOF.
 
 ## 1.5.2 — 2026-07-25
 
@@ -20,7 +20,7 @@ The full-customization pipeline, delivered as one decision-making command:
   back silently to a 13B default and produce plausible-looking wrong numbers (found while
   answering a real user question). Now: clean error listing the presets, plus the two escape
   hatches (`--total/--active` to describe any model, `--gguf` to read the exact spec from the
-  file). Same for `--machine`. 4 new tests (45 total).
+  file). Same for `--machine`. 4 new tests (41 total).
 - Docs: the one-command pipeline (`auto <model> --custom --run`) is now the first thing in
   QUICKSTART; bit-level selection clarified (quantize = fixed validated recipe, `auto`/`fetch`
   = standard quants).
