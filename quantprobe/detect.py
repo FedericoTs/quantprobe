@@ -20,7 +20,9 @@ def _run(cmd, timeout=10):
 
 # name-fragment -> (VRAM bandwidth GB/s, geta, gl). 1060 measured on the reference box; rest spec-sheet [table].
 GPU_TABLE = [
-    ("5090", 1792, 0.62, 0.42), ("4090", 1008, 0.62, 0.42), ("4080", 717, 0.6, 0.4),
+    ("5090", 1792, 0.62, 0.42), ("5080", 960, 0.62, 0.42), ("5070 ti", 896, 0.62, 0.42),
+    ("5070", 672, 0.6, 0.4), ("5060 ti", 448, 0.58, 0.38), ("5060", 448, 0.58, 0.38),
+    ("4090", 1008, 0.62, 0.42), ("4080", 717, 0.6, 0.4),
     ("4070", 504, 0.55, 0.35), ("4060", 272, 0.5, 0.3),
     ("3090", 936, 0.6, 0.4), ("3080", 760, 0.58, 0.38), ("3070", 448, 0.52, 0.32),
     ("3060 ti", 448, 0.5, 0.3), ("3060", 360, 0.5, 0.3), ("3050", 224, 0.45, 0.28),
@@ -107,11 +109,13 @@ def detect():
     gs = gpus()
     if gs:
         vram = sum(g[1] for g in gs)
-        bw0, geta, gl, src = gpu_lookup(gs[0][0])
-        vram_bw = bw0 * len(gs) * (1.0 if len(gs) == 1 else 0.85)   # aggregate w/ tensor-parallel loss
+        per = [gpu_lookup(g[0]) for g in gs]                        # per-card lookup (mixed pairs differ)
+        bw_sum = sum(p[0] for p in per)
+        vram_bw = bw_sum * (1.0 if len(gs) == 1 else 0.85)          # aggregate w/ tensor-parallel loss
+        geta, gl, src = per[0][1], per[0][2], per[0][3]             # eta class from the primary card
         names = " + ".join(g[0] for g in gs)
         notes.append(f"GPU: {names}, {vram:.0f} GB total [os], {vram_bw:.0f} GB/s {src}"
-                     + (f" (x{len(gs)} aggregate, 0.85 TP efficiency [est])" if len(gs) > 1 else ""))
+                     + (f" (x{len(gs)} per-card sum, 0.85 TP efficiency [est]; slower card gates its share)" if len(gs) > 1 else ""))
         hw.update(vram=vram, vram_bw=round(vram_bw), geta=geta, gl=gl)
     else:
         hw.update(vram=0, vram_bw=0)

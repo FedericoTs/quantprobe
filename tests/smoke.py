@@ -259,6 +259,13 @@ def t_optimize_prune_flagged():
     rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp", "--allow-prune")
     assert rc == 0 and ("PRUNED" in out or "tok/s" in out)
 
+def t_gpu_table_lookup():
+    from quantprobe.detect import gpu_lookup
+    assert gpu_lookup("NVIDIA GeForce RTX 5060 Ti")[0] == 448
+    assert gpu_lookup("NVIDIA GeForce RTX 3060")[0] == 360
+    assert gpu_lookup("NVIDIA GeForce GTX 1060 6GB")[0] == 192
+    assert "default" in gpu_lookup("Mystery GPU 9000")[3]
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")
