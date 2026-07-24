@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0 — 2026-07-24
+
+**`quantprobe optimize` — the cheapest path to a target speed.** A pure search layer over the
+frozen law (no physics touched; anchors untouchable by construction): bits ladder x placement x
+KV levers x hardware deltas, Pareto-ranked by quality cost then euros, with realize-commands.
+
+- Backtested: blind on the reference box it rediscovers the measured-best config (2.5-bit
+  depth-aware hybrid, 18.9 predicted / 19.30-20.02 measured) on the frontier.
+- Boundary-aware: on a 16 GB card with a just-over file it picks the bits-shave that crosses into
+  all-in-VRAM (x4+), the pre-registration #8 lesson operationalized.
+- Measured lever gates: KV-q8 blocked on weak-decode GPUs (measured -83% at 16k on Pascal,
+  2026-07-24); REAP-class pruning never ranked without --allow-prune (+39% OOD ppl measured).
+- Realizable-by-default: only stock-llama.cpp placements unless --any-runtime.
+- 37 smoke tests. Ten commands.
+
 ## 1.3.1 — 2026-07-24
 
 **Tier-boundary advisor.** Corollary of Law 4 made explicit: decode speed is a step function of

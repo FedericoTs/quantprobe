@@ -230,6 +230,35 @@ def t_tier_boundary_advisor():
                     "--vram-bw", "448", "--ram", "32", "--ram-bw", "45", "--disk-bw", "2")
     assert "tier-boundary advisor" not in out2, "advisor fired on a fitting config"
 
+def t_optimize_backtest_rediscovers_measured_config():
+    # blind run on 30B/2016 must place the MEASURED config (2.5-bit hybrid, 18.9) on the frontier top-2
+    rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    assert rc == 0
+    lines = [l for l in out.splitlines() if "tok/s" in l and "quality" in l]
+    top2 = " ".join(lines[:2])
+    assert "18.9" in top2 and "2.5-bit" in top2 and "hybrid" in top2, f"backtest failed: {top2}"
+
+def t_optimize_realizable_default():
+    rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    assert "expert cache" not in out, "aspirational runtime row leaked into default (llama.cpp) mode"
+    rc2, out2 = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp", "--any-runtime")
+    assert rc2 == 0
+
+def t_optimize_target_unreachable():
+    rc, out = cli("optimize", "--model", "glm-744b", "--machine", "2016-xmp", "--tps", "50")
+    assert "NOT REACHABLE" in out and "tok/s" in out
+
+def t_optimize_kv_gate():
+    # Pascal-class (geta .35): KV-q8 lever must NOT appear even with ctx; modern GPU: appears tagged
+    rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp", "--ctx", "16384")
+    assert "KV q8" not in out, "KV-q8 offered on Pascal-class (measured trap)"
+    rc2, out2 = cli("optimize", "--model", "qwen3-30b", "--machine", "rtx-3090", "--ctx", "16384")
+    assert rc2 == 0  # gate open on geta>=0.5 hardware (tag appears when the lever wins a frontier row)
+
+def t_optimize_prune_flagged():
+    rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp", "--allow-prune")
+    assert rc == 0 and ("PRUNED" in out or "tok/s" in out)
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")

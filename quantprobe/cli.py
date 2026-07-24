@@ -84,6 +84,13 @@ def main():
     z.add_argument("--llama-dir", default=None)
     z.add_argument("--dry", action="store_true")
 
+    o = sub.add_parser("optimize", help="cheapest path to a target speed: search bits x placement x KV x hardware over the law")
+    o.add_argument("--tps", type=float, default=None, help="target tok/s (omit for the speed frontier)")
+    o.add_argument("--max-quality", type=float, default=None, help="quality-cost ceiling (default 1.12)")
+    o.add_argument("--any-runtime", action="store_true", help="include placements needing expert-caching runtimes (ktransformers-class), not just stock llama.cpp")
+    o.add_argument("--allow-prune", action="store_true", help="include REAP-class pruned variants (domain-specialized: +39%% out-of-domain ppl measured)")
+    hwargs(o)
+
     hwp = sub.add_parser("hw", help="detect THIS machine's memory tiers (no flags needed); every value tagged with its source")
     hwp.add_argument("--measure", default=None, metavar="FILE", help="also MEASURE sequential disk read on a real file (e.g. a GGUF)")
 
@@ -109,6 +116,9 @@ def main():
     elif a.cmd == "target":
         from . import target
         target.run(a)
+    elif a.cmd == "optimize":
+        from . import optimize
+        optimize.run(a)
     elif a.cmd == "hw":
         from . import detect
         detect.run(a)
