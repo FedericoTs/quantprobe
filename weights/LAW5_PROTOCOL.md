@@ -80,3 +80,48 @@ Batch sweep `-p 32,512,2048`, `-r 2`, per configuration:
 3. Measure the staked configs. Score in public, hits and misses.
 4. Only then: Law 5 enters LAWS.md, `plan --prefill` enters the tool, and the Continue-class
    answer ("your first request will take N minutes") becomes a computed number.
+
+---
+
+## Phase 2 — the allocation frontier (stakes written 2026-07-25, before the runs)
+
+**H3 (VRAM-residency tax).** The pilot anomaly (ngl0 273 vs ngl99 166 at pp2048) has a proposed
+mechanism: resident weights compete with prefill compute buffers on a 6 GB card. Staked: (a) the
+ngl-sweep peak is NOT at full offload; (b) raising `-ub` to 1024 at ngl99 recovers at least half
+the gap (≥ 200 tok/s). If -ub does nothing, the mechanism is wrong and gets published as such.
+
+**H4 (coverage kills selective prefill placement — by arithmetic).** Expected expert coverage in
+a batch of n tokens is 1−(1−k/E)^n: for k=8, E=128 → 90% at n=32, ~100% at n=512. Prefill
+touches everything; there is nothing selective to place. Corollary staked without measurement
+(the arithmetic plus measured flat routing suffice): dynamic expert placement can only pay below
+batch ≈ 8 — i.e. decode, where the static version is already measured-dead. Empirical coverage
+curve deferred to an eval-callback source build (prebuilts ship no router telemetry).
+
+**H5 (pruning does not speed prefill).** Active-k is unchanged by expert pruning, so prefill
+FLOPs are unchanged: REAP-50-class pp2048 within ±10% of its parent, any device. Community-checkable.
+
+**H6 (k-reduction endpoints; the asymmetric idea).** Using stock `--override-kv
+qwen3moe.expert_used_count=int:4` on the k=8 file: staked — CPU-pure pp2048 rises to **43–50**
+(FLOPs ×0.68 of the 31.6 baseline), and WikiText-2 ppl degrades by **+8–25%** (k-halving is not
+free; consistent with the dynamic-top-k dead end and Lucebox's admitted trade). The genuinely
+novel design this bounds: **asymmetric top-k** (prefill at k=4, decode at k=8) — if context
+ingestion tolerates reduced k better than generation does, agents get +40% prefill nearly free.
+Not expressible in stock llama.cpp (no per-phase k); requires a small patch; designed, not run.
+
+### Phase 2 — scored (same day, logs in weights/data/law5_phase2.log)
+
+- **H3a HIT, and a discovery:** the ngl sweep is wildly non-monotonic — 273 (ngl0) → **322.5
+  (ngl16, the peak)** → 180 (ngl32) → 166 (ngl99). **Prefill-optimal offload is PARTIAL** on this
+  card: +18% over stream-everything, +94% over full offload. Nobody sweeps ngl for prefill;
+  decode-optimal and prefill-optimal placements are different configurations — the phase-dependent
+  placement corollary now has its first measured demonstration.
+- **H3b MISS:** ub-1024 at ngl99 recovered only 166→181.7, far short of the staked ≥200. The
+  buffer-squeeze mechanism is minor at best. Revised hypothesis for Phase 3 (unstaked, to be
+  staked before testing): the ngl16 peak is CPU+GPU **pipeline overlap** — partially-resident
+  layers compute on both devices concurrently; full offload serializes onto the weaker GPU.
+- **H6 quality HIT:** k=4 override costs **+20.7%** WikiText ppl (8.31 → 10.03), inside the staked
+  +8–25%. k-halving is not free — the asymmetric-top-k design's value now hinges entirely on
+  whether *context ingestion* tolerates what generation doesn't (the patch-gated experiment).
+- **H6 speed: blocked by tooling** — `--override-kv` is supported by llama-perplexity (the quality
+  runs prove it) but not llama-bench; speed endpoint recovered via perplexity prompt-timing
+  (law5_h6speed.log).
