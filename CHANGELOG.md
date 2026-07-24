@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.1 — 2026-07-25
+
+- **`python -m quantprobe` now works** — the PATH-proof entry point. On Windows, `pip install`
+  frequently lands `quantprobe.exe` in a user-site Scripts folder that is not on PATH ("'quantprobe'
+  is not recognized"); `python -m quantprobe <anything>` is identical and always works. Found when
+  it happened on our own machine. 46 tests.
+
 ## 1.6.0 — 2026-07-25
 
 The full-customization pipeline, delivered as one decision-making command:

@@ -37,6 +37,9 @@ It predicts decode speed, memory fit, quality cost, and your cheapest upgrade fo
 pip install quantprobe
 ```
 
+> **Windows: "'quantprobe' is not recognized"?** pip put the .exe in a Scripts folder that
+> isn't on your PATH. Use `python -m quantprobe ...` instead — identical, always works.
+
 **Zero-config on your own machine.** `quantprobe hw` shows what it detected (GPU, RAM speed, every value tagged with its source); any command with no hardware flags uses it automatically. And `--gguf model.gguf` reads the model's parameters from the file itself (total/active params, true effective bits, exact KV bytes). The minimal commands are now:
 
 ```bash

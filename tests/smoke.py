@@ -346,6 +346,14 @@ def t_optimize_unknown_machine_loud():
     assert rc != 0 and "unknown --machine" in out and "Traceback" not in out, \
         f"optimize unknown machine not loud: rc={rc} {out[:200]}"
 
+def t_python_m_package():
+    # `python -m quantprobe` must work identically to the console script -
+    # it is the PATH-proof fallback for Windows user-site installs
+    r = subprocess.run([sys.executable, "-m", "quantprobe", "--help"],
+                       capture_output=True, text=True, errors="replace")
+    assert r.returncode == 0 and "plan" in r.stdout and "auto" in r.stdout, \
+        f"python -m quantprobe broken: rc={r.returncode} {(r.stdout + r.stderr)[:200]}"
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__
