@@ -1,0 +1,38 @@
+=== LAW5 CLEAN-GPU CONTAMINATION AUDIT 21:35 ===
+[gpu-state pre] 705 MiB
+--- H9 staked sweep, CLEAN: 7B Q4 pp2048, ngl 4..99 ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   4 |          pp2048 |        281.40 ± 0.07 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   8 |          pp2048 |        292.86 ± 0.53 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  12 |          pp2048 |        304.96 ± 0.50 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  14 |          pp2048 |        309.48 ± 0.64 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  16 |          pp2048 |        314.33 ± 2.12 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  18 |          pp2048 |        321.92 ± 0.21 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  20 |          pp2048 |        328.49 ± 0.21 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  24 |          pp2048 |        345.26 ± 0.08 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  28 |          pp2048 |        362.98 ± 0.04 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  32 |          pp2048 |        367.98 ± 0.09 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |          pp2048 |        368.02 ± 0.36 |
+[gpu-state] 693 MiB
+--- H10/P-b depth ladder, CLEAN: 7B Q4 ngl0, pp 512..12288 ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |           pp512 |        285.57 ± 0.48 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |          pp2048 |        271.63 ± 0.36 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |          pp4096 |        254.14 ± 0.23 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |          pp8192 |        224.36 ± 0.02 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |         pp12288 |        201.12 ± 0.16 |
+--- P-c recheck, CLEAN: 7B Q2_K ngl0 pp2048 (was 277.15) ---
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |   0 |          pp2048 |        276.47 ± 6.58 |
+--- P6 recheck, CLEAN: 30B hybrid pp2048,pp32 (was 193.24 / ~24) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |            pp32 |          6.80 ± 1.40 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |          pp2048 |       209.32 ± 12.05 |
+--- pilot GPU-assist recheck, CLEAN: 30B ngl0 pp2048 (was 221.4) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |          pp2048 |        213.58 ± 1.44 |
+[gpu-state] 693 MiB
+=== SQUATTED TWIN SWEEP (co-residency map) ===
+[gpu-state squatted] 2311 MiB
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |          pp2048 |        261.28 ± 3.07 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   8 |          pp2048 |        289.95 ± 0.44 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  16 |          pp2048 |        314.63 ± 0.28 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  24 |          pp2048 |        145.03 ± 0.19 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |          pp2048 |        153.62 ± 0.11 |
+[gpu-state post] 659 MiB
+=== AUDIT DONE 21:51 ===
