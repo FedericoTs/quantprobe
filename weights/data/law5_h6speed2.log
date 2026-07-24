@@ -1,0 +1,16 @@
+=== H6-speed take 2: raw tails ===
+[k=8]
+0.02.013.496 I perplexity: tokenization took 456.315 ms
+0.02.013.972 I perplexity: calculating perplexity over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+1.04.088.882 I perplexity: 62.08 seconds per pass - ETA 2.07 minutes
+[1]6.4272,[2]8.8412,[3]8.4798,[4]8.2499,[5]8.3159,[6]8.7916,[7]8.9170,[8]9.4764,
+2.06.809.817 I Final estimate: PPL = 9.4764 +/- 0.62327
+
+[k=4]
+0.01.693.679 I perplexity: tokenization took 455.491 ms
+0.01.694.068 I perplexity: calculating perplexity over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+0.45.101.571 I perplexity: 43.41 seconds per pass - ETA 1.43 minutes
+[1]7.7363,[2]10.2098,[3]10.2057,[4]10.0694,[5]10.2927,[6]10.7698,[7]10.9664,[8]11.6299,
+1.28.106.059 I Final estimate: PPL = 11.6299 +/- 0.77571
+
+=== DONE ===

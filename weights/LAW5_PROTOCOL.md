@@ -125,3 +125,8 @@ Not expressible in stock llama.cpp (no per-phase k); requires a small patch; des
 - **H6 speed: blocked by tooling** — `--override-kv` is supported by llama-perplexity (the quality
   runs prove it) but not llama-bench; speed endpoint recovered via perplexity prompt-timing
   (law5_h6speed.log).
+- **H6 speed HIT (recovered via perplexity pass-timing):** k=4 CPU-pure prefill = **47.2 tok/s**
+  (2048/43.41s) vs k=8's 33.0 (2048/62.08s — cross-validating llama-bench's 31.6 from a second
+  tool) — **+43%**, inside the staked 43–50. Both asymmetric-top-k bounds are now measured: the
+  prize (+43% prefill) and the price-if-global (+20.7% ppl). The patch-gated experiment — k=4
+  during prefill only — decides whether the prize can be taken without the price.
