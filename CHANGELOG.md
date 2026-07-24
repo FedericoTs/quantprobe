@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.0 — 2026-07-25
+
+The full-customization pipeline, delivered as one decision-making command:
+
+- **`quantprobe auto` with no arguments is now interactive**: detects the machine, asks for the
+  model (preset or any HF GGUF repo), asks one question — best standard quant (skip
+  quantization), full custom probe-and-build, or a speed target — and offers to launch when
+  ready. Clean one-line refusal when there is no terminal to ask.
+- **`--custom` is now machine-gated by the laws.** If the optimizer wants ≥3.5 bits on your
+  hardware, the surgery doesn't pay (Laws 1–2: the fragile-band fix matters below ~3 bits) —
+  auto says so and fetches the optimal standard quant instead. `--force-custom` overrides.
+  The same command on a 6 GB/16 GB box still builds the depth-aware file, because there it wins.
+- 4 new tests (49 total): gate, force-override, wizard with piped answers, wizard EOF.
+
 ## 1.5.2 — 2026-07-25
 
 - **Unknown preset names now fail loudly.** `plan/target/optimize --model <unknown>` used to fall

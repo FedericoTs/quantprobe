@@ -3,6 +3,14 @@
 **If you only remember one command** — hardware auto-detected, nothing else to fill in:
 
 ```bash
+quantprobe auto
+```
+
+It detects your machine, asks for the model, decides — by the laws — whether your hardware
+even needs custom quantization (and says so), then builds or fetches and launches. The
+non-interactive form of the same thing:
+
+```bash
 quantprobe auto <model-or-HF-repo> --custom --run
 ```
 
