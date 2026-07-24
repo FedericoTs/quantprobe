@@ -24,17 +24,51 @@ MODEL_REPOS = {
     "laguna-s":   ("unsloth/Laguna-S-2.1-GGUF", 117.6, 8, 2.5, True),
     "gemma-12b":  ("unsloth/gemma-4-12b-it-GGUF", 11.9, 11.9, 11.9, False),
     "mistral-7b": ("unsloth/Mistral-7B-Instruct-v0.3-GGUF", 7.2, 7.2, 7.2, False),
+    "qwen3-235b": ("unsloth/Qwen3-235B-A22B-GGUF", 235.1, 22, 7.5, True),      # total exact (HF safetensors)
+    "glm-4.7":    ("unsloth/GLM-4.7-GGUF", 358.3, 32, 8, True),                # total exact; a/ne [est]
+    "glm-744b":   ("unsloth/GLM-5.2-GGUF", 753.3, 32, 8, True),                # GLM-5.2, total exact 753.3B; a/ne [est]
+    "kimi-k2.6":  ("unsloth/Kimi-K2.6-GGUF", 1058.6, 32, 6, True),             # total exact; a/ne [est]
+    "gpt-oss-120b": ("unsloth/gpt-oss-120b-GGUF", 120.4, 5.1, 1.8, True),      # total exact, A5.1B official
+    "llama-70b":  ("unsloth/Llama-3.3-70B-Instruct-GGUF", 70.6, 70.6, 70.6, False),
+    "deepseek-16b": ("bartowski/DeepSeek-Coder-V2-Lite-Instruct-GGUF", 15.7, 2.4, 1.3, True),
 }
 
 
 def list_ggufs(repo):
-    """[(path, size_bytes)] for a HF repo, via the public tree API."""
-    req = urllib.request.Request(f"https://huggingface.co/api/models/{repo}/tree/main",
+    """[(path, size_bytes)] for a HF repo, via the public tree API (recursive: big repos
+    keep quants in subfolders). Split multi-part files (-00001-of-000NN) are grouped into
+    ONE logical entry: path = first part, size = sum of parts — so effective-bits stays honest."""
+    import re
+    req = urllib.request.Request(f"https://huggingface.co/api/models/{repo}/tree/main?recursive=true",
                                  headers={"User-Agent": "quantprobe-auto"})
     with urllib.request.urlopen(req, timeout=30) as r:
-        return [(f["path"], f.get("size", 0)) for f in json.load(r)
-                if f["path"].endswith(".gguf") and f.get("size", 0) > 1e8
-                and "mmproj" not in f["path"].lower() and "draft" not in f["path"].lower()]
+        raw = [(f["path"], f.get("size", 0)) for f in json.load(r)
+               if f["path"].endswith(".gguf") and f.get("size", 0) > 1e8
+               and "mmproj" not in f["path"].lower() and "draft" not in f["path"].lower()]
+    groups, singles = {}, []
+    for path, size in raw:
+        m = re.match(r"^(.*)-(\d{5})-of-(\d{5})\.gguf$", path)
+        if m:
+            g = groups.setdefault(m.group(1), {"total": 0, "first": None, "n": int(m.group(3))})
+            g["total"] += size
+            if m.group(2) == "00001":
+                g["first"] = path
+        else:
+            singles.append((path, size))
+    for g in groups.values():
+        if g["first"]:
+            singles.append((g["first"], g["total"]))
+    return singles
+
+
+def split_parts(first_part):
+    """All part paths of a split file, derived from the -00001-of-000NN first part."""
+    import re
+    m = re.match(r"^(.*)-(\d{5})-of-(\d{5})\.gguf$", first_part)
+    if not m:
+        return [first_part]
+    base, n = m.group(1), int(m.group(3))
+    return [f"{base}-{i:05d}-of-{n:05d}.gguf" for i in range(1, n + 1)]
 
 
 WIKI_URL = "https://huggingface.co/datasets/ggml-org/ci/resolve/main/wikitext-2-raw-v1.zip"
@@ -136,9 +170,19 @@ def run(a):
             continue
         scored.append((abs(bits - want_bits), -cfgs[0][1], path, size, bits, cfgs[0]))
     if not scored:
-        raise SystemExit("no usable quant in that repo for this machine")
+        avail = sorted(set(round(s * 8 / (t * 1e9), 1) for _, s in files))
+        raise SystemExit(
+            f"no ready-to-run quant in {repo} for this machine yet (available bit-levels: {avail}).\n"
+            "  Big new models often publish low-bit quants days after release. Meanwhile:\n"
+            "  - predictions for any bits now:  quantprobe plan --model <preset> --bits 2.5\n"
+            + ("  - or build your own from the high-precision source: re-run with --custom\n"
+               if pick_source(files, t) else ""))
     scored.sort()
     _, _, path, size, bits, best = scored[0]
+    if abs(bits - want_bits) > 2:
+        print(f"\n[quantprobe auto] note: no ~{want_bits:g}-bit-class file in {repo} yet - closest "
+              f"available is {bits:.1f}-bit. Low-bit quants for new models often land days after "
+              f"release; plan/optimize predict any bits meanwhile.")
 
     if getattr(a, "custom", False) and want_bits >= 3.5 and not getattr(a, "force_custom", False):
         print(f"\n[quantprobe auto --custom] this machine doesn't need the surgery: the optimizer")
@@ -179,20 +223,24 @@ def run(a):
             a.gguf = out; a.bits = None
             runtime.run(a)
         return out
+    parts = split_parts(path)
     print(f"\n[quantprobe auto] optimizer wants ~{want_bits:g}-bit; closest file in {repo}:")
-    print(f"  {path}  ({size/1e9:.1f} GB, {bits:.2f} effective bits)")
+    print(f"  {path}  ({size/1e9:.1f} GB, {bits:.2f} effective bits"
+          + (f", {len(parts)} parts" if len(parts) > 1 else "") + ")")
     print(f"  predicted on this machine: {best[1]:.1f} tok/s  ({best[0]})")
     if getattr(a, "dry", False):
         print("  (--dry: nothing downloaded)")
         return path
-    # 3. fetch it (resumable), then hand off
+    # 3. fetch it (resumable; all parts when split), then hand off
     from . import fetch as fetchmod
     dest = getattr(a, "dir", None) or "./models"
     import os
     os.makedirs(dest, exist_ok=True)
-    ok = fetchmod.fetch(repo, dest, path, fetchmod.token())
-    if not ok:
-        raise SystemExit("download failed (it resumes: re-run the same command)")
+    for i, part in enumerate(parts):
+        if len(parts) > 1:
+            print(f"[quantprobe auto] part {i+1}/{len(parts)}: {os.path.basename(part)}")
+        if not fetchmod.fetch(repo, dest, part, fetchmod.token()):
+            raise SystemExit("download failed (it resumes: re-run the same command)")
     full = os.path.join(dest, os.path.basename(path))
     print(f"\n[quantprobe auto] ready. Run it:")
     print(f"  quantprobe run --gguf {full}")

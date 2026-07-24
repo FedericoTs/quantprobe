@@ -13,7 +13,8 @@ Levers and their measured gates:
   prune     REAP-class 50% expert pruning (total x0.82, file shrinks, active bytes UNCHANGED).
             Measured +39% out-of-domain perplexity (pre-registration #8) — domain-specialized,
             never ranked first without --allow-prune.
-  hardware  euro-priced deltas from the projections table: XMP (free), +16GB RAM (~40), NVMe (~100).
+  hardware  upgrade deltas from the projections table: XMP (free), +16GB RAM, NVMe. Ranked by
+            relative cost internally; no currency figures are shown (region- and time-dependent).
 """
 from __future__ import annotations
 from . import plan as planmod
@@ -28,9 +29,9 @@ REALIZE = {
 }
 HW_DELTAS = [
     ("as-is", 0, {}),
-    ("+16GB RAM (~40 EUR used)", 40, {"rc": +16}),
-    ("NVMe SSD (~100 EUR)", 100, {"db_min": 3.5}),
-    ("+RAM & NVMe (~140 EUR)", 140, {"rc": +16, "db_min": 3.5}),
+    ("+16GB RAM (used)", 40, {"rc": +16}),
+    ("NVMe SSD", 100, {"db_min": 3.5}),
+    ("+RAM & NVMe", 140, {"rc": +16, "db_min": 3.5}),
 ]
 
 
@@ -121,7 +122,7 @@ def run(a):
     print(f"  {headline}\n")
     for i, r in enumerate(ranked[:6]):
         star = "*" if i == 0 else " "
-        euro = "free" if r["euro"] == 0 else f"~{r['euro']}EUR"
+        euro = "free" if r["euro"] == 0 else "hw upgrade"
         print(f"  {star} {r['tps']:6.1f} tok/s  quality x{r['q']:.2f}  {euro:>7s}  {r['desc']}")
         for tag in r["tags"]:
             print(f"                [{tag}]")

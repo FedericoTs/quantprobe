@@ -17,7 +17,11 @@ MODELS = {
     "gemma-12b":  dict(t=11.9, a=11.9, ne=11.9, moe=False, kvp=65536,  hint="Gemma 4 12B"),             # [est] SWA: long-ctx slope from global layers only
     "mistral-7b": dict(t=7.2,  a=7.2,  ne=7.2,  moe=False, kvp=131072, hint="Mistral 7B"),              # 32L x 8KV x 128d (exact)
     "glm-air":    dict(t=110,  a=12,   ne=2.7,  moe=True,  kvp=94208,  hint="GLM-4.5-Air 106B"),        # [est]
-    "glm-744b":   dict(t=744,  a=32,   ne=8,    moe=True,  kvp=188416, hint="GLM-5.2 744B"),            # [est]
+    "glm-744b":   dict(t=753.3, a=32,  ne=8,    moe=True,  kvp=188416, hint="GLM-5.2 (753B)"),          # total exact (HF safetensors); a/ne/kvp [est]
+    "qwen3-235b": dict(t=235.1, a=22,  ne=7.5,  moe=True,  kvp=192512, hint="Qwen3-235B-A22B"),         # total exact; kvp: 94L x 4KV x 128d [est]
+    "kimi-k2.6":  dict(t=1058.6, a=32, ne=6,    moe=True,  kvp=70272,  hint="Kimi K2.6 (1T MLA)"),      # total exact; kvp: 61L x 576 MLA latent [est]
+    "gpt-oss-120b": dict(t=120.4, a=5.1, ne=1.8, moe=True, kvp=73728,  hint="gpt-oss-120b"),            # total+active official; kvp: 36L x 8KV x 64d [est]
+    "llama-70b":  dict(t=70.6, a=70.6, ne=70.6, moe=False, kvp=327680, hint="Llama-3.3-70B"),           # dense; kvp: 80L x 8KV x 128d
 }
 DEFAULT_KVP = 98304          # custom models without --kv-per-pos: typical GQA mid-size (Qwen3-30B class)
 ETA_KV = 0.70                # KV-read efficiency. Single-point calibration: measured tg32 d0->d16384

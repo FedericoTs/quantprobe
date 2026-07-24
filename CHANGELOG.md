@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.2 — 2026-07-25
+
+- **7 new presets** (13 total): `qwen3-235b`, `glm-4.7` (358B), `glm-744b` (= GLM-5.2, exact total
+  753.3B from HF safetensors), `kimi-k2.6` (1058.6B), `gpt-oss-120b`, `llama-70b`, `deepseek-16b` —
+  every repo verified live before shipping. The verification caught a real trap: unsloth/GLM-4.7-GGUF
+  is the 358B model; the 744B-class one is GLM-5.2. Estimated fields are marked [est] in-source.
+- **No more currency figures** in `optimize` output: upgrade suggestions stay ("+16GB RAM", "NVMe"),
+  prices don't (region- and time-dependent guesses). Internal relative-cost ranking unchanged.
+- **Split multi-part GGUFs supported** (`-00001-of-000NN`): grouped into one logical file
+  (bits computed from the SUMMED size — honest), all parts fetched, recursive repo listing
+  (big repos keep quants in subfolders). Repos that only have Q8/BF16 so far (brand-new
+  giants) get an honest "no ready-to-run quant yet" with the `--custom`/plan escape hatches
+  instead of a silent 800 GB pick. 50 tests.
+
 ## 1.6.1 — 2026-07-25
 
 - **`python -m quantprobe` now works** — the PATH-proof entry point. On Windows, `pip install`
