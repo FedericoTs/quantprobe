@@ -96,7 +96,7 @@ The RAM line is the story in miniature: one free BIOS toggle, predicted in advan
 **What's automated vs. what you set up once (honestly):** quantprobe automates the *decisions* — which bits to spend where (compression) and which memory tier serves what (placement). You handle three one-time setup steps: (1) **install [llama.cpp](https://github.com/ggml-org/llama.cpp/releases)** and point quantprobe at it (`--llama-dir`/`QUANTPROBE_LLAMA_DIR`/`PATH`) — not needed for `plan`/`target`/the web calculator; (2) **convert HF safetensors → GGUF** once with llama.cpp's `convert_hf_to_gguf.py` *only if the model has no community GGUF*; (3) ~~pick a machine preset~~ **auto-detected since v1.2** (`quantprobe hw` shows what it sees; presets/flags remain for estimating other machines). The memory-speed strategy itself is applied autonomously; a one-command `quantprobe auto` (auto-detect → convert → compress → run) is on the roadmap. Full guide: [QUICKSTART.md](QUICKSTART.md).
 
 ```bash
-pip install git+https://github.com/FedericoTs/quantprobe   # (PyPI release pending)
+pip install quantprobe   # (PyPI release pending)
 quantprobe fetch qwen3-30b ./models                # known-good GGUF, robust download (~10.5 GB)
 quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf --model qwen3-30b --machine 2016-xmp
 ```
@@ -106,7 +106,7 @@ That last command plans the optimal placement for your machine, prints the predi
 ## Install
 
 ```bash
-pip install git+https://github.com/FedericoTs/quantprobe
+pip install quantprobe
 ```
 
 Nine commands. `hw`/`plan`/`target` need nothing installed; the rest drive llama.cpp. **Zero-config on your own box** — `quantprobe plan --gguf model.gguf` detects the machine and reads the model from the file:

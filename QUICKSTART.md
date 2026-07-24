@@ -14,7 +14,7 @@ It predicts decode speed, memory fit, quality cost, and your cheapest upgrade fo
 ## Level 1 — the Python tool, zero external tools (1 minute)
 
 ```bash
-pip install git+https://github.com/FedericoTs/quantprobe
+pip install quantprobe
 ```
 
 **New in v1.2: zero flags needed on your own machine.** `quantprobe hw` shows what it detected (GPU, RAM speed, every value tagged with its source); any command with no hardware flags uses it automatically. And `--gguf model.gguf` reads the model's parameters from the file itself (total/active params, true effective bits, exact KV bytes). The minimal commands are now:
