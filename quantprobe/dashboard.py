@@ -46,6 +46,9 @@ textarea{flex:1;resize:none;height:54px;padding:9px;font-size:14px;font-family:i
 background:var(--g);color:var(--ink);border:1px solid var(--line);border-radius:8px}
 button{padding:0 18px;background:var(--acc);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
 button:disabled{opacity:.5}
+.m pre{background:var(--g);border:1px solid var(--line);border-radius:6px;padding:8px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;margin:6px 0}
+.m.think{color:var(--sub);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
 .foot{margin-top:14px;font-size:11.5px;color:var(--sub)}.foot a{color:var(--acc)}
 </style></head><body><div class="wrap">
 <h1>The law, live</h1>
@@ -82,16 +85,23 @@ async function send(){
   $("inp").value=""; $("send").disabled=true;
   hist.push({role:"user",content:t});
   $("msgs").insertAdjacentHTML("beforeend",'<div class="m u">'+esc(t)+'</div>');
-  const hold=document.createElement("div");hold.className="m a";hold.textContent="…";
+  const hold=document.createElement("div");hold.className="m a think";hold.textContent="measuring…";
   $("msgs").appendChild(hold);$("msgs").scrollTop=1e9;
   try{
     const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({messages:hist.slice(-12),max_tokens:256})});
     const j=await r.json();
-    const msg=(j.choices&&j.choices[0].message.content)||"(no reply)";
+    let raw=(j.choices&&j.choices[0].message&&j.choices[0].message.content)||"";
+    const think=(j.choices&&j.choices[0].message&&j.choices[0].message.reasoning_content)||"";
+    raw=raw.replace(/^[\s\S]*?<\/think>/,"").trim();          // strip a leaked think block
+    if(!raw&&think) raw="(the model spent its budget reasoning — tail:) "+think.slice(-400);
+    const msg=raw||"(empty reply — try again or rephrase)";
     const tps=j.timings?j.timings.predicted_per_second:null;
     hist.push({role:"assistant",content:msg});
-    hold.innerHTML=esc(msg)+(tps?'<span class="t">'+tps.toFixed(1)+' tok/s · predicted {{PRED}}</span>':'');
+    let html=esc(msg).replace(/```(\w*)
+([\s\S]*?)```/g,'<pre>$2</pre>');
+    hold.classList.remove("think");
+    hold.innerHTML=html+(tps?'<span class="t">'+tps.toFixed(1)+' tok/s · predicted {{PRED}}</span>':'');
     if(tps){pts.push(tps);
       const avg=pts.reduce((a,b)=>a+b,0)/pts.length,pred=parseFloat("{{PRED}}");
       $("meas").textContent=avg.toFixed(1);
@@ -124,6 +134,10 @@ def make_handler(upstream, page):
             n = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(n) or b"{}")
             body.setdefault("timings_per_token", True)
+            body.setdefault("max_tokens", 1024)
+            # thinking models (Qwen3-class) can spend the whole budget inside <think> -> empty replies.
+            # Ask the template to skip thinking; models without the kwarg ignore it.
+            body.setdefault("chat_template_kwargs", {"enable_thinking": False})
             req = urllib.request.Request(upstream + "/v1/chat/completions",
                                          data=json.dumps(body).encode(),
                                          headers={"Content-Type": "application/json"})
