@@ -1,0 +1,4 @@
+=== Bonsai quality gate: WikiText-2, 32 chunks, all-in-VRAM ===
+12.42.784.245 I Final estimate: PPL = 10.8727 +/- 0.33891
+reference points, same protocol: Qwen3-30B Q2_K depth-aware 11.08 | Coder-30B Q3_K_M 7.99 | REAP-25B Q3 11.10
+BONSAI PPL DONE

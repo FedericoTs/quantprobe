@@ -1,0 +1,7 @@
+--- autospec read ---
+{'t': 26.895998464, 'a': 26.895998464, 'ne': 26.895998464, 'moe': False, 'bits': 1.13, 'kvp': 262144, 'n_layer': 64}
+--- mainline load + bench attempt (tg32, CPU first - dense 27B wont fit 6GB VRAM anyway at... actually 3.8GB FITS. Try hybrid-auto) ---
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |  99 |            tg32 |         11.94 ± 0.04 |
+--- and pure CPU ---
+| qwen35 27B Q1_0                |   3.53 GiB |    26.90 B | CUDA       |   0 | none         |            tg32 |          3.26 ± 0.01 |
+BONSAI BENCH DONE

@@ -28,6 +28,20 @@ the weights, the routing, or the activations.**
 - *The prediction:* 2-bit is the data-free floor for any load-balance-trained model; task-trimming
   experts and semantic "brain-region" paging will fail on any of them.
 
+### Law 2 — scope boundary, measured (2026-07-25)
+
+The ~2-bit floor is a **post-training, data-free** claim. Its boundary now has a number: Bonsai-27B
+(qwen3.5-family hybrid, **natively trained at ~1.13 bits**, 3.8 GB total) scores **10.87 ± 0.34** on
+our WikiText-2 gate — statistical parity with our best post-training depth-aware 2.5-bit Qwen3-30B
+(11.08) at 2.2× fewer bits per weight. Training-time quantization sidesteps the PTQ floor entirely;
+Law 2 never bounded it and does not now. Two systems-side measurements from the same session, both
+error-barred: (1) the Pascal low-bit decode collapse (gl = 0.04) is **dequant-format-dependent, not
+bit-width-dependent** — Q1_0's trivial dequant runs the 27B all-in-VRAM at 11.94 ± 0.04 tok/s on the
+GTX 1060 where the gl model predicted ~1.8; (2) linear-attention hybrids (48 gated-delta layers)
+carry a CPU compute tax — measured η ≈ 0.30 vs the dense-GQA 0.62 class, and my same-day staked
+CPU estimate missed by 2×, published here per house rules. Raw logs:
+`weights/data/bonsai_bench.log`, `weights/data/bonsai_ppl.log`.
+
 ## Law 3 — Fragility is measurable, not predictable
 **Where a model breaks at low bits is model-specific: no configuration flag, architecture family, or
 weight statistic predicts it — but a 30-minute functional probe measures it exactly.**
