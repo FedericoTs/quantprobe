@@ -2,7 +2,7 @@
 from __future__ import annotations
 import argparse
 
-from .plan import numlist
+from .plan import numlist, MODELS as _MODELS
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
     p.add_argument("--dry-run", action="store_true")
 
     q = sub.add_parser("plan", help="evaluate every bit/tier placement, predict tok/s (Law 4)")
-    q.add_argument("--model", default=None, help="preset: qwen3-30b deepseek-16b gemma-12b mistral-7b glm-air glm-744b")
+    q.add_argument("--model", default=None, help="preset: " + " ".join(sorted(_MODELS)))
     q.add_argument("--machine", default=None, help="preset: 2016-xmp 2016 gaming ddr5 colibri")
     q.add_argument("--bits", type=float, default=None, help="effective bits/weight (default: read from --gguf, else 2.5)")
     q.add_argument("--total", type=float, help="total params (B)")
@@ -93,7 +93,7 @@ def main():
 
     au = sub.add_parser("auto", help="ONE command: model in, running setup out - optimizer picks the bits, the closest quant is fetched, run command printed")
     au.add_argument("target", nargs="?", default=None,
-                    help="model preset (qwen3-30b, qwen3-coder, glm-air, laguna-s, gemma-12b, mistral-7b) or a HF GGUF repo id; omit it and quantprobe ASKS (interactive)")
+                    help="model preset (qwen3-30b, qwen3-coder, glm-air, laguna-s, gemma-12b, mistral-7b, qwen3-235b, glm-4.7, glm-744b, kimi-k2.6, gpt-oss-120b, llama-70b, deepseek-16b) or a HF GGUF repo id; omit it and quantprobe ASKS (interactive)")
     au.add_argument("--dir", default="./models", help="download directory (default ./models)")
     au.add_argument("--run", action="store_true", help="launch chat immediately after the download")
     hwargs(au)

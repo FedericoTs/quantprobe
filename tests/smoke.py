@@ -346,6 +346,35 @@ def t_optimize_unknown_machine_loud():
     assert rc != 0 and "unknown --machine" in out and "Traceback" not in out, \
         f"optimize unknown machine not loud: rc={rc} {out[:200]}"
 
+def t_optimize_no_prices():
+    # upgrade suggestions must carry NO currency figures (region/time-dependent guesses)
+    rc, out = cli("optimize", "--machine", "2016-xmp")
+    assert rc == 0 and "EUR" not in out and "€" not in out, f"prices leaked: {out[:300]}"
+    assert "hw upgrade" in out or "free" in out, f"upgrade column missing: {out[:200]}"
+
+def t_auto_744b_preset_dry():
+    # the massive preset resolves to the VERIFIED GLM-5.2 repo (753B - not GLM-4.7/358B).
+    # Durable across repo states: either a usable quant is picked, or the not-yet state is
+    # explained cleanly - never a traceback, never a silent wrong pick.
+    rc, out = cli("auto", "glm-744b", "--dry", "--vram", "96", "--vram-bw", "1800",
+                  "--ram", "512", "--ram-bw", "300", "--disk-bw", "7")
+    assert "Traceback" not in out and "GLM-5.2-GGUF" in out, f"744b preset broken: rc={rc} {out[:300]}"
+    assert (rc == 0 and "closest file" in out) or "no ready-to-run quant" in out,         f"neither pick nor clean explanation: rc={rc} {out[:300]}"
+
+def t_auto_bf16_only_graceful():
+    # kimi-k2.6: today BF16-only upstream -> the >9-bit filter must yield the honest
+    # explanation (with the --custom tip), not a bare error; when quants land, it just works
+    rc, out = cli("auto", "kimi-k2.6", "--dry", "--vram", "96", "--vram-bw", "1800",
+                  "--ram", "768", "--ram-bw", "300", "--disk-bw", "7")
+    assert "Traceback" not in out, f"kimi traceback: {out[:300]}"
+    assert (rc == 0 and "closest file" in out) or "no ready-to-run quant" in out,         f"BF16-only repo not graceful: rc={rc} {out[:300]}"
+
+def t_split_parts_offline():
+    from quantprobe.auto import split_parts
+    ps = split_parts("Q8_0/GLM-5.2-Q8_0-00001-of-00017.gguf")
+    assert len(ps) == 17 and ps[0].endswith("00001-of-00017.gguf") and ps[16].endswith("00017-of-00017.gguf")
+    assert split_parts("model-Q4_K_M.gguf") == ["model-Q4_K_M.gguf"]
+
 def t_python_m_package():
     # `python -m quantprobe` must work identically to the console script -
     # it is the PATH-proof fallback for Windows user-site installs
