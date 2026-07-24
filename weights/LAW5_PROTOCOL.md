@@ -240,3 +240,51 @@ underlying curve moves. CPU-pure numbers (-dev none) are unaffected by construct
 and after every GPU-path measurement batch; a prefill run is valid only if the pre-run baseline
 is the clean-desktop value (~0.9 GB on this box). Kill-orphans-first is now a protocol step, not
 just hygiene.
+
+### Phase 3 — scored (2026-07-24, same day; raw logs law5_clean_audit.log, law5_h12_formats.log, server logs in session scratch)
+
+- **H7a HIT.** State saved on the ngl16 instance restored into the ngl99 instance: 2036/2036
+  tokens, follow-up request recomputed exactly **1 token**, coherent continuation. The
+  phase-split bridge exists in stock llama.cpp.
+- **H7b HIT, above band.** State file = tokens x kvp to within a header (116,785,660 B measured
+  vs 116.75 MB arithmetic at 2k; 778,007,340 B vs 777.9 MB at 8k-MoE — the format is pure KV).
+  Save 1.98–2.14 GB/s, restore 2.18–2.50 GB/s warm (staked floor 0.2 GB/s). Restore-effective
+  rate 16,800–39,800 tok/s.
+- **H7c MISS (ratio 1.10 vs staked <= 0.85).** Split 46.8 s vs best-single 42.6 s at pp8192+tg256
+  on dense 7B. Cause: the premise (ngl16 prefill >> ngl99) was the Phase-2 contention artifact;
+  on a clean GPU ngl99 wins both phases on this model/box, so there is no gap to arbitrage.
+  Unstaked corollary noted for future work: under measured co-residency the gap reopens
+  (squatted ngl99 = 154 vs ngl16 = 315), and the split premise revives conditionally.
+- **H8 HIT, x159 vs staked x10.** 30B hybrid, 8k context: compute TTFT 74.56 s (106 tok/s
+  server-path at depth) vs restore TTFT **0.47 s** (311.7 ms restore of 778 MB + 0.16 s eval).
+  Including full server restart: 6.4 s → x11.7, still above stake. Effective restored-prefix
+  rate 16,800 tok/s (staked 2,000–20,000). Decode after restore coherent at 15.36 tok/s
+  (8k-depth KV drag, consistent with Law 4 v2). **The agent recipe is measured: persist KV
+  between turns and turn-2+ context cost drops from ~75 s to ~0.5 s.**
+- **H9 MISS.** Clean-GPU fine sweep is MONOTONIC: 281.4 (ngl4) → 292.9 → 305.0 → 309.5 → 314.3
+  → 321.9 → 328.5 → 345.3 → 363.0 (ngl28) → 368.0 (ngl32/99). No interior peak; the staked
+  12–20 peak was the artifact's geography. More offload = faster prefill, saturating at full.
+- **H9 squatted twin — the replacement law, quantified.** With a 1.6 GB co-resident (nvidia-smi
+  2311 MiB): ngl0/8/16 unchanged (261/290/315) but ngl24 **collapses to 145.0** and ngl99 to
+  153.6 — the knee is exactly VRAM overcommit (layers + squatter + buffers > 6 GB → WDDM
+  paging). **Prefill-optimal ngl under co-residency = the largest ngl that still fits free
+  VRAM** — computable from nvidia-smi, the Law-4 fit-check applied per phase and per machine
+  STATE. Contention-immune region: any ngl whose footprint fits beside the squatter.
+- **Interleave fork: VOID.** It was designed to discriminate mechanisms of an interior peak
+  that does not exist on a clean GPU; the parent phenomenon was retracted, so the fork is moot
+  (not run, per protocol economy).
+- **H10 double HIT — the context term survives the audit.** Clean ladder (ngl0): 512 → 285.6,
+  2048 → 271.6, 4096 → **254.1** (staked 242–256), 8192 → 224.4, 12288 → **201.1** (staked
+  195–211). Per-token linear fit: t/tok = 3.44 ms + 1.24e-4 ms x ctx — attention doubles
+  prefill cost at ~28k tokens on this path. The ngl0 cells were only mildly contaminated
+  (small VRAM footprint), which is why P-b/P-c reproduce.
+- **H11 HIT (staked branch).** KV-q8 prefill: q8/q8+fa 272.8 vs f16+fa 262.7 (**+3.8%**),
+  ctk-q8 261.5 vs f16 271.6 (−3.7%) — inside [−20%, +5%]. Pascal's −83% decode collapse has
+  no prefill twin: **the KV-q8 gate is phase-dependent** (batched amortization, P-c family).
+  fa pilot cells: fa costs −1..−3% on Pascal prefill in every pairing → knob verdict: minor,
+  prefer off on this hardware.
+- **Contamination audit results.** P-c reproduces clean (276.5 vs 277.2 published ✓); pilot
+  30B ngl0 reproduces (213.6 vs 221.4, −3.5% ✓); P6 hybrid corrected upward to **209.3 ± 12.1**
+  (193.2 published was ~8% low, inside today's noise band); P6 pp32 re-cell (6.8) flagged as
+  cold-cache warm-up artifact, excluded pending a warmed re-run. CPU-pure numbers unaffected
+  by construction. H12 running.

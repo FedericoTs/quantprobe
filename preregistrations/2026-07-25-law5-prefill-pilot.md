@@ -5,6 +5,11 @@
 **Pilot results:** [weights/data/law5_pilot.log](../weights/data/law5_pilot.log), law5_p5p6.log
 **Status: SCORED same day (P-a/P-b/P-c); P-d remains community-gated.**
 
+> **Audit note (2026-07-24):** a VRAM-contention artifact was found in Phase-2's GPU-path
+> numbers (see LAW5_PROTOCOL.md CORRECTION). These pilot stakes were re-measured on a
+> verified-clean GPU: P-b's ladder and P-c reproduce within noise (254.1/224.4/201.1 ladder;
+> 276.5 vs 277.2), so the scoring above stands. P6's hybrid number corrects to 209.3 ± 12.1.
+
 - **P-a: HIT.** Measured **31.11 ± 0.21** vs staked 28.4–34.7 — dead center. The per-architecture
   fit reproduces across the Coder variant.
 - **P-b: MISS (−18%).** Measured **223.58 ± 1.31** vs staked 265–280. Deep batch is not flat —
