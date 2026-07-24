@@ -292,6 +292,38 @@ def t_quantize_help():
     rc, out = cli("quantize", "--help")
     assert rc == 0 and "--gguf" in out and "--protect-late" in out
 
+def cli_in(stdin_text, *args):
+    r = subprocess.run([sys.executable, "-m", "quantprobe.cli"] + list(args),
+                       capture_output=True, text=True, errors="replace", input=stdin_text)
+    return r.returncode, r.stdout + r.stderr
+
+def t_auto_custom_machine_gate():
+    # on a machine where the optimizer wants >=3.5 bits, --custom must DECLINE the surgery
+    # (Laws 1-2: the fragile-band fix only pays below ~3 bits) and fetch standard instead
+    rc, out = cli("auto", "qwen3-30b", "--custom", "--dry", "--vram", "24", "--vram-bw", "936",
+                  "--ram", "64", "--ram-bw", "86", "--disk-bw", "3")
+    assert rc == 0 and "doesn't need the surgery" in out and "closest file" in out, \
+        f"custom gate broken: rc={rc} {out[:300]}"
+
+def t_auto_force_custom():
+    # --force-custom overrides the gate: the source pick must happen
+    rc, out = cli("auto", "qwen3-30b", "--custom", "--force-custom", "--dry", "--vram", "24",
+                  "--vram-bw", "936", "--ram", "64", "--ram-bw", "86", "--disk-bw", "3")
+    assert rc == 0 and "source:" in out and "surgery" not in out, \
+        f"force-custom broken: rc={rc} {out[:300]}"
+
+def t_auto_wizard_dry():
+    # no model argument -> interactive wizard: answers piped, --dry keeps it offline-light
+    rc, out = cli_in("qwen3-30b\n1\nn\n", "auto", "--dry", "--machine", "2016-xmp")
+    assert rc == 0 and "interactive" in out and "closest file" in out, \
+        f"wizard broken: rc={rc} {out[:300]}"
+
+def t_auto_wizard_noninteractive_graceful():
+    # no model and no terminal must be a CLEAN one-line refusal, never a traceback
+    rc, out = cli_in("", "auto", "--dry")
+    assert rc != 0 and "no terminal to ask" in out and "Traceback" not in out, \
+        f"wizard EOF not graceful: rc={rc} {out[:300]}"
+
 def t_plan_unknown_model_loud():
     # an unknown --model preset must FAIL LOUDLY, never silently fall back to defaults
     rc, out = cli("plan", "--model", "laguna-s", "--machine", "2016-xmp")

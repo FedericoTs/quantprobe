@@ -92,14 +92,16 @@ def main():
     hwargs(o)
 
     au = sub.add_parser("auto", help="ONE command: model in, running setup out - optimizer picks the bits, the closest quant is fetched, run command printed")
-    au.add_argument("target", help="model preset (qwen3-30b, qwen3-coder, glm-air, laguna-s, gemma-12b, mistral-7b) or a HF GGUF repo id")
+    au.add_argument("target", nargs="?", default=None,
+                    help="model preset (qwen3-30b, qwen3-coder, glm-air, laguna-s, gemma-12b, mistral-7b) or a HF GGUF repo id; omit it and quantprobe ASKS (interactive)")
     au.add_argument("--dir", default="./models", help="download directory (default ./models)")
     au.add_argument("--run", action="store_true", help="launch chat immediately after the download")
     hwargs(au)
     au.add_argument("--tps", type=float, default=None, help="target tok/s for the optimizer")
     au.add_argument("--max-quality", type=float, default=None)
     au.add_argument("--allow-prune", action="store_true"); au.add_argument("--any-runtime", action="store_true")
-    au.add_argument("--custom", action="store_true", help="THE PRODUCT: fetch a high-precision source, probe YOUR model (~30-60 min), build a depth-aware GGUF personalized to it")
+    au.add_argument("--custom", action="store_true", help="THE PRODUCT: fetch a high-precision source, probe YOUR model (~30-60 min), build a depth-aware GGUF personalized to it (machine-gated: skipped with an explanation when this box doesn't need sub-3-bit surgery)")
+    au.add_argument("--force-custom", action="store_true", help="build the depth-aware GGUF even when the optimizer says this machine doesn't need it")
     au.add_argument("--serve", action="store_true", help="with --run: llama-server instead of chat")
     au.add_argument("--extra", default=None)
 

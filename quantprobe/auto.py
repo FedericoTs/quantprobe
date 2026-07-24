@@ -68,7 +68,36 @@ def pick_source(files, t):
     return hi[0] if hi else max(cands)
 
 
+def _wizard(a):
+    """No model given: detect, ask two questions, go. The full pipeline with zero flags."""
+    print("quantprobe auto - interactive (no flags needed; `quantprobe auto --help` for the full list)")
+    try:
+        from . import detect as detmod
+        d, _ = detmod.detect()
+        print(f"\n  this machine [auto-detected]: {d['vram']:g} GB VRAM @ {d['vram_bw']:g} GB/s | "
+              f"{d['ram']:g} GB RAM @ {d['ram_bw']:g} GB/s | disk {d['disk_bw']:g} GB/s")
+    except Exception:
+        pass
+    try:
+        m = input(f"\n  model - preset ({', '.join(MODEL_REPOS)}) or HF GGUF repo id [qwen3-30b]: ").strip() or "qwen3-30b"
+        print("\n  [1] best standard quant for this machine, ready to run  (skips quantization)")
+        print("  [2] full custom: probe YOUR model's fragile layers (~30-60 min), build its personalized GGUF")
+        print("  [3] hit a speed target (asks for tok/s)")
+        c = input("  choice [1]: ").strip() or "1"
+        if c == "2":
+            a.custom = True
+        elif c == "3":
+            a.tps = float(input("  target tok/s: ").strip())
+        r = input("  launch chat when ready? [Y/n]: ").strip().lower()
+        a.run = r != "n"
+    except EOFError:
+        raise SystemExit("no model given and no terminal to ask. Pass one: quantprobe auto qwen3-30b [--custom] [--run]")
+    a.target = m
+
+
 def run(a):
+    if a.target is None:
+        _wizard(a)
     target = a.target
     if target in MODEL_REPOS:
         repo, t, ac, ne, moe = MODEL_REPOS[target]
@@ -111,6 +140,12 @@ def run(a):
     scored.sort()
     _, _, path, size, bits, best = scored[0]
 
+    if getattr(a, "custom", False) and want_bits >= 3.5 and not getattr(a, "force_custom", False):
+        print(f"\n[quantprobe auto --custom] this machine doesn't need the surgery: the optimizer")
+        print(f"  wants ~{want_bits:g}-bit here, and at >=3.5 bits standard community quants match the")
+        print(f"  depth-aware recipe on quality - the fragile-band fix only pays below ~3 bits (Laws 1-2).")
+        print(f"  Fetching the optimal standard quant instead. Build anyway: --force-custom.")
+        a.custom = False
     if getattr(a, "custom", False):
         src = pick_source(files, t)
         if not src:
