@@ -51,6 +51,8 @@ Add to that: a **byte-identical control** (two GGUFs the same size, 2.25 ppl apa
 
 **Open pre-registrations** — predictions staked publicly *before* measurement: [colibri v1.1, five falsifiable predictions (2026-07-23)](preregistrations/2026-07-23-colibri-v1.1.md) — dual-SSD scaling, int3 speedup, lattice-vs-scalar, AVX-512 tier-scoping, MTP×MoE antagonism — plus open bands on the CPU-only context slope and expert-pruning decode ([all verdicts](preregistrations/)).
 
+**Live research track — Law 5 (prefill):** protocol-first and scored same-day in [weights/LAW5_PROTOCOL.md](weights/LAW5_PROTOCOL.md) — 6 staked hits, 4 published misses, and one self-caught retraction corrected in public within the hour, including the measured recipe that cuts an agent's 8k-context turn cost from ~75 s to ~0.5 s. Next up, staked before launch: [Law 6 — speculation economics](preregistrations/2026-07-24-law6-speculation-economics.md), scoring in public the week of 2026-07-27.
+
 
 ## The four placement laws
 
@@ -107,6 +109,7 @@ The loop is self-validating: `plan` predicted 17.5 for a file we then measured a
 | [docs/HARDWARE.md](docs/HARDWARE.md) | the 2016 box: exact specs, measured bandwidths, what the next euro buys |
 | [docs/DEEP-DIVE.md](docs/DEEP-DIVE.md) | what's new vs. what's built-on, parity tables, the 744B-at-home projection, repository map |
 | [preregistrations/](preregistrations/) | every staked prediction with its verdict — hits, the near-miss, and the honest miss |
+| [weights/LAW5_PROTOCOL.md](weights/LAW5_PROTOCOL.md) | the live Law-5 research ledger — conventions, stakes, scores, and the retraction |
 | [papers/arxiv/](papers/arxiv/) | the paper (submission-ready LaTeX) |
 | [CHANGELOG.md](CHANGELOG.md) | v1.0 → v1.5, every release |
 
