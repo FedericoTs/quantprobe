@@ -79,7 +79,7 @@ Native since v1.3 — pass comma lists and quantprobe aggregates them: `--vram 2
 > 2. **Convert a HuggingFace model to GGUF** — only if you're compressing a model that has no community GGUF. Run llama.cpp's `convert_hf_to_gguf.py` once, then feed the `.gguf` to `quantize`. Models with an existing GGUF skip this entirely.
 > 3. ~~Tell it your hardware~~ **auto-detected since v1.2** (`quantprobe hw` shows what it sees; flags/`--machine` only needed to estimate a different machine).
 >
-> So: **the memory-speed strategy is applied autonomously; the one-time setup is on you.** A single hands-off `quantprobe auto <hf-model>` (auto-detect hardware → convert → compress → run) is on the roadmap.
+> So: **the memory-speed strategy is applied autonomously; the one-time setup is on you.** And the hands-off pipeline shipped: `quantprobe auto <model>` (fetch the best community quant and run) and `auto --custom` (probe YOUR model, build its personalized GGUF).
 
 
 ---
@@ -99,14 +99,23 @@ Then, from model to chatting (llama.cpp installed above):
 # 1. download a known-good model (robust, resumes if interrupted)
 quantprobe fetch qwen3-30b ./models
 
-# 2. launch chat with the placement the law picked for your machine
-quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf --model qwen3-30b --machine 2016-xmp
+# 2. launch chat with the placement the law picked for your machine (zero config - it reads the file + your hardware)
+quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 
 # check the law on your own hardware (predicted vs measured):
-quantprobe bench --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf --model qwen3-30b --machine 2016-xmp
+quantprobe bench --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 ```
 
-### Make your own compressed model (the full pipeline)
+### Make your own compressed model
+
+The one-command version — picks a requantizable source from the repo, fetches the eval corpus,
+probes the fragile band (~30-60 min), builds the personalized depth-aware GGUF:
+
+```bash
+quantprobe auto qwen3-coder --custom
+```
+
+Manual control over each step (same machinery):
 
 ```bash
 # A. compress directly — protect the last 12 layers (good default for most late-fragile models)
@@ -138,6 +147,26 @@ quantprobe bench --gguf ~/.ollama/models/blobs/sha256-<hash> --total 7.2 --activ
 ```
 
 (Windows: `C:\Users\<you>\.ollama\models\blobs\`.) Two Ollama gotchas the law keeps exposing in the wild: Ollama's **default context window (~4k) is smaller than coding-agent payloads** — Continue/Cline overflow it, truncation breaks prompt-cache reuse, and every request re-prefills from zero (minutes on CPU). Either raise it (`PARAMETER num_ctx 16384` in a Modelfile / `OLLAMA_CONTEXT_LENGTH`) or serve with `quantprobe run --serve --extra "-c 16384"` instead. And on CPU-only boxes, prefer MoE models — dense 14B decodes ~3 tok/s where a 30B-A3B does ~8 with more intelligence (`plan` shows this per-box).
+
+## Recipes — getting the most out of it
+
+```bash
+# YOUR OWN FINE-TUNE (the most custom thing there is): convert once, then probe ITS fragile band
+#   python convert_hf_to_gguf.py ./my-finetune --outfile my-finetune-f16.gguf   (ships with llama.cpp)
+quantprobe probe --gguf my-finetune-f16.gguf --eval wiki.test.raw --apply --out my-finetune-2bit.gguf
+#   -> a ~2-bit model carrying YOUR fine-tune's own protection map, ~3x smaller than f16 per bit class
+
+# LOCAL CODING AGENT (Cline / Continue / Aider): serve the coding MoE with agent-sized context
+quantprobe auto qwen3-coder --tps 15 --run --serve --extra "-c 16384"
+#   -> OpenAI-compatible endpoint at localhost:8080/v1 (any key); MoE beats dense ~3x on CPU decode
+
+# BEFORE BUYING HARDWARE: price the candidate box (flags = the machine you're NOT on)
+quantprobe optimize --tps 20 --vram 16 --vram-bw 448 --ram 64 --ram-bw 85 --disk-bw 7
+#   -> the cheapest bits/placement/hardware combination that meets the target, Pareto-ranked
+
+# LONG-CONTEXT HONESTY (agents dump 10k+ tokens): the KV term prices it before you feel it
+quantprobe plan --gguf model.gguf --ctx 16384
+```
 
 ## Help grow the law (optional, opt-in)
 
