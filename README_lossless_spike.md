@@ -158,7 +158,7 @@ the LLM evolves the `Predictor` inside a marked `EVOLVE-BLOCK`. Round-trip is
 structural (encoder/decoder share the update), so every candidate is exactly lossless.
 
 **30 LLM evolution steps** took cmcore from 2.20 to **1.775 bpc** on a 1 MB enwik8
-slice (full trajectory in [`experiments/HUTTER_NOTES.md`](experiments/HUTTER_NOTES.md)).
+slice (full trajectory in `experiments/HUTTER_NOTES.md` (internal notes, not published)).
 Key wins: match models, word/prev-word/capitalization models, SSE/APM chains, a
 **nonstationary bit-history (indirect) model**, **hash-collision checksums**, a
 **mixture-of-experts + online neural (MLP) mixer**, an **XML/wiki structure model**,
