@@ -200,3 +200,43 @@ identical architecture and shapes → identical FLOPs, disclosed).
   below Q4_K_M** (LUT dequant tax, ≤ 20.4 tok/s).
 - Output if it survives: per-format η_pp column and the recipe "AVX2-era CPUs: prefer _0
   formats for CPU-resident tensors during prefill-heavy workloads."
+
+---
+
+## CORRECTION (2026-07-24): Phase-2 H3a "partial-offload peak" was a VRAM-contention artifact
+
+**What was published:** prefill peaks at ngl16 (322.5) vs ngl99 (166) — "+94% over full offload,"
+attributed to a residency mechanism.
+
+**What is true:** on a clean GPU, full offload wins: **ngl99 = 377.5 ± 0.9**, ngl16 = 316.6–322.5.
+The Phase-2 sweep (and the pilot's P4 = 166) ran while an orphaned llama-server from the previous
+day's dashboard session (30B hybrid, ~1.6 GB VRAM) was resident. Controlled A/B, same build, same
+file, same command, run 2026-07-24:
+
+| GPU state (nvidia-smi before run) | ngl99 pp2048 | ngl16 pp2048 |
+|---|---|---|
+| clean (927 MiB baseline) | **377.51 ± 0.90** | 316.56 ± 1.36 |
+| deliberate squatter resident (2560 MiB: 30B hybrid, the dashboard config) | **166.50 ± 0.71** | 317.76 ± 1.02 |
+
+The squatted number reproduces the pilot's 166 to ±0.5 tok/s; ngl16 is invariant across states.
+Attribution of the original contamination is forensic reconstruction (the orphan was found and
+killed at today's session start); the mechanism is proven by the controlled reproduction above.
+
+**What replaces the claim:** placement is **co-residency-conditional**. A ~1.6 GB VRAM squatter
+(a dashboard, a browser, a game) halves full-offload prefill and flips the optimal placement from
+ngl99 to partial offload — while partial offload is contention-immune. This is a real, useful,
+measurable phenomenon; it was just not the phenomenon we claimed. H3b's miss is explained (ub
+buffers were never the mechanism), and H9's staked sweep will be scored against the CLEAN curve
+(expected outcome: MISS of the staked interior peak — publishing it as such) plus a squatted twin
+sweep to map the co-residency geography.
+
+**Contamination audit triggered:** every GPU-path prefill number from the pilot and Phase 2
+(P3 ngl0 273/277.8, P-b 223.58@8k, P-c 277.15, P6 hybrid 193.24, Phase-2 sweep) is being
+re-measured on a verified-clean GPU. H10's staked bands were derived from potentially
+contaminated points; they will be scored against clean re-measurements and re-staked if the
+underlying curve moves. CPU-pure numbers (-dev none) are unaffected by construction.
+
+**New convention (binding from now on):** `nvidia-smi memory.used` is logged immediately before
+and after every GPU-path measurement batch; a prefill run is valid only if the pre-run baseline
+is the clean-desktop value (~0.9 GB on this box). Kill-orphans-first is now a protocol step, not
+just hygiene.
