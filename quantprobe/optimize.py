@@ -35,6 +35,7 @@ HW_DELTAS = [
 
 
 def resolve(a):
+    planmod.check_presets(a)
     """Model + machine resolution, same semantics as plan.run (autospec + autodetect included)."""
     from . import spec as specmod
     specmod.apply(a, quiet=True)

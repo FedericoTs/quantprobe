@@ -292,6 +292,28 @@ def t_quantize_help():
     rc, out = cli("quantize", "--help")
     assert rc == 0 and "--gguf" in out and "--protect-late" in out
 
+def t_plan_unknown_model_loud():
+    # an unknown --model preset must FAIL LOUDLY, never silently fall back to defaults
+    rc, out = cli("plan", "--model", "laguna-s", "--machine", "2016-xmp")
+    assert rc != 0 and "unknown --model" in out and "presets:" in out and "Traceback" not in out, \
+        f"unknown model not loud: rc={rc} {out[:200]}"
+
+def t_plan_unknown_model_with_total_ok():
+    # ...but an unknown name WITH an explicit --total is a described custom model: allowed
+    rc, out = cli("plan", "--model", "laguna-s", "--total", "117.6", "--active", "8",
+                  "--bits", "2.7", "--machine", "2016-xmp")
+    assert rc == 0 and "tok/s" in out, f"explicit-spec override broken: rc={rc} {out[:200]}"
+
+def t_plan_unknown_machine_loud():
+    rc, out = cli("plan", "--model", "qwen3-30b", "--machine", "gamign-typo")
+    assert rc != 0 and "unknown --machine" in out and "Traceback" not in out, \
+        f"unknown machine not loud: rc={rc} {out[:200]}"
+
+def t_optimize_unknown_machine_loud():
+    rc, out = cli("optimize", "--tps", "20", "--machine", "nope-preset")
+    assert rc != 0 and "unknown --machine" in out and "Traceback" not in out, \
+        f"optimize unknown machine not loud: rc={rc} {out[:200]}"
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

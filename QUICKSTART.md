@@ -1,5 +1,17 @@
 # quantprobe — 60-second start
 
+**If you only remember one command** — hardware auto-detected, nothing else to fill in:
+
+```bash
+quantprobe auto <model-or-HF-repo> --custom --run
+```
+
+That is the ENTIRE pipeline: pick a high-precision source → measure YOUR model's fragile
+band → build its personalized depth-aware GGUF → predict the placement for THIS machine →
+launch chat. Swap `--custom` for `--tps 15` to skip the ~30-60 min probe and just fetch the
+best community quant for a speed target. Everything below is the same machinery with more
+control.
+
 Three levels. Pick where you want to stop.
 
 ## Level 0 — nothing to install (10 seconds)
