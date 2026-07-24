@@ -53,3 +53,6 @@ weights/data/crux*.log
 weights/data/gen_*.log
 weights/data/revalidation_*.log
 weights/data/quantize_proof.log
+
+# llama.cpp builds live outside the repo - never commit binaries
+tools/

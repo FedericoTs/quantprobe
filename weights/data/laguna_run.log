@@ -1,0 +1,12 @@
+=== LAGUNA S 2.1 (118B) ON THE 2016 DESKTOP — pre-registered 0.2-0.4 tok/s (dfdfaa7, staked before download) ===
+--- 1. quantprobe bench (disk-stream placement, mainline b10098) ---
+[quantprobe] calibrated to file: 39.68 GB on disk (preset assumed 40.37 GB, scale 0.98)
+[quantprobe] placement: stream from disk (cold experts) | predicted 0.3 tok/s
+[quantprobe] bench: tools/llamacpp-b10098\llama-bench.exe -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -n 32 -p 0 -r 2 --mmap 1 -ngl 0
+[quantprobe] benchmarking (30-90s; llama-bench runs quietly, then prints the number)...
+
+[quantprobe] measured: 0.38 +/- 0.17 tok/s (predicted 0.3, +30%)
+[quantprobe] the tiered decode law just ran on your machine.
+[quantprobe] help grow the law: re-run with --contribute for a one-click, pre-filled data point (you review it first; nothing is sent automatically).
+
+--- 2. text proof: a day-old 118B generating on a 2016 PC ---

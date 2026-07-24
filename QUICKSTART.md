@@ -170,6 +170,7 @@ quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionall
 
 | command | needs llama.cpp? | what it does |
 |---|---|---|
+| `hw` | no | detect THIS machine (RAM/GPU/disk, source-tagged); used automatically when you pass no flags |
 | `plan` | no | predict decode speed + best placement for a model on your machine |
 | `target` | no | inverse: give a tok/s target, get the smartest model + a speed↔intelligence ladder |
 | `fetch` | no (network) | robust model download (resumes, retries) |

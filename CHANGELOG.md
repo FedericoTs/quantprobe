@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0 — 2026-07-24
+
+**Zero-configuration.** The minimal command is now `quantprobe plan --gguf model.gguf` — nothing else.
+
+- New `quantprobe hw`: detects RAM (sticks + configured MT/s -> peak GB/s), GPU(s) (nvidia-smi +
+  name->bandwidth/eta table; multi-GPU aggregated at 0.85 TP efficiency), Apple unified memory.
+  Every value tagged [os]/[table]/[default]; nothing leaves the machine. `--measure FILE` adds a real
+  sequential-read disk measurement.
+- GGUF autospec: `--gguf` alone yields total/active params (tensor sums + expert metadata), TRUE
+  effective bits (file size), EXACT KV bytes/pos (MLA-aware). Explicit flags always override.
+- Auto-detection engages only when no `--machine` and no hardware flags are given — presets/flags
+  are unchanged and remain the way to estimate a machine you are not running on.
+- `--bits` freed to continuous values (e.g. 2.88) + nearest-key quality lookup.
+- Verified: auto-detected reference box reproduces the hand-measured `2016-xmp` preset exactly
+  (17.6 == 17.6 tok/s on the same GGUF). 28 smoke tests green.
+- Pre-registration #7 HIT: Laguna S 2.1 (118B) on the 2016 desktop — staked 0.2-0.4 tok/s before
+  the download, measured 0.38 +/- 0.17 (llama-bench, mainline b10098, no draft).
+
 ## 1.1.0 — 2026-07-23
 
 **Law 4 v2: the context term.** Prompted by u/RogerAI--fyi's observation that the decode law omitted

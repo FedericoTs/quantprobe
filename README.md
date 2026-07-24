@@ -41,6 +41,7 @@ Most benchmark posts report what happened. I report what I **predicted before it
 | 110B streamed from SATA: **0.2–0.3 tok/s** | **0.19** |
 | RAM overclock scales in-RAM decode **×1.41+** | **×1.52** |
 | 30B hybrid placement: **~19 tok/s** | **19.30 ± 0.88** |
+| a day-old 118B (Laguna S 2.1) streamed from this SATA drive: **0.2–0.4** ([staked pre-download](preregistrations/2026-07-23-laguna-s-2.1-on-2016-desktop.md)) | **0.38 ± 0.17** |
 | colibri's own 128 GB / 25 GB tiers, from our η bands | land **inside** the bands |
 
 Add to that: a **byte-identical control** (two GGUFs the same size, 2.25 ppl apart — only placement differs), a full **claim → script → log manifest** (every number reproducible in-tree), and a set of **documented dead ends** (dynamic top-k, semantic paging, self-speculation — all measured-dead, because a law you only confirm is a law you haven't tested).
@@ -92,7 +93,7 @@ The RAM line is the story in miniature: one free BIOS toggle, predicted in advan
 
 ## Quickstart — from a model to running, a few commands
 
-**What's automated vs. what you set up once (honestly):** quantprobe automates the *decisions* — which bits to spend where (compression) and which memory tier serves what (placement). You handle three one-time setup steps: (1) **install [llama.cpp](https://github.com/ggml-org/llama.cpp/releases)** and point quantprobe at it (`--llama-dir`/`QUANTPROBE_LLAMA_DIR`/`PATH`) — not needed for `plan`/`target`/the web calculator; (2) **convert HF safetensors → GGUF** once with llama.cpp's `convert_hf_to_gguf.py` *only if the model has no community GGUF*; (3) **pick a `--machine` preset or pass your specs** — hardware isn't auto-detected yet. The memory-speed strategy itself is applied autonomously; a one-command `quantprobe auto` (auto-detect → convert → compress → run) is on the roadmap. Full guide: [QUICKSTART.md](QUICKSTART.md).
+**What's automated vs. what you set up once (honestly):** quantprobe automates the *decisions* — which bits to spend where (compression) and which memory tier serves what (placement). You handle three one-time setup steps: (1) **install [llama.cpp](https://github.com/ggml-org/llama.cpp/releases)** and point quantprobe at it (`--llama-dir`/`QUANTPROBE_LLAMA_DIR`/`PATH`) — not needed for `plan`/`target`/the web calculator; (2) **convert HF safetensors → GGUF** once with llama.cpp's `convert_hf_to_gguf.py` *only if the model has no community GGUF*; (3) ~~pick a machine preset~~ **auto-detected since v1.2** (`quantprobe hw` shows what it sees; presets/flags remain for estimating other machines). The memory-speed strategy itself is applied autonomously; a one-command `quantprobe auto` (auto-detect → convert → compress → run) is on the roadmap. Full guide: [QUICKSTART.md](QUICKSTART.md).
 
 ```bash
 pip install git+https://github.com/FedericoTs/quantprobe   # (PyPI release pending)
@@ -108,10 +109,12 @@ That last command plans the optimal placement for your machine, prints the predi
 pip install git+https://github.com/FedericoTs/quantprobe
 ```
 
-Eight commands. `plan`/`target` need nothing installed; the rest drive llama.cpp:
+Nine commands. `hw`/`plan`/`target` need nothing installed; the rest drive llama.cpp. **Zero-config on your own box** — `quantprobe plan --gguf model.gguf` detects the machine and reads the model from the file:
 
 ```bash
-quantprobe plan     --model qwen3-30b --machine 2016-xmp   # Law 4: best placement + predicted tok/s + the command
+quantprobe hw                                              # what the law sees on THIS machine (every value source-tagged)
+quantprobe plan     --gguf model.gguf                      # zero-config: machine auto-detected, model read from the file
+quantprobe plan     --model qwen3-30b --machine 2016-xmp   # or estimate ANY machine/model by name
 quantprobe target   --tps 5 --machine gaming --ladder      # inverse: tok/s target -> smartest model + ladder
 quantprobe fetch    unsloth/Qwen3-30B-A3B-GGUF ./models Qwen3-30B-A3B-Q2_K.gguf   # robust download
 quantprobe quantize --gguf model-f16.gguf --out model-2bit.gguf   # COMPRESS: build a depth-aware ~2-bit GGUF (verified: loads + generates)
