@@ -130,3 +130,73 @@ Not expressible in stock llama.cpp (no per-phase k); requires a small patch; des
   tool) — **+43%**, inside the staked 43–50. Both asymmetric-top-k bounds are now measured: the
   prize (+43% prefill) and the price-if-global (+20.7% ppl). The patch-gated experiment — k=4
   during prefill only — decides whether the prize can be taken without the price.
+
+---
+
+## Phase 3 — phase-split placement and the prefill knob map (stakes written 2026-07-24, before any run)
+
+Phase 2 proved decode-optimal and prefill-optimal placements are different configurations.
+Phase 3 tests whether the two can be *composed* on stock llama.cpp, and turns the knobs
+(offload fraction, KV persistence, format, fa, KV-quant) into a per-machine map. All runs:
+dense 7B Q4 = qwen7b-Q4_K_M (28 layers, kvp 57,344 B/token f16), MoE = Qwen3-30B-A3B Q2_K
+(kvp 98,304 B/token). b10098 build. New artifacts on C: (D: full).
+
+**H7 (phase-split serving via slot save/restore).** llama-server `--slot-save-path` serializes
+sequence state device-agnostically (claim under test).
+- **H7a staked (binary):** a slot saved on a prefill-tuned instance (ngl16) restores into a
+  decode-tuned instance (ngl99) of the same GGUF (same -c, same cache types); the follow-up
+  request with the identical prompt reports prompt_n ≈ 0 (no recompute) and generates coherently.
+  If the state format embeds device layout, this fails and is published as the kill.
+- **H7b staked (bridge price is transfer-priced):** 2048-token dense-7B state file lands
+  **100–140 MB** (ctx x kvp ≈ 117 MB + overhead); save and restore each sustain **≥ 200 MB/s**
+  effective warm (≤ 0.7 s); restore ≥ **2,000 tok/s** equivalent — ≥ x60 over CPU-pure compute
+  (33), ≥ x6 over the ngl16 peak. Below 2,000 → serialization overhead dominates and gets named.
+- **H7c staked (end-to-end):** pp8192+tg256 on dense 7B: phase-split total (prefill@ngl16 →
+  save → restore → decode@ngl99) ≤ **0.85 x** the best single-config total. Arithmetic behind
+  the stake: split ≈ 31+2+5 s vs single-config ≈ 52 s (ngl16 decode ~12 tok/s: 12 CPU layers
+  ≈ 1.87 GB/token over RAM) or ≈ 59 s (ngl99 prefill ~150 @8k). Robust across decode-rate
+  uncertainty ±50%.
+
+**H8 (KV persistence beats recompute for agent turns — the prefix answer).** Same-config
+save/restore across server restarts, MoE 30B on its decode config (ngl99 -ot exps=CPU, 193
+pp measured).
+- Staked: 8k-token state file **0.75–0.95 GB**; restore-then-decode beats recompute-then-decode
+  on time-to-first-token by **≥ x10** (compute ≈ 42 s; restore ≤ 4.2 s; cold-disk floor
+  1.6 s from 0.5 GB/s SATA). Effective restored-prefix rate staked **2,000–20,000 tok/s** —
+  the "turn 2+ is free" claim, priced by tier.
+
+**H9 (the ngl-peak formula).** Pre-stated: the naive load-balance overlap model (peak at
+ngl 25–26, ceiling ≈ 300 from R_cpu 27.2 + R_gpu-stream 273) is ALREADY inconsistent with
+the measured ngl16 = 322.5 > 300 — throughput at the peak is super-additive. The fine sweep
+maps the correction term.
+- Staked: sweep ngl ∈ {4,8,12,14,16,18,20,24} at pp2048 shows a single interior peak within
+  **ngl 12–20**, peak rate **310–335**, and both ngl8 and ngl24 sit ≥ 8% below the peak.
+- Interleave fork (activation-handoff arithmetic: 27 CPU↔GPU crossings ≈ 1.6 GB/pass ≈ 2% of
+  pass time — cheap): **staked branch:** interleaved offload at the same fraction
+  (ngl99 + -ot routing even-index blk to CPU, 14/28) lands **within ±10%** of the contiguous
+  curve at ngl14–16. If it instead collapses ≥ 30%, per-crossing sync cost (not bandwidth) is
+  the named term.
+
+**H10 (context-quadratic term — owed to P-b).** Per-token linear model fitted on measured
+512/2048/8192 (t/tok = 3.614 ms + 1.117e-4 ms x ctx):
+- Staked: pp4096 @ ngl0 = **242–256 tok/s**; pp12288 @ ngl0 = **195–211 tok/s** (fa at build
+  default, matching Phase 1/2 conditions).
+- fa pilot cells (no prior data → measured unstaked, Phase-1 style): pp2048 and pp8192 at
+  -fa on / off / default on Pascal → coefficient c per fa-mode. If c moves < 10%, the fa knob
+  is dead on this hardware and recorded as such.
+
+**H11 (KV-quant prefill tax — one cell, forked).** ctk/ctv = q8_0, ngl0, pp2048, dense 7B
+(with -fa on if quantized V requires it; fallback cell ctk-only without fa).
+- **Staked branch:** within **[−20%, +5%]** of f16 — batched dequant amortizes, same family as
+  P-c. The collapse branch (−50%+, mirroring Pascal's −83% decode) would make the KV-q8 gate
+  phase-independent.
+
+**H12 (format x device η_pp table — prefill-friendly formats).** CPU-pure pp2048, dense 7B.
+Known: Q4_K_M 27.2, Q2_K 17.6. New cells: Q4_0, Q5_0, Q8_0 (requantized from qwen7b-Q4_K_M —
+speed-only cells, no quality claims, disclosed), IQ3_M and IQ3_XS (existing Instruct files,
+identical architecture and shapes → identical FLOPs, disclosed).
+- Staked: **Q8_0 fastest overall** (+10–35% over Q4_K_M — trivial dequant, and bytes don't
+  matter in the compute regime); **Q4_0 ≥ Q4_K_M** (+5–20%); **IQ3 family slowest, ≥ 25%
+  below Q4_K_M** (LUT dequant tax, ≤ 20.4 tok/s).
+- Output if it survives: per-format η_pp column and the recipe "AVX2-era CPUs: prefer _0
+  formats for CPU-resident tensors during prefill-heavy workloads."
