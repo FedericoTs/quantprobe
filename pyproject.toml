@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantprobe"
-version = "1.5.0"
+version = "1.5.1"
 description = "Probe-then-quantize for LLMs: measure a model's fragility curve, plan bit/tier placement by the tiered decode law, and emit ready-to-run llama.cpp recipes."
 readme = "README.md"
 license = { text = "MIT" }

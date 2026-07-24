@@ -78,6 +78,7 @@ quantprobe auto qwen3-coder --tps 15 --run   # empty machine -> optimal quant ch
 
 ```bash
 quantprobe auto qwen3-30b --tps 15                       # ONE command: optimizer picks bits, closest quant fetched, run command printed
+quantprobe auto qwen3-30b --custom                       # THE PRODUCT: probe YOUR model, build its personalized depth-aware GGUF
 quantprobe hw                                            # what the law sees on THIS machine (every value source-tagged)
 quantprobe plan     --gguf model.gguf                    # zero-config prediction: placement + tok/s + the launch command
 quantprobe optimize --tps 20                             # CHEAPEST PATH to a target: bits x placement x hardware, Pareto-ranked

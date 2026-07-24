@@ -99,6 +99,7 @@ def main():
     au.add_argument("--tps", type=float, default=None, help="target tok/s for the optimizer")
     au.add_argument("--max-quality", type=float, default=None)
     au.add_argument("--allow-prune", action="store_true"); au.add_argument("--any-runtime", action="store_true")
+    au.add_argument("--custom", action="store_true", help="THE PRODUCT: fetch a high-precision source, probe YOUR model (~30-60 min), build a depth-aware GGUF personalized to it")
     au.add_argument("--serve", action="store_true", help="with --run: llama-server instead of chat")
     au.add_argument("--extra", default=None)
 

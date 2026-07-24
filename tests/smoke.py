@@ -277,6 +277,12 @@ def t_auto_unknown_target_graceful():
     rc, out = cli("auto", "not-a-real-preset-or-repo", "--dry")
     assert rc != 0 and ("not a preset" in out or "could not list" in out)
 
+def t_auto_custom_dry():
+    rc, out = cli("auto", "qwen3-30b", "--machine", "2016-xmp", "--custom", "--dry")
+    if "could not list" in out:
+        return
+    assert "source:" in out and "fragile band" in out and "nothing downloaded" in out, out[-300:]
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")

@@ -180,7 +180,7 @@ quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionall
 | `plan` | no | predict decode speed + best placement for a model on your machine |
 | `target` | no | inverse: give a tok/s target, get the smartest model + a speed↔intelligence ladder |
 | `optimize` | no | cheapest path to a target speed: bits × placement × KV × hardware searched over the law, measured lever gates |
-| `auto` | network | ONE command: optimizer picks the bits, closest community quant fetched, run command printed (`--run` launches) |
+| `auto` | network | ONE command: closest community quant fetched and ready (`--run` launches); `--custom` probes YOUR model and builds its personalized depth-aware GGUF |
 | `fetch` | no (network) | robust model download (resumes, retries) |
 | `quantize` | **yes** | **compress**: build a depth-aware ~2-bit GGUF (protect the fragile band, rest 2-bit) |
 | `probe` | **yes** | measure a model's fragility curve → emit (or `--apply` to build) the depth-aware GGUF |

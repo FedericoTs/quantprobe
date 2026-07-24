@@ -37,6 +37,37 @@ def list_ggufs(repo):
                 and "mmproj" not in f["path"].lower() and "draft" not in f["path"].lower()]
 
 
+WIKI_URL = "https://huggingface.co/datasets/ggml-org/ci/resolve/main/wikitext-2-raw-v1.zip"
+
+
+def ensure_eval(dest_dir):
+    """The held-out corpus for probing, fetched once (1.3 MB)."""
+    import os, zipfile, io
+    path = os.path.join(dest_dir, "wiki.test.raw")
+    if os.path.isfile(path):
+        return path
+    print("[quantprobe auto] fetching the WikiText-2 eval corpus (1.3 MB, one time)...")
+    with urllib.request.urlopen(WIKI_URL, timeout=60) as r:
+        z = zipfile.ZipFile(io.BytesIO(r.read()))
+    with z.open("wikitext-2-raw/wiki.test.raw") as f, open(path, "wb") as out:
+        out.write(f.read())
+    return path
+
+
+def pick_source(files, t):
+    """High-precision source for the custom build: prefer Q8-class (smallest requantizable), else max bits."""
+    cands = []
+    for path, size in files:
+        if "-of-" in path.lower():
+            continue                                # split multi-part files: out of scope for v1
+        bits = size * 8 / (t * 1e9)
+        cands.append((bits, size, path))
+    if not cands:
+        return None
+    hi = sorted([c for c in cands if c[0] >= 7.5], key=lambda c: c[1])
+    return hi[0] if hi else max(cands)
+
+
 def run(a):
     target = a.target
     if target in MODEL_REPOS:
@@ -79,6 +110,40 @@ def run(a):
         raise SystemExit("no usable quant in that repo for this machine")
     scored.sort()
     _, _, path, size, bits, best = scored[0]
+
+    if getattr(a, "custom", False):
+        src = pick_source(files, t)
+        if not src:
+            raise SystemExit("no usable high-precision source in that repo (split files unsupported)")
+        sbits, ssize, spath = src
+        import os
+        dest = getattr(a, "dir", None) or "./models"
+        os.makedirs(dest, exist_ok=True)
+        print("\n[quantprobe auto --custom] source: " + spath + f" ({ssize/1e9:.1f} GB, {sbits:.1f}-bit)")
+        print("  pipeline: fetch source -> probe the fragile band (~30-60 min) -> build the")
+        print("  depth-aware GGUF. Interrupt anytime; the fetch resumes.")
+        if getattr(a, "dry", False):
+            print("  (--dry: nothing downloaded)")
+            return spath
+        from . import fetch as fetchmod
+        if not fetchmod.fetch(repo, dest, spath, fetchmod.token()):
+            raise SystemExit("source download failed (re-run: it resumes)")
+        srcfull = os.path.join(dest, os.path.basename(spath))
+        evalf = ensure_eval(dest)
+        from . import probe as probemod
+        import argparse
+        out = os.path.join(dest, os.path.basename(spath).rsplit(".gguf", 1)[0] + "-depthaware.gguf")
+        pa = argparse.Namespace(gguf=srcfull, bands=4, chunks=32, eval=evalf, ngl=99,
+                                workdir=dest, llama_dir=getattr(a, "llama_dir", None),
+                                apply=True, out=out, dry_run=False)
+        probemod.run(pa)
+        print("\n[quantprobe auto --custom] your personalized model:")
+        print("  quantprobe run --gguf " + out)
+        if getattr(a, "run", False):
+            from . import runtime
+            a.gguf = out; a.bits = None
+            runtime.run(a)
+        return out
     print(f"\n[quantprobe auto] optimizer wants ~{want_bits:g}-bit; closest file in {repo}:")
     print(f"  {path}  ({size/1e9:.1f} GB, {bits:.2f} effective bits)")
     print(f"  predicted on this machine: {best[1]:.1f} tok/s  ({best[0]})")
@@ -96,8 +161,8 @@ def run(a):
     full = os.path.join(dest, os.path.basename(path))
     print(f"\n[quantprobe auto] ready. Run it:")
     print(f"  quantprobe run --gguf {full}")
-    print(f"\n  Want better quality at the SAME size? That's the custom path (the actual product):")
-    print(f"  fetch the f16, then:  quantprobe probe --gguf <f16>.gguf --eval wiki.test.raw --apply")
+    print("\n  Better quality at the SAME size: rerun with --custom - it probes YOUR model's")
+    print("  fragile band (~30-60 min) and builds a depth-aware GGUF personalized to it.")
     if getattr(a, "run", False):
         from . import runtime
         a.gguf = full

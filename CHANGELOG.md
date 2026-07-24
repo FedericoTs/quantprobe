@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1 — 2026-07-25
+
+**`auto --custom` — the personalized recipe, now truly one command.** Fetches the best
+requantizable source from the repo (prefers Q8-class over f16: half the download, identical PTQ
+quality), auto-fetches the WikiText-2 eval corpus (1.3 MB, once), probes YOUR model's fragile
+band (~30-60 min), and builds the depth-aware GGUF - personalized to the model, sized by the
+optimizer. The fast path (closest community quant) remains the default; every fast-path run
+advertises the upgrade. 41 tests.
+
 ## 1.5.0 — 2026-07-25
 
 **One command from empty machine to running model — and the law, watchable.**
