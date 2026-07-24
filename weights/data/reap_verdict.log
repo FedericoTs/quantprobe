@@ -1,0 +1,19 @@
+=== PRE-REG #8 MEASUREMENT RUN 04:24 ===
+eval corpus: 1290590 bytes
+
+--- P-a: WikiText-2 perplexity, 32 chunks, identical flags (out-of-domain test) ---
+[parent Qwen3-Coder-30B-A3B Q3_K_M]
+3.21.638.814 I Final estimate: PPL = 7.9852 +/- 0.25782
+[REAP-25B (50% experts pruned) Q3_K_M]
+1.52.400.549 I Final estimate: PPL = 11.0990 +/- 0.37236
+
+--- P-b: decode tok/s, identical placement (RAM-resident experts) ---
+| qwen3moe 30B.A3B Q3_K - Medium |  13.70 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |            tg32 |          3.38 ± 2.66 |
+| qwen3moe 30B.A3B Q3_K - Medium |  10.71 GiB |    24.87 B | CUDA       |  99 | exps=CPU              |            tg32 |          4.74 ± 3.15 |
+
+--- P-c: tier promotion on a 16GB card (law pricing, via the tool) ---
+  *   61.7 tok/s  all in VRAM
+      16.3 tok/s  hybrid: attention->VRAM, experts->RAM
+  *   15.7 tok/s  hybrid: attention->VRAM, experts->RAM
+       8.6 tok/s  pure CPU (GPU idle)
+=== REAP MEASUREMENT DONE 04:31 ===
