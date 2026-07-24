@@ -22,11 +22,11 @@ BITS_LADDER = [4.5, 3.0, 2.5, 2.0]           # prefer quality (higher bits) when
 
 def hw_of(a):
     hw = dict(planmod.MACHINES[a.machine]) if getattr(a, "machine", None) in planmod.MACHINES else {}
-    vc = a.vram if a.vram is not None else hw.get("vc", 0)
-    vb = a.vram_bw if a.vram_bw is not None else hw.get("vb", 0)
+    vc = planmod.agg_cap(a.vram) if a.vram is not None else hw.get("vc", 0)
+    vb = planmod.agg_bw(a.vram_bw, 0.85) if a.vram_bw is not None else hw.get("vb", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
     rb = a.ram_bw if a.ram_bw is not None else hw.get("rb", 40)
-    db = a.disk_bw if a.disk_bw is not None else hw.get("db", 0.5)
+    db = planmod.agg_bw(a.disk_bw, 0.75) if a.disk_bw is not None else hw.get("db", 0.5)
     return hw, vc, vb, rc, rb, db, hw.get("geta", 0.45), hw.get("gl", None)
 
 

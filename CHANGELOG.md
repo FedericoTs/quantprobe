@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0 — 2026-07-24
+
+**Any hardware combination.** Prompted by a wild 744B rig (72 GB VRAM + 128 GB RAM + RAID-0 Gen5
+NVMe at 3.6 tok/s) that the two-tier model under-predicted.
+
+- Three-tier expert cache: new ADDITIVE placement row "stream from disk (VRAM+RAM expert cache)" —
+  models what expert-caching runtimes (ktransformers/colibri-class) achieve; the stock-llama.cpp
+  rows are untouched (validated: retrodicts the 3.6 tok/s rig at 2.9, within the law's +/-25%).
+- Multi-device inputs: comma lists aggregate — `--vram 24,24,24 --vram-bw 936,936,936` (x0.85 TP
+  efficiency [est]) and `--disk-bw 14,14` (x0.75 stripe [est from the RAID-0 eta 0.66 datapoint]).
+- Simulator carries the same three-tier row (CLI parity).
+- Validation matrix green: every measured anchor identical to the digit (30B hybrid 18.9, ctx-16k
+  15.4, 110B 0.2, Laguna 0.3) with the new rows strictly additive. 31 smoke tests.
+
 ## 1.2.0 — 2026-07-24
 
 **Zero-configuration.** The minimal command is now `quantprobe plan --gguf model.gguf` — nothing else.

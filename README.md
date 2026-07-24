@@ -12,7 +12,7 @@
 > Pick any model + your machine → predicted tok/s, memory fit, quality cost, and your cheapest next upgrade — from the law below, with your config plotted against every validated measurement.
 
 
-**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds.** Two tiers: `plan`/`target` and the web calculator need *nothing* installed; `quantize`/`probe`/`run`/`bench`/`dashboard` drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). Preview any command without llama.cpp using `--dry`. 16 machine presets ship in (`--machine`): GTX 1060 → RTX 5090, Apple `mac-m2/m3/m4-*`, DGX Spark, Epyc — or pass raw specs.
+**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds.** Two tiers: `plan`/`target` and the web calculator need *nothing* installed; `quantize`/`probe`/`run`/`bench`/`dashboard` drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`). Preview any command without llama.cpp using `--dry`. 16 machine presets ship in (`--machine`): GTX 1060 → RTX 5090, Apple `mac-m2/m3/m4-*`, DGX Spark, Epyc — or pass raw specs. Multi-GPU / RAID? Comma lists aggregate: `--vram 24,24 --disk-bw 14,14`. Big-VRAM + disk-streaming rigs get the three-tier expert-cache row (v1.3).
 
 
 ---

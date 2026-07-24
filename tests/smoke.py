@@ -193,6 +193,32 @@ def t_autospec_from_gguf():
     assert abs(s["kvp"] - 98304) < 2048, f"kvp should be ~98304 exact, got {s['kvp']}"
     assert 2.5 < s["bits"] < 3.3, f"effective bits off: {s['bits']}"
 
+def t_multi_device_aggregate():
+    rc, out = cli("plan", "--model", "glm-744b", "--bits", "2.5", "--vram", "24,24,24",
+                  "--vram-bw", "936,936,936", "--ram", "128", "--ram-bw", "80", "--disk-bw", "14,14")
+    assert rc == 0 and "tok/s" in out, f"multi-device syntax broke: {out[:200]}"
+
+def t_three_tier_row_additive():
+    # big-VRAM + big-RAM + fast-disk rig: new expert-cache row appears AND the llama.cpp row survives
+    rc, out = cli("plan", "--model", "glm-744b", "--bits", "2.5", "--vram", "72", "--vram-bw", "900",
+                  "--ram", "128", "--ram-bw", "80", "--disk-bw", "15")
+    assert "VRAM+RAM expert cache" in out and "cold experts" in out, "3-tier row missing or llama.cpp row lost"
+    import re
+    three = float(re.search(r"([0-9.]+) tok/s\s+stream from disk \(VRAM\+RAM", out).group(1))
+    plain = float(re.search(r"([0-9.]+) tok/s\s+stream from disk \(cold", out).group(1))
+    assert three > plain * 1.5, f"VRAM cache credit too small: {three} vs {plain}"
+
+def t_anchor_matrix_v13():
+    # measured anchors must stay retrodicted: 110B->0.19, laguna->0.38 (llama.cpp rows)
+    import re
+    rc, out = cli("plan", "--model", "glm-air", "--bits", "2.5", "--machine", "2016-xmp")
+    v = float(re.search(r"([0-9.]+) tok/s\s+stream from disk \(cold", out).group(1))
+    assert 0.12 <= v <= 0.30, f"110B anchor drifted: {v}"
+    rc, out = cli("plan", "--total", "117.6", "--active", "8", "--always-active", "2.5",
+                  "--bits", "2.5", "--machine", "2016-xmp")
+    v = float(re.search(r"([0-9.]+) tok/s\s+stream from disk \(cold", out).group(1))
+    assert 0.2 <= v <= 0.5, f"laguna anchor drifted: {v}"
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")

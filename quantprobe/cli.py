@@ -2,6 +2,8 @@
 from __future__ import annotations
 import argparse
 
+from .plan import numlist
+
 
 def main():
     import sys
@@ -34,9 +36,9 @@ def main():
     q.add_argument("--total", type=float, help="total params (B)")
     q.add_argument("--active", type=float, help="active params per token (B)")
     q.add_argument("--always-active", type=float, help="always-active (attention/embed) params (B)")
-    q.add_argument("--vram", type=float); q.add_argument("--vram-bw", type=float)
+    q.add_argument("--vram", type=numlist, help="GB; comma-list for multi-GPU: 24,24"); q.add_argument("--vram-bw", type=numlist, help="GB/s; comma-list aggregates x0.85")
     q.add_argument("--ram", type=float); q.add_argument("--ram-bw", type=float)
-    q.add_argument("--disk-bw", type=float)
+    q.add_argument("--disk-bw", type=numlist, help="GB/s; comma-list (RAID) aggregates x0.75")
     q.add_argument("--gguf", default=None, help="optional: read total/active/bits/KV exactly from this GGUF")
     q.add_argument("--ctx", type=int, default=0, help="context depth: adds KV reads/token + KV memory to the prediction (Law 4 v2)")
     q.add_argument("--kv-per-pos", type=float, default=None, help="KV bytes per position in KB (default: model preset, or 96)")
@@ -46,9 +48,9 @@ def main():
         sp.add_argument("--bits", type=float, default=None, help="effective bits/weight (default: read from --gguf, else 2.5)")
         sp.add_argument("--total", type=float); sp.add_argument("--active", type=float)
         sp.add_argument("--always-active", type=float)
-        sp.add_argument("--vram", type=float); sp.add_argument("--vram-bw", type=float)
+        sp.add_argument("--vram", type=numlist); sp.add_argument("--vram-bw", type=numlist)
         sp.add_argument("--ram", type=float); sp.add_argument("--ram-bw", type=float)
-        sp.add_argument("--disk-bw", type=float)
+        sp.add_argument("--disk-bw", type=numlist)
         sp.add_argument("--ctx", type=int, default=0, help="context depth for the prediction (Law 4 v2)")
         sp.add_argument("--kv-per-pos", type=float, default=None, help="KV bytes per position in KB")
         sp.add_argument("--llama-dir", default=None); sp.add_argument("--dry", action="store_true")

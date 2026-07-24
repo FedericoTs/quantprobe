@@ -191,6 +191,13 @@
       const hot=moe?actNe:0, str=act-hot;
       cfgs.push({n:"stream from disk (cold experts)", tps:0.95/(str*ms/H.db+(str*(1-ms)+hot)/(etaR*H.rb)+kvGb/(ETA_KV*H.rb)),
         warn:"exceeds RAM"}); }
+    if (moe && H.vc>0 && size+kvGb>ra){
+      const vRes=ne*AB/8*1.08+1.2+kvGb, vFree=Math.max(0,H.vc*0.90-vRes);
+      if (vFree>0.5){ const cache=ra*0.9+vFree, ms3=Math.max(0,1-cache/size);
+        const hot=actNe, str=act-hot, vSh=cache>0?vFree/cache:0, hit=str*(1-ms3);
+        cfgs.push({n:"stream from disk (VRAM+RAM expert cache)",
+          tps:0.95/(str*ms3/H.db+hit*(1-vSh)/(etaR*H.rb)+hit*vSh/(H.geta*H.vb)+hot/(H.geta*H.vb)+kvGb/(ETA_KV*H.vb)),
+          warn:"needs expert-caching runtime (not stock llama.cpp)"}); } }
     cfgs.sort((x,y)=>y.tps-x.tps);
     return {size, act, kvGb, cfgs, best:cfgs[0]||{n:"—",tps:0}, moe, ra, vc:H.vc, q:(QUAL[moe?"moe":"dense"][String(bitsVal)]||1)};
   }

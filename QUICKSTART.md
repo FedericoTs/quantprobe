@@ -65,7 +65,7 @@ You rarely need these — pick the closest preset above. But if you go custom, h
 
 ### Multi-GPU / multi-device?
 
-quantprobe models a single device. For tensor-parallel rigs (e.g. 2× 3090, or a DGX cluster), approximate: set `--vram` to the **summed** VRAM and `--vram-bw` to the **aggregate** bandwidth (the law held on a 4× DGX Spark cluster this way — its published number lands in the eta bands).
+Native since v1.3 — pass comma lists and quantprobe aggregates them: `--vram 24,24 --vram-bw 936,936` (×0.85 tensor-parallel efficiency [est]; the law held on a 4× DGX Spark cluster this way), `--disk-bw 14,14` for RAID (×0.75 stripe [est]). Rigs with big VRAM *and* disk streaming also get the **three-tier expert-cache row** — what ktransformers/colibri-class runtimes achieve; stock llama.cpp performs at the RAM-cache row.
 
 ---
 

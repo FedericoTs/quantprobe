@@ -48,6 +48,27 @@ MACHINES = {
     "epyc-256":    dict(vc=0,  vb=0,    rc=256, rb=200, db=5,    geta=0.5,  gl=0.3,  hint="Epyc/Threadripper, 256GB, ~200 GB/s [est]"),
     "dgx-spark":   dict(vc=128,vb=273,  rc=8,   rb=273, db=5,    geta=0.79, gl=0.6,  hint="NVIDIA DGX Spark / GB10, 128GB unified [validated vs published]"),
 }
+def numlist(x):
+    """CLI type: '24,24' -> [24.0, 24.0]; '24' -> 24.0. Lists = multiple devices."""
+    if isinstance(x, (int, float)):
+        return float(x)
+    if "," in str(x):
+        return [float(v) for v in str(x).split(",") if v.strip()]
+    return float(x)
+
+
+def agg_cap(v):
+    return sum(v) if isinstance(v, list) else v
+
+
+def agg_bw(v, eff):
+    """Aggregate bandwidth of multiple devices: sum x efficiency (TP loss for GPUs [est],
+    stripe loss for disks [est from the RAID-0 Gen5 datapoint, eta 0.66 vs single ~0.88])."""
+    if isinstance(v, list):
+        return sum(v) * (eff if len(v) > 1 else 1.0)
+    return v
+
+
 QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00},
         False: {2.0: 1.45, 2.5: 1.30, 3.0: 1.12, 4.5: 1.03, 6.5: 1.01, 8.5: 1.00}}
 
@@ -94,6 +115,26 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         tps = 0.95 / (streamable * miss / db + (streamable * (1 - miss) + hot) / (eta_r * rb)
                       + kv_gb / (ETA_KV * rb))
         out.append(("stream from disk (cold experts)", tps, "exceeds RAM - capacity demo", "-ngl 0"))
+    if moe and vc > 0 and size + kv_gb > ra:
+        # three-tier expert cache (VRAM + RAM + disk): what expert-caching runtimes achieve.
+        # llama.cpp mainline cannot LRU experts in VRAM - its number is the row above.
+        v_res = ne * ab / 8 * 1.08 + 1.2 + kv_gb           # attention + KV live in VRAM here
+        vfree = max(0.0, vc * 0.90 - v_res)
+        if vfree > 0.5:
+            cache = ra * 0.9 + vfree
+            miss3 = max(0.0, 1 - cache / size)
+            hot = act_ne
+            streamable = act - hot
+            vshare = vfree / cache if cache > 0 else 0.0
+            hit = streamable * (1 - miss3)
+            tps3 = 0.95 / (streamable * miss3 / db
+                           + hit * (1 - vshare) / (eta_r * rb)
+                           + hit * vshare / (geta * vb)
+                           + hot / (geta * vb)
+                           + kv_gb / (ETA_KV * vb))
+            out.append(("stream from disk (VRAM+RAM expert cache)", tps3,
+                        "needs an expert-caching runtime (ktransformers/colibri-class) - stock llama.cpp gets the RAM-cache row",
+                        "-ngl 99 + runtime-managed expert cache"))
     out.sort(key=lambda x: -x[1])
     return size, act, out
 
@@ -131,7 +172,9 @@ def run(args):
     if args.ram is not None: rc = args.ram
     if args.ram_bw is not None: rb = args.ram_bw
     if args.disk_bw is not None: db = args.disk_bw
-    vc = vc or 0; vb = vb or 0; rc = rc or 16; rb = rb or 40; db = db or 0.5
+    vc = agg_cap(vc) or 0; vb = agg_bw(vb, 0.85) or 0
+    rc = rc or 16; rb = rb or 40
+    db = agg_bw(db, 0.75) or 0.5
     ctx = getattr(args, "ctx", 0) or 0
     kvp = (args.kv_per_pos * 1024 if getattr(args, "kv_per_pos", None)
            else m.get("kvp", DEFAULT_KVP))

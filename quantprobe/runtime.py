@@ -45,11 +45,11 @@ def best_flags(a):
                   db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"))
         print("[quantprobe] hardware auto-detected (run `quantprobe hw` for details; "
               "pass --machine/flags to estimate a different box)")
-    vc = a.vram if a.vram is not None else hw.get("vc", 0)
-    vb = a.vram_bw if a.vram_bw is not None else hw.get("vb", 0)
+    vc = planmod.agg_cap(a.vram) if a.vram is not None else hw.get("vc", 0)
+    vb = planmod.agg_bw(a.vram_bw, 0.85) if a.vram_bw is not None else hw.get("vb", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
     rb = a.ram_bw if a.ram_bw is not None else hw.get("rb", 40)
-    db = a.disk_bw if a.disk_bw is not None else hw.get("db", 0.5)
+    db = planmod.agg_bw(a.disk_bw, 0.75) if a.disk_bw is not None else hw.get("db", 0.5)
     geta = hw.get("geta", 0.45); gl = hw.get("gl", None)
     act_scale = 1.0
     gguf = getattr(a, "gguf", None)
@@ -144,7 +144,7 @@ def tier_view(a, best):
                   db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"))
         print("[quantprobe] hardware auto-detected (run `quantprobe hw` for details; "
               "pass --machine/flags to estimate a different box)")
-    vc = a.vram if a.vram is not None else hw.get("vc", 0)
+    vc = planmod.agg_cap(a.vram) if a.vram is not None else hw.get("vc", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
     size = os.path.getsize(a.gguf) / 1e9 if a.gguf and os.path.isfile(a.gguf) else 0
     name = best[0]
