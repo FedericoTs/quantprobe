@@ -3,7 +3,22 @@
 **Author:** Federico Sciuca · **Date staked:** 2026-07-25, committed before the measurements ran
 **Protocol:** [weights/LAW5_PROTOCOL.md](../weights/LAW5_PROTOCOL.md) (frozen before the pilot)
 **Pilot results:** [weights/data/law5_pilot.log](../weights/data/law5_pilot.log), law5_p5p6.log
-**Status: OPEN — P-a/P-b/P-c measured immediately after this commit; P-d is community-gated.**
+**Status: SCORED same day (P-a/P-b/P-c); P-d remains community-gated.**
+
+- **P-a: HIT.** Measured **31.11 ± 0.21** vs staked 28.4–34.7 — dead center. The per-architecture
+  fit reproduces across the Coder variant.
+- **P-b: MISS (−18%).** Measured **223.58 ± 1.31** vs staked 265–280. Deep batch is not flat —
+  and the residual is identifiable: attention's context-quadratic FLOPs, excluded by the 2×params
+  convention, grow to a visible share by 8k. **Prefill has its own context term**, the compute-side
+  sibling of Law 4 v2's KV term. Fitting it is the next protocol step (the 512/2048/8192 sweep
+  already brackets it: 276.7 → 272.7 → 223.6).
+- **P-c: HIT on the staked fork branch.** Measured **277.15 ± 2.67** — statistically identical to
+  Q4's 272.7. **The dequant tax is CPU-only**; CUDA kernels amortize format cost. The
+  η_pp(format, device) table has its decisive cell.
+
+Running tally for Law 5's birth: two sharp claims killed (bits-invariance, hybrid-hurts), two
+staked hits, one productive miss naming the next term — all before the law is allowed anywhere
+near LAWS.md. Raw logs: [law5_stakes.log](../weights/data/law5_stakes.log).
 
 ## What the pilot established (and killed)
 
