@@ -65,7 +65,7 @@ def best_flags(a):
     kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None)
            else m.get("kvp", planmod.DEFAULT_KVP))
     _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
-                                  ctx=ctx, kvp=kvp)
+                                  ctx=ctx, kvp=kvp, n_layer=getattr(a, "n_layer", None))
     # run/bench/dashboard LAUNCH stock llama.cpp, so they may only pick placements stock
     # llama.cpp can actually execute. The three-tier expert-cache row's "flags" field is a
     # PROSE description ("+ runtime-managed expert cache"), not argv - exec'ing it hands

@@ -12,8 +12,8 @@ from __future__ import annotations
 # [est] otherwise. MLA models (deepseek) cache the compressed latent -> ~10x smaller: placement's
 # context story differs per architecture, which is why this is per-model, not a constant.
 MODELS = {
-    "qwen3-30b":  dict(t=30.5, a=3.3,  ne=1.2,  moe=True,  kvp=98304,  hint="Qwen3-30B-A3B"),          # 48L x 4KV x 128d (exact; calibration anchor)
-    "deepseek-16b": dict(t=15.7, a=2.4, ne=1.3,  moe=True,  kvp=31104,  hint="DeepSeek-V2-Lite"),        # MLA: 27L x (512+64) latent (exact)
+    "qwen3-30b":  dict(t=30.5, a=3.3,  ne=1.2,  moe=True,  kvp=98304,  nl=48,  hint="Qwen3-30B-A3B"),          # 48L x 4KV x 128d (exact; calibration anchor)
+    "deepseek-16b": dict(t=15.7, a=2.4, ne=1.3,  moe=True,  kvp=31104,  nl=27,  hint="DeepSeek-V2-Lite"),        # MLA: 27L x (512+64) latent (exact)
     "gemma-12b":  dict(t=11.9, a=11.9, ne=11.9, moe=False, kvp=65536,  hint="Gemma 4 12B"),             # [est] SWA: long-ctx slope from global layers only
     "mistral-7b": dict(t=7.2,  a=7.2,  ne=7.2,  moe=False, kvp=131072, hint="Mistral 7B"),              # 32L x 8KV x 128d (exact)
     "glm-air":    dict(t=110,  a=12,   ne=2.7,  moe=True,  kvp=94208,  hint="GLM-4.5-Air 106B"),        # [est]
@@ -23,6 +23,10 @@ MODELS = {
     "gpt-oss-120b": dict(t=120.4, a=5.1, ne=1.8, moe=True, kvp=73728,  hint="gpt-oss-120b"),            # total+active official; kvp: 36L x 8KV x 64d [est]
     "llama-70b":  dict(t=70.6, a=70.6, ne=70.6, moe=False, kvp=327680, hint="Llama-3.3-70B"),           # dense; kvp: 80L x 8KV x 128d
 }
+DESKTOP_VRAM_RESERVE = 1.0   # GB held by the OS/desktop on a real machine, not the model's to use.
+                             # Measured 0.8-1.5 GB on this box (pre-registration #13 sweep).
+                             # Applied ONLY to the new MoE split row: existing rows keep their
+                             # published anchors untouched.
 DEFAULT_KVP = 98304          # custom models without --kv-per-pos: typical GQA mid-size (Qwen3-30B class)
 ETA_KV = 0.70                # KV-read efficiency. Single-point calibration: measured tg32 d0->d16384
                              # 20.02 -> 16.12 on Qwen3-30B (+12.1 ms/token = 133 GB/s effective on the
@@ -77,7 +81,18 @@ QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00
         False: {2.0: 1.45, 2.5: 1.30, 3.0: 1.12, 4.5: 1.03, 6.5: 1.01, 8.5: 1.00}}
 
 
-def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0):
+def moe_split_flags(frac, n_layer):
+    """-ot regex placing the FIRST ceil(frac*L) layers' experts on GPU, the rest on CPU.
+    Measured 2026-07-26 (pre-registration #13): +34.7% decode and ~2-3x prefill on a 6 GB card.
+    Returns None when the layer count is unknown - we will not emit a regex we cannot ground."""
+    if not n_layer or frac <= 0:
+        return None
+    k = max(1, min(n_layer - 1, int(frac * n_layer)))
+    return '-ngl 99 -ot "blk\\.(%s)\\.ffn_.*_exps\\.=CPU"' % "|".join(str(i) for i in range(k, n_layer))
+
+
+def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
+             n_layer=None):
     ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
     size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
     act_ne = ne * ab / 8 * 1.15 * act_scale
@@ -102,6 +117,28 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
             out.append(("hybrid: attention->VRAM, experts->RAM",
                         1 / (act_ne / (geta * vb) + act_ex / (eta_r * rb) + kv_gb / (ETA_KV * vb)), warn,
                         '-ngl 99 -ot "exps=CPU" --no-mmap'))
+        # MoE partial expert offload: attention+KV in VRAM, then as many EXPERT layers as still
+        # fit, remainder on CPU. Measured pre-registration #13 (2026-07-26): +34.7% decode,
+        # ~2-3x prefill vs all-experts-to-CPU, with a hard CLIFF on overcommit (-29% at one step
+        # past the ceiling) - so the free-VRAM headroom is deliberately conservative.
+        # Desktop reserve: a real machine is not an empty GPU. Measured on this box during the
+        # pre-registration #13 sweep: Explorer + compositor + browser held 0.8-1.5 GB throughout.
+        # Overshooting the cutoff costs -29% (measured cliff), undershooting costs a few percent,
+        # so the asymmetry is deliberately resolved toward caution.
+        v_free = vc * 0.90 - v_need - DESKTOP_VRAM_RESERVE
+        experts_gb = size - ne * ab / 8 * 1.08
+        if v_free > 0.3 and experts_gb > 0:
+            f = min(1.0, v_free / experts_gb)
+            ram_left = experts_gb * (1 - f)
+            if f > 0.05 and ram_left <= ra:
+                t_split = (act_ne / (geta * vb) + f * act_ex / (geta * vb)
+                           + (1 - f) * act_ex / (eta_r * rb) + kv_gb / (ETA_KV * vb))
+                fl = moe_split_flags(f, n_layer)
+                # Only offer it if we can emit the EXACT command. Advertising a speed the
+                # printed flags cannot deliver is the v1.6.5 bug class; without a layer count
+                # the row is suppressed and the footer tells the user how to unlock it.
+                if fl:
+                    out.append((f"split experts: {f:.0%}->VRAM, rest->RAM", 1 / t_split, None, fl))
     if (not moe) and vc > 0 and size + kv_gb > vc * 0.90 and size + kv_gb <= ra + vc * 0.9:
         g = min(0.95, vc * 0.9 / (size + kv_gb))           # KV splits with its layers
         kv_t = g * kv_gb / (ETA_KV * vb) + (1 - g) * kv_gb / (ETA_KV * rb)
@@ -201,7 +238,8 @@ def run(args):
     kvp = (args.kv_per_pos * 1024 if getattr(args, "kv_per_pos", None)
            else m.get("kvp", DEFAULT_KVP))
 
-    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp)
+    nlay = getattr(args, 'n_layer', None) or m.get('nl')   # 'nl' = layer count VERIFIED from a real GGUF
+    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, n_layer=nlay)
     q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
           f"on {hw.get('hint', 'custom machine')}")
@@ -245,5 +283,8 @@ def run(args):
             print(f"  tier-boundary advisor: this config is {gap:.1f} GB over the {tier_name} boundary - "
                   f"shave it ({lever}) -> ~{promoted[0][1]:.1f} tok/s (x{promoted[0][1]/best[1]:.1f})")
         break                                          # nearest boundary only
+    if moe and vc > 0 and getattr(args, "n_layer", None) is None:
+        print("\n  note: MoE partial expert offload (measured +34.7% decode, ~2-3x prefill) needs this\n"
+              "  model's layer count to emit exact -ot flags - re-run with --gguf <file> to unlock it.")
     print("\n  (eta bands fitted from published measurements; estimates +/-25%. "
           "Hybrid needs --no-mmap.)")

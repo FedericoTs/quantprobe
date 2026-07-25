@@ -164,7 +164,7 @@ def run(a):
         if bits < 1.0 or bits > 9:
             continue
         _, _, cfgs = planmod.evaluate(t, ac, ne, moe, bits, vc, vb, rc, rb, db, geta, 1.0, gl,
-                                      ctx=ctx, kvp=kvp)
+                                      ctx=ctx, kvp=kvp, n_layer=getattr(a, "n_layer", None))
         cfgs = [c for c in cfgs if "expert cache" not in c[0]]
         if not cfgs:
             continue
