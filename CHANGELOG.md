@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.3 — 2026-07-25
+
+- **`probe` no longer silently fails on large models with small VRAM.** Its internal perplexity
+  measurement hardcoded `-ngl 99` (full GPU offload) for every intermediate test file — but a
+  probe's Q6_K reference build can be far bigger than the model's final compressed size (e.g.
+  ~23 GB for a 35B-class source), so on a 6 GB card it OOMs, llama-perplexity exits without a
+  result, and probe silently reported `PPL None` for every band with zero diagnostic. Found
+  running our own APEX-vs-depth-aware comparison. Now: on an OOM-shaped failure, probe retries
+  once at `-ngl 0` (CPU, slower but always fits) before giving up, and prints the last lines of
+  llama.cpp's own output if it still can't parse a result — never another silent `None` again.
+  Manually verified against the real failure case (recovered PPL 6.5161 on a file that OOM'd at
+  ngl99). 50 tests unchanged (this path needs a real GGUF + llama.cpp to exercise, consistent
+  with the existing probe test coverage).
+
 ## 1.6.2 — 2026-07-25
 
 - **7 new presets** (13 total): `qwen3-235b`, `glm-4.7` (358B), `glm-744b` (= GLM-5.2, exact total
