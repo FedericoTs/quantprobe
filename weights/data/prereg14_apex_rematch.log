@@ -1,0 +1,258 @@
+=== PREREG-14 fair APEX rematch 2026-07-26 00:46 ===
+[gpu-state] 991 MiB
+--- generating reference logits from Q8_0 parent (8 chunks, OOD corpus) ---
+0.01.586.309 W resolve_fused_ops: layer 0 is assigned to device CPU but fused Gated Delta Net (chunked) is assigned to device CUDA0 (usually due to missing support)
+0.01.586.450 W resolve_fused_ops: fused Gated Delta Net (chunked) not supported, set to disabled
+0.22.036.709 I 
+0.22.037.113 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.22.037.860 I perplexity: saving all logits to C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/q35_q8_ref.logits
+0.22.037.870 I perplexity: tokenizing the input ..
+0.22.106.662 I perplexity: tokenization took 68.787 ms
+0.22.106.755 I perplexity: calculating perplexity over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+13.57.538.592 I perplexity: 815.39 seconds per pass - ETA 27.17 minutes
+[1]15.8400,[2]6.8510,[3]4.5331,[4]4.8545,[5]4.7999,[6]4.7221,[7]4.9369,[8]4.9634,
+29.20.635.671 I Final estimate: PPL = 4.9634 +/- 0.28653
+
+CHECKPOINT OK: reference logits ready (967M)
+
+--- APEX-Mini : OOD ppl + KL vs Q8 parent ---
+0.01.309.718 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --no-mmap for better performance
+0.10.208.419 I 
+0.10.208.816 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.10.230.169 I kl_divergence: computing over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+1.17.387.974 I kl_divergence: 67.16 seconds per pass - ETA 2.23 minutes
+
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Δp RMS            Same top p
+   1      18.5110 ±    3.6581       0.15583 ±    0.03935       0.13063 ±    0.01064     8.971 ±  1.110 %    80.392 ±  2.491 %
+   2       7.6063 ±    0.9661       0.10459 ±    0.02283       0.10075 ±    0.00739    10.238 ±  0.864 %    85.098 ±  1.578 %
+   3       4.9164 ±    0.4576       0.08117 ±    0.01795       0.08854 ±    0.00638    10.006 ±  0.695 %    87.712 ±  1.188 %
+   4       5.2000 ±    0.4312       0.06875 ±    0.01519       0.08815 ±    0.00521     9.494 ±  0.579 %    87.451 ±  1.038 %
+   5       5.1545 ±    0.3760       0.07129 ±    0.01329       0.08424 ±    0.00436     9.149 ±  0.491 %    87.765 ±  0.918 %
+   6       5.1174 ±    0.3421       0.08039 ±    0.01302       0.09153 ±    0.00420     9.367 ±  0.432 %    87.320 ±  0.851 %
+   7       5.3326 ±    0.3329       0.07709 ±    0.01199       0.09299 ±    0.00376     9.195 ±  0.385 %    87.059 ±  0.795 %
+   8       5.3382 ±    0.3100       0.07279 ±    0.01103       0.09011 ±    0.00337     9.026 ±  0.356 %    87.500 ±  0.732 %
+
+====== Perplexity statistics ======
+Mean PPL(Q)                   :   5.338172 ±   0.310002
+Mean PPL(base)                :   4.963398 ±   0.286533
+Cor(ln(PPL(Q)), ln(PPL(base))):  98.19%
+Mean ln(PPL(Q)/PPL(base))     :   0.072793 ±   0.011031
+Mean PPL(Q)/PPL(base)         :   1.075507 ±   0.011864
+Mean PPL(Q)-PPL(base)         :   0.374773 ±   0.061413
+
+====== KL divergence statistics ======
+Mean    KLD:   0.090106 ±   0.003375
+Maximum KLD:   2.618803
+99.9%   KLD:   1.370336
+99.0%   KLD:   0.700432
+95.0%   KLD:   0.330931
+90.0%   KLD:   0.236122
+Median  KLD:   0.034088
+10.0%   KLD:   0.000526
+ 5.0%   KLD:   0.000176
+ 1.0%   KLD:   0.000022
+ 0.1%   KLD:   0.000003
+Minimum KLD:   0.000000
+
+====== Token probability statistics ======
+Mean    Δp: -1.825 ± 0.196 %
+Maximum Δp: 51.815%
+99.9%   Δp: 38.529%
+99.0%   Δp: 20.417%
+95.0%   Δp:  8.643%
+90.0%   Δp:  4.152%
+75.0%   Δp:  0.329%
+Median  Δp: -0.079%
+25.0%   Δp: -2.523%
+10.0%   Δp: -10.841%
+ 5.0%   Δp: -18.016%
+ 1.0%   Δp: -35.725%
+ 0.1%   Δp: -59.786%
+Minimum Δp: -63.394%
+RMS Δp    :  9.026 ± 0.356 %
+Same top p: 87.500 ± 0.732 %
+
+[exit 0]
+CHECKPOINT OK: APEX-Mini measured
+
+--- OURS-imatrix+shexp : OOD ppl + KL vs Q8 parent ---
+0.01.305.679 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --no-mmap for better performance
+0.10.531.552 I 
+0.10.531.933 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.10.551.821 I kl_divergence: computing over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+1.10.344.053 I kl_divergence: 59.79 seconds per pass - ETA 1.98 minutes
+
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Δp RMS            Same top p
+   1      17.1444 ±    3.3392       0.07914 ±    0.03303       0.09018 ±    0.00750     6.724 ±  0.987 %    85.882 ±  2.185 %
+   2       7.2470 ±    0.9077       0.05621 ±    0.01969       0.06817 ±    0.00486     7.079 ±  0.624 %    88.824 ±  1.397 %
+   3       4.7257 ±    0.4325       0.04162 ±    0.01445       0.06090 ±    0.00380     7.264 ±  0.515 %    90.588 ±  1.056 %
+   4       5.0292 ±    0.4092       0.03535 ±    0.01302       0.06498 ±    0.00342     7.103 ±  0.477 %    89.706 ±  0.952 %
+   5       4.9815 ±    0.3577       0.03715 ±    0.01172       0.06341 ±    0.00293     7.074 ±  0.399 %    89.961 ±  0.842 %
+   6       4.9498 ±    0.3267       0.04711 ±    0.01130       0.06739 ±    0.00283     7.565 ±  0.358 %    89.869 ±  0.772 %
+   7       5.1439 ±    0.3174       0.04107 ±    0.01056       0.06902 ±    0.00262     7.499 ±  0.323 %    89.636 ±  0.722 %
+   8       5.1645 ±    0.2961       0.03972 ±    0.00993       0.06665 ±    0.00239     7.328 ±  0.309 %    90.000 ±  0.664 %
+
+====== Perplexity statistics ======
+Mean PPL(Q)                   :   5.164523 ±   0.296061
+Mean PPL(base)                :   4.963398 ±   0.286533
+Cor(ln(PPL(Q)), ln(PPL(base))):  98.51%
+Mean ln(PPL(Q)/PPL(base))     :   0.039722 ±   0.009929
+Mean PPL(Q)/PPL(base)         :   1.040522 ±   0.010331
+Mean PPL(Q)-PPL(base)         :   0.201125 ±   0.051124
+
+====== KL divergence statistics ======
+Mean    KLD:   0.066648 ±   0.002395
+Maximum KLD:   0.995129
+99.9%   KLD:   0.868530
+99.0%   KLD:   0.574388
+95.0%   KLD:   0.260706
+90.0%   KLD:   0.176721
+Median  KLD:   0.023847
+10.0%   KLD:   0.000404
+ 5.0%   KLD:   0.000107
+ 1.0%   KLD:   0.000019
+ 0.1%   KLD:   0.000003
+Minimum KLD:   0.000001
+
+====== Token probability statistics ======
+Mean    Δp: -1.325 ± 0.160 %
+Maximum Δp: 34.373%
+99.9%   Δp: 28.413%
+99.0%   Δp: 19.081%
+95.0%   Δp:  7.626%
+90.0%   Δp:  4.143%
+75.0%   Δp:  0.359%
+Median  Δp: -0.071%
+25.0%   Δp: -2.215%
+10.0%   Δp: -8.340%
+ 5.0%   Δp: -13.588%
+ 1.0%   Δp: -27.433%
+ 0.1%   Δp: -52.278%
+Minimum Δp: -60.865%
+RMS Δp    :  7.328 ± 0.309 %
+Same top p: 90.000 ± 0.664 %
+
+[exit 0]
+CHECKPOINT OK: OURS-imatrix+shexp measured
+
+--- OURS-no-imatrix : OOD ppl + KL vs Q8 parent ---
+0.01.304.367 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --no-mmap for better performance
+0.08.552.924 I 
+0.08.553.320 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.08.574.517 I kl_divergence: computing over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+1.03.173.917 I kl_divergence: 54.60 seconds per pass - ETA 1.82 minutes
+
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Δp RMS            Same top p
+   1      17.1071 ±    3.3632       0.07696 ±    0.03527       0.11403 ±    0.00973     7.210 ±  0.843 %    83.137 ±  2.349 %
+   2       7.2972 ±    0.9163       0.06310 ±    0.02242       0.09604 ±    0.00704     9.914 ±  0.778 %    86.471 ±  1.516 %
+   3       4.8175 ±    0.4458       0.06086 ±    0.01886       0.08749 ±    0.00727     9.599 ±  0.626 %    89.542 ±  1.107 %
+   4       5.1663 ±    0.4274       0.06226 ±    0.01630       0.08997 ±    0.00589     9.365 ±  0.543 %    88.333 ±  1.006 %
+   5       5.1495 ±    0.3760       0.07032 ±    0.01401       0.08878 ±    0.00517     9.122 ±  0.474 %    88.706 ±  0.887 %
+   6       5.0822 ±    0.3392       0.07350 ±    0.01284       0.09126 ±    0.00460     9.261 ±  0.420 %    88.431 ±  0.818 %
+   7       5.3198 ±    0.3331       0.07468 ±    0.01190       0.09109 ±    0.00407     9.077 ±  0.379 %    88.235 ±  0.763 %
+   8       5.3234 ±    0.3084       0.07002 ±    0.01108       0.08958 ±    0.00366     9.090 ±  0.354 %    88.235 ±  0.714 %
+
+====== Perplexity statistics ======
+Mean PPL(Q)                   :   5.323391 ±   0.308352
+Mean PPL(base)                :   4.963398 ±   0.286533
+Cor(ln(PPL(Q)), ln(PPL(base))):  98.17%
+Mean ln(PPL(Q)/PPL(base))     :   0.070020 ±   0.011079
+Mean PPL(Q)/PPL(base)         :   1.072529 ±   0.011883
+Mean PPL(Q)-PPL(base)         :   0.359993 ±   0.060977
+
+====== KL divergence statistics ======
+Mean    KLD:   0.089578 ±   0.003658
+Maximum KLD:   3.898788
+99.9%   KLD:   1.328779
+99.0%   KLD:   0.668435
+95.0%   KLD:   0.344086
+90.0%   KLD:   0.225673
+Median  KLD:   0.035324
+10.0%   KLD:   0.000630
+ 5.0%   KLD:   0.000198
+ 1.0%   KLD:   0.000028
+ 0.1%   KLD:   0.000005
+Minimum KLD:   0.000003
+
+====== Token probability statistics ======
+Mean    Δp: -1.935 ± 0.197 %
+Maximum Δp: 49.985%
+99.9%   Δp: 39.809%
+99.0%   Δp: 21.802%
+95.0%   Δp:  7.947%
+90.0%   Δp:  3.739%
+75.0%   Δp:  0.176%
+Median  Δp: -0.176%
+25.0%   Δp: -2.847%
+10.0%   Δp: -10.830%
+ 5.0%   Δp: -16.756%
+ 1.0%   Δp: -36.299%
+ 0.1%   Δp: -58.579%
+Minimum Δp: -63.501%
+RMS Δp    :  9.090 ± 0.354 %
+Same top p: 88.235 ± 0.714 %
+
+[exit 0]
+CHECKPOINT OK: OURS-no-imatrix measured
+
+--- UD-IQ2_M : OOD ppl + KL vs Q8 parent ---
+0.01.308.578 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --no-mmap for better performance
+0.08.629.386 I 
+0.08.629.795 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.08.651.403 I kl_divergence: computing over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+0.54.853.717 I kl_divergence: 46.20 seconds per pass - ETA 1.53 minutes
+
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Δp RMS            Same top p
+   1      16.6951 ±    3.2558       0.05258 ±    0.03200       0.11240 ±    0.01115     7.876 ±  0.714 %    86.667 ±  2.133 %
+   2       7.1970 ±    0.9005       0.04928 ±    0.02043       0.09660 ±    0.00796     9.992 ±  0.869 %    87.647 ±  1.458 %
+   3       4.7766 ±    0.4418       0.05233 ±    0.01754       0.08799 ±    0.00784     9.933 ±  0.745 %    89.935 ±  1.089 %
+   4       5.0705 ±    0.4163       0.04353 ±    0.01531       0.08931 ±    0.00649     9.792 ±  0.649 %    88.627 ±  0.995 %
+   5       5.0559 ±    0.3664       0.05197 ±    0.01327       0.08347 ±    0.00529     9.365 ±  0.555 %    89.333 ±  0.865 %
+   6       4.9733 ±    0.3304       0.05183 ±    0.01223       0.08274 ±    0.00453     9.175 ±  0.483 %    89.150 ±  0.795 %
+   7       5.2129 ±    0.3242       0.05438 ±    0.01131       0.08384 ±    0.00404     9.158 ±  0.433 %    88.796 ±  0.747 %
+   8       5.2176 ±    0.3014       0.04995 ±    0.01042       0.08280 ±    0.00370     8.935 ±  0.394 %    88.824 ±  0.698 %
+
+====== Perplexity statistics ======
+Mean PPL(Q)                   :   5.217632 ±   0.301361
+Mean PPL(base)                :   4.963398 ±   0.286533
+Cor(ln(PPL(Q)), ln(PPL(base))):  98.37%
+Mean ln(PPL(Q)/PPL(base))     :   0.049953 ±   0.010424
+Mean PPL(Q)/PPL(base)         :   1.051222 ±   0.010957
+Mean PPL(Q)-PPL(base)         :   0.254234 ±   0.055078
+
+====== KL divergence statistics ======
+Mean    KLD:   0.082798 ±   0.003698
+Maximum KLD:   4.013737
+99.9%   KLD:   1.920106
+99.0%   KLD:   0.618689
+95.0%   KLD:   0.284972
+90.0%   KLD:   0.195339
+Median  KLD:   0.034974
+10.0%   KLD:   0.000693
+ 5.0%   KLD:   0.000189
+ 1.0%   KLD:   0.000031
+ 0.1%   KLD:   0.000003
+Minimum KLD:   0.000000
+
+====== Token probability statistics ======
+Mean    Δp: -1.312 ± 0.196 %
+Maximum Δp: 66.690%
+99.9%   Δp: 38.785%
+99.0%   Δp: 21.231%
+95.0%   Δp: 10.449%
+90.0%   Δp:  5.260%
+75.0%   Δp:  0.566%
+Median  Δp: -0.050%
+25.0%   Δp: -2.207%
+10.0%   Δp: -9.478%
+ 5.0%   Δp: -15.959%
+ 1.0%   Δp: -34.691%
+ 0.1%   Δp: -60.905%
+Minimum Δp: -71.993%
+RMS Δp    :  8.935 ± 0.394 %
+Same top p: 88.824 ± 0.698 %
+
+[exit 0]
+CHECKPOINT OK: UD-IQ2_M measured
+
+=== REMATCH DONE 2026-07-26 01:21 ===
