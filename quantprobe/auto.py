@@ -200,8 +200,9 @@ def run(a):
         os.makedirs(dest, exist_ok=True)
         print("\n[quantprobe auto --custom] source: " + spath + f" ({ssize/1e9:.1f} GB, {sbits:.1f}-bit)")
         cal = "skipped (--no-imatrix)" if getattr(a, "no_imatrix", False) else "calibrate (importance matrix)"
-        print(f"  pipeline: fetch source -> probe the fragile band (~30-60 min) -> {cal} -> build")
-        print("  the depth-aware GGUF. Interrupt anytime; the fetch resumes.")
+        print(f"  pipeline: fetch source -> probe the fragile band -> {cal} -> build the")
+        print("  depth-aware GGUF. Each stage prints its own time estimate before it starts;")
+        print("  on a large source this is HOURS, not minutes. Interrupt anytime; fetch resumes.")
         if getattr(a, "dry", False):
             print("  (--dry: nothing downloaded)")
             return spath
