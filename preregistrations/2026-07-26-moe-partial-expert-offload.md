@@ -64,3 +64,46 @@ Our 6 GB card holds ~32% of this model's experts. Users on 12–24 GB cards can 
 fraction, so their gains should be *larger* — but that is an extrapolation along a fitted curve,
 not a measurement, and will be labelled as such in the tool. The mechanism is what is being
 tested here; the magnitude is per-machine and belongs to the law, not to a benchmark.
+
+---
+
+## Scored (2026-07-26, log: weights/data/prereg13_moe_split.log)
+
+| K (first layer → CPU) | tg32 tok/s | vs baseline | pp512 tok/s |
+|---|---|---|---|
+| 0 (baseline, all experts → CPU) | 15.18 ± 0.13 | — | 88.3 ± 32.1 |
+| 4 | 19.38 ± 0.60 | +27.7% | 206.3 ± 14.5 |
+| 8 | 19.89 ± 0.17 | +31.0% | 216.3 ± 11.4 |
+| 12 | 20.21 ± 0.02 | +33.1% | 226.9 ± 9.6 |
+| **16 (peak)** | **20.44 ± 0.44** | **+34.7%** | **237.6 ± 9.5** |
+| 20 | 10.82 ± 0.06 | −28.7% | 57.7 ± 0.5 |
+
+- **P-1 (monotonicity): HIT.** Strictly monotonic through K=16, then a cliff — not a taper —
+  at K=20 (20.44 → 10.82). Tier bandwidth dominates exactly as the Law-4 identity predicts.
+- **P-2 (magnitude): SPLIT — relative HIT, absolute MISS, and the split is the honest part.**
+  The staked *relative* gain (+25–50%) is hit at **+34.7%**. But both *absolute* bands are
+  missed low: baseline 15.18 vs staked 17–21, peak 20.44 vs staked 24–29. The whole curve is
+  shifted down ~20%. Most likely cause, and it is our own published phenomenon: the desktop held
+  **~1485 MiB of VRAM** throughout this sweep (Explorer/overlay/WebView), versus the ~805–1050 MiB
+  of the sessions that produced this file's 19.26–20.4 baseline. That is the co-residency effect
+  from the Law-5 H3a correction, applied to the baseline instead of the treatment. **Not confirmed**
+  — confirming it needs a clean-desktop rerun, and it is recorded as a hypothesis, not a result.
+  What survives either way: the *ratio*, measured under identical conditions within one sweep.
+- **P-3 (capacity ceiling): HIT.** Last good K=16, cliff at K=20 — inside the staked K=12–20,
+  and the failure mode is the staked sharp fall (VRAM overcommit → paging), not a gentle taper.
+- **P-4 (prefill unharmed): MISS, badly, in our favour.** Staked within ±10%; measured
+  **+169%** (88.3 → 237.6). My stated mechanism was wrong: I reasoned "moving weights to a
+  faster tier shouldn't *hurt* prefill" and missed that it also moves the **compute**. Prefill is
+  compute-bound in the batch regime (Law 5), so expert layers on GPU means expert prefill math on
+  GPU. Caveat on size: the K=0 prefill baseline has 36% variance (±32.1), so treat "+169%" as
+  "roughly 2–3×", not a precise figure. Direction and order of magnitude are solid; the exact
+  multiplier is not.
+
+**Ship condition met.** The pre-registered non-ship threshold was a gain under +15%; measured
++34.7% on decode and a large prefill bonus. Implementation follows.
+
+**What this means for users:** partial expert offload is worth ~⅓ more decode and ~2× prefill on
+a 6 GB card holding only ~⅓ of this model's experts. Users with 12–24 GB cards hold a larger
+fraction and should gain more — an extrapolation along a fitted curve, labelled as such, not a
+measurement. And the cliff is real: the tool must compute the cutoff from *free* VRAM, because
+overshooting costs more than never offloading at all.
