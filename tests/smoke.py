@@ -389,6 +389,28 @@ def t_run_never_execs_prose_flags():
         f"prose leaked into the launch command: {exec_line[0]}"
     assert "expert cache" not in exec_line[0], f"unrunnable placement selected: {exec_line[0]}"
 
+def _build_cmd(**kw):
+    """Capture the command build_depthaware would run (dry=True needs no GGUF and no llama.cpp)."""
+    from quantprobe.probe import build_depthaware
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        build_depthaware(None, "src.gguf", "out.gguf", 34, 39, 40, dry=True, **kw)
+    return buf.getvalue()
+
+def t_quantize_shexp_protection_first():
+    # always-active shared-expert tensors must be protected, and the rule MUST come before the
+    # band rules: llama.cpp resolves --tensor-type first-match-wins, so placed last it is a
+    # silent no-op. Measured -3.2% ppl when protected (pre-registration #12).
+    out = _build_cmd()
+    assert "ffn_.*_shexp.*=q8_0" in out, f"shared-expert protection missing: {out[:300]}"
+    assert out.index("ffn_.*_shexp") < out.index("blk\\.("), \
+        "shexp rule must precede band rules (first-match-wins) or it silently does nothing"
+
+def t_quantize_imatrix_passthrough():
+    out = _build_cmd(imatrix="cal.gguf")
+    assert "--imatrix cal.gguf" in out, f"imatrix not passed through: {out[:300]}"
+    assert "--imatrix" not in _build_cmd(), "imatrix flag leaked into an uncalibrated build"
+
 def t_python_m_package():
     # `python -m quantprobe` must work identically to the console script -
     # it is the PATH-proof fallback for Windows user-site installs

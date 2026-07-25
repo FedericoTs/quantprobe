@@ -199,8 +199,9 @@ def run(a):
         dest = getattr(a, "dir", None) or "./models"
         os.makedirs(dest, exist_ok=True)
         print("\n[quantprobe auto --custom] source: " + spath + f" ({ssize/1e9:.1f} GB, {sbits:.1f}-bit)")
-        print("  pipeline: fetch source -> probe the fragile band (~30-60 min) -> build the")
-        print("  depth-aware GGUF. Interrupt anytime; the fetch resumes.")
+        cal = "skipped (--no-imatrix)" if getattr(a, "no_imatrix", False) else "calibrate (importance matrix)"
+        print(f"  pipeline: fetch source -> probe the fragile band (~30-60 min) -> {cal} -> build")
+        print("  the depth-aware GGUF. Interrupt anytime; the fetch resumes.")
         if getattr(a, "dry", False):
             print("  (--dry: nothing downloaded)")
             return spath
@@ -214,7 +215,9 @@ def run(a):
         out = os.path.join(dest, os.path.basename(spath).rsplit(".gguf", 1)[0] + "-depthaware.gguf")
         pa = argparse.Namespace(gguf=srcfull, bands=4, chunks=32, eval=evalf, ngl=99,
                                 workdir=dest, llama_dir=getattr(a, "llama_dir", None),
-                                apply=True, out=out, dry_run=False)
+                                apply=True, out=out, dry_run=False,
+                                imatrix=None if getattr(a, "no_imatrix", False) else "auto",
+                                imatrix_chunks=100)
         probemod.run(pa)
         print("\n[quantprobe auto --custom] your personalized model:")
         print("  quantprobe run --gguf " + out)

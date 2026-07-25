@@ -114,8 +114,12 @@ def run(a):
           f'    {os.path.basename(a.gguf)} out-depthaware.gguf Q2_K 8', flush=True)
     if getattr(a, "apply", False):
         out = a.out or os.path.splitext(a.gguf)[0] + "-depthaware.gguf"
+        imat = getattr(a, "imatrix", None)
+        if imat == "auto":
+            imat = make_imatrix(a.llama_dir, a.gguf, a.eval, chunks=getattr(a, "imatrix_chunks", 100),
+                                ngl=a.ngl, dry=a.dry_run)
         print("\n[quantprobe] --apply: building the recommended GGUF now...", flush=True)
-        build_depthaware(a.llama_dir, a.gguf, out, lo, hi, bands[-1][1] + 1, dry=a.dry_run)
+        build_depthaware(a.llama_dir, a.gguf, out, lo, hi, bands[-1][1] + 1, dry=a.dry_run, imatrix=imat)
     else:
         print("\n  (re-run with  --apply --out model-2bit.gguf  to BUILD this GGUF automatically)", flush=True)
 
@@ -125,11 +129,19 @@ def _band_re(lo, hi):
 
 
 def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
-                     base="Q2_K", protect="q4_k", dry=False):
-    """Actually PRODUCE the compressed GGUF: base bits everywhere, fragile band + attention + embed protected."""
+                     base="Q2_K", protect="q4_k", dry=False, imatrix=None):
+    """Actually PRODUCE the compressed GGUF: base bits everywhere, fragile band + attention +
+    embed + always-active tensors protected; optional importance-matrix calibration."""
     # --dry previews the exact command WITHOUT requiring llama.cpp installed
     q = exe("llama-quantize") if dry else os.path.join(find_llama(llama_dir), exe("llama-quantize"))
     cmd = [q, "--allow-requantize"]
+    if imatrix:
+        cmd += ["--imatrix", imatrix]
+    # ALWAYS-ACTIVE tensors first: llama.cpp resolves --tensor-type first-match-wins (verified
+    # 2026-07-25), so this must precede the band rules or it silently does nothing. The shared
+    # expert fires on EVERY token (routed experts fire ~8/256) and is heavy-tailed: measured
+    # -3.2% ppl when protected at q8_0, for ~0.65% more bytes (pre-registration #12).
+    cmd += ["--tensor-type", "ffn_.*_shexp.*=q8_0"]
     if protect_lo > 0:
         cmd += ["--tensor-type", f"{_band_re(0, protect_lo - 1)}=q2_k"]
     if protect_hi < n_lay - 1:
@@ -150,6 +162,32 @@ def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
     return out
 
 
+def make_imatrix(llama_dir, src, eval_file, out=None, chunks=100, ngl=99, dry=False):
+    """Generate an importance matrix: measured -8.5% ppl at ~3 bits, at zero size and speed
+    cost (pre-registration #12). The single largest quality lever in the recipe.
+
+    The calibration corpus should NOT be your evaluation text - calibrating on the same data
+    you score against inflates the result. Wikitext TRAIN is used against a wikitext TEST eval.
+    """
+    out = out or os.path.splitext(src)[0] + ".imatrix.gguf"
+    if os.path.isfile(out):
+        print(f"[quantprobe] reusing existing imatrix: {out}")
+        return out
+    im = exe("llama-imatrix") if dry else os.path.join(find_llama(llama_dir), exe("llama-imatrix"))
+    cmd = [im, "-m", src, "-f", eval_file, "-o", out, "--chunks", str(chunks), "-ngl", str(ngl), "-c", "512"]
+    print(f"[quantprobe] building importance matrix over {chunks} chunks "
+          f"(one pass; slow on big models, but worth ~8% quality for free)")
+    print("  $ " + " ".join(cmd))
+    if dry:
+        return out
+    rc = subprocess.call(cmd)
+    if rc != 0 or not os.path.isfile(out):
+        print(f"[quantprobe] imatrix generation failed (exit {rc}); continuing WITHOUT calibration.")
+        return None
+    print(f"[quantprobe] imatrix ready -> {out} ({os.path.getsize(out)/1e6:.0f} MB)")
+    return out
+
+
 def quantize(a):
     """Standalone compress: build a depth-aware GGUF from an explicit band (no probing)."""
     if not os.path.isfile(a.gguf):
@@ -160,4 +198,9 @@ def quantize(a):
     else:
         lo, hi = n_lay - a.protect_late, n_lay - 1
     out = a.out or os.path.splitext(a.gguf)[0] + "-depthaware.gguf"
-    build_depthaware(a.llama_dir, a.gguf, out, lo, hi, n_lay, dry=getattr(a, "dry", False))
+    imat = getattr(a, "imatrix", None)
+    if imat and not os.path.isfile(imat) and not getattr(a, "dry", False):
+        raise SystemExit(f"--imatrix file not found: {imat}\n"
+                         "  generate one first, or drop the flag to build without calibration.")
+    build_depthaware(a.llama_dir, a.gguf, out, lo, hi, n_lay,
+                     dry=getattr(a, "dry", False), imatrix=imat)

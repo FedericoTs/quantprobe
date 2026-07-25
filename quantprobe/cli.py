@@ -27,6 +27,8 @@ def main():
     p.add_argument("--llama-dir", default=None, help="dir containing llama-quantize/llama-perplexity")
     p.add_argument("--apply", action="store_true", help="after probing, BUILD the recommended depth-aware GGUF")
     p.add_argument("--out", default=None, help="output path for --apply (default: <model>-depthaware.gguf)")
+    p.add_argument("--imatrix", default=None, help="importance-matrix file for --apply, or 'auto' to generate one first (measured -8.5%% ppl at ~3 bits, free in size and speed)")
+    p.add_argument("--imatrix-chunks", type=int, default=100, help="calibration chunks when --imatrix auto (default 100)")
     p.add_argument("--dry-run", action="store_true")
 
     q = sub.add_parser("plan", help="evaluate every bit/tier placement, predict tok/s (Law 4)")
@@ -81,6 +83,7 @@ def main():
     z.add_argument("--out", default=None, help="output path (default: <model>-depthaware.gguf)")
     z.add_argument("--protect-late", type=int, default=12, help="protect the last N layers at 4-bit (default 12)")
     z.add_argument("--protect", default=None, help="protect an explicit band LO-HI (e.g. 36-47) instead of --protect-late")
+    z.add_argument("--imatrix", default=None, help="importance-matrix file (build one with `probe --imatrix auto`); improves quality at zero size cost")
     z.add_argument("--llama-dir", default=None)
     z.add_argument("--dry", action="store_true")
 
@@ -101,6 +104,7 @@ def main():
     au.add_argument("--max-quality", type=float, default=None)
     au.add_argument("--allow-prune", action="store_true"); au.add_argument("--any-runtime", action="store_true")
     au.add_argument("--custom", action="store_true", help="THE PRODUCT: fetch a high-precision source, probe YOUR model (~30-60 min), build a depth-aware GGUF personalized to it (machine-gated: skipped with an explanation when this box doesn't need sub-3-bit surgery)")
+    au.add_argument("--no-imatrix", action="store_true", help="skip importance-matrix calibration in --custom (faster build, measurably worse quality)")
     au.add_argument("--force-custom", action="store_true", help="build the depth-aware GGUF even when the optimizer says this machine doesn't need it")
     au.add_argument("--serve", action="store_true", help="with --run: llama-server instead of chat")
     au.add_argument("--extra", default=None)

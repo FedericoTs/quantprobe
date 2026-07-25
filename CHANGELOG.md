@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.7.0 — 2026-07-26
+
+Everything measured in pre-registration #12, now in the tool:
+
+- **Importance-matrix calibration.** `probe --imatrix auto` generates one and builds with it;
+  `quantize --imatrix FILE` uses an existing one; `auto --custom` now does it automatically
+  (`--no-imatrix` to skip). Measured **−8.5% perplexity at ~3 bits, at zero file-size cost and
+  no measurable speed cost** — the single largest quality lever in the recipe, and one this
+  project had never used.
+- **Always-active tensor protection.** Shared-expert tensors (`ffn_*_shexp`) fire on every token
+  while routed experts fire ~8/256, and they are heavy-tailed. They are now pinned at q8_0 in
+  every depth-aware build: **−3.2% ppl for ~0.65% more bytes**. The rule is emitted FIRST because
+  llama.cpp resolves `--tensor-type` first-match-wins — placed last it is a silent no-op.
+- Combined, these reverse a head-to-head loss: our build went from +8.9% worse than a strong
+  competing recipe at matched bytes to **1.1% better**. Full method, numbers and scope limits:
+  `preregistrations/2026-07-25-recipe-upgrade-shexp-imatrix.md`.
+- LAWS.md: Law 3 refinement (structural and statistical allocation are orthogonal, stack with
+  diminishing returns) and a Law 4 scope confirmation (weight *content* does not affect the
+  speed law — staked and measured). 53 tests.
+
 ## 1.6.5 — 2026-07-25
 
 - **`run`/`bench` no longer try to launch a placement stock llama.cpp can't execute.** The
