@@ -375,6 +375,20 @@ def t_split_parts_offline():
     assert len(ps) == 17 and ps[0].endswith("00001-of-00017.gguf") and ps[16].endswith("00017-of-00017.gguf")
     assert split_parts("model-Q4_K_M.gguf") == ["model-Q4_K_M.gguf"]
 
+def t_run_never_execs_prose_flags():
+    # the three-tier row's "flags" field is a PROSE description, not argv. run/bench must never
+    # select it: exec'ing it hands llama-cli a bare "+" and it dies (real user report, 2026-07-25).
+    # This config is chosen so the expert-cache row ranks FIRST.
+    rc, out = cli("run", "--gguf", "x.gguf", "--total", "110.5", "--active", "15", "--bits", "2.77",
+                  "--vram", "6", "--vram-bw", "192", "--ram", "16", "--ram-bw", "48",
+                  "--disk-bw", "0.5", "--dry")
+    assert rc == 0, f"run --dry failed: {out[:300]}"
+    exec_line = [l for l in out.splitlines() if "exec:" in l]
+    assert exec_line, f"no exec line: {out[:300]}"
+    assert " + " not in exec_line[0] and "runtime-managed" not in exec_line[0], \
+        f"prose leaked into the launch command: {exec_line[0]}"
+    assert "expert cache" not in exec_line[0], f"unrunnable placement selected: {exec_line[0]}"
+
 def t_python_m_package():
     # `python -m quantprobe` must work identically to the console script -
     # it is the PATH-proof fallback for Windows user-site installs

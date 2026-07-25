@@ -66,7 +66,20 @@ def best_flags(a):
            else m.get("kvp", planmod.DEFAULT_KVP))
     _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
                                   ctx=ctx, kvp=kvp)
-    best = cfgs[0]
+    # run/bench/dashboard LAUNCH stock llama.cpp, so they may only pick placements stock
+    # llama.cpp can actually execute. The three-tier expert-cache row's "flags" field is a
+    # PROSE description ("+ runtime-managed expert cache"), not argv - exec'ing it hands
+    # llama-cli a bare "+" and it dies. optimize/auto already filter this; run/bench must too.
+    runnable = [c for c in cfgs if "expert cache" not in c[0]]
+    if not runnable:
+        raise SystemExit(
+            "no placement on this machine is runnable by stock llama.cpp for this file.\n"
+            "  The planner's best row needs an expert-caching runtime (ktransformers/colibri-class).\n"
+            "  See the full picture, including that row:  quantprobe plan --gguf <file>")
+    if runnable[0] is not cfgs[0]:
+        print(f"[quantprobe] note: the fastest placement ({cfgs[0][0]}, {cfgs[0][1]:.1f} tok/s) needs an "
+              f"expert-caching runtime; launching the fastest STOCK-llama.cpp placement instead.")
+    best = runnable[0]
     return best, best[3].replace('"', "").split()
 
 

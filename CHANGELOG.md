@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.5 — 2026-07-25
+
+- **`run`/`bench` no longer try to launch a placement stock llama.cpp can't execute.** The
+  three-tier expert-cache row's "flags" field is a human-readable description
+  (`-ngl 99 + runtime-managed expert cache`), not argv — when that row ranked first, `run`
+  split it into arguments and handed llama-cli a bare `+`, which died with
+  `error: invalid argument: +`. `optimize` and `auto` already filtered unrunnable rows;
+  `run`/`bench` now do the same, print a note naming the faster-but-unrunnable placement, and
+  launch the fastest stock-llama.cpp placement instead. Reported by a user running
+  GLM-4.5-Air-UD-TQ1_0. New regression test (51 total) asserts no prose can ever reach the
+  launch command.
+
 ## 1.6.4 — 2026-07-25
 
 - **Depth-aware builds now protect SSM (state-space) tensors, not just attention.** Hybrid
