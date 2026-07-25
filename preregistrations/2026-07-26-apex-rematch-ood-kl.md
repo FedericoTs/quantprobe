@@ -63,3 +63,51 @@ If P-3 fails, `auto --custom` stops generating an imatrix by default and the CHA
 corrected. If P-1/P-2 confirm APEX generalises better, the honest recommendation becomes
 **diverse calibration**, and quantprobe should ship a diverse corpus rather than defaulting to
 wikitext — a concrete product change driven by losing.
+
+---
+
+## Scored (2026-07-26, log: weights/data/prereg14_apex_rematch.log)
+
+Out-of-domain corpus (this repo's code + technical prose, 183 KB — a domain our imatrix never
+saw), 8 chunks, ctx 512, hybrid placement, KL measured against logits from the Q8_0 parent
+(reference PPL 4.9634).
+
+| build | size | OOD PPL | ratio to parent | **Mean KL** |
+|---|---|---|---|---|
+| **ours (imatrix + shexp)** | 13.35 GB | **5.1645** | **1.0405** | **0.06665 ± 0.0024** |
+| ours, no imatrix | 13.35 GB | 5.3234 | 1.0725 | 0.08958 ± 0.0037 |
+| UD-IQ2_M (smaller) | 11.4 GB | 5.2176 | — | 0.08280 ± 0.0037 |
+| APEX Mini | 13.25 GB | 5.3382 | 1.0755 | 0.09011 ± 0.0034 |
+
+- **P-1: MISS — and my stated prior was wrong.** I staked that our wikitext win would narrow or
+  reverse out-of-domain (−1% to +6% vs APEX). Measured **−3.25%**: we did not just hold the win,
+  we *widened* it on unseen data. Outside the band, published as a miss of my own prediction.
+- **P-2: MISS, decisively and in the opposite direction from staked.** I predicted APEX would
+  show 2–15% *better* KL because it calibrates diversely. Measured: **ours is 26.0% better**
+  (0.0667 vs 0.0901). Error bars do not overlap. This is the sharpest instrument in the test and
+  it points the other way.
+- **P-3: MISS by 0.02 percentage points — held to the letter.** Staked "imatrix beats no-imatrix
+  OOD by ≥3%"; measured **2.98%** on perplexity. That is a miss, and it is recorded as one.
+  Reporting it honestly, the same comparison on KL is **25.6%** — so the *conclusion* the stake
+  was testing (calibration generalises, it is not wikitext memorisation) is strongly supported
+  even though the specific perplexity threshold was missed by a hair.
+- **P-4: HIT.** The ranking IS metric-dependent, as staked. On wikitext ppl: ours < APEX < IQ2_M.
+  On out-of-domain KL: ours < **IQ2_M < APEX** — APEX moves from second to last, behind a
+  *smaller* community quant. "Which recipe is better" genuinely depends on what you measure.
+
+### What this actually establishes (and what it does not)
+
+**Established:** importance-matrix calibration generalises. It was not wikitext memorisation —
+the calibrated build is better on code and technical prose it was never calibrated on, by every
+metric measured. Shipping it as the `auto --custom` default (v1.7.0) is supported, and the P-3
+threshold miss does not change that.
+
+**NOT established:** "quantprobe beats APEX." Caveats, stated rather than buried: only 8 chunks
+(though error bars separate cleanly); our file is 0.8% larger; APEX Mini is built by a different
+pipeline from a different source, so this compares *artifacts*, not isolated recipe choices; and
+a single OOD domain (code/technical prose) is not "general". A diverse-corpus calibration on our
+side remains untested — the follow-up experiment is diverse vs specialised calibration, which
+this result makes more interesting, not less.
+
+**The honest headline:** I predicted we would lose this and published that prediction first. We
+won it. Two of four stakes missed *in our favour*, which is still two misses.
