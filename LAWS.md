@@ -56,6 +56,10 @@ weight statistic predicts it — but a 30-minute functional probe measures it ex
 
 ### Law 3 refinement — structural and statistical allocation are orthogonal (2026-07-26)
 
+*Prompted by testing against [apex-quant](https://github.com/localai-org/apex-quant) (mudler),
+whose MoE-aware design supplied the always-active/heavy-tailed argument, and surfaced by
+u/MoneroApe.*
+
 Measured in [pre-registration #12](preregistrations/2026-07-25-recipe-upgrade-shexp-imatrix.md) on
 Qwen3.5-35B-A3B at ~3 bits, each lever isolated against an identical band:
 
