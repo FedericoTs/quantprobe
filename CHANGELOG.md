@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.9.1 — 2026-07-26
+
+Both fixes found by an end-to-end run, not by the unit suite — the tests were all green while
+the real pipeline was wrong.
+
+- **The MoE split placement was missing `--no-mmap`.** The all-experts-to-CPU row has carried it
+  for versions; the new split row (1.8.0) did not, even though llama.cpp itself warns that
+  tensor overrides to CPU with mmap enabled cost performance. Measured on the split placement:
+  **16.45 tok/s with mmap vs 18.70 without (+13.7%)**.
+- **`bench` now refuses to report a number whose own error bar is huge.** A first read from a
+  cold file cache produced `4.01 ± 2.16 tok/s` (54% spread) against a warm value of 18.7, and
+  the tool printed it as a result. It now flags any run with >15% spread as unreliable and tells
+  you to re-run rather than letting someone quote an artifact.
+
+After both: predicted 22.1, measured **19.36 ± 0.61** (−12%, inside the stated ±25% band). The
+prediction is on the optimistic side of measurement, which is recorded rather than tuned away.
+
 ## 1.9.0 — 2026-07-26
 
 **Honest time estimates.** This tool told users a probe takes "~30-60 min". On a 35 GB source

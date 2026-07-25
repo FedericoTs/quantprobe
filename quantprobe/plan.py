@@ -88,7 +88,11 @@ def moe_split_flags(frac, n_layer):
     if not n_layer or frac <= 0:
         return None
     k = max(1, min(n_layer - 1, int(frac * n_layer)))
-    return '-ngl 99 -ot "blk\\.(%s)\\.ffn_.*_exps\\.=CPU"' % "|".join(str(i) for i in range(k, n_layer))
+    # --no-mmap for the same reason the all-experts row carries it: llama.cpp itself warns that
+    # tensor overrides to CPU with mmap enabled cost performance. Measured 2026-07-26 on this
+    # split placement: 16.45 tok/s with mmap vs 18.70 without (+13.7%).
+    return ('-ngl 99 -ot "blk\\.(%s)\\.ffn_.*_exps\\.=CPU" --no-mmap'
+            % "|".join(str(i) for i in range(k, n_layer)))
 
 
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
