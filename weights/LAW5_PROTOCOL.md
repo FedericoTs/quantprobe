@@ -302,6 +302,16 @@ just hygiene.
   Reproduction check inside the batch: Q2_K 17.71 vs pilot 17.60 ✓. Requant cells disclosed
   as speed-only (requantized from Q4_K_M; no quality claims).
 
+**H12 refinement (2026-07-25, from pre-registration #11's S-3): the penalty scales with LUT
+FRACTION, not presence.** A 100%-IQ file (this H12 batch, and the APEX A/B's IQ2_M reference)
+collapses ~x7 / ~2x respectively vs K-quant-family builds. A file that BLENDS a narrow LUT band
+with K-quant elsewhere (APEX Mini: IQ2_S confined to middle layers only) pays a much smaller
+aggregate penalty (16% vs a 0%-LUT build at matched bytes, log: apex_ab_stageE_speed.log) — the
+mechanism is real per-tensor but the file-level cost is a weighted average over how much of the
+compute-heavy FFN mass is actually LUT-format. Recipe update: LUT formats are fine in SMALL,
+targeted doses (a narrow middle band); the "never IQ" line above means never as the BULK format
+on a CPU-serving box, not zero tolerance for any LUT tensor anywhere.
+
 **Phase 3 final ledger: 6 hits (H7a, H7b, H8, H10 x2, H11, H12-IQ), 4 misses published
 (H7c, H9, H12-Q8_0, H12-Q4_0), one void (interleave), one retraction handled with controlled
 reproduction (H3a), one quantified replacement law (co-residency knee), contamination audit
