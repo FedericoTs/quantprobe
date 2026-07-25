@@ -115,9 +115,6 @@ def bench(a):
             bflags += ["-ngl", flags[i + 1]]
         if f == "-ot":
             bflags += ["-ot", flags[i + 1]]
-    if flags and flags[0].startswith("-ngl") is False and "-ngl" not in flags:
-        pass
-    # normalize: flags like ['-ngl','99','-ot','exps=CPU','--no-mmap']
     cmd = [binp, "-m", a.gguf, "-n", "32", "-p", "0", "-r", str(a.reps)] + bflags
     if getattr(a, "depth", None):
         cmd += ["-d", str(a.depth)]
