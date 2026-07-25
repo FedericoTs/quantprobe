@@ -85,3 +85,54 @@ architectural lesson from #11 applied: protection should be **structural** (alwa
 tensors, attention, SSM, embeddings protected by default; the measured depth-gradient applied
 only to genuinely redundant routed-expert weights), not a growing list of named regex
 exceptions. A win here is a product change, not a paper result.
+
+---
+
+## Scored (2026-07-25, log: weights/data/prereg12_stage2_builds.log)
+
+Baseline (prereg #11's SSM-fixed build): **6.6976 @ 13.27 GB**. All builds share the identical
+band (34-39); only the tested variable changes. Sizes landed as predicted: A/C 13.35 GB
+(3.08 BPW — the staked ~87 MiB shexp cost), B 13.26 GB (unchanged).
+
+| stake | result | staked | verdict |
+|---|---|---|---|
+| **P-1** shared-expert @q8_0 alone | 6.4824 (**−3.21%**) | 2-8% | **HIT** |
+| **P-2** imatrix alone | 6.1309 (**−8.46%**) | 5-15% | **HIT** |
+| **P-3** combined | 6.0853 (**−9.14%**) | 8-16%, band [5.60, 6.15] | **HIT** |
+| **P-4** speed unaffected | 44.80 tok/s (**+2.59%**) | ±5% of 43.67 | **HIT** |
+
+**The headline claim lands: 6.0853 vs APEX Mini's 6.1511 — we beat it by 1.07% at matched
+bytes**, and beat the UD-IQ2_M reference by 4.83%. New standings at ~13.3 GB (lower better):
+**ours 6.085 < APEX Mini 6.151 < IQ2_M 6.394**. The order from prereg #11 is fully reversed.
+
+### What the isolation shows
+
+- **imatrix is the dominant lever** (−8.46% alone) — and we had never used it, on any model, in
+  this project. It is also nearly free: identical file size, and speed *unchanged* (P-4 hit,
+  +2.6% is within run-to-run noise), because calibration changes which weights get precision,
+  not the format.
+- **Shared-expert protection is real but smaller** (−3.21%). APEX's kurtosis argument transfers,
+  but at the low end of the staked band — it is not the main event.
+- **The two are NOT additive** (3.21 + 8.46 = 11.7 expected vs 9.14 measured). They partially
+  overlap: imatrix already directs precision toward the heavy-tailed always-active tensors that
+  the shexp rule protects by name. Both still earn their place — combined beats either alone —
+  but this predicts diminishing returns from stacking further role-based rules on top of a good
+  imatrix, which is a useful design signal for the protect-by-default refactor.
+
+### Honesty on scope (restating the pre-registered disclosure)
+
+This is **in-domain calibration** (wiki.train → wiki.test), the most favourable possible setup
+for a wikitext-ppl metric, and it is why the number should not be read as "we beat APEX
+generally." APEX's i-variants deliberately calibrate on a diverse non-Wikipedia corpus and
+optimise for real-world accuracy and KL divergence, not wikitext ppl. A fair rematch needs a
+diverse calibration corpus and a broader metric set (KL + task benchmarks). **What is
+established here: imatrix is a large, nearly-free lever we were not using, and it is now
+worth ~8% on its own.** What is NOT established: a general-purpose quality win over APEX.
+
+### Product consequence
+
+Both changes are model-agnostic and get baked into `quantprobe` for all models, per the
+pre-registered commitment. imatrix support is a new capability (it needs a calibration corpus
+and a generation step), so it ships as an explicit, documented step rather than a silent
+default. The protect-by-default refactor (structural protection for always-active tensors
+rather than a growing regex list) is the follow-up this result argues for.
