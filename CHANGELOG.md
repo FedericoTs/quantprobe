@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.4 — 2026-07-25
+
+- **Depth-aware builds now protect SSM (state-space) tensors, not just attention.** Hybrid
+  SSM+attention+MoE architectures (e.g. Qwen3.5-class) name their recurrent-state tensors
+  `ssm_*`, which the `attn_.*` protection pattern never matched — so every custom build left
+  them at the aggressive base level (Q2_K) with zero protection. Found running our own APEX
+  comparison: it cost a measured wikitext ppl of 8.81 on a 35B-class model, worse than a plain
+  community IQ2_M reference at a SMALLER size. The fix costs ~56 MB on a 13 GB file (SSM tensors
+  are tiny) and is a straight quality win with no real tradeoff. Manually verified (dry-run
+  command + a live rebuild) before shipping. 50 tests unchanged (same reasoning as 1.6.3 - this
+  path needs a real hybrid-architecture GGUF to exercise end-to-end).
+
 ## 1.6.3 — 2026-07-25
 
 - **`probe` no longer silently fails on large models with small VRAM.** Its internal perplexity
