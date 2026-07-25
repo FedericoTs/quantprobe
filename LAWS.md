@@ -54,6 +54,33 @@ weight statistic predicts it — but a 30-minute functional probe measures it ex
 - *The prediction:* for any new model, the band probe (`quant_probe.py`) beats every static allocation
   rule; guessing the fragile end without probing risks forfeiting up to a 25× fragility differential.
 
+### Law 3 refinement — structural and statistical allocation are orthogonal (2026-07-26)
+
+Measured in [pre-registration #12](preregistrations/2026-07-25-recipe-upgrade-shexp-imatrix.md) on
+Qwen3.5-35B-A3B at ~3 bits, each lever isolated against an identical band:
+
+| lever | kind | ppl effect |
+|---|---|---|
+| importance-matrix calibration | statistical (*which weights* carry signal) | **−8.5%** |
+| always-active tensor protection | structural (*which roles* are load-bearing) | **−3.2%** |
+| both | | **−9.1%** (not additive) |
+
+**Law 3 stands unchanged and is reinforced** — *where* a model is fragile still has to be measured,
+and no calibration substitutes for that. What is new: fragility-by-depth (structural) and
+importance-by-activation (statistical) are **different axes that stack with diminishing returns**.
+Calibration already routes precision toward the heavy-tailed always-active tensors that role rules
+protect by name, which is why 8.5 + 3.2 yields 9.1 rather than 11.7. Practical consequence: after a
+good imatrix, additional hand-written role rules buy little — the remaining headroom is in
+*structural* protection-by-default, not more named exceptions.
+
+Two scope limits, stated plainly: this is one model, and the calibration was **in-domain**
+(wikitext train → wikitext test), the most favourable case for a wikitext metric. The size of the
+lever is established; its generality across corpora and metrics is not.
+
+**Quality-curve caveat.** `qual_of(bits)` in the planner maps bits → quality cost on the assumption
+of a *particular* recipe quality. These results show ~9% spread at fixed bits depending on recipe,
+so treat printed quality costs as recipe-conditional. The curve is not re-fitted on one model.
+
 ## Law 4 — The tiered decode law
 **Decode speed is a placement identity: `tok/s = η(tier) × bandwidth ÷ active-bytes-per-token`, with
 the utilization constant η collapsing per memory tier.**
@@ -71,6 +98,10 @@ the utilization constant η collapsing per memory tier.**
   prefetch), not scheduling or sync — both eliminated experimentally.
 - *The prediction:* measure any machine's tier bandwidths and any model's active bytes, and this
   equation prices its decode speed before you download a single weight.
+- *Scope confirmation (2026-07-26):* pre-registration #12 changed **which** weights carry precision
+  (importance-matrix calibration) at identical format and identical file size, and measured CPU
+  prefill **unchanged** (44.80 vs 43.67 tok/s, inside run-to-run noise — staked at ±5% and hit).
+  Law 4 is a function of bytes and bandwidth, not of weight *content*. Confirmed, not assumed.
 
 ### Law 4, general form (v1.3–v1.4, 2026-07-24) — a restatement, not a revision
 
