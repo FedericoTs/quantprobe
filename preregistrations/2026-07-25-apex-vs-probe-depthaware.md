@@ -89,3 +89,38 @@ perplexity step hardcoded full GPU offload, OOMing on this model's 23-27 GB inte
 6 GB card) — fixed and shipped as quantprobe v1.6.3, verified against the real failure before
 this rerun. Disclosed here because it's methodologically relevant: S-1 above is from the
 corrected, CPU-pure rerun, not the failed first attempt.
+
+## S-4 and S-2 scored (2026-07-25, log: apex_ab_stageC_quality.log, apex_ab_stageD_ssmfix.log)
+
+**S-4 (reproduction gate): MISS.** Measured APEX Mini on this box: **PPL 6.1511** (hybrid,
+ctx 2048, 32 chunks) vs their reported **7.088** — 13.2% off, well outside the staked ±3%.
+Named cause: their own technical report lists APEX Mini at 12.2 GB; the file actually served
+today is 13.3 GB. The artifact was very likely updated/improved after their report was
+published — plausible given the direction (bigger file, better/lower ppl than documented), and
+verifiable (the size mismatch is a plain fact, not an inference). Per protocol this miss is
+named and disclosed rather than allowed to silently color the comparison below; the comparison
+proceeds against the artifact anyone downloads today, which is the more relevant one for users.
+
+**S-2 (matched-bytes quality): a mechanism was found mid-measurement, fixed, and the result
+flipped from a decisive miss to a near-miss.**
+
+- First build (13.21 GB, protect layers 34-39, our standard recipe): **PPL 8.8111** — +43.3%
+  worse than APEX Mini, and worse than even the smaller community IQ2_M reference (6.3939).
+  Staked band was [-2%, +8%]; this missed by 35+ points. Named cause, confirmed in the build
+  log: this architecture carries `ssm_*` state-space tensors (hybrid SSM+attention+MoE) that our
+  `attn_.*` protection regex — written for pure-transformer models — never matched, leaving
+  every SSM tensor at the aggressive Q2_K base with zero protection. APEX's own report
+  explicitly protects "attention & SSM weights" together; ours didn't protect SSM at all.
+- **Fixed** (shipped as quantprobe v1.6.4: `ssm_.*=q4_k` added alongside `attn_.*=q4_k`) and
+  **rebuilt at the identical band** (34-39, same measured fragile region, testing the mechanism
+  cleanly rather than re-tuning): **13.27 GB, PPL 6.6976** — a 24.0% relative ppl reduction for
+  +0.06 GB (~56 MB). The mechanism is confirmed: SSM protection was the dominant term.//
+- **Final scored delta: +8.88% vs APEX Mini** (staked band -2% to +8%) — **MISS, but a near-miss
+  of the stated honest prior**, not the decisive loss the first build showed. Also **+4.75%
+  worse than the IQ2_M reference** (down from +37.8% pre-fix). Held to the letter of the stake:
+  8.88 > 8.00, this is scored as a miss, not rounded into a hit.
+
+**Standings at matched bytes (~13.2-13.3 GB), lower is better:** APEX Mini 6.15 < IQ2_M
+reference 6.39 < ours (SSM-fixed) 6.70. APEX wins. Per the pre-registered commitment: APEX
+enters `quantprobe auto` as a recipe candidate. S-3 (CPU-pure speed, the other half of the
+commitment's condition) is next.
