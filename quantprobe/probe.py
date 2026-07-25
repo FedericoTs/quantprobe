@@ -135,8 +135,8 @@ def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
     if protect_hi < n_lay - 1:
         cmd += ["--tensor-type", f"{_band_re(protect_hi + 1, n_lay - 1)}=q2_k"]
     cmd += ["--tensor-type", f"{_band_re(protect_lo, protect_hi)}={protect}",
-            "--tensor-type", "attn_.*=q4_k", "--token-embedding-type", "q4_k",
-            src, out, base, "8"]
+            "--tensor-type", "attn_.*=q4_k", "--tensor-type", "ssm_.*=q4_k",
+            "--token-embedding-type", "q4_k", src, out, base, "8"]
     print(f"[quantprobe] building depth-aware GGUF: protect layers {protect_lo}-{protect_hi} @ {protect}")
     print("  $ " + " ".join(cmd))
     if dry:
