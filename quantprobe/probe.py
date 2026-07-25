@@ -105,13 +105,12 @@ def run(a):
         return
     worst = max(range(len(bands)), key=lambda i: deltas[i])
     lo, hi = bands[worst]
-    others = [f"{band_regex(b[0], b[1])}=q2_k" for i, b in enumerate(bands) if i != worst]
     print(f"  fragile band: layers {lo}-{hi} (delta +{deltas[worst]:.2f} vs "
           f"median {sorted(deltas)[len(deltas)//2]:.2f}) -> protect at Q4_K:\n", flush=True)
-    flags = " ".join(f'--tensor-type "{o}"' for o in others)
-    print(f'  llama-quantize {flags} --tensor-type "{band_regex(lo, hi)}=q4_k" '
-          f'--tensor-type "attn_.*=q4_k" --token-embedding-type q4_k \\\n'
-          f'    {os.path.basename(a.gguf)} out-depthaware.gguf Q2_K 8', flush=True)
+    # ONE source of truth for the recipe: print exactly what --apply would run. Hand-writing this
+    # string separately let it silently go stale (it predated the SSM and shared-expert
+    # protections, so anyone copying it built the OLD, worse recipe) - found in the 2026-07-26 audit.
+    build_depthaware(a.llama_dir, a.gguf, "out-depthaware.gguf", lo, hi, bands[-1][1] + 1, dry=True)
     if getattr(a, "apply", False):
         out = a.out or os.path.splitext(a.gguf)[0] + "-depthaware.gguf"
         imat = getattr(a, "imatrix", None)

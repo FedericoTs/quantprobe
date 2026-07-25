@@ -39,7 +39,8 @@ def feasible(a, tps_target):
         for bits in BITS_LADDER:
             size, act, cfgs = planmod.evaluate(m["t"], m["a"], m["ne"], m["moe"],
                                                bits, vc, vb, rc, rb, db, geta, 1.0, gl,
-                                               ctx=ctx, kvp=m.get("kvp", planmod.DEFAULT_KVP))
+                                               ctx=ctx, kvp=m.get("kvp", planmod.DEFAULT_KVP),
+                                               n_layer=m.get("nl"))
             best = cfgs[0]
             if best[1] >= tps_target:
                 q = planmod.qual_of(m["moe"], bits)
