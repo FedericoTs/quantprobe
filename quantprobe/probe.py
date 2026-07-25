@@ -45,14 +45,28 @@ def sh(cmd, dry, capture=False):
     return ""
 
 
+def _ppl_once(perp, gguf, eval_file, chunks, ngl):
+    p = subprocess.run([perp, "-m", gguf, "-f", eval_file, "--chunks", str(chunks), "-ngl", str(ngl)],
+                       capture_output=True, text=True, errors="replace")
+    out = p.stdout + p.stderr
+    m = re.search(r"Final estimate: PPL = ([0-9.]+)", out)
+    return (float(m.group(1)) if m else None), out
+
+
 def ppl(perp, gguf, eval_file, chunks, ngl, dry):
     print(f"  measuring perplexity on {chunks} chunks (this can take 1-3 min; llama.cpp is quiet while it works)...", flush=True)
     if dry:
         return None
-    p = subprocess.run([perp, "-m", gguf, "-f", eval_file, "--chunks", str(chunks), "-ngl", str(ngl)],
-                       capture_output=True, text=True, errors="replace")
-    m = re.search(r"Final estimate: PPL = ([0-9.]+)", p.stdout + p.stderr)
-    return float(m.group(1)) if m else None
+    val, out = _ppl_once(perp, gguf, eval_file, chunks, ngl)
+    if val is None and ngl != 0 and ("out of memory" in out.lower() or "failed to" in out.lower()):
+        # a probe intermediate (Q6_K reference, or a band left at Q6_K) can be far bigger
+        # than the source's final compressed size — retry CPU-only before giving up.
+        print("  GPU offload failed to fit (likely VRAM); retrying at -ngl 0 (CPU, slower)...", flush=True)
+        val, out = _ppl_once(perp, gguf, eval_file, chunks, 0)
+    if val is None:
+        tail = "\n".join(out.strip().splitlines()[-12:])
+        print(f"  perplexity produced no parseable result. Last output lines:\n{tail}", flush=True)
+    return val
 
 
 def run(a):
