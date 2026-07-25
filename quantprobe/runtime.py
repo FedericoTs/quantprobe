@@ -133,6 +133,14 @@ def bench(a):
         delta = (meas / best[1] - 1) * 100 if best[1] else 0
         print(f"\n[quantprobe] measured: {meas:.2f} +/- {err:.2f} tok/s "
               f"(predicted {best[1]:.1f}, {delta:+.0f}%)")
+        # A run whose own error bar is huge is not a measurement - saying so beats letting
+        # someone quote a cold-cache artifact. (Seen 2026-07-26: 4.01 +/- 2.16 on a first
+        # read from disk, where the warm number was 18.7.)
+        if err > meas * 0.15:
+            print(f"[quantprobe] WARNING: +/-{err/meas*100:.0f}% spread - this number is not "
+                  f"reliable. Usually a cold file cache on the first read.\n"
+                  f"             Re-run it: the second run reads from RAM and is the real number.")
+            return
         if getattr(a, "contribute", False):
             _emit_contribution(a, best, meas, err, delta)
         else:
