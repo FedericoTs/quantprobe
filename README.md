@@ -1,132 +1,145 @@
 # quantprobe
 
-### Placement beats budget
+### How fast will this model run on *my* machine — and how do I make it faster?
 
-**Where your bits sit — which layers, which memory tier — matters more than how many you have. Four falsification-tested laws for running big LLMs on hardware you already own, every number measured on one 2016 desktop (GTX 1060 6 GB · 16 GB DDR4 · SATA SSD).**
+**Answers both before you download anything. Then hands you the exact command.** Every number measured on one 2016 desktop (GTX 1060 6 GB · 16 GB DDR4 · SATA SSD), and every claim published as a prediction *made before the measurement*.
 
-![smoke](https://github.com/FedericoTs/quantprobe/actions/workflows/smoke.yml/badge.svg) ![license](https://img.shields.io/badge/license-MIT-0f766e) ![hardware](https://img.shields.io/badge/measured_on-2016_GTX_1060_6GB-d73027) ![data--free](https://img.shields.io/badge/quantization-data--free-1d9e70) ![models](https://img.shields.io/badge/validated-7B_→_744B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
+![smoke](https://github.com/FedericoTs/quantprobe/actions/workflows/smoke.yml/badge.svg) ![license](https://img.shields.io/badge/license-MIT-0f766e) ![hardware](https://img.shields.io/badge/measured_on-2016_GTX_1060_6GB-d73027) ![models](https://img.shields.io/badge/validated-7B_→_744B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
 
 <p align="center"><img src="weights/data/hero_placement.png" width="880" alt="Placement across memory tiers: disk 2-bit cold experts, RAM 2-bit experts + probed fragile band at 4-bit, VRAM 4-bit attention — one law ties them"></p>
 
-> **▶ Try the interactive calculator: [Will it run — and how fast?](https://federicots.github.io/quantprobe/)**
-> Pick any model + your machine → predicted tok/s, memory fit, quality cost, and your cheapest next upgrade — from the law below, with your config plotted against every validated measurement.
-
-
-**New here? → [QUICKSTART.md](QUICKSTART.md) gets you running in 60 seconds — or just `pip install quantprobe && quantprobe auto qwen3-coder --run`.** The calculators (`hw`/`plan`/`target`/`optimize`) need nothing installed; the weight-touching commands drive [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point quantprobe at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`; preview anything with `--dry`). 16 machine presets ship in (`--machine`): GTX 1060 → RTX 5090, Apple `mac-m2/m3/m4-*`, DGX Spark, Epyc — or pass raw specs. Multi-GPU / RAID? Comma lists aggregate: `--vram 24,24 --disk-bw 14,14`. Big-VRAM + disk-streaming rigs get the three-tier expert-cache row (v1.3).
-
-
 ---
 
-## What this is
-
-My 2016 desktop can't run frontier models the way a datacenter does — so instead of brute force, I asked *where* every bit and byte should go, and answered it by measurement. Months of experiments later, the result is four laws, a 30-minute probe tool, copy-paste llama.cpp recipes, and one equation that predicts decode speed from 7B to 744B — validated against my own pre-registered predictions and against [colibri](https://github.com/JustVugg/colibri)'s independently published 744B numbers.
-
-## Headline results
-
-| result | number |
-|---|---|
-| 16B MoE, 2-bit, **data-free**, resident on a 6 GB card | ppl 6.31 → 6.96 (**1.10×**) — beats calibrated SOTA's gap-ratio |
-| Same bytes, different layers (Gemma 4 12B, stock llama.cpp) | **byte-identical files, 2.25 ppl apart** (12.27 vs 10.02) |
-| Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |
-| Qwen3-30B-A3B on the 2016 desktop | **19.3 tok/s** — hybrid placement, *predicted 19 before measuring* |
-| GLM-4.5-Air **110B** from a SATA drive, 16 GB RAM | 0.19 tok/s — inside the law's pre-registered 0.2–0.3 band |
-| RAM overclock (XMP, 2133→3000) | dense **+52%**, pre-registered ×1.41+ |
-
-## Why the evidence is unusually strong
-
-Most benchmark posts report what happened. I report what I **predicted before it happened** — I wrote the number down, then ran the hardware, and this is the strongest form of empirical evidence I know how to produce:
-
-| prediction (made first) | measured (after) |
-|---|---|
-| 110B streamed from SATA: **0.2–0.3 tok/s** | **0.19** |
-| RAM overclock scales in-RAM decode **×1.41+** | **×1.52** |
-| 30B hybrid placement: **~19 tok/s** | **19.30 ± 0.88** |
-| a day-old 118B (Laguna S 2.1) streamed from this SATA drive: **0.2–0.4** ([staked pre-download](preregistrations/2026-07-23-laguna-s-2.1-on-2016-desktop.md)) | **0.38 ± 0.17** |
-| colibri's own 128 GB / 25 GB tiers, from our η bands | land **inside** the bands |
-
-Add to that: a **byte-identical control** (two GGUFs the same size, 2.25 ppl apart — only placement differs), a full **claim → script → log manifest** (every number reproducible in-tree), and a set of **documented dead ends** (dynamic top-k, semantic paging, self-speculation — all measured-dead, because a law you only confirm is a law you haven't tested).
-
-<p align="center"><img src="weights/data/validation_19tok/live_run_20tps.png" width="880" alt="One frame: Task Manager showing 16 GB DDR4-3000 and the GTX 1060 6GB beside llama.cpp chatting Qwen3-30B-A3B live at 20.4 tok/s generation"></p>
-<p align="center"><em>One frame, no cuts: Task Manager (16 GB @ 3000 MT/s, GTX 1060 6 GB, RAM at 91% — the hybrid placement using the whole machine) beside llama.cpp chatting Qwen3-30B-A3B at <b>20.4 tok/s generation</b> — above the pre-registered 19. Raw logs, hardware attestation + GGUF SHA256: <a href="weights/data/validation_19tok/EVIDENCE.txt">EVIDENCE.txt</a>. Third bench run: 19.26 ± 0.45 (series 19.30 → 19.55 → 19.26).</em></p>
-
-**Open pre-registrations** — predictions staked publicly *before* measurement: [colibri v1.1, five falsifiable predictions (2026-07-23)](preregistrations/2026-07-23-colibri-v1.1.md) — dual-SSD scaling, int3 speedup, lattice-vs-scalar, AVX-512 tier-scoping, MTP×MoE antagonism — plus open bands on the CPU-only context slope and expert-pruning decode ([all verdicts](preregistrations/)).
-
-**Recipe head-to-head, published in full:** [#11](preregistrations/2026-07-25-apex-vs-probe-depthaware.md) tested my depth-aware build against mudler's APEX at matched bytes and **I lost** (+8.9%); [#12](preregistrations/2026-07-25-recipe-upgrade-shexp-imatrix.md) fixed what it exposed and won the rematch by 1.1% — with the calibration caveat stated *before* measuring, because the win is in-domain and does not generalize as published. Both are scored in the open, loss first.
-
-**Live research track — Law 5 (prefill):** protocol-first and scored same-day in [weights/LAW5_PROTOCOL.md](weights/LAW5_PROTOCOL.md) — 6 staked hits, 4 published misses, and one self-caught retraction corrected in public within the hour, including the measured recipe that cuts an agent's 8k-context turn cost from ~75 s to ~0.5 s. Next up, staked before launch: [Law 6 — speculation economics](preregistrations/2026-07-24-law6-speculation-economics.md), scoring in public the week of 2026-07-27.
-
-
-## The four placement laws
-
-Full statements, each with its establishing measurement and a falsifiable prediction, in **[LAWS.md](LAWS.md)**.
-
-1. **Rotation is rank-conditional.** Incoherence rotation (QuIP#/QTIP/QuaRot) helps full-rank tensors (+0.006 ppl) and destroys low-rank bottlenecks (+1623 ppl) — a ~270,000× swing on effective rank alone.
-2. **Trained networks are dense everywhere.** Experts sit *exactly* at the rate-distortion floor; routing is flat (even across domains — Jaccard 1.00 prose vs code); activations are diffuse. **2-bit is the floor.**
-3. **Fragility is measurable, not predictable.** Gemma late-fragile 4×, Mistral **early-fragile 25×** — architectural near-twins pointing opposite ways. Weight statistics mislead. **Only a 30-minute functional probe decides.**
-4. **The tiered decode law.** `tok/s = η(tier)·BW ÷ active-bytes`, η collapsing per tier across 7B→744B and both projects' hardware. **v1.1 adds the context term**: each generated token also re-reads the whole KV cache from *its* tier — `--ctx` prices it, `bench --depth` measures it (measured here: 20.02 → 16.12 tok/s at 16k depth).
-
-<p align="center"><img src="weights/data/x_chart_E_scalinglaw.png" width="700" alt="One scaling law, 7B to 744B, predicted vs measured, including colibri's published tiers"></p>
-
-<p align="center"><img src="weights/data/x_chart_D_placement.png" width="700" alt="Byte-identical GGUF files, 2.25 perplexity apart — placement is worth twice the byte budget"></p>
-<p align="center"><img src="weights/data/x_chart_I_kvdepth.png" width="700" alt="Decode speed versus context depth: measured 20.02 tok/s at depth zero falling to 16.12 at 16384, on the Law 4 v2 curve with eta_kv 0.70"></p>
-
-
-## Install — and the eleven commands
+## Start here
 
 ```bash
 pip install quantprobe
-quantprobe auto qwen3-coder --tps 15 --run   # empty machine -> optimal quant chosen, fetched, chatting
+quantprobe auto
 ```
 
-**Zero-config on your own box**: `quantprobe plan --gguf model.gguf` auto-detects the machine and reads the model from the file. Presets/flags estimate any *other* machine. `hw`/`plan`/`target`/`optimize` need nothing else installed (`auto` needs network for the fetch); the rest drive stock [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) (point at it with `--llama-dir`/`QUANTPROBE_LLAMA_DIR`/`PATH`; preview any command with `--dry`).
+That's it — it detects your machine, asks which model you want, and gets you running. No flags to learn.
+
+**Just want the number first?** `quantprobe plan --gguf model.gguf` prints your predicted tok/s, whether it fits, and the launch command. Downloads nothing, takes a second. There's also a [browser version](https://federicots.github.io/quantprobe/) with nothing to install.
+
+## The two ways to run a model
+
+| | **Fast** — `quantprobe auto qwen3-30b` | **Custom** — `quantprobe auto qwen3-30b --custom` |
+|---|---|---|
+| what it does | picks the best existing quant for *your* machine, downloads it | measures which layers of *your* model break under compression, then builds a version tailored to it |
+| time | minutes (mostly download) | **~50 min for a 7B, ~10 h for a 35B** — it tells you before starting |
+| disk | one file | source + working files, 3–4× bigger |
+| **speed** | full | **identical** — speed comes from placement, not from the build |
+| **quality** | whatever the community published | **−9% perplexity at the same file size** ([measured](preregistrations/2026-07-25-recipe-upgrade-shexp-imatrix.md)) |
+
+**Most people want Fast.** Above ~3 bits per weight, community quants are already near-lossless — so `--custom` *refuses to run* on machines that don't need it and explains why. The tool declines to sell you its own product.
+
+**Use Custom when** you're squeezing a model that barely fits (under ~3 bits, where ordinary compression falls off a cliff), you have your own fine-tune nobody has published, or you need maximum quality at a fixed size.
+
+## The free speed you probably already have
+
+Most guides put *all* of a mixture-of-experts model's experts in system RAM and leave your graphics card half empty. Keeping the first N expert layers on the GPU instead — same file, different flags — measured on the reference box:
+
+| | all experts → RAM | **partial offload** |
+|---|---|---|
+| generation | 15.18 tok/s | **20.44 tok/s** (+34.7%) |
+| prompt reading | 88 tok/s | **~238 tok/s** (2–3×) |
+
+`plan` and `run` now compute the cutoff from your *free* VRAM and emit the exact flags. It costs nothing and needs no new download. ([pre-registration #13](preregistrations/2026-07-26-moe-partial-expert-offload.md) — staked before measuring, including the non-ship condition.)
+
+## Measured results
+
+| result | number |
+|---|---|
+| Qwen3-30B-A3B on the 2016 desktop | **19.3 tok/s** — *predicted 19 before measuring* |
+| Same model, partial expert offload | **20.44 tok/s**, +34.7% for free |
+| Same bytes, different layers (Gemma 4 12B) | **byte-identical files, 2.25 ppl apart** |
+| Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |
+| GLM-4.5-Air **110B** from a SATA drive, 16 GB RAM | 0.19 tok/s — inside the pre-registered 0.2–0.3 band |
+| RAM overclock (XMP, 2133→3000) | dense **+52%**, pre-registered ×1.41+ |
+
+<p align="center"><img src="weights/data/validation_19tok/live_run_20tps.png" width="880" alt="One frame: Task Manager showing 16 GB DDR4-3000 and the GTX 1060 6GB beside llama.cpp chatting Qwen3-30B-A3B live at 20.4 tok/s generation"></p>
+<p align="center"><em>One frame, no cuts: Task Manager beside llama.cpp chatting Qwen3-30B-A3B at <b>20.4 tok/s</b> — above the pre-registered 19. Raw logs + GGUF SHA256: <a href="weights/data/validation_19tok/EVIDENCE.txt">EVIDENCE.txt</a>.</em></p>
+
+## Why you can trust the numbers
+
+Most benchmark posts report what happened. **I write the prediction down first, publish it, then run the hardware** — and publish the misses just as loudly.
+
+| predicted (first) | measured (after) |
+|---|---|
+| 110B streamed from SATA: **0.2–0.3 tok/s** | **0.19** |
+| RAM overclock scales decode **×1.41+** | **×1.52** |
+| 30B hybrid placement: **~19 tok/s** | **19.30 ± 0.88** |
+| a day-old 118B streamed from SATA: **0.2–0.4** | **0.38 ± 0.17** |
+
+**The misses are the point.** A few that are published in full:
+
+- **I benchmarked my recipe against a competitor's and lost** ([#11](preregistrations/2026-07-25-apex-vs-probe-depthaware.md), +8.9% worse). It exposed two real bugs in mine. Fixed them ([#12](preregistrations/2026-07-25-recipe-upgrade-shexp-imatrix.md)), then ran a *fair* rematch on data neither side calibrated for — [predicting I'd lose again](preregistrations/2026-07-26-apex-rematch-ood-kl.md). I won: 26% better KL divergence. Two of four stakes missed **in my favour**, still recorded as misses.
+- **I retracted a headline finding within the hour** when my own audit showed it was a measurement artifact — then reproduced the artifact deliberately to prove the cause ([Law 5 ledger](weights/LAW5_PROTOCOL.md)).
+- **This tool told users a probe takes "30–60 minutes."** It takes 5h40m on a 35 GB model. That was my unmeasured claim, and [v1.9.0](CHANGELOG.md) replaced it with a derived estimate, a live ETA, and a confirmation prompt.
+
+Plus a **byte-identical control** (two same-size files, 2.25 ppl apart — only placement differs), a full claim → script → log manifest, and **documented dead ends** (dynamic top-k, semantic paging, self-speculation — all measured-dead, because a law you only confirm is a law you haven't tested).
+
+## The four laws, in one line each
+
+Full statements with measurements and falsifiable predictions in **[LAWS.md](LAWS.md)**.
+
+1. **Rotation is rank-conditional.** The standard trick behind modern quantization helps full-rank tensors and destroys low-rank bottlenecks — a ~270,000× swing.
+2. **Trained networks are dense everywhere.** No free lunch left in the weights: **2-bit is the data-free floor.**
+3. **Fragility is measurable, not predictable.** Gemma breaks late, Mistral breaks early — architectural near-twins pointing opposite ways. Only a functional probe decides.
+4. **The tiered decode law.** `tok/s = η(tier) × bandwidth ÷ active-bytes-per-token`. This is the equation that predicts your speed before you download.
+
+<p align="center"><img src="weights/data/x_chart_E_scalinglaw.png" width="700" alt="One scaling law, 7B to 744B, predicted vs measured"></p>
+
+## All eleven commands
 
 ```bash
-quantprobe auto qwen3-30b --tps 15                       # ONE command: optimizer picks bits, closest quant fetched, run command printed
-quantprobe auto qwen3-30b --custom --run                 # THE PRODUCT: probe YOUR model, build its personalized depth-aware GGUF, launch it
-quantprobe hw                                            # what the law sees on THIS machine (every value source-tagged)
-quantprobe plan     --gguf model.gguf                    # zero-config prediction: placement + tok/s + the launch command
-quantprobe optimize --tps 20                             # CHEAPEST PATH to a target: bits x placement x hardware, Pareto-ranked
-quantprobe target   --tps 5 --machine gaming --ladder    # inverse: target -> smartest model + speed-intelligence ladder
+quantprobe auto                                          # interactive: detects, asks, decides, runs
+quantprobe auto qwen3-30b --custom --run                 # the full custom pipeline, end to end
+quantprobe hw                                            # what the law sees on THIS machine
+quantprobe plan     --gguf model.gguf                    # predicted tok/s + placement + launch command
+quantprobe optimize --tps 20                             # cheapest path to a speed target, Pareto-ranked
+quantprobe target   --tps 5 --ladder                     # inverse: target -> smartest model that fits
 quantprobe fetch    qwen3-30b ./models                   # robust, resumable download
-quantprobe quantize --gguf f16.gguf --out 2bit.gguf      # COMPRESS: depth-aware ~2-bit GGUF (verified: loads + generates)
-quantprobe probe    --gguf f16.gguf --eval wiki.test.raw # measure YOUR model's fragile band (~30 min); --apply builds it
-quantprobe run      --gguf 2bit.gguf                     # plan the placement, then LAUNCH llama.cpp chat
-quantprobe bench    --gguf 2bit.gguf --contribute        # predicted vs measured on your box; opt-in datapoint
-quantprobe dashboard --gguf 2bit.gguf                    # the law LIVE: neuron galaxy + thinking toggle, every reply scored vs prediction
+quantprobe quantize --gguf f16.gguf --out 2bit.gguf      # build a depth-aware quant
+quantprobe probe    --gguf f16.gguf --eval wiki.test.raw # measure YOUR model's fragile band
+quantprobe run      --gguf 2bit.gguf                     # plan the placement, then launch chat
+quantprobe bench    --gguf 2bit.gguf --contribute        # predicted vs measured; opt-in datapoint
+quantprobe dashboard --gguf 2bit.gguf                    # the law live, every reply scored vs prediction
 ```
 
-The loop is self-validating: `plan` predicted 17.5 for a file we then measured at **18.32 ± 0.17**; the config months of research converged to is what `optimize` picks blind. A measured example of what that's worth: the same model, mis-specified vs law-routed, is **3.38 vs 18.32 tok/s (×5.4)** — [worked examples](docs/EXAMPLES.md).
+`hw`/`plan`/`target`/`optimize` need nothing but Python. The weight-touching commands drive stock [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) — point at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`, and preview anything with `--dry`. 16 machine presets ship in (`--machine`); multi-GPU and RAID aggregate with comma lists (`--vram 24,24`).
+
+> **Windows: `'quantprobe' is not recognized`?** pip put it in a folder that isn't on your PATH. Use `python -m quantprobe ...` — identical, always works.
 
 ## Help grow the law
 
-`quantprobe bench --contribute` prints exactly what would be shared (hardware label, model, predicted-vs-measured) plus a pre-filled issue link — **you review and submit; nothing is ever sent automatically**. Contributed points land on the law chart; the ones *outside* the bands are the most valuable. Open falsifiable predictions anyone can settle: [preregistrations/](preregistrations/).
+`quantprobe bench --contribute` prints exactly what would be shared plus a pre-filled issue link — **you review and submit; nothing is ever sent automatically.** Points that land *outside* the predicted bands are the most valuable ones. Open predictions anyone can settle: [preregistrations/](preregistrations/).
 
 ## Deep dives
 
 | | |
 |---|---|
-| [QUICKSTART.md](QUICKSTART.md) | 60-second start, three levels; recipes (own fine-tune, coding agents, hardware buying); Ollama interop |
-| [LAWS.md](LAWS.md) | the four laws — statements, measurements, falsifiable predictions, the general form |
-| [docs/EXAMPLES.md](docs/EXAMPLES.md) | worked examples with real outputs: zero-config, the ×5.4 optimizer A/B, probe walkthrough, troubleshooting |
+| [QUICKSTART.md](QUICKSTART.md) | get running, three levels; recipes for fine-tunes, coding agents, hardware buying |
+| [LAWS.md](LAWS.md) | the four laws — statements, measurements, falsifiable predictions |
+| [docs/EXAMPLES.md](docs/EXAMPLES.md) | worked examples with real output, including the ×5.4 optimizer A/B |
 | [docs/HARDWARE.md](docs/HARDWARE.md) | the 2016 box: exact specs, measured bandwidths, what the next euro buys |
-| [docs/DEEP-DIVE.md](docs/DEEP-DIVE.md) | what's new vs. what's built-on, parity tables, the 744B-at-home projection, repository map |
-| [preregistrations/](preregistrations/) | every staked prediction with its verdict — hits, the near-miss, and the honest miss |
-| [weights/LAW5_PROTOCOL.md](weights/LAW5_PROTOCOL.md) | the live Law-5 research ledger — conventions, stakes, scores, and the retraction |
-| [papers/arxiv/](papers/arxiv/) | the paper (submission-ready LaTeX) |
-| [CHANGELOG.md](CHANGELOG.md) | v1.0 → v1.5, every release |
+| [preregistrations/](preregistrations/) | every staked prediction with its verdict — hits **and** misses |
+| [weights/LAW5_PROTOCOL.md](weights/LAW5_PROTOCOL.md) | the live Law-5 research ledger, including the retraction |
+| [CHANGELOG.md](CHANGELOG.md) | every release |
 
 ## Honest limitations
 
-- Perplexity on WikiText-2 is my primary metric; I haven't run task-level evals (MMLU/HellaSwag) yet.
-- My fragility atlas covers four model families — enough to *disprove* universality, not to chart every architecture.
-- 0.19 tok/s for a 110B is a **capacity demonstration, not usable inference** — the honest speed only arrives with faster storage.
-- Speed numbers are single-stream decode on one machine (±25% across environments); the tiered-decode η values are fitted, not derived.
-- No custom runtime: everything rides stock llama.cpp and streaming eval harnesses. The one CUDA kernel is verified in reference, not built.
-
+- Perplexity and KL divergence are my metrics; I haven't run task-level evals (MMLU/HellaSwag) yet.
+- The fragility atlas covers four model families — enough to *disprove* universality, not to chart every architecture.
+- 0.19 tok/s for a 110B is a **capacity demonstration, not usable inference.**
+- Speed numbers are single-stream decode on one machine (±25% across environments); the η values are fitted, not derived.
+- No custom runtime: everything rides stock llama.cpp.
 
 ## Credits
 
-[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Independent research by Federico Sciuca, AI-supported, on one desktop; every claim is measured, and every negative that redirected the work is documented. The Law 4 context term (v1.1) was prompted by **u/RogerAI--fyi** (Reddit), who correctly observed the original formulation omitted per-token KV reads — measured, confirmed, and shipped within a day. The v1.7 recipe upgrade came the same way: **u/MoneroApe** (Reddit) pointed me at [apex-quant](https://github.com/localai-org/apex-quant) and TurboQuant, and testing my recipe against **mudler's APEX** exposed two real gaps in mine — unprotected always-active tensors (their kurtosis argument, adopted here) and no importance-matrix calibration at all. Their work made this tool measurably better; the head-to-head and its scope limits are published in full.
+[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Independent research by Federico Sciuca, AI-supported, on one desktop.
+
+Two community contributions changed the tool measurably: **u/RogerAI--fyi** (Reddit) observed that the Law 4 formulation omitted per-token KV reads — measured, confirmed, shipped within a day. **u/MoneroApe** pointed me at [apex-quant](https://github.com/localai-org/apex-quant) and TurboQuant, and testing against **mudler's APEX** exposed two real gaps in my recipe: unprotected always-active tensors (their kurtosis argument, adopted here) and no importance-matrix calibration at all. The head-to-head and its scope limits are published in full, loss first.
 
 ## License
 
