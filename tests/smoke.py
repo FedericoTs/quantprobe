@@ -231,12 +231,21 @@ def t_tier_boundary_advisor():
     assert "tier-boundary advisor" not in out2, "advisor fired on a fitting config"
 
 def t_optimize_backtest_rediscovers_measured_config():
-    # blind run on 30B/2016 must place the MEASURED config (2.5-bit hybrid, 18.9) on the frontier top-2
+    # Backtest of the optimizer against MEASURED reality. Until 2026-07-26 this asserted the
+    # 2.5-bit hybrid (18.9) in the top-2. Pre-registration #13 then MEASURED that partial expert
+    # offload beats it (+34.7%), so the optimizer legitimately promotes split-experts rows and
+    # the old assertion is obsolete rather than violated. What must stay true: the top pick is
+    # grounded in a measured mechanism, is realizable by stock llama.cpp, and beats the old
+    # hybrid number it superseded.
     rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
     assert rc == 0
     lines = [l for l in out.splitlines() if "tok/s" in l and "quality" in l]
-    top2 = " ".join(lines[:2])
-    assert "18.9" in top2 and "2.5-bit" in top2 and "hybrid" in top2, f"backtest failed: {top2}"
+    top = lines[0]
+    assert "split experts" in top, f"measured MoE offload not promoted: {top}"
+    tps = float(top.split("tok/s")[0].split()[-1])
+    assert tps > 18.9, f"top pick must beat the hybrid config it replaced: {tps}"
+    # and the emitted command must be a real -ot regex, not prose or a bare fallback
+    assert "ffn_.*_exps" in out and "blk\.(" in out, "realize-the-pick lost its exact -ot flags"
 
 def t_optimize_realizable_default():
     rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
@@ -410,6 +419,33 @@ def t_quantize_imatrix_passthrough():
     out = _build_cmd(imatrix="cal.gguf")
     assert "--imatrix cal.gguf" in out, f"imatrix not passed through: {out[:300]}"
     assert "--imatrix" not in _build_cmd(), "imatrix flag leaked into an uncalibrated build"
+
+def t_moe_split_row_and_flags():
+    # MoE partial expert offload (pre-registration #13): measured +34.7% decode over
+    # all-experts-to-CPU. Must appear for MoE with spare VRAM, and emit a REAL -ot regex.
+    from quantprobe.plan import evaluate
+    _, _, cfgs = evaluate(30.5, 3.3, 1.2, True, 2.5, 6, 192, 16, 48, 0.45, 0.35, gl=0.04, n_layer=48)
+    split = [c for c in cfgs if c[0].startswith("split experts")]
+    assert split, f"MoE split row missing: {[c[0] for c in cfgs]}"
+    flags = split[0][3]
+    assert "ffn_.*_exps" in flags and "-ngl 99" in flags, f"bad split flags: {flags}"
+    assert "blk\\.(" in flags and "47)" in flags, f"regex must end at the last layer: {flags}"
+
+def t_moe_split_no_layer_count_no_bogus_regex():
+    # without a layer count we must NOT invent layer indices - fall back and say why
+    from quantprobe.plan import evaluate
+    _, _, cfgs = evaluate(30.5, 3.3, 1.2, True, 2.5, 6, 192, 16, 48, 0.45, 0.35, gl=0.04, n_layer=None)
+    split = [c for c in cfgs if c[0].startswith("split experts")]
+    if split:
+        assert "blk\\.(" not in split[0][3], f"invented a regex without layer count: {split[0][3]}"
+        assert split[0][2] and "layer count" in split[0][2], "must explain why flags are generic"
+
+def t_dense_split_row_unregressed():
+    # the pre-existing dense split row must still work (no MoE change may break it)
+    from quantprobe.plan import evaluate
+    _, _, cfgs = evaluate(13, 13, 13, False, 4.5, 8, 300, 32, 50, 2, 0.5)
+    assert any(c[0].startswith("split:") for c in cfgs), \
+        f"dense split row regressed: {[c[0] for c in cfgs]}"
 
 def t_python_m_package():
     # `python -m quantprobe` must work identically to the console script -

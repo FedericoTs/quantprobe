@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.8.0 — 2026-07-26
+
+**MoE partial expert offload** — the placement the planner never offered, measured in
+pre-registration #13 and now shipped.
+
+- Until now, MoE models got all-experts-to-CPU or nothing, so a mid-size GPU sat half empty.
+  The planner now also evaluates keeping the **first K expert layers on GPU** and emits the exact
+  `-ot` regex. Measured on the reference box: **+34.7% decode** (15.18 → 20.44 tok/s) and
+  **~2-3x prefill** vs all-experts-to-CPU. Flagged by three separate users in one session.
+- **The cutoff is computed conservatively on purpose.** Overshooting VRAM is a cliff, not a
+  taper: one step past the ceiling measured **−29%**. A 1 GB desktop reserve is subtracted
+  (measured 0.8–1.5 GB held by Explorer/compositor/browser during the sweep), because a real
+  machine is not an empty GPU.
+- **The row is suppressed when the model's layer count is unknown**, with a note telling you to
+  pass `--gguf`. A speed figure whose printed command cannot deliver it is the v1.6.5 bug class;
+  the planner will not do that again. Verified layer counts added for `qwen3-30b` and
+  `deepseek-16b` (read from real GGUFs, not guessed).
+- `optimize` and `run`/`bench` see the new placement too, so the recommendation and the launched
+  command agree.
+- **Test honesty:** the optimizer backtest previously asserted the 2.5-bit hybrid (18.9) in the
+  top-2. That config is now legitimately superseded by a measured-better one, so the test was
+  rewritten to assert what must remain true (top pick grounded in a measured mechanism,
+  realizable by stock llama.cpp, beating the number it replaced) rather than pinned to an
+  obsolete answer. 54 tests.
+
 ## 1.7.0 — 2026-07-26
 
 Everything measured in pre-registration #12, now in the tool:

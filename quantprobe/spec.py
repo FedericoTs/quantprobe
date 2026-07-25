@@ -84,6 +84,8 @@ def apply(a, quiet=False):
         a.bits = s["bits"]; used.append(f"{s['bits']:g} effective bits")
     if getattr(a, "kv_per_pos", None) is None:
         a.kv_per_pos = s["kvp"] / 1024; used.append(f"KV {s['kvp']/1024:.0f} KB/pos")
+    if getattr(a, "n_layer", None) is None:
+        a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))
     return True
