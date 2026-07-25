@@ -124,3 +124,34 @@ flipped from a decisive miss to a near-miss.**
 reference 6.39 < ours (SSM-fixed) 6.70. APEX wins. Per the pre-registered commitment: APEX
 enters `quantprobe auto` as a recipe candidate. S-3 (CPU-pure speed, the other half of the
 commitment's condition) is next.
+
+## S-3 scored, and the full A/B closed (log: apex_ab_stageE_speed.log)
+
+**S-3: MISS (x1.164 vs staked >=x2), and the mechanism it refines rather than breaks.** CPU-pure
+pp2048: APEX Mini 37.53 tok/s, ours (SSM-fixed) 43.67, reference IQ2_M 18.90. The three-way
+comparison is the useful part: the reference (near-uniform LUT-format, and the SMALLEST file of
+the three) runs at HALF the speed of both other files - while APEX (LUT confined to a narrow
+middle band, blended with K-quant elsewhere) pays only a 16% penalty against a 0%-LUT build.
+H12's original finding (LUT collapse x7 on CPU prefill) was measured on a fully-IQ 7B file;
+it's confirmed again here (the reference's 2x slowdown despite being smallest is exactly that
+mechanism) but the AGGREGATE file-level penalty scales with what FRACTION of the compute-heavy
+FFN tensors are LUT-format, not simply "any presence." APEX's narrow-middle-band design is a
+genuinely smart choice that keeps this fraction, and the penalty, small. Refinement recorded in
+LAW5_PROTOCOL.md.
+
+## Final verdict
+
+Quality (matched ~13.2-13.3 GB): APEX Mini 6.15 < community IQ2_M 6.39 < ours (SSM-fixed) 6.70 -
+**APEX wins**, near-miss of our stated prior after a real bug fix (+8.88% vs a staked +8%
+ceiling). Speed (CPU-pure pp2048): ours 43.67 > APEX 37.53 > reference 18.90 tok/s - **we win**,
+but by 16%, not the staked 2x+, because APEX's blend isn't as LUT-heavy as the mechanism assumed.
+
+The pre-registered commitment fires (APEX wins S-2), but the clean "APEX for GPU, K-quant for
+CPU" placement split doesn't hold as cleanly as staked - APEX isn't paying a severe CPU tax for
+its quality edge, it's close to strictly better on this architecture class. Two real, generalizable
+gaps were found in OUR recipe along the way, one fixed (SSM tensors, live in v1.6.4), one
+identified but not yet tested (shared-expert tensors, same shape, same near-zero cost) - and a
+third, larger one purely from reading APEX's own design: we use no importance-matrix calibration
+anywhere in this project, which the field has converged on as a standard lever. Recommended
+before any `auto` integration decision: close those two remaining gaps and re-run this exact A/B
+on the upgraded recipe. That result, not this one, should decide the integration.
