@@ -63,3 +63,29 @@ as a recipe candidate with a placement-conditional recommendation — GPU-reside
 pointed at APEX, hybrid/CPU boxes at K-quant-family builds. The tool's job is finding the best
 config for YOUR machine, not defending its own recipe. That outcome is a win for users and
 for whoever built the better allocation.
+
+---
+
+## Scored (2026-07-25, log: weights/data/apex_ab_stageA2.log)
+
+- **S-1 HIT, sharper than staked.** The probe's band search (reference PPL 5.4298, WikiText,
+  40-layer source) found a strictly monotonic, late-weighted fragility curve — NOT the symmetric
+  front+back edges APEX's design asserts:
+
+  | band | layers | delta PPL |
+  |---|---|---|
+  | 1 | 0-9 | +0.09 |
+  | 2 | 10-19 | +0.15 |
+  | 3 | 20-29 | +0.16 |
+  | 4 | 30-39 | **+0.45** |
+
+  The front band (0-9) is the MOST tolerant region measured, not a fragile edge — directly
+  contradicting APEX's L0-4 protection assumption for this model. Fragile band: layers 30-39,
+  delta +0.45 vs the +0.16 median (~2.8x). Depth-aware build now underway targeting this band,
+  size to be matched against APEX Mini's 13.3 GB (S-2/S-3, next).
+
+Note en route: Stage A's first attempt failed on an unrelated tooling bug (`probe`'s internal
+perplexity step hardcoded full GPU offload, OOMing on this model's 23-27 GB intermediates on a
+6 GB card) — fixed and shipped as quantprobe v1.6.3, verified against the real failure before
+this rerun. Disclosed here because it's methodologically relevant: S-1 above is from the
+corrected, CPU-pure rerun, not the failed first attempt.
