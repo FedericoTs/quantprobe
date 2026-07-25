@@ -51,6 +51,8 @@ Add to that: a **byte-identical control** (two GGUFs the same size, 2.25 ppl apa
 
 **Open pre-registrations** — predictions staked publicly *before* measurement: [colibri v1.1, five falsifiable predictions (2026-07-23)](preregistrations/2026-07-23-colibri-v1.1.md) — dual-SSD scaling, int3 speedup, lattice-vs-scalar, AVX-512 tier-scoping, MTP×MoE antagonism — plus open bands on the CPU-only context slope and expert-pruning decode ([all verdicts](preregistrations/)).
 
+**Recipe head-to-head, published in full:** [#11](preregistrations/2026-07-25-apex-vs-probe-depthaware.md) tested my depth-aware build against mudler's APEX at matched bytes and **I lost** (+8.9%); [#12](preregistrations/2026-07-25-recipe-upgrade-shexp-imatrix.md) fixed what it exposed and won the rematch by 1.1% — with the calibration caveat stated *before* measuring, because the win is in-domain and does not generalize as published. Both are scored in the open, loss first.
+
 **Live research track — Law 5 (prefill):** protocol-first and scored same-day in [weights/LAW5_PROTOCOL.md](weights/LAW5_PROTOCOL.md) — 6 staked hits, 4 published misses, and one self-caught retraction corrected in public within the hour, including the measured recipe that cuts an agent's 8k-context turn cost from ~75 s to ~0.5 s. Next up, staked before launch: [Law 6 — speculation economics](preregistrations/2026-07-24-law6-speculation-economics.md), scoring in public the week of 2026-07-27.
 
 
@@ -124,7 +126,7 @@ The loop is self-validating: `plan` predicted 17.5 for a file we then measured a
 
 ## Credits
 
-[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Independent research by Federico Sciuca, AI-supported, on one desktop; every claim is measured, and every negative that redirected the work is documented. The Law 4 context term (v1.1) was prompted by **u/RogerAI--fyi** (Reddit), who correctly observed the original formulation omitted per-token KV reads — measured, confirmed, and shipped within a day.
+[colibri](https://github.com/JustVugg/colibri) (744B on 25 GB, pure C) inspired the tier-streaming exploration. The quantization stack builds on [llama.cpp](https://github.com/ggml-org/llama.cpp) and the QTIP/QuIP# incoherence codecs — whose central tool our first law bounds. Independent research by Federico Sciuca, AI-supported, on one desktop; every claim is measured, and every negative that redirected the work is documented. The Law 4 context term (v1.1) was prompted by **u/RogerAI--fyi** (Reddit), who correctly observed the original formulation omitted per-token KV reads — measured, confirmed, and shipped within a day. The v1.7 recipe upgrade came the same way: **u/MoneroApe** (Reddit) pointed me at [apex-quant](https://github.com/localai-org/apex-quant) and TurboQuant, and testing my recipe against **mudler's APEX** exposed two real gaps in mine — unprotected always-active tensors (their kurtosis argument, adopted here) and no importance-matrix calibration at all. Their work made this tool measurably better; the head-to-head and its scope limits are published in full.
 
 ## License
 
