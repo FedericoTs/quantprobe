@@ -1,24 +1,47 @@
-# quantprobe — 60-second start
+# quantprobe — get running
 
-**If you only remember one command** — hardware auto-detected, nothing else to fill in:
+**One command. Hardware detected, nothing to fill in:**
 
 ```bash
+pip install quantprobe
 quantprobe auto
 ```
 
-It detects your machine, asks for the model, decides — by the laws — whether your hardware
-even needs custom quantization (and says so), then builds or fetches and launches. The
-non-interactive form of the same thing:
+It detects your machine, asks which model, decides by the laws whether your hardware even
+*needs* custom quantization (and tells you when it doesn't), then fetches or builds, and launches.
 
+## Which path is for you
+
+**Fast — minutes.** Best existing quant for your machine, downloaded and running:
 ```bash
-quantprobe auto <model-or-HF-repo> --custom --run
+quantprobe auto qwen3-30b --run
 ```
 
-That is the ENTIRE pipeline: pick a high-precision source → measure YOUR model's fragile
-band → build its personalized depth-aware GGUF → predict the placement for THIS machine →
-launch chat. Swap `--custom` for `--tps 15` to skip the ~30-60 min probe and just fetch the
-best community quant for a speed target. Everything below is the same machinery with more
-control.
+**Custom — hours.** Measures which layers of *your* model break under compression, calibrates,
+and builds a version tailored to it. Worth about **−9% perplexity at the same file size**:
+```bash
+quantprobe auto qwen3-30b --custom --run
+```
+
+Honest about the cost: roughly **50 minutes for a 7B, ~10 hours for a 35B**. Every stage prints
+its own estimate before it starts, shows a live ETA from your machine's actual pace, and asks
+before committing you to anything over two hours. You can stop between stages; nothing is lost.
+
+**Not sure? Don't build.** Above ~3 bits per weight community quants are already near-lossless,
+and `--custom` will decline and explain why. Custom pays when you're squeezing a model that
+barely fits, or when it's your own fine-tune that nobody has published.
+
+## The free speed most people miss
+
+If you run a mixture-of-experts model (Qwen3-30B-A3B, GLM-Air, most big local models), the usual
+advice puts *every* expert in system RAM and leaves your GPU half empty. Keeping some expert
+layers on the GPU instead — same file, different flags — measured **+34.7% generation and 2–3×
+faster prompt reading**. `plan` and `run` now work out the cutoff from your free VRAM and print
+the exact command. No download, no rebuild:
+
+```bash
+quantprobe plan --gguf your-model.gguf     # look for the "split experts" row
+```
 
 Three levels. Pick where you want to stop.
 
@@ -132,7 +155,8 @@ quantprobe bench --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 ### Make your own compressed model
 
 The one-command version — picks a requantizable source from the repo, fetches the eval corpus,
-probes the fragile band (~30-60 min), builds the personalized depth-aware GGUF:
+probes the fragile band, calibrates, builds the personalized depth-aware GGUF
+(it prints a time estimate first - minutes for a small model, hours for a large one):
 
 ```bash
 quantprobe auto qwen3-coder --custom
@@ -145,7 +169,7 @@ Manual control over each step (same machinery):
 quantprobe quantize --gguf your-model-f16.gguf --out your-model-2bit.gguf
 #    -> produces a depth-aware ~2-bit GGUF you can run immediately
 
-# B. or probe first (measure YOUR model's fragile band, ~30 min) then build it in one step
+# B. or probe first (measure YOUR model's fragile band; prints its own time estimate)
 quantprobe probe --gguf your-model-f16.gguf --eval wiki.test.raw --apply --out your-model-2bit.gguf
 
 # C. then run it
@@ -235,7 +259,7 @@ quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionall
 | command | what it does | measured or computed? |
 |---|---|---|
 | `plan` / `--machine` | **describes your hardware** — preset or raw `--vram/--ram/...` numbers; prediction is *computed* from the decode law | computed (no run, no cache) |
-| `probe` | **measures your model** — which layers break under low-bit quantization (quality, not speed) | measured (~30 min, llama.cpp) |
+| `probe` | **measures your model** — which layers break under low-bit quantization (quality, not speed) | measured (minutes to hours by model size; estimated up front) |
 | `bench` | **measures your machine** — real tok/s vs the law's prediction, side by side | measured (llama-bench) |
 
 `--machine` is never learned from `probe` and nothing is cached between them. The only dynamic input: passing `--gguf` calibrates bytes-per-token to your actual file size on disk.
