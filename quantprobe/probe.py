@@ -20,6 +20,51 @@ def exe(name):
     return name + (".exe" if os.name == "nt" else "")
 
 
+# Throughput constants MEASURED on the reference box (i5-7600K, 8 threads, 16 GB DDR4-3000,
+# GTX 1060 6 GB), 2026-07-25/26. They are the basis of the up-front time estimate and are
+# refined from the user's OWN elapsed time after the first step - see _Progress.
+QUANT_GB_PER_MIN = 2.8       # 35 GB source -> 12.6 min per pass, five passes measured
+PPL_MIN_PER_GB_FITS = 0.55   # intermediate fits memory: 13 GB model -> ~7 min / 32 chunks
+PPL_MIN_PER_GB_SPILLS = 2.4
+IMATRIX_MIN_PER_GB = 7.7      # 35 GB source, 100 chunks -> 270 min measured  # intermediate exceeds RAM: 23 GB -> ~55 min (page thrashing)
+
+
+def fmt_dur(minutes):
+    if minutes < 90:
+        return f"{minutes:.0f} min"
+    return f"{minutes/60:.1f} h"
+
+
+def estimate_probe_minutes(src_gb, bands, ram_gb=16.0, vram_gb=0.0):
+    """Honest up-front cost of a probe. Returns (minutes, spills) - `spills` flags the case
+    where the Q6_K intermediate exceeds memory, which is what turns an hour into most of a day."""
+    passes = bands + 1                        # one reference + one per band
+    inter_gb = src_gb * 0.66                  # Q6_K intermediate of the source
+    spills = inter_gb > max(ram_gb - 4, 1) + vram_gb * 0.9
+    rate = PPL_MIN_PER_GB_SPILLS if spills else PPL_MIN_PER_GB_FITS
+    return passes * (src_gb / QUANT_GB_PER_MIN + inter_gb * rate), spills
+
+
+class _Progress:
+    """Step counter + ETA refined from the user's own measured pace, not our constants."""
+
+    def __init__(self, total_steps, est_minutes):
+        import time
+        self.t0 = time.time(); self.total = total_steps; self.done = 0; self.est = est_minutes
+
+    def step(self, label):
+        import time
+        self.done += 1
+        el = (time.time() - self.t0) / 60
+        if self.done > 1:                     # refine from real pace once we have one data point
+            remain = el / (self.done - 1) * (self.total - self.done + 1)
+            eta = f", ~{fmt_dur(remain)} left (measured pace)"
+        else:
+            eta = f", ~{fmt_dur(max(self.est - el, 0))} left (estimated)"
+        print(f"\n[quantprobe] step {self.done}/{self.total}: {label}  "
+              f"[elapsed {fmt_dur(el)}{eta}]", flush=True)
+
+
 def n_layers(gguf_path):
     from gguf import GGUFReader
     r = GGUFReader(gguf_path)
@@ -77,11 +122,41 @@ def run(a):
     L = n_layers(a.gguf)
     step = (L + a.bands - 1) // a.bands
     bands = [(i, min(i + step - 1, L - 1)) for i in range(0, L, step)]
-    print(f"quant-probe: {os.path.basename(a.gguf)} | {L} layers -> {len(bands)} bands {bands}\n", flush=True)
+    print(f"quant-probe: {os.path.basename(a.gguf)} | {L} layers -> {len(bands)} bands {bands}", flush=True)
+
+    # Up-front honesty about cost. A 35 GB source took 5h40m on the reference box - telling
+    # people "30-60 min" (as this tool used to) is wrong by an order of magnitude on big models.
+    src_gb = os.path.getsize(a.gguf) / 1e9
+    ram_gb, vram_gb = 16.0, 0.0
+    try:
+        from . import detect as detmod
+        d, _ = detmod.detect()
+        ram_gb, vram_gb = float(d.get("ram", 16)), float(d.get("vram", 0))
+    except Exception:
+        pass
+    est, spills = estimate_probe_minutes(src_gb, len(bands), ram_gb, vram_gb)
+    print(f"\n  ESTIMATED TIME: ~{fmt_dur(est)}  ({len(bands)+1} quantize passes + "
+          f"{len(bands)+1} perplexity runs on a {src_gb:.0f} GB source)", flush=True)
+    if spills:
+        print(f"  WARNING: the {src_gb*0.66:.0f} GB working file exceeds your memory, so every\n"
+              f"  perplexity run pages from disk - that is what makes this slow. A smaller source\n"
+              f"  (or more RAM) changes this from hours to minutes.", flush=True)
+    print("  (measured on the reference box; refined from YOUR pace after step 1. "
+          "Ctrl-C is safe between steps.)", flush=True)
+    if est > 120 and not getattr(a, "yes", False) and not a.dry_run:
+        try:
+            if input(f"\n  This will take about {fmt_dur(est)}. Continue? [y/N]: ").strip().lower() != "y":
+                raise SystemExit("aborted - nothing was built. Re-run with --yes to skip this prompt.")
+        except EOFError:
+            raise SystemExit(f"this probe needs ~{fmt_dur(est)} and there is no terminal to confirm.\n"
+                             "  Re-run with --yes if you intend to commit that time.")
+    prog = _Progress(2 * (len(bands) + 1), est)
+    print("", flush=True)
 
     ref = os.path.join(wd, "_probe_ref_q6k.gguf")
-    print("[1/3] reference Q6_K", flush=True)
+    prog.step("building the Q6_K reference")
     sh([quant, "--allow-requantize", a.gguf, ref, "Q6_K", "8"], a.dry_run)
+    prog.step("scoring the reference")
     p_ref = ppl(perp, ref, a.eval, a.chunks, a.ngl, a.dry_run)
     print(f"  ref PPL = {p_ref}\n", flush=True)
 
@@ -89,7 +164,9 @@ def run(a):
     deltas = []
     for lo, hi in bands:
         out = os.path.join(wd, f"_probe_b{lo}_{hi}.gguf")
+        prog.step(f"building band {lo}-{hi}")
         sh([quant, "--allow-requantize", "--tensor-type", f"{band_regex(lo, hi)}=q2_k", a.gguf, out, "Q6_K", "8"], a.dry_run)
+        prog.step(f"scoring band {lo}-{hi}")
         p = ppl(perp, out, a.eval, a.chunks, a.ngl, a.dry_run)
         d = None if (p is None or p_ref is None) else p - p_ref
         deltas.append(d)
@@ -174,8 +251,12 @@ def make_imatrix(llama_dir, src, eval_file, out=None, chunks=100, ngl=99, dry=Fa
         return out
     im = exe("llama-imatrix") if dry else os.path.join(find_llama(llama_dir), exe("llama-imatrix"))
     cmd = [im, "-m", src, "-f", eval_file, "-o", out, "--chunks", str(chunks), "-ngl", str(ngl), "-c", "512"]
-    print(f"[quantprobe] building importance matrix over {chunks} chunks "
-          f"(one pass; slow on big models, but worth ~8% quality for free)")
+    src_gb = os.path.getsize(src) / 1e9 if os.path.isfile(src) else 0
+    im_est = src_gb * IMATRIX_MIN_PER_GB * (chunks / 100.0)
+    print(f"[quantprobe] building importance matrix over {chunks} chunks on a {src_gb:.0f} GB source")
+    print(f"  ESTIMATED TIME: ~{fmt_dur(im_est)} (measured 4.5 h for a 35 GB source at 100 chunks).")
+    print(f"  Worth ~8% quality at zero size/speed cost - but it is a real time commitment.")
+    print(f"  Skip it with --no-imatrix; reduce it with --imatrix-chunks (quality scales down too).")
     print("  $ " + " ".join(cmd))
     if dry:
         return out
