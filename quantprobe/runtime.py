@@ -116,13 +116,31 @@ def bench(a):
         a.ctx = a.depth                                   # prediction at the benched depth
     best, flags = best_flags(a)
     binp = "llama-bench" if getattr(a, "dry", False) else find_llama(a.llama_dir, "llama-bench")
-    # llama-bench uses --mmap 0 rather than --no-mmap
-    bflags = ["--mmap", "0" if "--no-mmap" in flags else "1"]
-    for i, f in enumerate(flags):
-        if f == "-ngl":
-            bflags += ["-ngl", flags[i + 1]]
-        if f == "-ot":
-            bflags += ["-ot", flags[i + 1]]
+    # Forward the planned flags into llama-bench, translating where the two CLIs differ.
+    #
+    # This used to hand-list -ngl and -ot and SILENTLY DROP everything else, which means any flag
+    # the planner learns to emit is missing from `bench` - and predicted-vs-measured then drifts
+    # by exactly the size of the new lever, while both commands still look right. Pre-registration
+    # #19 measured a 1.73x prefill effect from -ub; had it shipped through the old forwarder,
+    # `bench` would have quietly measured the un-flagged configuration and reported the law as
+    # wrong. An allow-list that drops the unknown is the same shape as every other silent-fallback
+    # defect in this project's history, so unknown flags now RAISE.
+    BENCH_VALUED = {"-ngl", "-ot", "-ub", "-b", "-c", "-t"}   # take a value, same spelling in bench
+    BENCH_TRANSLATE = {"--no-mmap": ["--mmap", "0"]}          # spelled differently in llama-bench
+    bflags, i = [], 0
+    while i < len(flags):
+        f = flags[i]
+        if f in BENCH_TRANSLATE:
+            bflags += BENCH_TRANSLATE[f]; i += 1
+        elif f in BENCH_VALUED:
+            bflags += [f, flags[i + 1]]; i += 2
+        else:
+            raise SystemExit(
+                f"[quantprobe] internal: the planner emitted '{f}', which bench does not know how "
+                f"to forward. Add it to BENCH_VALUED or BENCH_TRANSLATE in runtime.py - dropping "
+                f"it would make every predicted-vs-measured figure wrong by the size of that flag.")
+    if "--mmap" not in bflags:
+        bflags += ["--mmap", "1"]
     cmd = [binp, "-m", a.gguf, "-n", "32", "-p", "0", "-r", str(a.reps)] + bflags
     if getattr(a, "depth", None):
         cmd += ["-d", str(a.depth)]

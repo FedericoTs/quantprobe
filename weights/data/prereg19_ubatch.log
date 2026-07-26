@@ -1,0 +1,21 @@
+=== Pre-reg #19: ubatch on CPU-resident experts. P-1 >=1.5x, P-2 control <=1.05x, P-3 decode flat ===
+GPU before: 987 MiB, 835 MHz, 43
+--- warm-up (DISCARDED) ---
+load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |           pp512 |        205.38 ± 0.00 |
+--- P-1: MoE, experts on CPU, pp2048 across ubatch ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |      512 | exps=CPU              |    0 |          pp2048 |        199.90 ± 1.42 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | exps=CPU              |    0 |          pp2048 |        277.17 ± 1.70 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     2048 | exps=CPU              |    0 |          pp2048 |        345.89 ± 0.88 |
+GPU: 1004 MiB, 1835 MHz, 69
+--- P-2 CONTROL: dense 7B FULLY in VRAM (no -ot, no host-resident weights) ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |      512 |    0 |          pp2048 |        329.80 ± 0.90 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |     1024 |    0 |          pp2048 |        333.07 ± 0.27 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |     2048 |    0 |          pp2048 |        200.31 ± 0.17 |
+GPU: 1014 MiB, 1809 MHz, 74
+--- P-3: DECODE on the same MoE placement (a ubatch cannot be filled by 1 token/step) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |      512 | exps=CPU              |    0 |           tg128 |         18.46 ± 0.43 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     2048 | exps=CPU              |    0 |           tg128 |         18.76 ± 0.15 |
+GPU: 1014 MiB, 1847 MHz, 65
