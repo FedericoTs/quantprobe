@@ -321,6 +321,26 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_layer_count_note_only_when_genuinely_unknown():
+    """The layer-count note must not appear when the flags were already emitted.
+
+    It tested `args.n_layer` - the raw CLI flag - while the placement rows read the effective
+    value, which falls back to a preset's verified `nl`. So `plan --model qwen3-30b` printed exact
+    -ot flags for layers 10-47 and then told the user to "re-run with --gguf to unlock it".
+    Same class as the v1.10.5 n_layer divergence: a second reader of a value that has a fallback,
+    written without the fallback.
+    """
+    rc, out = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--bits", "2.95")
+    assert rc == 0
+    assert "-ot " in out, "the split row's flags vanished"
+    assert "re-run with --gguf" not in out, (
+        "plan emitted -ot flags AND told the user the layer count is missing:\n" + out[:600])
+    # but a custom MoE with no layer count anywhere must still be told how to unlock it
+    rc2, out2 = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
+                    "--machine", "2016-xmp", "--bits", "2.95")
+    assert "re-run with --gguf" in out2, "the note vanished when it IS needed"
+
+
 def t_simulator_law_matches_the_cli():
     """The published simulator runs its own copy of the law in JavaScript. It must agree.
 
