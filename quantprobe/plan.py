@@ -124,9 +124,18 @@ def speculation_advice(moe, placement):
 
 
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
-             n_layer=None):
+             n_layer=None, true_size_gb=None):
     ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
     size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
+    # CAPACITY uses the real file size when we have the file. The estimate above assumes the
+    # depth-aware recipe (attention held at >=4.5 bits), which for a DENSE model - where the
+    # tables set ne = t - inflates size by 4.5/bits: a dense 7B at 2 bits came out 125% too big,
+    # and a real 12B at 3.51 bits read as 7.2 GB against an actual 5.2 GB. That wrongly evicted
+    # the all-in-VRAM row and recommended a placement measured 2.4x slower (3.9 vs 9.56 tok/s).
+    # Only `size` is corrected: the activation terms below are empirically calibrated and
+    # accurate as-is (scaling them too is what made bench 11% optimistic before v1.10.5).
+    if true_size_gb:
+        size = true_size_gb
     act_ne = ne * ab / 8 * 1.15 * act_scale
     act_ex = (a - ne) * bits / 8 * 1.15 * act_scale
     act = act_ne + act_ex
@@ -271,7 +280,11 @@ def run(args):
            else m.get("kvp", DEFAULT_KVP))
 
     nlay = getattr(args, 'n_layer', None) or m.get('nl')   # 'nl' = layer count VERIFIED from a real GGUF
-    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, n_layer=nlay)
+    import os as _os
+    _g = getattr(args, 'gguf', None)
+    true_size = _os.path.getsize(_g) / 1e9 if _g and _os.path.isfile(_g) else None
+    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
+                               kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
           f"on {hw.get('hint', 'custom machine')}")

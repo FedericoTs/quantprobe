@@ -1,0 +1,7 @@
+=== Is our +34.7% measured against a STRAWMAN? llama.cpp -fit vs our -ot split 2026-07-26 05:21 ===
+[gpu-state] 1084 MiB
+--- A: our stated baseline (all experts -> CPU) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |            tg32 |          5.93 ± 3.51 |
+--- B: llama.cpp's OWN default auto-fit (no -ngl, no -ot) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  -1 |            tg32 |          4.01 ± 0.00 |
+--- C: our -ot split recommendation ---
