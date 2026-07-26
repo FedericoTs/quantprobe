@@ -29,7 +29,7 @@ Head-to-head under identical conditions (my box, WikiText-2, same eval windows):
 
 ## Projection: running the 744B locally
 
-The question colibri made everyone ask: *what would GLM-5.2 (744B-A32B) cost to run at home?* The law answers it per hardware class and placement strategy — same equation, same η bands, error bars ±25–40% at this extrapolation distance:
+The question colibri made everyone ask: *what would GLM-5.2 (753B-A32B) cost to run at home?* The law answers it per hardware class and placement strategy — same equation, same η bands, error bars ±25–40% at this extrapolation distance:
 
 | setup | strategy | predicted tok/s |
 |---|---|---|

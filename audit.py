@@ -173,6 +173,27 @@ def audit_single_source_of_truth():
                 if abs(float(sval) - m[field]) > 1e-9:
                     problems.append(f"simulator preset '{n}' disagrees with plan.MACHINES['{k}']: "
                                     f"{field} = {sval} (JS) vs {m[field]} (Python)")
+
+        # C3. the MODEL table is copied into the simulator too, and it HAD drifted: the page
+        # carried GLM-5.2 as 744B long after v1.6.2 verified 753.3B from HF safetensors - the
+        # same release whose live verification caught that GLM-4.7 is the 358B model. A stale
+        # parameter count on the public calculator is a wrong prediction for everyone who uses
+        # it. Matched on kvp, which is distinctive per architecture and does not drift with
+        # parameter-count corrections.
+        from quantprobe.plan import MODELS
+        mrows = re.findall(r'\{n:"([^"]+)",\s*t:([\d.]+),\s*a:([\d.]+),\s*ne:([\d.]+),'
+                           r'\s*moe:([01])(?:,\s*kvp:(\d+))?\}', js)
+        bykvp = {m["kvp"]: (k, m) for k, m in MODELS.items()}
+        for n, t, a, ne, moe, kvp in mrows:
+            if not kvp or int(kvp) not in bykvp:
+                continue                       # simulator-only entry (e.g. "Custom")
+            k, m = bykvp[int(kvp)]
+            for field, sval in (("t", t), ("a", a), ("ne", ne)):
+                if abs(float(sval) - m[field]) > 1e-9:
+                    problems.append(f"simulator model '{n}' disagrees with plan.MODELS['{k}']: "
+                                    f"{field} = {sval} (JS) vs {m[field]} (Python)")
+            if bool(int(moe)) != bool(m["moe"]):
+                problems.append(f"simulator model '{n}' disagrees with plan.MODELS['{k}'] on moe")
     return problems
 
 
