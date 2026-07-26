@@ -136,3 +136,5 @@ pre-registered commitment. imatrix support is a new capability (it needs a calib
 and a generation step), so it ships as an explicit, documented step rather than a silent
 default. The protect-by-default refactor (structural protection for always-active tensors
 rather than a growing regex list) is the follow-up this result argues for.
+
+**Wired into:** `quantprobe/probe.py:make_imatrix` · `tests/smoke.py:t_quantize_imatrix_passthrough` · `tests/smoke.py:t_quantize_shexp_protection_first` — imatrix calibration and always-active shared-expert protection both shipped into the depth-aware builder and run automatically in `auto --custom`.

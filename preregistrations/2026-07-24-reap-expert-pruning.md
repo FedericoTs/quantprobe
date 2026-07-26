@@ -41,3 +41,5 @@ P-a: out-of-domain delta <3% (refutes my density claim) or >30% (my band was too
 P-b: RAM-resident decode differs by >10% at equal placement.
 Protocol: llama-perplexity on WikiText-2 test (same chunks both), llama-bench tg32 same flags both,
 raw logs committed in-tree. Misses published with the same prominence as hits, per house rules.
+
+**Wired into:** `quantprobe/optimize.py:PRUNED` · `tests/smoke.py:t_optimize_prune_flagged` — the finding was NEGATIVE (+39% out-of-domain perplexity), so what shipped is the warning, not the technique: pruned models stay selectable but carry a measured domain-use-only tag.

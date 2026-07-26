@@ -141,3 +141,5 @@ measurements spanning 1.13–4.5 bits and four formats, none of which collapse:
 no longer gates decode. **P-4 (no anchor moves) is verified separately in the test suite:** every
 published anchor runs through `geta`/`eta_r` on the MoE-hybrid, disk-stream and pure-CPU paths,
 none of which ever touched `geta_w`.
+
+**Wired into:** `quantprobe/plan.py:geta_w` · `tests/smoke.py:t_low_bit_vram_not_collapsed` · `tests/smoke.py:t_vram_regime_error_does_not_grow` · `docs/index.html` — the bit-width decode gate is removed from the planner AND from the published simulator, which reimplements the law separately. The fits-in-VRAM consequence is disclosed in `quantprobe/optimize.py`.

@@ -155,3 +155,5 @@ third, larger one purely from reading APEX's own design: we use no importance-ma
 anywhere in this project, which the field has converged on as a standard lever. Recommended
 before any `auto` integration decision: close those two remaining gaps and re-run this exact A/B
 on the upgraded recipe. That result, not this one, should decide the integration.
+
+**Wired into:** `quantprobe/probe.py:ssm_` · `tests/smoke.py:t_quantize_shexp_protection_first` — losing the A/B exposed two real recipe gaps. SSM tensors were left unprotected (v1.6.4, cost 24% perplexity) and probe silently reported PPL None on OOM (v1.6.3). Both fixed in the builder.

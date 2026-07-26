@@ -1,4 +1,4 @@
-"""quantprobe verify — the pre-release gate. One command, four layers.
+"""quantprobe verify — the pre-release gate. One command, five layers.
 
 Every bug that reached users this project has shipped was caught by a DIFFERENT layer, and
 never by the one before it:
@@ -8,6 +8,8 @@ never by the one before it:
   layer 3  END-TO-END with llama.cpp caught: an 82%-below-prediction config that 54 unit tests
                                              sat green through
   layer 4  anchors vs measured       catches: the law quietly ceasing to retrodict reality
+  layer 5  findings reach the code   caught: a result we measured, published, and then kept
+                                             contradicting in code for a full day
 
 Layer 3 needs a real GGUF and a real llama.cpp. It now FINDS BOTH ITSELF — walking up to the
 enclosing checkout for a build (preferring a CUDA one) and picking the smallest real model on
@@ -114,6 +116,25 @@ def layer3_e2e(gguf, llama_dir):
     assert abs(delta) <= 25, f"prediction outside the stated +/-25% band: {delta:+d}%"
 
 
+def layer5_audit():
+    """Does what we MEASURED actually reach what we SHIP?
+
+    Layers 1-4 all check the code against itself or against anchors we chose. None of them can
+    catch code that is perfectly self-consistent with a belief we have already disproved - which
+    is exactly how the sub-4-bit decode collapse survived: measured false on 2026-07-25,
+    published in LAWS.md, and still gating the planner a day later. See audit.py.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import audit
+    n, pa = audit.audit_findings_reach_code()
+    surface, pb = audit.audit_decision_surface_is_evidenced()
+    problems = pa + pb
+    assert not problems, ("what we know and what we ship have drifted apart:\n  "
+                          + "\n  ".join(problems))
+    print(f"  {n} scored findings all declare where they landed; "
+          f"{len(surface)} placements all evidenced or declared")
+
+
 def autodiscover_llama():
     """Find a llama.cpp build without being told where it is.
 
@@ -174,6 +195,7 @@ def main():
     step("layer 2: installed artifact", layer2_installed_artifact)
     step("layer 3: end-to-end vs real llama.cpp", lambda: layer3_e2e(a.gguf, a.llama_dir))
     step("layer 4: measured anchors", layer4_anchors)
+    step("layer 5: findings reach the code", layer5_audit)
 
     print("\n" + "=" * 60)
     if SKIP:

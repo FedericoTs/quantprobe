@@ -58,3 +58,5 @@ near LAWS.md. Raw logs: [law5_stakes.log](../weights/data/law5_stakes.log).
 P-a outside ±10% (the per-arch reproduction fails); P-b falls >5% below pp2048 (an unmodeled
 deep-batch cost); P-c lands in neither band (mechanism misunderstood); P-d outside 38–60 on
 comparable CPUs. Misses publish with the same prominence as hits — they are the point.
+
+**Wired into:** nothing — deliberately. Law 5 has not entered LAWS.md and prefill is not modelled in the planner, which only predicts decode. The pilot's findings inform the research track and the IQ-format prefill warning in `docs/HARDWARE.md`, but no prediction the tool makes rests on them.

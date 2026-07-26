@@ -119,3 +119,5 @@ Only then is a size-dependent η (or a better-motivated form) worth staking.
 tool's own decision surface and flagged an implausible cell. The sweep found a real 37% error in
 the most common configuration — and my first explanation for it was wrong. Both facts belong in
 the record.
+
+**Wired into:** nothing — correctly. The fixed-overhead form was refuted (staked 40-58 tok/s, measured 93.12) and the existing law was right within 1.5%. The residual all-in-VRAM pessimism it surfaced is not fitted but ratcheted, in `tests/smoke.py:VRAM_GAPS`, so it can shrink and never grow.

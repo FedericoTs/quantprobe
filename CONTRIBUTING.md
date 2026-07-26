@@ -15,3 +15,58 @@ A model whose fragile end breaks the current pattern is a finding, not a failure
 ## Code
 PRs welcome for the `quantprobe` package (plan/target/fetch/quantize/probe/run/bench/dashboard) (keep `python tests/smoke.py` green). For claims/laws,
 open an issue with data first — the bar for prose is measurements.
+
+## The method: measure, stake, wire, audit
+
+Every number this tool prints is supposed to be traceable to a measurement. Keeping that true
+needs four steps, and the fourth exists because the first three were not enough.
+
+**1. Stake before you measure.** Write a pre-registration in `preregistrations/` naming the
+prediction, the falsification condition, and the ship/don't-ship rule — then commit it *before*
+running anything. Misses publish with the same prominence as hits; several of the most useful
+findings here are misses.
+
+**2. Measure, and log the machine state.** Raw logs go in `weights/data/`, referenced from the
+pre-registration. For GPU work, record `nvidia-smi` **memory and clocks** before and after. Both
+have burned us: an orphaned process once made a result look 
+worse and invented a finding that had to be retracted, and a boosted clock once made a result look
+28% *better*, which is more dangerous because a flattering number invites no scrutiny.
+
+**3. Score it, then say where it went.** Add a `## Scored` section, and end the file with a
+machine-readable line:
+
+```
+**Wired into:** `quantprobe/plan.py:some_symbol` · `tests/smoke.py:t_some_test` — what changed.
+```
+
+`**Wired into:** nothing — <reason>` is a perfectly good answer, and a common one: a refuted
+hypothesis *should* change no code. What is not acceptable is leaving it implicit.
+
+**4. Audit that the finding actually reached the code.** Run `python audit.py`, or just
+`python verify.py`, which runs it as layer 5.
+
+### Why step 4 exists
+
+On 2026-07-25 we measured — and published in `LAWS.md` — that the Pascal low-bit decode collapse
+was format-dependent, not bit-width-dependent. The planner went on gating decode efficiency on
+bit-width for another full day, telling every user with a sub-4-bit quant that their GPU was
+useless for it and recommending a placement **2.4× slower** than the one it rejected.
+
+Nothing was broken in the usual sense. Tests were green. The release gate passed. The finding was
+written down. **It simply never reached the code** — and no test can catch that, because the code
+was perfectly self-consistent with a belief we had already disproved. Steps 1–3 produce knowledge;
+step 4 is the only one that checks the knowledge landed.
+
+The audit also enumerates the planner's whole decision surface and requires every placement it can
+recommend to be either measured or listed in `audit.py:UNMEASURED_PLACEMENTS` **with a reason**.
+That second half exists for the same reason: every anchor we had was a MoE-hybrid or disk-stream
+row, not one covered "all in VRAM" — the most common setup there is — which is exactly where the
+9.5× error hid through a public release. A hole in your evidence is invisible until you enumerate
+the surface and diff it against your anchors.
+
+### A test that asserts a bug is worse than no test
+
+Two smoke tests had encoded the collapse as expected behaviour, so they actively resisted the fix.
+One demanded that a 2-bit model be *slower* than a 4.5-bit one, which is backwards on byte count
+alone. When a test fails after a fix, decide which is wrong before changing either — and
+mutation-test the replacement: break the code deliberately and confirm the test goes red.
