@@ -73,3 +73,50 @@ trips that cliff is a net loss for a chat user, which is what P-3 exists to chec
 `llama-bench`. Any new flag added to the plan's flag string is silently dropped from `bench`, so
 predicted-vs-measured would drift by exactly the size of the new lever. The forwarder must be
 fixed before this ships, or the validation loop stops validating.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg19_ubatch.log`)
+
+**Verdict: P-1, P-2, P-3, P-4 all HIT. Four for four, and the control is the important one.**
+
+`Qwen3-30B-A3B-Q2_K`, `-ngl 99 -ot exps=CPU -mmp 0`, warm-up discarded, r=3.
+
+| `-ub` | pp2048, experts on CPU | vs 512 | pp2048, dense 7B **fully in VRAM** | vs 512 |
+|---|---|---|---|---|
+| 512 | 199.90 ± 1.42 | — | 329.80 ± 0.90 | — |
+| 1024 | 277.17 ± 1.70 | 1.39× | 333.07 ± 0.27 | 1.01× |
+| 2048 | **345.89 ± 0.88** | **1.73×** | **200.31 ± 0.17** | **0.61×** |
+
+- **P-1 (≥1.5×): HIT.** 1.73×, monotone, error bars under 1%.
+- **P-2 (control ≤1.05×): HIT, decisively.** The VRAM-resident model does not merely fail to
+  gain — it **loses 39%**. Same flag, opposite sign, on the same box in the same session.
+- **P-3 (decode flat): HIT.** 18.46 ± 0.43 → 18.76 ± 0.15, a 1.6% change. A ubatch cannot be
+  filled when generation emits one token per step, and it isn't.
+- **P-4 (no anchor moves): HIT.** Nothing in the law changed; all four anchors retrodict.
+
+### Why the double dissociation is the result, not the 1.73×
+
+A speedup alone would be consistent with "bigger batches are just better". The *opposite sign on
+the control* is not. Weight residency is the only thing that differs between those two columns,
+and it is exactly what the mechanism predicts: with `-ot exps=CPU` the expert tensors live in a
+**host** buffer, so CUDA is offered the op (`ggml-backend.cpp`) and accepts it once the ubatch
+clears 32 tokens (`ggml-cuda.cu:5565`, `MUL_MAT_ID → op->ne[2]`). Expert weights then cross PCIe
+**once per ubatch instead of once per token**. With nothing host-resident there is no transfer to
+amortise, and raising `ub` only inflates the compute buffer — which on a 6 GB card holding a
+4.36 GiB model is precisely the −39% we measured.
+
+That regression is not a nuisance result; it **is** the VRAM-headroom ceiling this
+pre-registration said would have to bound the lever, measured directly.
+
+### What ships
+
+A **search dimension, not a law change** — `plan.evaluate()` is untouched, so no published anchor
+can move. The planner emits `-b`/`-ub` only where weights are host-resident, never as a blanket
+default, and never past the VRAM headroom the control shows is real.
+
+**Blocker confirmed and must be fixed first:** `runtime.py` forwards only `-ngl`, `-ot` and
+`--mmap` into `llama-bench`, so a new flag in the plan's string is silently dropped from `bench`
+and predicted-vs-measured would drift by exactly the size of this lever.
+
+**Wired into:** `quantprobe/plan.py:ubatch_flags` · `quantprobe/runtime.py` (flag forwarder) · `tests/smoke.py:t_ubatch_only_when_host_resident`
