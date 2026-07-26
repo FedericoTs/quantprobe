@@ -61,8 +61,16 @@ def from_gguf(path):
         kvp = n_layer * kv_heads * ((k_dim or 128) + (v_dim or k_dim or 128)) * 2
 
     bits = os.path.getsize(path) * 8 / total
+    arch = None
+    for field in r.fields.values():        # recipe matching needs (arch, n_layer), not layers alone
+        if field.name == "general.architecture":
+            try:
+                arch = bytes(field.parts[field.data[0]]).decode("utf-8")
+            except Exception:
+                arch = None
+            break
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
-                bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer)
+                bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch)
 
 
 def apply(a, quiet=False):

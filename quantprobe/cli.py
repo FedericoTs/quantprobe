@@ -85,8 +85,11 @@ def main():
     z.add_argument("--protect-late", type=int, default=12, help="protect the last N layers at 4-bit (default 12)")
     z.add_argument("--protect", default=None, help="protect an explicit band LO-HI (e.g. 36-47) instead of --protect-late")
     z.add_argument("--imatrix", default=None, help="importance-matrix file (build one with `probe --imatrix auto`); improves quality at zero size cost")
+    z.add_argument("--recipe", default=None, help="use a MEASURED fragile band from the community atlas instead of the default guess (see: quantprobe recipes)")
     z.add_argument("--llama-dir", default=None)
     z.add_argument("--dry", action="store_true")
+
+    sub.add_parser("recipes", help="the community fragility atlas: bands already measured, so you can skip the probe")
 
     o = sub.add_parser("optimize", help="cheapest path to a target speed: search bits x placement x KV x hardware over the law")
     o.add_argument("--tps", type=float, default=None, help="target tok/s (omit for the speed frontier)")
@@ -145,6 +148,9 @@ def main():
     elif a.cmd == "hw":
         from . import detect
         detect.run(a)
+    elif a.cmd == "recipes":
+        from . import recipes
+        recipes.run(a)
     elif a.cmd == "quantize":
         from . import probe
         probe.quantize(a)

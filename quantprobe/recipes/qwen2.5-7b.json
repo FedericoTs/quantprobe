@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "model": {
+    "key": "qwen2.5-7b",
+    "name": "Qwen2.5-7B-Instruct",
+    "arch": "qwen2",
+    "n_layer": 28,
+    "moe": false
+  },
+  "probe": {
+    "reference_ppl": 6.1496,
+    "band_deltas": [
+      {
+        "lo": 0,
+        "hi": 6,
+        "delta_ppl": 0.8829
+      },
+      {
+        "lo": 7,
+        "hi": 13,
+        "delta_ppl": 0.5406
+      },
+      {
+        "lo": 14,
+        "hi": 20,
+        "delta_ppl": 0.5814
+      },
+      {
+        "lo": 21,
+        "hi": 27,
+        "delta_ppl": 1.8545
+      }
+    ],
+    "fragile_band": [
+      21,
+      27
+    ],
+    "fragility_ratio": 2.53,
+    "shape": "late"
+  },
+  "provenance": {
+    "measured": "2026-06",
+    "eval": "WikiText-2 test (held out)",
+    "hardware": "GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K",
+    "base_quant": "Q6_K",
+    "raw_log": "weights/data/qwen_mech_probe.log",
+    "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
+    "contributor": "FedericoTs"
+  }
+}

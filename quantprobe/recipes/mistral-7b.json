@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "model": {
+    "key": "mistral-7b",
+    "name": "Mistral-7B-Instruct-v0.3",
+    "arch": "llama",
+    "n_layer": 32,
+    "moe": false
+  },
+  "probe": {
+    "reference_ppl": 5.2055,
+    "band_deltas": [
+      {
+        "lo": 0,
+        "hi": 7,
+        "delta_ppl": 6.525
+      },
+      {
+        "lo": 8,
+        "hi": 15,
+        "delta_ppl": 0.148
+      },
+      {
+        "lo": 16,
+        "hi": 23,
+        "delta_ppl": 0.2248
+      },
+      {
+        "lo": 24,
+        "hi": 31,
+        "delta_ppl": 0.2587
+      }
+    ],
+    "fragile_band": [
+      0,
+      7
+    ],
+    "fragility_ratio": 26.99,
+    "shape": "early"
+  },
+  "provenance": {
+    "measured": "2026-06",
+    "eval": "WikiText-2 test (held out)",
+    "hardware": "GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K",
+    "base_quant": "Q6_K",
+    "raw_log": "weights/data/mistral_atlas.log",
+    "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
+    "contributor": "FedericoTs"
+  }
+}
