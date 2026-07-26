@@ -121,27 +121,43 @@ def moe_split_flags(frac, n_layer):
 
 
 def fits_in_vram_advice(placement, bits):
-    """Once a model fits in VRAM, quantizing it further buys almost no speed - measured.
+    """What we know, and admit we don't know, about the all-in-VRAM row.
 
-    The law prices decode as bandwidth, so it predicts that halving the bits nearly halves the
-    time. In the fits-entirely-in-VRAM regime that is simply not what happens. Same 7B, same
-    card, all in VRAM, only the quantization changed (pre-registration #16, r=3):
+    This is the most common configuration for anyone with adequate VRAM, and it is where the law
+    is least trustworthy. Two separate facts, both measured, both worth telling the user:
 
-        Q4_K_M  4.5 bits  4.68 GB  20.03 +/- 0.04 tok/s
-        Q2_K    2.8 bits  3.01 GB  19.17 +/- 0.03 tok/s     36% smaller, 4% SLOWER
+    1. The prediction is CONSERVATIVE here. Across all seven models measured all-in-VRAM on the
+       reference box the real speed came in FASTER than predicted every single time, by 2% to
+       67%. That is the opposite of the usual failure direction and it is not noise - it is a
+       one-directional bias (pre-registration #15, unresolved).
 
-    Decode there is not bandwidth-bound, so bytes stop predicting speed. Until that regime is
-    modelled properly the law over-rewards low bits here, and a user following the ranking alone
-    would trade real quality for nothing. Say so, rather than silently ranking on a number known
-    to be wrong in this direction.
+    2. Below 4.5 bits, quantizing further buys almost nothing. Same 7B, same card, only the
+       quantization changed (pre-registration #16, r=3):
+           Q4_K_M  4.5 bits  4.68 GB  20.03 +/- 0.04 tok/s
+           Q2_K    2.8 bits  3.01 GB  19.17 +/- 0.03 tok/s    36% smaller, 4% SLOWER
+       Decode here is not bandwidth-bound, so bytes stop predicting speed and the ranking
+       over-rewards low bits.
+
+    Why no fix instead of a disclaimer: seven points on ONE GPU do not identify a functional
+    form, and the last two times a constant moved on thin evidence it cost a public correction.
+    So the honest move is to say what we know, and ask for the datapoint that would settle it -
+    which is why this note ends in a request rather than an apology. The regime is pinned by a
+    ratchet in the test suite so it can improve but never silently worsen.
     """
-    if placement != "all in VRAM" or bits >= 4.5:
+    if placement != "all in VRAM":
         return None
-    return ("it already fits in VRAM, so going lower-bit buys you almost nothing. Measured on "
-            "this class of card: the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER "
-            "(19.17 vs 20.03 tok/s). The speeds ranked above assume decode is bandwidth-bound, "
-            "which it is not once the whole model sits in VRAM. Quantize to make a model FIT - "
-            "once it fits, take the highest bits that still fit.")
+    note = ("this is the placement our law knows least well. Every model we have measured "
+            "all-in-VRAM ran FASTER than predicted - by 2% to 67% - so treat the number above as "
+            "a floor, not a ceiling.")
+    if bits < 4.5:
+        note += (" It also already fits, and going lower-bit buys almost nothing: the same 7B at "
+                 "Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER (19.17 vs 20.03 tok/s). Quantize "
+                 "to make a model FIT - once it fits, take the highest bits that still fit.")
+    note += ("\n  We only have one GPU, and one GPU cannot fix this. If you run this model, "
+             "`quantprobe bench --contribute` turns your machine into the datapoint that does - "
+             "it prints exactly what would be shared and you submit it yourself. Results that "
+             "land OUTSIDE our predicted band are the most valuable ones we can receive.")
+    return note
 
 
 def speculation_advice(moe, placement):

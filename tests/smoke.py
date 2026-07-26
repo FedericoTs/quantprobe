@@ -453,18 +453,25 @@ def t_fits_in_vram_warning_is_consistent():
     inconsistency class as the plan-vs-bench disagreement - a user gets different advice
     depending on which command they happened to run.
     """
+    # Pin the INVARIANTS, not the prose - the wording changed once already and broke this test.
+    # Two things must be true of both commands in the all-in-VRAM regime: they disclose that the
+    # prediction is a floor (the measured one-directional bias), and they ask for the datapoint
+    # that would fix it. Below 4.5 bits they must also say a lower quant buys nothing.
+    MARKS = ("floor, not a ceiling", "bench --contribute")
     big = ["--total", "30.5", "--active", "3.3", "--always-active", "1.2", "--vram", "24",
            "--vram-bw", "936", "--ram", "64", "--ram-bw", "86", "--disk-bw", "3"]
     _, opt = cli("optimize", *big)
-    assert "already fits in VRAM" in opt, f"optimize lost the fits-in-VRAM note:\n{opt[-400:]}"
     _, pl = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "2.5")
-    assert "already fits in VRAM" in pl, f"plan lost the fits-in-VRAM note:\n{pl[-400:]}"
+    for name, out in (("optimize", opt), ("plan", pl)):
+        for mark in MARKS:
+            assert mark in out, f"{name} lost the all-in-VRAM disclosure '{mark}':\n{out[-500:]}"
+        assert "4% SLOWER" in out, f"{name} lost the low-bit guidance below 4.5 bits"
     # and neither may cry wolf when the model genuinely does NOT fit, where bytes really do buy
     # speed and quantizing down is the correct advice
     _, opt2 = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
-    assert "already fits in VRAM" not in opt2, "optimize warns when the model does not fit VRAM"
     _, pl2 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--bits", "2.95")
-    assert "already fits in VRAM" not in pl2, "plan warns when the model does not fit VRAM"
+    for name, out in (("optimize", opt2), ("plan", pl2)):
+        assert "floor, not a ceiling" not in out, f"{name} warns when the model does not fit VRAM"
 
 
 def t_commands_agree_on_the_same_input():
