@@ -144,6 +144,14 @@ def run(a):
         ne = a.always_active or (ac if ac >= t * 0.9 else ac * 0.35)
         moe = ac < t * 0.9
     a.total, a.active, a.always_active, a.model = t, ac, ne, None
+    # Setting a.model = None hands the law explicit params instead of a preset name, which also
+    # discards the preset's verified layer count - so every downstream reader (optimize's whole
+    # frontier included) silently lost the MoE split placement and recommended the slower hybrid.
+    # Carry the count forward on `a` at the one point where the preset is still in hand, rather
+    # than re-deriving it at each call site. That re-derivation is the bug shape effective_n_layer
+    # exists to end.
+    if not getattr(a, "n_layer", None):
+        a.n_layer = planmod.effective_n_layer(None, target)
 
     # 1. what does the optimizer want on THIS machine?
     a.gguf = None
@@ -164,7 +172,8 @@ def run(a):
         if bits < 1.0 or bits > 9:
             continue
         _, _, cfgs = planmod.evaluate(t, ac, ne, moe, bits, vc, vb, rc, rb, db, geta, 1.0, gl,
-                                      ctx=ctx, kvp=kvp, n_layer=getattr(a, "n_layer", None))
+                                      ctx=ctx, kvp=kvp,
+                                      n_layer=planmod.effective_n_layer(a, target))
         cfgs = [c for c in cfgs if "expert cache" not in c[0]]
         if not cfgs:
             continue

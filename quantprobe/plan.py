@@ -81,6 +81,30 @@ QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00
         False: {2.0: 1.45, 2.5: 1.30, 3.0: 1.12, 4.5: 1.03, 6.5: 1.01, 8.5: 1.00}}
 
 
+def effective_n_layer(args=None, model=None):
+    """THE resolver for "how many layers does this model have". Do not hand-write this again.
+
+    Precedence: an explicit --n-layer, then a preset's `nl` (verified against a real GGUF).
+    Callers that read a GGUF thread the file's own count onto args before calling.
+
+    This function exists because the fallback was hand-written at each call site and was wrong
+    FOUR times: v1.9.0 (target.py), v1.10.5 (runtime.py), and twice more found by auditing for
+    the shape - plan's layer-count note, and auto.py, which omitted the preset step entirely and
+    so could never offer the MoE split placement for a preset model. Each was fixed where it was
+    found; the shape was never fixed. One resolver, one behaviour, one place to be wrong.
+
+    `model` accepts a MODELS dict or a preset name, so callers can pass whichever they hold.
+    """
+    n = getattr(args, "n_layer", None)
+    if n:
+        return int(n)
+    if isinstance(model, str):
+        model = MODELS.get(model)
+    if isinstance(model, dict) and model.get("nl"):
+        return int(model["nl"])
+    return None
+
+
 def moe_split_flags(frac, n_layer):
     """-ot regex placing the FIRST ceil(frac*L) layers' experts on GPU, the rest on CPU.
     Measured 2026-07-26 (pre-registration #13, corrected): +12.4% decode and ~2-3x prefill
@@ -314,7 +338,7 @@ def run(args):
     kvp = (args.kv_per_pos * 1024 if getattr(args, "kv_per_pos", None)
            else m.get("kvp", DEFAULT_KVP))
 
-    nlay = getattr(args, 'n_layer', None) or m.get('nl')   # 'nl' = layer count VERIFIED from a real GGUF
+    nlay = effective_n_layer(args, m)
     import os as _os
     _g = getattr(args, 'gguf', None)
     true_size = _os.path.getsize(_g) / 1e9 if _g and _os.path.isfile(_g) else None

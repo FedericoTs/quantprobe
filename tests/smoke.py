@@ -321,6 +321,34 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_effective_n_layer_is_the_only_resolver():
+    """One resolver, and every command actually reaching the same answer.
+
+    The three-step fallback (explicit flag -> GGUF -> preset `nl`) was hand-written at each call
+    site and was wrong FOUR times: v1.9.0 target.py, v1.10.5 runtime.py, plan's layer-count note,
+    and auto.py - which omitted the preset step entirely, so `auto qwen3-30b` recommended the
+    hybrid placement at 22.4 tok/s when the split placement it could not see runs 26.9.
+    """
+    from quantprobe.plan import effective_n_layer, MODELS
+    import argparse
+    assert effective_n_layer(None, "qwen3-30b") == 48
+    assert effective_n_layer(None, MODELS["qwen3-30b"]) == 48
+    assert effective_n_layer(None, "gemma-12b") is None          # no verified count -> honest None
+    assert effective_n_layer(None, "not-a-preset") is None
+    assert effective_n_layer(argparse.Namespace(n_layer=61), "qwen3-30b") == 61   # explicit wins
+    assert effective_n_layer(argparse.Namespace(n_layer=None), "qwen3-30b") == 48
+
+
+def t_auto_reaches_the_split_placement_for_presets():
+    """auto is the flagship path; it must not lose the placement plan finds for the same model."""
+    rc, out = cli("auto", "qwen3-30b", "--dry", "--machine", "2016-xmp")
+    if "could not list" in out:
+        return                                   # offline
+    assert "split experts" in out, (
+        "auto lost the MoE split placement for a preset - it sets a.model=None and so discarded "
+        "the preset's layer count:\n" + out[:400])
+
+
 def t_layer_count_note_only_when_genuinely_unknown():
     """The layer-count note must not appear when the flags were already emitted.
 
