@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.13.1 - 2026-07-27
+
+**Correction to v1.13.0, found by measuring the same lever on a placement we had not tested.**
+v1.13.0 recommended `-b 2048 -ub 2048` on the MoE **split** placement — its own default for the
+flagship model — where it is now measured to cost **42% of prompt processing**.
+
+The gate tested *"is anything host-resident"*, which the split satisfies
+(`split experts: N%->VRAM, rest->RAM`). But the split exists to fill spare VRAM with experts, and
+that is exactly the VRAM the larger compute buffer needs. Same flag, opposite sign, depending on
+placement:
+
+| placement | pp2048 @ub512 | pp2048 @ub2048 |
+|---|---|---|
+| all experts → CPU | 199.90 | **349.59 (+75%)** |
+| split, K=16 → VRAM | **279.07** | 161.87 (**−42%**) |
+
+#19 measured `-ub` on all-experts-to-CPU and on a fully-VRAM-resident control, reached the right
+conclusion about the mechanism, and *still* shipped a wrong gate — because the split is neither
+of those cases and nobody looked. **A double dissociation proves a mechanism; it does not
+enumerate a decision surface.**
+
+### New: `plan` says which phase its command optimises
+
+[Pre-registration #20](preregistrations/2026-07-27-phase-split-placement.md), 4/4 stakes hit:
+prompt processing and generation want **different placements**.
+
+| placement | pp2048 @ub2048 | tg128 |
+|---|---|---|
+| all experts → CPU | **349.59 ± 1.78** | 18.54 ± 0.16 |
+| split, K=16 → VRAM | 161.87 ± 0.24 | **20.16 ± 0.18** |
+
+The split wins generation by 9% and loses prompt processing by **2.16×**. Ranking by decode — what
+this tool has always done — silently hands long-prompt users the worse configuration by a factor
+of two. `plan` now says so, and prints the alternative.
+
+Also notable: **adding a lever inverted which placement is fastest at prefill.** At the default
+ubatch the split wins (279 vs 200); at `-ub 2048` the all-CPU placement wins (350 vs 162).
+Placement and batch are not independent dimensions — they compete for one VRAM budget.
+
+
 ## 1.13.0 - 2026-07-27
 
 **+73% prompt processing, one flag, no download — for anyone running a MoE with experts in RAM.**

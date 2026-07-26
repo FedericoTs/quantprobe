@@ -134,6 +134,36 @@ def ubatch_flags(placement, vram_resident_gb, vc):
     return "-b 2048 -ub 2048"
 
 
+def phase_advice(placement, rows):
+    """Which phase does the recommended command actually optimise, and what does it cost?
+
+    `plan` prints ONE command, and the placement that maximises generation is not the placement
+    that maximises prompt processing. Measured on the reference box (pre-registration #20,
+    Qwen3-30B-A3B, one session, r=3):
+
+        placement                  pp2048 @ub2048   tg128
+        all experts -> CPU            349.59        18.54
+        split, K=16 -> VRAM           161.87        20.16
+
+    The split wins generation by 9% and loses prompt processing by 2.16x. Ranking by decode - which
+    is what this tool does - silently hands long-prompt users the worse configuration by a factor
+    of two, so it has to say so.
+
+    Not a law change and not a second command: llama.cpp is started once, with one placement. This
+    tells the user which one they are getting and what the other is worth.
+    """
+    if "split experts" not in placement:
+        return None
+    alt = next((r for r in rows if r[0].startswith("hybrid")), None)
+    if not alt:
+        return None
+    return ("this command is tuned for GENERATION. If your prompts are long - agent transcripts, "
+            "RAG context, whole files - the other placement is far better at reading them: "
+            "measured 349.6 vs 161.9 tok/s prompt processing (2.2x), for 8% less generation. "
+            f"Use `{alt[3]} -b 2048 -ub 2048` instead. Prompt processing and generation genuinely "
+            "want different placements here, and one command cannot serve both.")
+
+
 def effective_n_layer(args=None, model=None):
     """THE resolver for "how many layers does this model have". Do not hand-write this again.
 
@@ -460,6 +490,9 @@ def run(args):
     ub = ubatch_flags(best[0], ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc)
     run_flags = f"{best[3]} {ub}" if ub else best[3]
     print(f"\n  run it:  llama-server -m model.gguf {run_flags}")
+    ph = phase_advice(best[0], cfgs)
+    if ph:
+        print(f"\n  phase: {ph}")
     if ub:
         print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
               f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
