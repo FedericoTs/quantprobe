@@ -1,0 +1,25 @@
+=== LAW 6 ARM S-f: dense MTP, both tiers 2026-07-26 07:35 ===
+[gpu-state] 860 MiB
+CHECKPOINT OK: dense MTP model present (2.7G)
+
+--- tier=vram (ngl 99)  spec-type=none ---
+CELL warmup  tg tok/s: 26.78   generated: 200
+CELL vram/none  tg tok/s: 27.01   generated: 200
+[gpu] 3886 MiB
+
+--- tier=vram (ngl 99)  spec-type=draft-mtp ---
+CELL warmup  tg tok/s: 33.89   generated: 200
+CELL vram/draft-mtp  tg tok/s: 31.73   generated: 200
+[gpu] 4128 MiB
+
+--- tier=cpu (ngl 0)  spec-type=none ---
+CELL warmup  tg tok/s: 8.75   generated: 200
+CELL cpu/none  tg tok/s: 8.92   generated: 200
+[gpu] 1039 MiB
+
+--- tier=cpu (ngl 0)  spec-type=draft-mtp ---
+CELL warmup  tg tok/s: 9.73   generated: 200
+CELL cpu/draft-mtp  tg tok/s: 9.34   generated: 200
+[gpu] 1120 MiB
+
+=== S-f MEASUREMENT DONE 2026-07-26 07:37 ===

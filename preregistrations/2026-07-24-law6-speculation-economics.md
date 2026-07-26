@@ -178,3 +178,62 @@ needs either a larger card or a model small enough to fit ours entirely.
 model this measurement refuted. The LAWS.md scope limit stands, now with a measured direction
 attached rather than a guess. What users get today is the honest placement-conditional guidance
 above.
+
+---
+
+## Arm S-f scored (2026-07-26, logs: prereg_sf_mtp_dense.log, prereg_sf_repeats.log)
+
+Model: `unsloth/Qwen3.5-4B-MTP` Q4_K_M (2.7 GB, 33 layers incl. the MTP head, **dense**), which
+fits 6 GB of VRAM entirely — so both tiers are testable without the MoE confound. Same file,
+same prompt, `--spec-type none` vs `draft-mtp`.
+
+| configuration | MTP off | MTP on | effect |
+|---|---|---|---|
+| dense, GPU-resident | 27.01 | 31.73 | **1.17×** (+17%) |
+| dense, pure CPU (3 runs each) | 8.90 ± 0.06 | 9.31 ± 0.01 | **1.046×** (+4.6%) |
+| *(S-e, for comparison)* MoE, experts→RAM | 16.39 | 12.42 | **0.76×** (−24%) |
+
+**All three stakes MISSED, and every one missed the same way — too optimistic.**
+
+- **S-f1 (dense GPU): MISS.** Staked 1.3–2.0×, measured **1.17×**.
+- **S-f2 (dense CPU): MISS.** Staked 1.3–2.2×, measured **1.046×**. The repeats matter here: the
+  gap is 0.41 tok/s against a combined run-to-run spread of ~0.07, so the +4.6% is **real and
+  reproducible**, just far smaller than staked.
+- **S-f3 (the discriminator): MISS.** Staked dense-CPU exceeding MoE-hybrid by ≥0.40 in ratio;
+  measured **0.29** (1.046 vs 0.76).
+
+### What this does and does not establish
+
+**Does:** architecture matters. On the same bandwidth-bound tier, the dense model *gains* (1.046×)
+where the MoE model *loses* (0.76×). The sign difference is unambiguous and consistent with the
+expert-union mechanism — a dense verify batch re-reads the same weights, a MoE batch unions extra
+experts.
+
+**Does not:** confirm that mechanism at the strength I demanded. I chose 0.40 as the threshold
+that would count as evidence, and got 0.29. By my own pre-registered rule that is a miss, and
+the explanation stays a well-supported hypothesis rather than a result.
+
+### The correction that matters more than the stakes
+
+Across S-e and S-f I made **four magnitude predictions and missed all four HIGH**. That is not
+variance, it is a bias: I imported the community's "MTP gives 1.5–2.5×" figure into my own priors
+without measuring it, then staked against it twice.
+
+Measured on this hardware, MTP is worth **+17% at best** (dense, GPU-resident), **+4.6%** on a
+slow tier, and **−24%** for MoE with experts in RAM. The single large number in the whole set —
+1.94× on the spilling MoE — now reads as a **paging-amortisation artifact** rather than an MTP
+property, since no other configuration came close to it.
+
+### What users should actually do
+
+Turn MTP on if your model is GPU-resident (worth ~17%, free). Leave it on for dense models on
+slow tiers (small but real). **Turn it off for MoE models with experts offloaded to RAM** — it
+costs you 24% there. And do not expect the 2× the internet promises: on this class of hardware
+that number appears only when MTP is rescuing a badly-fitting model from paging.
+
+### Scope
+
+One model per architecture class, one machine, single-stream decode, Pascal-class GPU. The
+compute-bound regime with a *large* model comfortably resident (the reporting user's 12 GB case)
+is still untested here — a 4 B model on a 6 GB card is compute-bound, but it is not his
+configuration, and MTP acceptance rates are model-specific.

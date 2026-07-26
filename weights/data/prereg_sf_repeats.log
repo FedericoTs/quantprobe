@@ -1,0 +1,10 @@
+=== S-f REPEATS: 3 runs per cell, the +5% dense-CPU result needs error bars 2026-07-26 07:38 ===
+--- cpu / none ---
+  run: 8.93
+  run: 8.83
+  run: 8.94
+--- cpu / draft-mtp ---
+  run: 9.32
+  run: 9.30
+  run: 9.32
+=== REPEATS DONE 2026-07-26 07:41 ===
