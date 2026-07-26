@@ -27,6 +27,12 @@ DESKTOP_VRAM_RESERVE = 1.0   # GB held by the OS/desktop on a real machine, not 
                              # Measured 0.8-1.5 GB on this box (pre-registration #13 sweep).
                              # Applied ONLY to the new MoE split row: existing rows keep their
                              # published anchors untouched.
+DENSE_PROTECTED_SHARE = 0.214  # fraction of a DENSE model the depth-aware recipe holds at >=4.5
+                               # bits. The recipe protects attn_/ssm_ only - not embeddings, not
+                               # the FFN. Mean of the attention share measured from real GGUF
+                               # tensor shapes: 10.8% (Qwen2.5-7B), 20.2% (gemma4-12B), 25.1%
+                               # (Qwen3.5-4B), 29.6% (Qwen3-0.6B). MoE is unaffected: there `ne`
+                               # already names the protected set exactly.
 DEFAULT_KVP = 98304          # custom models without --kv-per-pos: typical GQA mid-size (Qwen3-30B class)
 ETA_KV = 0.70                # KV-read efficiency. Single-point calibration: measured tg32 d0->d16384
                              # 20.02 -> 16.12 on Qwen3-30B (+12.1 ms/token = 133 GB/s effective on the
@@ -200,8 +206,24 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     # accurate as-is (scaling them too is what made bench 11% optimistic before v1.10.5).
     if true_size_gb:
         size = true_size_gb
-    act_ne = ne * ab / 8 * 1.15 * act_scale
-    act_ex = (a - ne) * bits / 8 * 1.15 * act_scale
+    # How much of the model does the depth-aware recipe actually hold at >=4.5 bits?
+    #
+    # For a MoE, `ne` is exactly that set - attention plus shared experts - and the routed experts
+    # scale with `bits`. For a DENSE model the tables set ne = t, which is true for ACTIVATION
+    # (every parameter is read per token) and false for QUANTIZATION: it priced the entire model
+    # at max(bits, 4.5), so a dense model's predicted speed did not respond to its bit-width AT
+    # ALL. Gemma 4 12B came out at 7.70 GB/token, and therefore identical tok/s, at 2.5 bits and
+    # at 4.5 - which is how a 106B MoE ended up predicted FASTER than a 12B dense on the same
+    # hardware, on the public calculator (pre-registration #17, found by a user).
+    #
+    # The recipe protects `attn_.*` and `ssm_.*`, not embeddings and not the FFN. Measured from
+    # real GGUF tensor shapes, the attention share of a dense model is 10.8% (Qwen2.5-7B), 20.2%
+    # (gemma4-12B), 25.1% (Qwen3.5-4B), 29.6% (Qwen3-0.6B). Reading each model's true share from
+    # its file scores no better than the mean (11% vs 10% error over six points), so the constant
+    # ships and the machinery does not.
+    prot = ne if moe else min(ne, t * DENSE_PROTECTED_SHARE)
+    act_ne = prot * ab / 8 * 1.15 * act_scale
+    act_ex = (a - prot) * bits / 8 * 1.15 * act_scale
     act = act_ne + act_ex
     # Law 4 v2 (context term, v1.1): every generated token re-reads the whole KV cache from
     # whichever tier KV lives on - kv_gb adds to BOTH the byte budget and that tier's capacity.

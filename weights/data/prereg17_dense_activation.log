@@ -1,0 +1,11 @@
+=== Pre-registration #17: held-out dense point, Qwen2.5-7B IQ3_M ===
+staked: current model 13.6 | corrected model 15.7 | P-3 band 17.5-20.5
+GPU before: 1499 MiB, 810 MHz
+| qwen2 7B IQ3_S mix - 3.66 bpw  |   3.32 GiB |     7.62 B | CUDA       |  99 |           tg128 |         17.53 ± 0.02 |
+GPU after: 1513 MiB, 1847 MHz
+--- RE-RUN with Chrome closed (GPU: 1300 MiB, 1873 MHz) ---
+| qwen2 7B IQ3_S mix - 3.66 bpw  |   3.32 GiB |     7.62 B | CUDA       |  99 |           tg128 |         17.03 ± 0.02 |
+GPU after: 1321 MiB, 1847 MHz
+--- third run, thermally settled ---
+| qwen2 7B IQ3_S mix - 3.66 bpw  |   3.32 GiB |     7.62 B | CUDA       |  99 |           tg128 |         16.89 ± 0.15 |
+GPU: 1323 MiB, 1822 MHz, 72

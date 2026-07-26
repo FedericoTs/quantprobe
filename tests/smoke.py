@@ -321,6 +321,33 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_dense_speed_responds_to_bits():
+    """A dense model quantized harder must be predicted faster. It was not.
+
+    The tables set ne = t for dense models - true for ACTIVATION, false for QUANTIZATION - so the
+    law priced every parameter at max(bits, 4.5) and a dense model's predicted speed was identical
+    at 2.5 and 4.5 bits. That is how the published calculator ended up showing a 12B dense SLOWER
+    than a 106B MoE with the same active parameter count, which is what a user reported
+    (pre-registration #17). Held-out validation: Qwen2.5-7B IQ3_M, error -22% -> -7%.
+    """
+    from quantprobe.plan import evaluate, MODELS
+    hw = dict(vc=0, vb=0, rc=64, rb=80, db=5, geta=0.5)      # pure-RAM: genuinely bandwidth-bound
+    m = MODELS["gemma-12b"]
+    speeds = []
+    for bits in (2.0, 3.0, 4.5):
+        _, act, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], bits, **hw)
+        speeds.append(cfgs[0][1])
+    assert speeds[0] > speeds[1] > speeds[2], (
+        f"dense speed does not respond to bit-width: 2.0/3.0/4.5 bits -> {speeds}")
+    # and the ratio must be substantial, not a rounding artifact: 2 bits reads far fewer bytes
+    assert speeds[0] / speeds[2] > 1.4, f"dense 2-bit barely faster than 4.5-bit: {speeds[0]/speeds[2]:.2f}x"
+    # MoE must be UNTOUCHED - there `ne` already names the protected set exactly
+    g = MODELS["glm-air"]
+    _, act_moe, _ = evaluate(g["t"], g["a"], g["ne"], g["moe"], 2.5, **hw)
+    expected = (g["ne"] * 4.5 / 8 + (g["a"] - g["ne"]) * 2.5 / 8) * 1.15
+    assert abs(act_moe - expected) < 1e-6, f"MoE activation changed: {act_moe} vs {expected}"
+
+
 def t_effective_n_layer_is_the_only_resolver():
     """One resolver, and every command actually reaching the same answer.
 

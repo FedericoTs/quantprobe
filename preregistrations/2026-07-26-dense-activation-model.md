@@ -83,3 +83,54 @@ captured, and the structural argument would need rethinking rather than patching
 Note that P-2 can hold while the prediction is still poor: the in-VRAM regime is known pessimistic
 by 2–67% and this correction does not claim to fix that. It claims only that a dense model's speed
 should respond to its quantization at all.
+
+---
+
+## Scored (2026-07-26, log: `weights/data/prereg17_dense_activation.log`)
+
+**Verdict: P-1 HIT, P-2 HIT decisively, P-3 MISS. The correction ships.**
+
+`Qwen2.5-7B-Instruct-IQ3_M`, 3.75 effective bits, all in VRAM, tg128. Measured three times in
+different thermal states, which turned out to matter:
+
+| run | GPU entry state | measured |
+|---|---|---|
+| 1 | 810 MHz, 47 °C, Chrome running | 17.53 ± 0.02 |
+| 2 | 1873 MHz, 57 °C, Chrome closed | 17.03 ± 0.02 |
+| 3 | settled, 72 °C, r=5 | **16.89 ± 0.15** |
+
+Taking the settled run as representative:
+
+- **P-1 (above 15.7): HIT.** 16.89 — both models under-predict, as the known in-VRAM pessimism
+  predicts.
+- **P-2 (corrected is closer): HIT, decisively.** |15.7 − 16.89| = **1.19** against
+  |13.6 − 16.89| = **3.29**. Error more than halved, −22% → −7%. This is the stake that decides
+  shipping, and it holds under every one of the three runs.
+- **P-3 (lands in 17.5–20.5): MISS.** 16.89 is **below** the band I staked from its own siblings
+  (Q2_K 19.17, IQ3_XS 18.11, Q4_K_M 20.03). On the first, coldest run it scraped inside at 17.53;
+  on the properly settled run it does not. Scored against the settled run, so: a miss.
+- **P-4 (no anchor moves): HIT.** All four published anchors are MoE and retrodict bit-identically;
+  `ne` already names the protected set exactly there, so the MoE path is untouched by construction.
+
+### The methodological finding inside the miss
+
+P-3 missing is more interesting than P-2 hitting. The band came from sibling measurements taken
+earlier in the session — and this model measured **17.53 → 17.03 → 16.89 as the card warmed to
+72 °C**, a 3.8% decay across thermal states on the same file, with error bars of ±0.02 that
+never overlap. So the siblings the band was built from were very likely measured on a cooler
+card than this one, and part of the "miss" is my own measurement protocol, not the model.
+
+That is the **third** GPU-state effect this project has been bitten by, after orphaned-process
+contention (a retracted Law 5 finding) and boost-clock inflation (a 28% verify anomaly). The
+convention gains a third clause: **log entry clock AND temperature, and prefer a thermally
+settled run.** The existing VRAM_GAPS anchors should be re-measured warm before any of them is
+used to justify a constant.
+
+### What ships
+
+`DENSE_PROTECTED_SHARE = 0.214` in `plan.py`, applied to dense models only. Mean |error| over the
+six calibration points falls **18% → 10%**, and the held-out point moves −22% → −7%. The defect it
+removes is structural rather than numerical: a dense model's predicted speed now responds to its
+quantization at all, which it previously did not.
+
+**Wired into:** `quantprobe/plan.py:DENSE_PROTECTED_SHARE` · `tests/smoke.py:t_dense_speed_responds_to_bits` · `docs/index.html` — the same correction is applied to the published simulator, which reimplements the law separately.
