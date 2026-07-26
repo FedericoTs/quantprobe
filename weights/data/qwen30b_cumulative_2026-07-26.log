@@ -1,0 +1,48 @@
+=== Qwen3-30B-A3B Q2_K (2.95 bits) cumulative-gain audit, one session, thermally matched ===
+GPU before: 1359 MiB, 1075 MHz, 48
+--- warm-up (DISCARDED) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |            tg32 |         16.16 ± 0.00 |
+--- A: all experts -> CPU  (the standard-guide config) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |           tg128 |         17.44 ± 0.38 |
+GPU: 1337 MiB, 1847 MHz, 58
+--- B: partial expert split, 22%->VRAM (what the tool recommends; predicted 19.9) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |           tg128 |         18.38 ± 0.63 |
+GPU: 1354 MiB, 1847 MHz, 62
+--- A2: all experts -> CPU, RE-RUN HOT for thermal parity with B ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |           tg128 |         17.58 ± 0.91 |
+GPU: 1361 MiB, 1847 MHz, 62
+--- C: split at K=16 (33% to VRAM) - the OPTIMUM found by prereg #13's sweep ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |           tg128 |         18.84 ± 0.48 |
+GPU: 1356 MiB, 1847 MHz, 65
+--- protocol check: tg32 (what quantprobe bench and the published figures use) ---
+  A @tg32:
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |            tg32 |         16.87 ± 0.30 |
+  C @tg32 (K=16):
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |            tg32 |         18.89 ± 0.41 |
+GPU: 1368 MiB, 1847 MHz, 61
+
+=== SUMMARY: Qwen3-30B-A3B Q2_K (2.95 bits), one session, RAM 12.1 GB free, XMP 3000 MT/s ===
+
+  config                                   tg32              tg128
+  all experts -> CPU (--no-mmap)      16.87 +/- 0.30    17.44 +/- 0.38  (17.58 +/- 0.91 re-run hot)
+  split K=10, 22%->VRAM (tool ships)         -          18.38 +/- 0.63
+  split K=16, 33%->VRAM (prereg #13 peak)  18.89 +/- 0.41  18.84 +/- 0.48
+
+  gain of the peak split over the all-CPU baseline:
+    at tg32   +12.0%   <- reproduces the published +12.4% under its own protocol
+    at tg128   +7.6%   <- the gain SHRINKS with generation length
+
+  The tool's shipped cutoff (K=10) delivers +5.0% at tg128 where the measured optimum (K=16)
+  delivers +7.6%. The conservative DESKTOP_VRAM_RESERVE is deliberate (the overcommit cliff is
+  -29%), but it leaves ~2.6pp on the table on this box.
+
+  THERMAL: unlike the all-in-VRAM 7B (which decayed 3.8% from 47C to 72C), this placement is
+  thermally flat - 17.44 at 58C vs 17.58 at 62C. Expected: it is bound by system RAM, not by
+  the GPU, so GPU clock/temperature barely enters.
+
+  OPEN: today's absolute baseline (16.87-17.58) sits ~10% below the historical flagship anchor
+  of 19.30 measured on this same box and model class. RAM is not under pressure (12.1 GB free)
+  and XMP is still on at 3000 MT/s, so neither of the obvious causes explains it. The law's
+  prediction (17.6 hybrid) matches TODAY's measurement, not the historical one. Needs a
+  controlled re-measurement against the original file and llama.cpp build before the 19.30
+  figure is quoted again.
