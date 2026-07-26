@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.13.0 - 2026-07-27
+
+**+73% prompt processing, one flag, no download — for anyone running a MoE with experts in RAM.**
+
+`plan` now emits `-b 2048 -ub 2048` on placements that leave weights in **host memory**. Measured
+on the reference box ([pre-registration #19](preregistrations/2026-07-27-ubatch-cpu-resident.md),
+r=3, warm-up discarded):
+
+| `-ub` | Qwen3-30B, `-ot exps=CPU` | dense 7B **fully in VRAM** |
+|---|---|---|
+| 512 | 199.90 ± 1.42 | 329.80 ± 0.90 |
+| 1024 | 277.17 ± 1.70 | 333.07 ± 0.27 |
+| 2048 | **345.89 ± 0.88  (+73%)** | **200.31 ± 0.17  (−39%)** |
+
+**The control is the result.** Same flag, same box, same session — opposite signs. A speedup alone
+would be consistent with "bigger batches are just better"; a 39% *regression* on the VRAM-resident
+model is not. Weight residency is the only difference, and it is exactly what the mechanism
+predicts: with `-ot exps=CPU` the experts live in a host buffer, so CUDA is offered the op and
+accepts it once the ubatch clears 32 tokens (`ggml-cuda.cu`, `MUL_MAT_ID → op->ne[2]`). Those
+weights then cross PCIe **once per ubatch instead of once per token**. With nothing host-resident
+there is no transfer to amortise and the larger compute buffer just costs VRAM.
+
+So the flag is **gated, never defaulted** — host-resident weights, and only with VRAM headroom.
+Decode is unaffected (18.46 → 18.76): a ubatch cannot be filled one token at a time.
+
+**This is a search dimension, not a law change.** `plan.evaluate()` is untouched and all four
+published anchors are bit-identical. Batch size was simply never an input to the placement search,
+which is why a 1.73× effect sat unmeasured on the most-used MoE path.
+
+### Also fixed: `bench` silently dropped any flag it did not hand-list
+
+`runtime.py` forwarded `-ngl` and `-ot` into `llama-bench` and dropped the rest. Shipping `-ub`
+through that forwarder would have had `bench` quietly measure the **un-flagged** configuration and
+report the law as wrong by exactly the size of the new lever — while both printed commands still
+looked correct. Unknown flags now raise instead of vanishing.
+
+
 ## 1.12.1 - 2026-07-27
 
 **The dense layer-split row emitted an `-ngl` that tells llama.cpp to put every layer on a GPU

@@ -335,6 +335,32 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_ubatch_only_when_host_resident():
+    """-ub is a prefill lever for HOST-resident weights only, and it is measured to hurt otherwise.
+
+    Pre-registration #19, same box, same session, r=3:
+        Qwen3-30B -ot exps=CPU   pp2048  199.90 -> 345.89  (+73%)  at ub 512 -> 2048
+        dense 7B fully in VRAM   pp2048  329.80 -> 200.31  (-39%)  same flag, opposite sign
+    Emitting it by default would hand a 39% regression to everyone whose model fits in VRAM -
+    which is the most common configuration for anyone with adequate VRAM.
+    """
+    from quantprobe.plan import ubatch_flags, UBATCH_HEADROOM_GB
+    # host-resident placements with headroom -> emitted
+    for placement in ("hybrid: attention->VRAM, experts->RAM",
+                      "split experts: 21%->VRAM, rest->RAM",
+                      "pure CPU (GPU idle)",
+                      "stream from disk (cold experts)"):
+        assert ubatch_flags(placement, 0.7, 6), f"ubatch not offered for host-resident: {placement}"
+    # fully VRAM-resident -> never, this is the measured -39% case
+    assert ubatch_flags("all in VRAM", 4.7, 6) is None, \
+        "ubatch offered for an all-in-VRAM placement - measured there it LOSES 39%"
+    # host-resident but no VRAM headroom -> withheld (the compute buffer would not fit)
+    assert ubatch_flags("hybrid: attention->VRAM, experts->RAM", 6 * 0.9 - 0.1, 6) is None, \
+        "ubatch offered with no VRAM headroom for the larger compute buffer"
+    # no GPU at all -> nothing to amortise a transfer to
+    assert ubatch_flags("pure CPU (GPU idle)", 0, 0) is None, "ubatch offered with no GPU"
+
+
 def t_dense_split_ngl_is_a_layer_count():
     """-ngl must be a LAYER COUNT, and must never exceed the model's layers on a split row.
 

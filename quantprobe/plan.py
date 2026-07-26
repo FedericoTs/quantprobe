@@ -87,6 +87,37 @@ QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00
         False: {2.0: 1.45, 2.5: 1.30, 3.0: 1.12, 4.5: 1.03, 6.5: 1.01, 8.5: 1.00}}
 
 
+UBATCH_HEADROOM_GB = 1.5   # VRAM the compute buffer needs before -ub 2048 is safe. NOT yet
+                           # characterised as a curve - measured only as a boundary: with experts
+                           # on CPU (little in VRAM) -ub 2048 gave +73% prefill, while a 4.36 GiB
+                           # model filling a 6 GB card LOST 39% at the same setting. The ceiling
+                           # is real; its shape is an open measurement (pre-registration #19).
+
+
+def ubatch_flags(placement, vram_resident_gb, vc):
+    """-b/-ub for placements that leave weights in HOST memory. Prefill-only lever.
+
+    With `-ot ...=CPU` the expert tensors live in a host buffer, so CUDA is offered the op and
+    accepts it once the ubatch clears 32 tokens (ggml-cuda.cu: MUL_MAT_ID -> op->ne[2]). Those
+    weights then cross PCIe ONCE PER UBATCH instead of once per token, so the per-token transfer
+    cost falls as 1/ub. Measured on the reference box (pre-registration #19, r=3):
+
+        Qwen3-30B-A3B, -ot exps=CPU   pp2048  199.90 -> 345.89   +73%   at ub 512 -> 2048
+        dense 7B fully in VRAM        pp2048  329.80 -> 200.31   -39%   same flag, opposite sign
+
+    The control is why this is gated rather than defaulted: with nothing host-resident there is no
+    transfer to amortise and a larger ubatch only inflates the compute buffer, which on a tight
+    card costs more than it saves. Decode is unaffected either way (18.46 -> 18.76), because a
+    ubatch cannot be filled one token at a time.
+    """
+    host_resident = any(k in placement for k in ("->RAM", "CPU", "disk"))
+    if not host_resident or vc <= 0:
+        return None
+    if vc * 0.90 - vram_resident_gb < UBATCH_HEADROOM_GB:
+        return None                       # no room for the bigger compute buffer; the -39% case
+    return "-b 2048 -ub 2048"
+
+
 def effective_n_layer(args=None, model=None):
     """THE resolver for "how many layers does this model have". Do not hand-write this again.
 
@@ -408,7 +439,17 @@ def run(args):
         w = f"   [{warn}]" if warn else ""
         print(f"  {star} {tps:6.1f} tok/s  {name}{w}")
     best = cfgs[0]
-    print(f"\n  run it:  llama-server -m model.gguf {best[3]}")
+    # Prefill lever, appended only where the measurement says it pays (host-resident weights with
+    # VRAM headroom). Not part of the law: `evaluate` is untouched and no anchor can move.
+    ub = ubatch_flags(best[0], ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc)
+    run_flags = f"{best[3]} {ub}" if ub else best[3]
+    print(f"\n  run it:  llama-server -m model.gguf {run_flags}")
+    if ub:
+        print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
+              f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
+              f"(18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe "
+              f"once per batch instead of once per token. Do NOT set it when a model is fully in "
+              f"VRAM - measured there, the same flag LOSES 39%.")
     fit_adv = fits_in_vram_advice(best[0], args.bits)
     if fit_adv:
         print(f"\n  note: {fit_adv}")
