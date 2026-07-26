@@ -86,6 +86,46 @@ persistence as a decided atom in the per-machine profile; and the demo writes it
 
 ---
 
+### Added arm S-f (staked 2026-07-26, before downloading the model)
+
+S-e measured MTP's sign flipping with placement on a **MoE** model, and attributed the loss to
+the expert-union tax. That attribution is an inference, not a measurement — the confound is that
+"MoE" and "bandwidth-bound" moved together. S-f separates them with a **dense** MTP model small
+enough to sit entirely in 6 GB of VRAM: `unsloth/Qwen3.5-4B-MTP` at Q4_K_M (2.83 GB).
+
+**The mechanistic claim being tested.** For a DENSE model, a verify batch of k tokens reads the
+*same weights* as a single token — weights are shared across the batch, so there is no extra
+traffic. For a MoE model, a verify batch unions the experts that each drafted token routes to,
+so the traffic grows with k. If that is really the mechanism, then MTP should help a dense model
+in **both** placements, and the S-e hybrid loss belongs to the expert union specifically — not
+to bandwidth-boundedness in general.
+
+Matrix, same file and prompt throughout, `--spec-type none` vs `draft-mtp`:
+
+| | MTP off | MTP on |
+|---|---|---|
+| dense 4B, all-in-VRAM (compute-bound) | baseline | S-f1 |
+| dense 4B, pure CPU (bandwidth-bound, no experts) | baseline | S-f2 |
+
+- **S-f1 (dense, GPU-resident): 1.3–2.0×.** Weights are already fast to read; MTP saves passes
+  and the extra batch work is nearly free on a GPU. Below 1.1× would mean MTP carries a fixed
+  overhead that never pays on Pascal-class hardware regardless of tier — which would make the
+  S-e "spilling" gain a paging artifact rather than a general property.
+- **S-f2 (dense, CPU): 1.3–2.2×, i.e. it HELPS here too.** This is the sharp one. S-e showed a
+  24% LOSS on bandwidth-bound MoE; if bandwidth-boundedness were the cause, dense-CPU should
+  also lose. I predict it **gains**, because without experts there is no extra traffic to pay
+  for. A loss here refutes the expert-union explanation and means MTP simply does not pay on
+  slow tiers, whatever the architecture.
+- **S-f3 (the discriminator).** dense-CPU gain > MoE-hybrid gain by at least **0.4×** in ratio
+  terms (measured MoE-hybrid was 0.76×). This is the single number that decides whether the
+  S-e finding is about *experts* or about *bandwidth*.
+
+**If S-f2 and S-f3 hold**, the rule becomes precise and shippable: *MTP pays whenever a verify
+batch does not increase weight traffic — always for dense models, and for MoE only when the
+saved pass costs more than the unioned experts.* That is a joint term the planner can carry.
+**If they miss**, the honest statement is simpler and weaker: MTP is unpredictable per machine
+and users should measure it themselves — which the tool would then say plainly.
+
 ## Arm S-e scored (2026-07-26, log: weights/data/prereg_se_mtp.log)
 
 Model: `mudler/Qwen3.6-35B-A3B-APEX-MTP-I-Nano` (11.7 GB, 41 layers incl. the MTP head) — the
