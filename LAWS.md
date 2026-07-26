@@ -108,8 +108,12 @@ the utilization constant η collapsing per memory tier.**
   (a community datapoint: ~1.8x on Qwen3.6-35B-A3B with MTP). This is a missing factor, not a
   refutation: the bytes-and-bandwidth term is unchanged and the multiplier sits on top. Measuring
   it is Law 6's job. **Measured 2026-07-26 (arm S-e): the sign FLIPS with placement.** Same
-  model, same file, MTP toggled on the same server: experts-in-RAM **0.76x (a 24% LOSS)**,
-  model-spilling **1.94x (a 94% GAIN)**. MTP trades more work per forward pass for fewer
+  model, same file, MTP toggled on the same server. Full 2x2 across architecture and tier:
+  dense GPU-resident **1.17x**, dense CPU **1.046x** (+-0.01, reproducible), MoE experts-in-RAM
+  **0.76x**, MoE spilling VRAM **1.94x**. Architecture decides the SIGN on a slow tier: dense
+  gains where MoE loses, consistent with a dense verify batch re-reading the same weights while
+  a MoE batch unions extra experts. The 1.94x is MTP rescuing a model from paging, not a
+  general property - no other cell came close. MTP trades more work per forward pass for fewer
   passes, so it pays only where an extra *pass* costs more than an extra *batch*. MTP does
   NOT escape the expert-union tax that makes draft speculation 2.3x slower on MoE. There is
   therefore no single multiplier to add to this law - a joint term is required, and the
