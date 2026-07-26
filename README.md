@@ -41,17 +41,19 @@ Most guides put *all* of a mixture-of-experts model's experts in system RAM and 
 
 | | all experts → RAM | **partial offload** |
 |---|---|---|
-| generation | 15.18 tok/s | **20.44 tok/s** (+34.7%) |
+| generation | 18.35 tok/s | **20.62 tok/s** (+12.4%) |
 | prompt reading | 88 tok/s | **~238 tok/s** (2–3×) |
 
-`plan` and `run` now compute the cutoff from your *free* VRAM and emit the exact flags. It costs nothing and needs no new download. ([pre-registration #13](preregistrations/2026-07-26-moe-partial-expert-offload.md) — staked before measuring, including the non-ship condition.)
+`plan` and `run` compute the cutoff from your *free* VRAM and emit the exact flags. It costs nothing and needs no new download.
+
+*This number was first published as +34.7% and is now corrected downward: that baseline was measured without `--no-mmap`, a flag the tool already recommended, so the control was worse than what a user would actually run. The [correction is published in full](preregistrations/2026-07-26-moe-partial-expert-offload.md#correction-2026-07-26-the-baseline-above-was-mis-configured-and-347-is-overstated) beneath the original — a community report about llama.cpp's `-fit` is what led us to check.*
 
 ## Measured results
 
 | result | number |
 |---|---|
 | Qwen3-30B-A3B on the 2016 desktop | **19.3 tok/s** — *predicted 19 before measuring* |
-| Same model, partial expert offload | **20.44 tok/s**, +34.7% for free |
+| Same model, partial expert offload | **20.62 tok/s**, +12.4% for free (corrected from a first-published +34.7%) |
 | Same bytes, different layers (Gemma 4 12B) | **byte-identical files, 2.25 ppl apart** |
 | Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |
 | GLM-4.5-Air **110B** from a SATA drive, 16 GB RAM | 0.19 tok/s — inside the pre-registered 0.2–0.3 band |

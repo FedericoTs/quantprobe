@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.10.2 — 2026-07-26
+
+**Correction: the MoE partial-offload gain is +12.4%, not the +34.7% shipped in 1.8.0.**
+
+The original measurement compared our split against an all-experts-to-CPU baseline running
+**without `--no-mmap`** — a flag this tool has recommended on that very row for many versions,
+and which llama.cpp itself warns about. The control was therefore a worse-than-recommended
+version of the thing being beaten. Re-measured with every cell configured the way the tool
+actually tells you to run it (warm cache, r=3):
+
+| config | tok/s | vs correct baseline |
+|---|---|---|
+| baseline, all experts to CPU | 18.35 ± 0.48 | — |
+| split at the cutoff the tool picks | 19.47 ± 0.77 | +6.1% |
+| split at the measured peak | 20.62 ± 0.26 | **+12.4%** |
+| one step past the ceiling | 10.59 ± 0.07 | −42.3% (cliff reproduced) |
+
+About 21 of the original 34.7 percentage points were `--no-mmap` alone. The mechanism, the
+capacity cliff, and the prefill result are unchanged; only the size of the decode win moves.
+README, QUICKSTART and pre-registration #13 all corrected, with the original left visible
+beneath the correction.
+
+**Found via a community report.** A user pointed out that llama.cpp's own `-fit` auto-placement
+worked well on his 12 GB card. Checking whether `-fit` beat our recommendation (it does not
+here — 4.06 tok/s on a 6 GB card) led to re-examining our own baseline, where the real problem
+was. Also noted for future work: **we do not model multi-token prediction at all**, and a user
+running MTP measured ~1.8x above our estimate — a missing term, not an error, but a real gap.
+
+Process lesson worth recording: a benchmark's *control* deserves the same scrutiny as its
+treatment. No unit test catches this; it is a measurement-design error. 65 tests.
+
 ## 1.10.1 — 2026-07-26
 
 **Tensor-role registry — the part of a recipe that legitimately transfers.** A recipe has two
@@ -119,6 +150,7 @@ pre-registration #13 and now shipped.
 - Until now, MoE models got all-experts-to-CPU or nothing, so a mid-size GPU sat half empty.
   The planner now also evaluates keeping the **first K expert layers on GPU** and emits the exact
   `-ot` regex. Measured on the reference box: **+34.7% decode** (15.18 → 20.44 tok/s) and
+  *[CORRECTED 2026-07-26 to +12.4% — that baseline lacked `--no-mmap`; see pre-registration #13]* and
   **~2-3x prefill** vs all-experts-to-CPU. Flagged by three separate users in one session.
 - **The cutoff is computed conservatively on purpose.** Overshooting VRAM is a cliff, not a
   taper: one step past the ceiling measured **−29%**. A 1 GB desktop reserve is subtracted

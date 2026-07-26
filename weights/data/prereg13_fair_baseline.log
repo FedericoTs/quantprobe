@@ -1,0 +1,17 @@
+=== PREREG-13 CORRECTION: split vs a PROPERLY CONFIGURED baseline 2026-07-26 05:27 ===
+The original sweep measured the all-experts-to-CPU baseline WITHOUT --no-mmap, which our
+own tool has recommended on that row for versions. That understates the baseline and
+therefore overstates the split's gain. Re-running every cell WITH --no-mmap.
+[gpu-state] 906 MiB
+--- K=0 baseline (all experts -> CPU, --no-mmap) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |            tg32 |         18.35 ± 0.48 |
+--- K=9 (split, --no-mmap) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |            tg32 |         19.47 ± 0.77 |
+--- K=12 (split, --no-mmap) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |            tg32 |         19.61 ± 0.50 |
+--- K=16 (split, --no-mmap) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |            tg32 |         20.62 ± 0.26 |
+--- K=20 (split, --no-mmap) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |            tg32 |         10.59 ± 0.07 |
+[gpu-state] 857 MiB
+=== DONE 2026-07-26 05:30 ===
