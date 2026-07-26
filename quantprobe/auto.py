@@ -12,6 +12,7 @@ The two-speed design:
 """
 from __future__ import annotations
 import json, urllib.request
+from collections import namedtuple
 
 from . import plan as planmod
 from . import optimize as optmod
@@ -129,10 +130,17 @@ def _wizard(a):
     a.target = m
 
 
-def run(a):
-    if a.target is None:
-        _wizard(a)
-    target = a.target
+#: Everything the law needs to know about the model. auto hands the law EXPLICIT parameters
+#: rather than a preset name (it must - a raw HF repo has no preset), so every fact the preset
+#: carried has to be transferred deliberately. Spread across bare assignments, one was forgotten
+#: - the layer count - and the flagship path silently lost its best placement for every preset
+#: MoE (v1.11.1). Naming the record makes the set of facts reviewable, and `apply_to` makes the
+#: transfer one auditable step instead of N chances to forget.
+ModelSpec = namedtuple("ModelSpec", "repo total active always_active moe n_layer")
+
+
+def resolve_model(a, target):
+    """Resolve the model once: preset if we know it, explicit parameters otherwise."""
     if target in MODEL_REPOS:
         repo, t, ac, ne, moe = MODEL_REPOS[target]
     else:
@@ -143,15 +151,29 @@ def run(a):
         t, ac = a.total, a.active or a.total
         ne = a.always_active or (ac if ac >= t * 0.9 else ac * 0.35)
         moe = ac < t * 0.9
-    a.total, a.active, a.always_active, a.model = t, ac, ne, None
-    # Setting a.model = None hands the law explicit params instead of a preset name, which also
-    # discards the preset's verified layer count - so every downstream reader (optimize's whole
-    # frontier included) silently lost the MoE split placement and recommended the slower hybrid.
-    # Carry the count forward on `a` at the one point where the preset is still in hand, rather
-    # than re-deriving it at each call site. That re-derivation is the bug shape effective_n_layer
-    # exists to end.
-    if not getattr(a, "n_layer", None):
-        a.n_layer = planmod.effective_n_layer(None, target)
+    return ModelSpec(repo=repo, total=t, active=ac, always_active=ne, moe=moe,
+                     n_layer=planmod.effective_n_layer(a, target))
+
+
+def apply_to(spec, a):
+    """Transfer EVERY field of the record onto the args downstream commands read.
+
+    Add a field to ModelSpec and forget it here and t_auto_transfers_every_model_field fails.
+    That test exists because forgetting one silently degraded a recommendation by 20% rather
+    than raising anything.
+    """
+    a.total, a.active, a.always_active = spec.total, spec.active, spec.always_active
+    a.n_layer = spec.n_layer
+    a.model = None            # deliberate: explicit parameters, not a preset lookup
+    return spec
+
+
+def run(a):
+    if a.target is None:
+        _wizard(a)
+    target = a.target
+    spec = apply_to(resolve_model(a, target), a)
+    repo, t, ac, ne, moe = spec.repo, spec.total, spec.active, spec.always_active, spec.moe
 
     # 1. what does the optimizer want on THIS machine?
     a.gguf = None
