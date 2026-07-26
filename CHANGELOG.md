@@ -11,8 +11,8 @@ nobody has probed.
 
 - The builder now classifies every tensor by role before quantizing, and **reports any weight
   class it has no protection rule for** instead of silently compressing it. This is the exact
-  bug we shipped once: hybrid SSM models name their state tensors , our pattern matched
-  only , and every one landed at the aggressive base level (v1.6.4, −24% ppl).
+  bug we shipped once: hybrid SSM models name their state tensors `ssm_*`, our pattern matched
+  only `attn_*`, and every one landed at the aggressive base level (v1.6.4, −24% ppl).
 - Verified across three architecture families (dense, classic MoE, SSM-hybrid MoE) with no
   unrecognised classes.
 
