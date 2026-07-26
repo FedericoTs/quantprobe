@@ -1,4 +1,4 @@
-"""quantprobe CLI — probe / plan / fetch."""
+"""quantprobe CLI - probe / plan / fetch."""
 from __future__ import annotations
 import argparse
 

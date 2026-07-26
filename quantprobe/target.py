@@ -1,9 +1,9 @@
-"""quantprobe target — inverse planning: from a tok/s target to the smartest feasible model.
+"""quantprobe target - inverse planning: from a tok/s target to the smartest feasible model.
 
 The tiered decode law solved backwards: given YOUR machine and the speed you need,
 rank every (model x bits x placement) that meets the target, by intelligence
 (total parameters, quality-adjusted). Then print the LADDER: at each speed band,
-the best option — so trading speed for intelligence is one `quantprobe run` away.
+the best option - so trading speed for intelligence is one `quantprobe run` away.
 """
 from __future__ import annotations
 from . import plan as planmod

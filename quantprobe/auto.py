@@ -1,14 +1,14 @@
-"""quantprobe auto — one command: model in, running setup out.
+"""quantprobe auto - one command: model in, running setup out.
 
     quantprobe auto qwen3-30b --tps 15          # preset
     quantprobe auto unsloth/Qwen3-30B-A3B-GGUF  # any HF GGUF repo (params read from filenames' size)
 
 The two-speed design:
   FAST PATH (this command): detect the machine -> ask the optimizer for the best effective-bits ->
-  scan the HF repo's file list and pick the closest-matching quant BY SIZE (bits = size*8/params —
+  scan the HF repo's file list and pick the closest-matching quant BY SIZE (bits = size*8/params -
   no fragile name parsing) -> fetch it -> print the prediction and the run command (--run launches).
   CUSTOM PATH (the actual product, printed at the end): probe YOUR model's fragile band and build a
-  depth-aware GGUF at the same bits — better quality at the same bytes. `probe --apply` does it.
+  depth-aware GGUF at the same bits - better quality at the same bytes. `probe --apply` does it.
 """
 from __future__ import annotations
 import json, urllib.request
@@ -37,7 +37,7 @@ MODEL_REPOS = {
 def list_ggufs(repo):
     """[(path, size_bytes)] for a HF repo, via the public tree API (recursive: big repos
     keep quants in subfolders). Split multi-part files (-00001-of-000NN) are grouped into
-    ONE logical entry: path = first part, size = sum of parts — so effective-bits stays honest."""
+    ONE logical entry: path = first part, size = sum of parts - so effective-bits stays honest."""
     import re
     req = urllib.request.Request(f"https://huggingface.co/api/models/{repo}/tree/main?recursive=true",
                                  headers={"User-Agent": "quantprobe-auto"})
@@ -184,11 +184,25 @@ def run(a):
               f"available is {bits:.1f}-bit. Low-bit quants for new models often land days after "
               f"release; plan/optimize predict any bits meanwhile.")
 
-    if getattr(a, "custom", False) and want_bits >= 3.5 and not getattr(a, "force_custom", False):
-        print(f"\n[quantprobe auto --custom] this machine doesn't need the surgery: the optimizer")
-        print(f"  wants ~{want_bits:g}-bit here, and at >=3.5 bits standard community quants match the")
-        print(f"  depth-aware recipe on quality - the fragile-band fix only pays below ~3 bits (Laws 1-2).")
-        print(f"  Fetching the optimal standard quant instead. Build anyway: --force-custom.")
+    # Does this machine NEED to go below ~3 bits? That is the real question, and it is not the
+    # same as which bit-width is fastest. This gate used to read `want_bits >= 3.5` - the speed
+    # winner - which only ever fired because the (now-refuted, pre-registration #16) sub-4-bit
+    # decode collapse made low bits look slow. With that bug removed the speed winner is always
+    # the lowest bits the quality ceiling allows, and the gate became unreachable. The stated
+    # rationale was always about viability, so ask that directly: if a >=3.5-bit build runs on
+    # this machine without falling back to disk streaming, the surgery is not needed.
+    # "Viable" means on the hardware the user already owns: >=3.5 bits, no upgrade to buy
+    # (euro == 0), and not falling back to disk streaming. On the reference box a 30B at 4.5 bits
+    # needs +16 GB RAM (euro 40) or disk, so the surgery still runs; on a 24 GB rig it is all in
+    # VRAM for free, so it is declined.
+    roomy = next((r for r in ranked if r["bits"] >= 3.5 and r["euro"] == 0
+                  and "disk" not in r["desc"].lower()), None)
+    if getattr(a, "custom", False) and roomy and not getattr(a, "force_custom", False):
+        print(f"\n[quantprobe auto --custom] this machine doesn't need the surgery: it runs")
+        print(f"  ~{roomy['bits']:g}-bit at {roomy['tps']:.0f} tok/s, and at >=3.5 bits standard community quants")
+        print(f"  match the depth-aware recipe on quality - the fragile-band fix only pays below")
+        print(f"  ~3 bits (Laws 1-2). Fetching the optimal standard quant instead.")
+        print(f"  Build anyway: --force-custom.")
         a.custom = False
     if getattr(a, "custom", False):
         src = pick_source(files, t)

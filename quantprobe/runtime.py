@@ -1,9 +1,9 @@
-"""quantprobe run / bench — the runtime layer.
+"""quantprobe run / bench - the runtime layer.
 
 run:   plan the best placement for your model+machine, then LAUNCH llama.cpp with those exact
        flags (chat via llama-cli, or --serve for llama-server). Colibri-style one-command UX,
        riding stock llama.cpp instead of a custom engine.
-bench: measure real decode tok/s with the planned flags and print predicted vs measured —
+bench: measure real decode tok/s with the planned flags and print predicted vs measured -
        every user becomes a validation point for the tiered decode law.
 """
 from __future__ import annotations
@@ -70,8 +70,9 @@ def best_flags(a):
     ctx = getattr(a, "ctx", 0) or 0
     kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None)
            else m.get("kvp", planmod.DEFAULT_KVP))
+    _true = os.path.getsize(gguf) / 1e9 if gguf and os.path.isfile(gguf) else None
     _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
-                                  ctx=ctx, kvp=kvp,
+                                  ctx=ctx, kvp=kvp, true_size_gb=_true,
                                   n_layer=getattr(a, "n_layer", None) or m.get("nl"))
     # run/bench/dashboard LAUNCH stock llama.cpp, so they may only pick placements stock
     # llama.cpp can actually execute. The three-tier expert-cache row's "flags" field is a

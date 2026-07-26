@@ -1,7 +1,7 @@
 """Smoke suite for quantprobe — plain asserts, no pytest dependency.
 Run:  python tests/smoke.py   (needs the package installed; llama.cpp NOT required for these)"""
 from __future__ import annotations
-import io, subprocess, sys
+import io, os, subprocess, sys
 from contextlib import redirect_stdout
 
 FAIL = []
@@ -64,12 +64,20 @@ def t_law_invariants():
     # dense bigger than RAM must be disk-slow (the 70B honesty fix)
     _, _, c3 = evaluate(70, 70, 70, False, 4.5, 0, 0, 16, 48, 0.45, 0.5)
     assert c3[0][1] < 0.1, f"dense disk-stream too optimistic: {c3[0][1]}"
-    # low-bit VRAM must use gl not geta (decode-util law)
+    # Low-bit all-in-VRAM decode must NOT collapse. This asserted the opposite until
+    # pre-registration #16 measured it: Qwen2.5-7B all in VRAM decodes 19.17 (Q2_K, 2.8 bits),
+    # 18.11 (IQ3_XS, 3.3 bits) and 20.03 (Q4_K_M, 4.5 bits) - a 10% band across 2.8-4.5 bits,
+    # not the 8.75x cliff the old gl gate applied below 4 bits. The old test enforced the cliff,
+    # which is also backwards on bytes alone: fewer bits per weight is fewer bytes to read.
     _, _, c4 = evaluate(7, 7, 7, False, 2.0, 8, 300, 32, 50, 2, 0.5, 1.0, 0.05)
     _, _, c5 = evaluate(7, 7, 7, False, 4.5, 8, 300, 32, 50, 2, 0.5, 1.0, 0.05)
     vr4 = [x for x in c4 if x[0] == "all in VRAM"][0][1]
     vr5 = [x for x in c5 if x[0] == "all in VRAM"][0][1]
-    assert vr4 < vr5, "low-bit VRAM eta collapse not applied"
+    # Equality is the expected answer here and it is what measurement shows: for a DENSE model the
+    # activation term holds attention at >=4.5 bits, so active bytes barely move with the nominal
+    # bit-width - and the 7B measured 19.17 at 2.8 bits vs 20.03 at 4.5, a 4% spread. What must
+    # never come back is the PENALTY.
+    assert vr4 >= vr5 * 0.9, f"low-bit VRAM penalised: {vr4:.1f} vs {vr5:.1f} at 4.5 bits"
 
 
 def t_llama_commands_parse_and_fail_gracefully():
@@ -159,14 +167,22 @@ def t_bench_depth_dry():
                   "--depth", "16384", "--dry")
     assert "-d 16384" in out and "placement" in out.lower(), f"bench --depth --dry broke: {out[:200]}"
 
-def t_plan_uses_preset_gl():
-    # plan CLI must apply the preset's MEASURED low-bit collapse (gl), not geta*0.6
-    # 2016-xmp gl=0.04: dense 7B @2.5 all-in-VRAM ~1.7 tok/s; the geta*0.6 bug gave ~8.7
+def t_low_bit_vram_not_collapsed():
+    # Regression test for the bug pre-registration #16 fixed. This test previously ASSERTED the
+    # collapse (< 3.0 tok/s), locking in a 9.5x error. Measured reality on this exact box:
+    # gemma4-12b at 3.51 bits, all in VRAM, decodes 9.56 tok/s. The old law said 1.0 - so low
+    # that plan recommended pure CPU (3.9) over the GPU placement that actually runs 9.56.
+    # A dense 7B at 2.5 bits is smaller still, so it must comfortably clear the same bar.
     rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "2.5")
     import re
     m = re.search(r"([0-9.]+) tok/s\s+all in VRAM", out)
     assert m, f"no all-in-VRAM row: {out[:200]}"
-    assert float(m.group(1)) < 3.0, f"preset gl ignored: VRAM row {m.group(1)} tok/s (expected ~1.7)"
+    tps = float(m.group(1))
+    assert tps > 9.0, f"low-bit VRAM collapse regressed: {tps} tok/s (measured floor 9.56)"
+    # and it must beat the CPU row - recommending CPU over a working GPU was the user-visible bug
+    c = re.search(r"([0-9.]+) tok/s\s+pure CPU", out)
+    if c:
+        assert tps > float(c.group(1)), f"VRAM {tps} must beat CPU {c.group(1)} for a 7B at 2.5 bits"
 
 def t_hw_command():
     rc, out = cli("hw")
@@ -253,6 +269,155 @@ def t_measured_anchors_still_retrodicted():
             drift.append(f"{label}: predicted {pred}, measured {measured} "
                          f"({(pred-measured)/measured*100:+.0f}%, tolerance +/-{tol*100:.0f}%)")
     assert not drift, "the law stopped retrodicting measured reality:\n  " + "\n  ".join(drift)
+
+# Every all-in-VRAM datapoint measured on the reference box, with the law's CURRENT error.
+#
+# This table exists because of a structural hole in the one above it: every MEASURED_ANCHOR is a
+# MoE-hybrid or a disk-stream row. Not one covered "all in VRAM" - the single most common
+# configuration for anyone with enough VRAM - and that is exactly why a 9.5x error (the refuted
+# sub-4-bit collapse, pre-registration #16) lived there undetected through a public release.
+#
+# These are NOT tolerances that certify the law is right. The law is knowingly PESSIMISTIC in
+# this regime - it under-predicts every single point and never over-predicts, which is a bias,
+# not noise (pre-registration #15, unresolved: no clean fit exists, a 12B is off by 9% while a
+# 7B is off by 38%). They are a RATCHET: the error may shrink, never grow. Improve the law and
+# these numbers come down; break it and the suite goes red.
+#
+# (file, measured tok/s all-in-VRAM on 2016-xmp, current |error| bound)
+VRAM_GAPS = [
+    ("Qwen3-0.6B-Q8_0.gguf",            93.12, 0.10),   # -2%   dense GQA, Q8_0
+    ("Qwen3.5-4B-Q4_K_M.gguf",          27.30, 0.32),   # -25%  dense GQA, K-quant
+    ("Qwen2.5-7B-Instruct-Q4_K_M.gguf", 20.03, 0.45),   # -38%  worst of the K-quant dense points
+    ("Qwen2.5-7B-Instruct-Q2_K.gguf",   19.17, 0.36),   # -29%  same model, 2.8 bits
+    ("Qwen2.5-7B-Instruct-IQ3_XS.gguf", 18.11, 0.32),   # -25%  same model, IQ format
+    ("gemma4-12b-B-late12.gguf",         9.56, 0.16),   # -9%   the model that exposed the bug
+    ("Bonsai-27B-Q1_0.gguf",            11.94, 0.74),   # -67%  linear-attention hybrid (Law 2 note)
+]
+GGUF_DIR = os.environ.get("QUANTPROBE_GGUF_DIR", "D:/evo-compress-data/gguf")
+
+
+def t_vram_regime_error_does_not_grow():
+    """Ratchet on the known all-in-VRAM pessimism. Skips per-file when the GGUF is absent."""
+    import re
+    worse, checked = [], 0
+    for fname, measured, bound in VRAM_GAPS:
+        path = os.path.join(GGUF_DIR, fname)
+        if not os.path.isfile(path):
+            continue
+        checked += 1
+        rc, out = cli("plan", "--gguf", path, "--machine", "2016-xmp")
+        assert rc == 0, f"{fname}: plan failed"
+        m = re.search(r"([0-9.]+) tok/s\s+all in VRAM", out)
+        assert m, (f"{fname}: the all-in-VRAM row vanished. That row disappearing IS the bug "
+                   f"pre-registration #16 fixed - the planner recommended pure CPU instead.")
+        pred = float(m.group(1))
+        err = abs(pred - measured) / measured
+        if err > bound + 0.02:                      # 2pp slack for run-to-run bench noise
+            worse.append(f"{fname}: predicted {pred}, measured {measured} "
+                         f"({(pred-measured)/measured*100:+.0f}%, was within {bound*100:.0f}%)")
+    assert not worse, ("the all-in-VRAM regime got WORSE - this is a ratchet, errors may only "
+                       "shrink:\n  " + "\n  ".join(worse))
+    if checked == 0:
+        print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
+
+
+def t_simulator_law_matches_the_cli():
+    """The published simulator runs its own copy of the law in JavaScript. It must agree.
+
+    docs/index.html is the most-seen surface this project has, and it reimplements evalCore()
+    by hand. Nothing kept the two in step: when the sub-4-bit collapse was removed from plan.py
+    the simulator still had `bitsVal>=4?H.geta:gl` in it, so the website would have gone on
+    telling people their GPU was useless for a Q3 quant after the CLI had stopped.
+
+    Extracts evalCore from the page, runs it under node on fixed cases, and compares every row
+    against plan.evaluate(). Skips (loudly) when node is absent.
+    """
+    import shutil, json, re, tempfile
+    node = shutil.which("node")
+    if not node:
+        print("      (simulator parity: node not installed, SKIPPED)", end="")
+        return
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    page = os.path.join(here, "docs", "index.html")
+    if not os.path.isfile(page):
+        return
+    src = io.open(page, encoding="utf-8").read()
+    js = re.search(r"<script[^>]*>(.*?)</script>", src, re.S).group(1)
+
+    def grab(sig):
+        i = js.index(sig); j = js.index("{", i); d = 0
+        for k in range(j, len(js)):
+            d += (js[k] == "{") - (js[k] == "}")
+            if d == 0:
+                return js[i:k + 1]
+        raise AssertionError("unbalanced braces around " + sig)
+
+    consts = "\n".join(l for l in js.splitlines() if re.match(r"\s*(const|let)\s+ETA_KV\s*=", l))
+    qm = re.search(r"(?:const|let)\s+QUAL\s*=\s*\{.*?\};", js, re.S)
+    harness = consts + "\n" + (qm.group(0) if qm else "") + "\n" + grab("function evalCore(") + """
+const H = {vc:6,vb:192,rc:16,rb:48,db:0.45,geta:0.35,gl:0.04};
+const OUT = [];
+for (const [t,a,ne,moe,b] of [[30.5,3.3,1.2,true,2.95],[7.2,7.2,7.2,false,2.5],
+                              [110,12,2.7,true,2.5],[7.2,7.2,7.2,false,4.5]]) {
+  const e = evalCore(t,a,ne,moe,b,H,0,0);
+  OUT.push(Object.fromEntries(e.cfgs.map(c => [c.n, +c.tps.toFixed(2)])));
+}
+console.log(JSON.stringify(OUT));
+"""
+    fd, path = tempfile.mkstemp(suffix=".js")
+    os.close(fd)
+    io.open(path, "w", encoding="utf-8").write(harness)
+    try:
+        r = subprocess.run([node, path], capture_output=True, text=True)
+        assert r.returncode == 0, f"simulator JS failed to run: {r.stderr[:400]}"
+        sim = json.loads(r.stdout.strip().splitlines()[-1])
+    finally:
+        os.unlink(path)
+
+    sys.path.insert(0, os.path.join(here, "quantprobe"))
+    from quantprobe.plan import evaluate
+    M = dict(vc=6, vb=192, rc=16, rb=48, db=0.45, geta=0.35, gl=0.04)
+    cases = [dict(t=30.5, a=3.3, ne=1.2, moe=True, bits=2.95),
+             dict(t=7.2, a=7.2, ne=7.2, moe=False, bits=2.5),
+             dict(t=110, a=12, ne=2.7, moe=True, bits=2.5),
+             dict(t=7.2, a=7.2, ne=7.2, moe=False, bits=4.5)]
+    drift = []
+    for kw, srows in zip(cases, sim):
+        _, _, cfgs = evaluate(**kw, **M)
+        # normalise the arrows the page renders as unicode
+        srows = {k.replace("→", "->"): v for k, v in srows.items()}
+        for name, tps in ((c[0], c[1]) for c in cfgs):
+            if name not in srows:
+                continue           # rows the simulator has not implemented are a gap, not drift
+            # the page reports toFixed(2), so allow one rounding step in absolute terms as well
+            # as the 1% relative band - at 0.19 tok/s half a cent is already 2.6% relative
+            if abs(srows[name] - tps) > 0.01 and abs(srows[name] - tps) / max(tps, 1e-9) > 0.01:
+                drift.append(f"{kw['t']}B '{name}': CLI {tps:.4f} vs simulator {srows[name]:.2f}")
+    assert not drift, ("the published simulator disagrees with the CLI:\n  " + "\n  ".join(drift))
+
+
+def t_fits_in_vram_warning_is_consistent():
+    """plan and optimize must BOTH disclose the fits-in-VRAM trap, and both stay quiet otherwise.
+
+    The law ranks by bandwidth, so once everything fits in VRAM it puts 2-bit above 4.5-bit.
+    Measured, that gain is not there: the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% slower
+    (pre-registration #16). A disclosure that only one of the two commands makes is the same
+    inconsistency class as the plan-vs-bench disagreement - a user gets different advice
+    depending on which command they happened to run.
+    """
+    big = ["--total", "30.5", "--active", "3.3", "--always-active", "1.2", "--vram", "24",
+           "--vram-bw", "936", "--ram", "64", "--ram-bw", "86", "--disk-bw", "3"]
+    _, opt = cli("optimize", *big)
+    assert "already fits in VRAM" in opt, f"optimize lost the fits-in-VRAM note:\n{opt[-400:]}"
+    _, pl = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "2.5")
+    assert "already fits in VRAM" in pl, f"plan lost the fits-in-VRAM note:\n{pl[-400:]}"
+    # and neither may cry wolf when the model genuinely does NOT fit, where bytes really do buy
+    # speed and quantizing down is the correct advice
+    _, opt2 = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    assert "already fits in VRAM" not in opt2, "optimize warns when the model does not fit VRAM"
+    _, pl2 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--bits", "2.95")
+    assert "already fits in VRAM" not in pl2, "plan warns when the model does not fit VRAM"
+
 
 def t_commands_agree_on_the_same_input():
     """plan / run / bench MUST predict the same number for the same model+machine.

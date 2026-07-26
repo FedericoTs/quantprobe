@@ -83,7 +83,8 @@ QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00
 
 def moe_split_flags(frac, n_layer):
     """-ot regex placing the FIRST ceil(frac*L) layers' experts on GPU, the rest on CPU.
-    Measured 2026-07-26 (pre-registration #13): +34.7% decode and ~2-3x prefill on a 6 GB card.
+    Measured 2026-07-26 (pre-registration #13, corrected): +12.4% decode and ~2-3x prefill
+    on a 6 GB card, against a properly configured baseline.
     Returns None when the layer count is unknown - we will not emit a regex we cannot ground."""
     if not n_layer or frac <= 0:
         return None
@@ -95,20 +96,91 @@ def moe_split_flags(frac, n_layer):
             % "|".join(str(i) for i in range(k, n_layer)))
 
 
+def fits_in_vram_advice(placement, bits):
+    """Once a model fits in VRAM, quantizing it further buys almost no speed - measured.
+
+    The law prices decode as bandwidth, so it predicts that halving the bits nearly halves the
+    time. In the fits-entirely-in-VRAM regime that is simply not what happens. Same 7B, same
+    card, all in VRAM, only the quantization changed (pre-registration #16, r=3):
+
+        Q4_K_M  4.5 bits  4.68 GB  20.03 +/- 0.04 tok/s
+        Q2_K    2.8 bits  3.01 GB  19.17 +/- 0.03 tok/s     36% smaller, 4% SLOWER
+
+    Decode there is not bandwidth-bound, so bytes stop predicting speed. Until that regime is
+    modelled properly the law over-rewards low bits here, and a user following the ranking alone
+    would trade real quality for nothing. Say so, rather than silently ranking on a number known
+    to be wrong in this direction.
+    """
+    if placement != "all in VRAM" or bits >= 4.5:
+        return None
+    return ("it already fits in VRAM, so going lower-bit buys you almost nothing. Measured on "
+            "this class of card: the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER "
+            "(19.17 vs 20.03 tok/s). The speeds ranked above assume decode is bandwidth-bound, "
+            "which it is not once the whole model sits in VRAM. Quantize to make a model FIT - "
+            "once it fits, take the highest bits that still fit.")
+
+
+def speculation_advice(moe, placement):
+    """What speculative decoding is worth for THIS model and placement.
+
+    Every number here is measured on the reference box (Law 6 arms S-a/S-b/S-e/S-f, 3 runs per
+    cell, raw logs in weights/data/). Speculation drafts tokens and verifies them, so output is
+    identical - the only question is whether the verify batch costs more than the pass it saves.
+
+    dense       code  2.10x | prose 1.01x   (ngram; copyability is the whole mechanism)
+    MoE offload code  1.03x                 (the verify batch unions experts - the tax eats it)
+    dense       MTP   1.17x GPU-resident, 1.046x CPU
+    MoE offload MTP   0.76x                 (an actual LOSS)
+
+    Returns None when we have no measurement for the case rather than guessing.
+    """
+    # Only the fully-offloaded case is measured (exps=CPU). A partial split puts some experts
+    # on the fast tier, which we have NOT measured - so it gets no claim either way.
+    experts_offloaded = "exps=CPU" in (placement or "")
+    if moe and experts_offloaded:
+        return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "
+                "offloaded - a verify batch unions experts, and every extra one is a slow read.")
+    if not moe:
+        return ("if you write CODE, add `--spec-type ngram-simple` - measured **2.10x decode** "
+                "(17.7 -> 37.2 tok/s), one flag, no download, identical output. Prose gains "
+                "nothing (1.01x): it drafts by copying spans from your context.")
+    return None                    # MoE fully resident: untested here, so we say nothing
+
+
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
-             n_layer=None):
+             n_layer=None, true_size_gb=None):
     ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
     size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
+    # CAPACITY uses the real file size when we have the file. The estimate above assumes the
+    # depth-aware recipe (attention held at >=4.5 bits), which for a DENSE model - where the
+    # tables set ne = t - inflates size by 4.5/bits: a dense 7B at 2 bits came out 125% too big,
+    # and a real 12B at 3.51 bits read as 7.2 GB against an actual 5.2 GB. That wrongly evicted
+    # the all-in-VRAM row and recommended a placement measured 2.4x slower (3.9 vs 9.56 tok/s).
+    # Only `size` is corrected: the activation terms below are empirically calibrated and
+    # accurate as-is (scaling them too is what made bench 11% optimistic before v1.10.5).
+    if true_size_gb:
+        size = true_size_gb
     act_ne = ne * ab / 8 * 1.15 * act_scale
     act_ex = (a - ne) * bits / 8 * 1.15 * act_scale
     act = act_ne + act_ex
     # Law 4 v2 (context term, v1.1): every generated token re-reads the whole KV cache from
-    # whichever tier KV lives on — kv_gb adds to BOTH the byte budget and that tier's capacity.
+    # whichever tier KV lives on - kv_gb adds to BOTH the byte budget and that tier's capacity.
     kv_gb = ctx * kvp / 1e9 if ctx > 0 else 0.0
     ra = max(rc - 4, 1)
     eta_r = 0.38 if moe else 0.62
     if gl is None: gl = geta * 0.6
-    geta_w = geta if bits >= 4 else gl                 # decode-util law: low-bit GPU decode collapses on weak GPUs
+    # The sub-4-bit GPU DECODE collapse does not exist. It was gated on bit-width (`bits >= 4`),
+    # which made 3.99 bits predict 8.75x slower than 4.00. Pre-registration #16 measured decode
+    # all-in-VRAM across three formats and 1.13-3.51 bits and found no collapse anywhere:
+    #   Bonsai-27B Q1_0 @1.13b  11.94   |  gemma4-12b K-mix @3.51b  9.56  |  Qwen2.5-7B IQ3_XS @3.3b  18.11
+    # The lowest efficiency ever measured on this path is 0.272; gl = 0.04 sits 6.8x below that
+    # floor. Worse than inaccurate, it inverted advice: gemma was predicted at 1.0 tok/s so the
+    # planner recommended pure CPU (3.9) over a placement that actually runs 9.56.
+    # What IS real is a PREFILL effect, and it is format-dependent, not bit-width-dependent: on a
+    # matched pair (same model, same card) IQ3_XS costs 6.80x in prefill but only 1.55x in decode
+    # - IQ dequant is compute, prefill is compute-bound, decode is bandwidth-bound and hides it.
+    # `gl` is retained in the machine table for the prefill model; it must not gate decode.
+    geta_w = geta
     out = []
     if vc > 0 and size + kv_gb <= vc * 0.90:
         out.append(("all in VRAM", 1 / (act / (geta_w * vb) + kv_gb / (ETA_KV * vb)), None,
@@ -122,7 +194,7 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                         1 / (act_ne / (geta * vb) + act_ex / (eta_r * rb) + kv_gb / (ETA_KV * vb)), warn,
                         '-ngl 99 -ot "exps=CPU" --no-mmap'))
         # MoE partial expert offload: attention+KV in VRAM, then as many EXPERT layers as still
-        # fit, remainder on CPU. Measured pre-registration #13 (2026-07-26): +34.7% decode,
+        # fit, remainder on CPU. Measured pre-registration #13 (2026-07-26, corrected): +12.4% decode,
         # ~2-3x prefill vs all-experts-to-CPU, with a hard CLIFF on overcommit (-29% at one step
         # past the ceiling) - so the free-VRAM headroom is deliberately conservative.
         # Desktop reserve: a real machine is not an empty GPU. Measured on this box during the
@@ -243,7 +315,11 @@ def run(args):
            else m.get("kvp", DEFAULT_KVP))
 
     nlay = getattr(args, 'n_layer', None) or m.get('nl')   # 'nl' = layer count VERIFIED from a real GGUF
-    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, n_layer=nlay)
+    import os as _os
+    _g = getattr(args, 'gguf', None)
+    true_size = _os.path.getsize(_g) / 1e9 if _g and _os.path.isfile(_g) else None
+    size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
+                               kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
           f"on {hw.get('hint', 'custom machine')}")
@@ -257,6 +333,12 @@ def run(args):
         print(f"  {star} {tps:6.1f} tok/s  {name}{w}")
     best = cfgs[0]
     print(f"\n  run it:  llama-server -m model.gguf {best[3]}")
+    fit_adv = fits_in_vram_advice(best[0], args.bits)
+    if fit_adv:
+        print(f"\n  note: {fit_adv}")
+    adv = speculation_advice(moe, best[0])
+    if adv:
+        print(f"\n  speculation: {adv}")
     # upgrade advisor
     alts = []
     if rb < 40:
@@ -288,7 +370,7 @@ def run(args):
                   f"shave it ({lever}) -> ~{promoted[0][1]:.1f} tok/s (x{promoted[0][1]/best[1]:.1f})")
         break                                          # nearest boundary only
     if moe and vc > 0 and getattr(args, "n_layer", None) is None:
-        print("\n  note: MoE partial expert offload (measured +34.7% decode, ~2-3x prefill) needs this\n"
+        print("\n  note: MoE partial expert offload (measured +12.4% decode, ~2-3x prefill) needs this\n"
               "  model's layer count to emit exact -ot flags - re-run with --gguf <file> to unlock it.")
     print("\n  (eta bands fitted from published measurements; estimates +/-25%. "
           "Hybrid needs --no-mmap.)")

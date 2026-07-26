@@ -111,3 +111,5 @@ this result makes more interesting, not less.
 
 **The honest headline:** I predicted we would lose this and published that prediction first. We
 won it. Two of four stakes missed *in our favour*, which is still two misses.
+
+**Wired into:** nothing — correctly. This was a head-to-head comparison, not a mechanism: it establishes that our imatrix recipe generalises out of domain and that ranking is metric-dependent. Neither changes a prediction the tool makes. The result is a claim in the README, not a constant.

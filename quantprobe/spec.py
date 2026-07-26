@@ -1,4 +1,4 @@
-"""quantprobe autospec — read the MODEL's law-parameters from the GGUF itself.
+"""quantprobe autospec - read the MODEL's law-parameters from the GGUF itself.
 
 A GGUF already contains everything the decode law needs:
   total params    = sum of tensor element counts

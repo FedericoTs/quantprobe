@@ -176,8 +176,11 @@
     // Law 4 v2: each token re-reads the whole KV cache from KV's tier; KV also consumes capacity
     const kvGb=(ctx>0?(ctx*(kvp||DEFAULT_KVP))/1e9:0);
     const ra=Math.max(H.rc-4,1), etaR=moe?0.38:0.62;
-    const gl=H.gl!==undefined?H.gl:H.geta*0.6;
-    const getaW=bitsVal>=4?H.geta:gl;
+    // No sub-4-bit decode collapse: pre-registration #16 measured the same 7B all in VRAM at
+    // 20.03 (Q4_K_M) / 19.17 (Q2_K) / 18.11 (IQ3_XS) - a 10% band across 2.8-4.5 bits. The old
+    // `bitsVal>=4?H.geta:gl` gate made 3.99 bits predict 8.75x slower than 4.00. The real
+    // format effect is ~6.8x and lives in PREFILL, not decode. Kept in step with plan.py.
+    const getaW=H.geta;
     const cfgs=[];
     if (H.vc>0 && size+kvGb<=H.vc*0.90) cfgs.push({n:"all in VRAM", tps:1/(act/(getaW*H.vb)+kvGb/(ETA_KV*H.vb))});
     if (moe && H.vc>0){ const vN=ne*AB/8*1.08+1.2+kvGb, rN=size-ne*AB/8*1.08;
@@ -314,7 +317,7 @@
     $("chips").innerHTML = '<span class="chip ok">'+best.n+'</span>'+(e.moe?'<span class="chip ok">MoE</span>':'<span class="chip warn">dense</span>')+(best.warn?'<span class="chip warn">'+best.warn+'</span>':'');
     $("verdict").textContent =
       best.n.indexOf("hybrid")>=0 ? "Always-active weights served at VRAM speed, experts at RAM speed — the placement the law recommends (needs --no-mmap)." :
-      best.n==="all in VRAM" ? "Fully GPU-resident — fastest tier." :
+      best.n==="all in VRAM" ? ("Fully GPU-resident — fastest tier." + (bits<4.5 ? " But it ALREADY fits: measured on a Pascal card, the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. Once a model fits in VRAM, decode stops being bandwidth-bound and a lower quant buys almost nothing — take the highest bits that still fit (pre-registration #16)." : "")) :
       best.n.indexOf("split")>=0 ? "Dense partial offload: each tier serves its share of layers." :
       best.n.indexOf("CPU")>=0 ? (e.moe?"CPU-served MoE: only the active experts move per token.":"CPU-served dense: every weight moves every token.") :
       "Bigger than RAM: cold experts re-stream from disk each token.";

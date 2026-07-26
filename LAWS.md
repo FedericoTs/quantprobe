@@ -37,7 +37,12 @@ our WikiText-2 gate — statistical parity with our best post-training depth-awa
 Law 2 never bounded it and does not now. Two systems-side measurements from the same session, both
 error-barred: (1) the Pascal low-bit decode collapse (gl = 0.04) is **dequant-format-dependent, not
 bit-width-dependent** — Q1_0's trivial dequant runs the 27B all-in-VRAM at 11.94 ± 0.04 tok/s on the
-GTX 1060 where the gl model predicted ~1.8; (2) linear-attention hybrids (48 gated-delta layers)
+GTX 1060 where the gl model predicted ~1.8 — **superseded 2026-07-26 by pre-registration #16, which
+went further: there is no low-bit decode collapse of any kind.** A matched triple (same 7B, same
+card, all in VRAM) decodes 20.03 / 19.17 / 18.11 at Q4_K_M / Q2_K / IQ3_XS — a 10% band across
+2.8–4.5 bits and across formats. The collapse is real but lives entirely in **prefill**, where the
+same IQ3_XS pays **6.8×**. Dequantization is compute; prefill is compute-bound and decode is not.
+The gate has been removed from the planner and `gl` no longer touches decode; (2) linear-attention hybrids (48 gated-delta layers)
 carry a CPU compute tax — measured η ≈ 0.30 vs the dense-GQA 0.62 class, and my same-day staked
 CPU estimate missed by 2×, published here per house rules. Raw logs:
 `weights/data/bonsai_bench.log`, `weights/data/bonsai_ppl.log`.

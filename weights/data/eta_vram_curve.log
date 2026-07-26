@@ -1,0 +1,14 @@
+=== eta-vs-bytes/token curve, all-in-VRAM, bits>=4 only (avoids the gl collapse regime) 2026-07-26 08:15 ===
+[gpu-state] 966 MiB
+--- Qwen2.5-0.5B-Instruct-Q8_0 ---
+| qwen2 1B Q8_0                  | 500.79 MiB |   494.03 M | CUDA       |  99 |            tg32 |        127.90 ± 5.40 |
+--- Qwen3-0.6B-Q8_0 ---
+| qwen3 0.6B Q8_0                | 604.15 MiB |   596.05 M | CUDA       |  99 |            tg32 |         95.48 ± 0.23 |
+--- Qwen3.5-4B-Q4_K_M ---
+| qwen35 4B Q4_K - Medium        |   2.63 GiB |     4.33 B | CUDA       |  99 |            tg32 |         27.19 ± 0.05 |
+--- qwen7b-Q4_K_M ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |            tg32 |         20.13 ± 0.12 |
+--- gemma4-12b-B-late12 ---
+| gemma4 ?B Q2_K - Medium        |   4.85 GiB |    11.91 B | CUDA       |  99 |            tg32 |          9.56 ± 0.07 |
+[gpu-state] 822 MiB
+=== CURVE DONE 2026-07-26 08:16 ===

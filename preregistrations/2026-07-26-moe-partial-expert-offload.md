@@ -149,3 +149,5 @@ headline number and was worth it.
 scrutiny as its treatment. Our own tool's recommended flags should have defined the baseline
 from the first run. No amount of unit testing catches this — it is a measurement-design error,
 not a code error.
+
+**Wired into:** `quantprobe/plan.py:moe_split_flags` · `tests/smoke.py:t_moe_split_row_and_flags` · `tests/smoke.py:t_moe_split_no_layer_count_no_bogus_regex` — the planner evaluates the split placement and emits exact -ot flags, suppressing the row entirely when it cannot ground the layer count rather than advertising a speed its flags cannot deliver.
