@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.12.1 - 2026-07-27
+
+**The dense layer-split row emitted an `-ngl` that tells llama.cpp to put every layer on a GPU
+that cannot hold them.** It computed `int(g * 99)` where `g` is a *fraction* and `99` is the
+all-layers sentinel used elsewhere in the same file.
+
+Two failures, the second serious:
+
+- The split was misreported. `llama-70b` (80 layers) printed *"split: 50% layers→VRAM"* and
+  emitted `-ngl 49` — 61%. Prediction and command disagreed.
+- For any model with `<= 99·g` layers the flag **exceeds the layer count**, so llama.cpp places
+  *every* layer on the GPU — on a row that exists **only** when the model does not fit in VRAM.
+  A 32-layer model does this for any `g > 0.32`. That is an OOM, or a silent thrash on Windows
+  with driver memory fallback.
+
+Now emits `int(g · n_layer)`, and **suppresses the row** when no layer count is grounded rather
+than printing a command it cannot honour. `--gguf` always unlocks it (autospec reads
+`block_count`). `mistral-7b` (32) and `llama-70b` (80) gain `nl` from the exact counts already
+written in the table's own comments. The row label now reads `split: 40/80 layers→VRAM` so the
+prediction and the flag are checkable against each other by eye.
+
+Same shape as v1.10.5 and v1.11.1: a layer count with a proper resolver, at a call site that
+didn't use it. Found by a 25-agent survey auditing our own emitted flags.
+
+### The test harness was validating two different copies of the code
+
+Chasing this exposed something worse than the bug. `python tests/smoke.py` puts `tests/` on
+`sys.path[0]` — **not** the cwd — so in-process `from quantprobe.plan import ...` resolved to
+**site-packages** while the subprocess CLI tests resolved to the **repo**. Half the suite silently
+tested stale installed code, so an edit that hadn't been reinstalled was invisible to it.
+
+That cost a real mutation test: re-introducing this bug reported `ok` while the same function
+failed when called directly, and three rewrites of the assertion went by before the harness
+turned out to be at fault. `smoke.py` now puts the repo first; `verify.py` layer 2 still covers
+the installed artifact deliberately and separately.
+
+The surviving assertion is physical rather than formal: **the layers sent to the GPU must fit in
+its VRAM.** Checking the printed label against the emitted flag does not work — both derive from
+the same variable, so a wrong value agrees with itself — and a bare range check does not either,
+since `-ngl 49` is comfortably under 80 layers while asking a 24 GB card to hold 26.3 GB.
+
+
 ## 1.12.0 - 2026-07-26
 
 **A dense model's predicted speed did not respond to its quantization at all.** Reported from the
