@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.10.5 — 2026-07-26
+
+**Two commands in this tool disagreed about the same input, and the disagreement was corrupting
+our own accuracy reporting.** On an identical model and machine, `plan` predicted 19.6 tok/s and
+`bench` predicted 22.1. Measured: 19.88. `plan` was right to within 1.4%; `bench` was 11% wrong —
+so every predicted-vs-measured figure the tool reported depended on which command produced it.
+Predicted-vs-measured is the entire product, which makes this the worst class of bug this
+project can have.
+
+Two independent causes, both introduced by recent work:
+
+- **Double correction.** `bench` applied a file-size calibration on top of `autospec`, which
+  already derives effective bits from that same file — correcting one discrepancy twice. The
+  calibration is now skipped whenever the spec came from the file (it still applies when a
+  preset's assumed size must be reconciled against a real one).
+- **Divergent fallbacks.** `runtime` did not fall back to a preset's verified layer count the
+  way `plan` does, so `run`/`bench` silently dropped the MoE split placement for preset models
+  (18.9 vs 16.6). The n_layer threading was "fixed" earlier the same day in `plan` and
+  `optimize` and written differently here — a checklist found the first instances and missed
+  this one.
+
+**The structural guard:** `plan`, `run` and `bench` must now produce identical predictions for
+identical input — asserted across preset models, custom specs and multiple hardware classes in
+the suite, and against a real GGUF in `verify.py`'s end-to-end layer (the calibration path only
+exists when a file does, so the offline suite cannot reach it). It caught the second bug within
+seconds of being written, and mutation-testing it exposed a hole in the guard itself, which is
+why the file-based assertion lives in the gate.
+
+After the fix: predicted 19.6, measured 19.22 ± 0.7 — **−2%**. The law was accurate the whole
+time; we were misreporting it. 67 tests.
+
 ## 1.10.4 — 2026-07-26
 
 **A stated scope limit instead of a silent error.** We do not model multi-token prediction or

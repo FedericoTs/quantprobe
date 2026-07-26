@@ -254,6 +254,39 @@ def t_measured_anchors_still_retrodicted():
                          f"({(pred-measured)/measured*100:+.0f}%, tolerance +/-{tol*100:.0f}%)")
     assert not drift, "the law stopped retrodicting measured reality:\n  " + "\n  ".join(drift)
 
+def t_commands_agree_on_the_same_input():
+    """plan / run / bench MUST predict the same number for the same model+machine.
+
+    They did not: bench applied a file-size calibration that plan skipped, so on identical
+    input plan said 19.6 and bench said 22.1 - and bench was 11% wrong against a measured
+    19.88 while plan was 1.4% right. Every 'predicted vs measured' figure the tool reported
+    was distorted by which command produced it. This is the guard against a repeat.
+    """
+    import re, os
+    gguf = os.environ.get("QUANTPROBE_TEST_GGUF")
+    cases = ([["--gguf", gguf, "--machine", "2016-xmp"]] if gguf and os.path.isfile(gguf) else []) + [
+        ["--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp"],
+        ["--model", "mistral-7b", "--bits", "4.5", "--machine", "rtx-3060"],
+        ["--total", "110", "--active", "12", "--always-active", "2.7", "--bits", "2.5",
+         "--vram", "24", "--vram-bw", "936", "--ram", "64", "--ram-bw", "80", "--disk-bw", "3"],
+    ]
+    for args in cases:
+        rc0, plan_out = cli("plan", *args)
+        assert rc0 == 0, f"plan failed for {args}"
+        m0 = re.search(r"\*\s+([0-9.]+) tok/s", plan_out)
+        assert m0, f"plan printed no winning row for {args}"
+        plan_tps = float(m0.group(1))
+        g = gguf if "--gguf" in args else "x.gguf"
+        for cmd in ("run", "bench"):
+            extra = ["--gguf", g] if "--gguf" not in args else []
+            rc, out = cli(cmd, *(extra + args), "--dry")
+            m = re.search(r"predicted ([0-9.]+)", out)
+            assert m, f"{cmd} printed no prediction for {args}: {out[:200]}"
+            got = float(m.group(1))
+            assert abs(got - plan_tps) / plan_tps < 0.01, (
+                f"{cmd} disagrees with plan on identical input {args}: "
+                f"plan {plan_tps} vs {cmd} {got}")
+
 def t_tier_boundary_advisor():
     # file just over the VRAM boundary -> advisor names the shave and prices the promotion
     rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",

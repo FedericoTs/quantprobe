@@ -89,9 +89,20 @@ def layer3_e2e(gguf, llama_dir):
     out = r.stdout + r.stderr
     if "not found" in out and "llama" in out.lower():
         SKIP.append("E2E: llama.cpp not available"); return False
+    # CROSS-COMMAND CONSISTENCY on a real file. The offline suite cannot catch this: the
+    # file-size calibration path only runs when a GGUF exists, and a double correction there
+    # made bench 11% optimistic while plan was 1.4% accurate on identical input.
+    pr = subprocess.run([sys.executable, "-m", "quantprobe", "plan", "--gguf", gguf],
+                        capture_output=True, text=True, errors="replace", env=env)
+    mp = re.search(r"\*\s+([0-9.]+) tok/s", pr.stdout + pr.stderr)
+    assert mp, "plan printed no winning row for the E2E file"
     m = re.search(r"measured: ([0-9.]+) \+/- ([0-9.]+) tok/s \(predicted ([0-9.]+), ([+-][0-9]+)%\)", out)
     assert m, "E2E produced no predicted-vs-measured line:\n" + out[-400:]
     meas, err, pred, delta = float(m[1]), float(m[2]), float(m[3]), int(m[4])
+    plan_tps = float(mp.group(1))
+    assert abs(pred - plan_tps) / plan_tps < 0.01, (
+        f"plan and bench disagree on the same file: plan {plan_tps} vs bench {pred}")
+    print(f"  plan and bench agree at {plan_tps} tok/s")
     print(f"  predicted {pred}, measured {meas} +/- {err}  ({delta:+d}%)")
     assert err <= meas * 0.15, f"measurement too noisy to trust ({err/meas*100:.0f}% spread) - re-run warm"
     assert abs(delta) <= 25, f"prediction outside the stated +/-25% band: {delta:+d}%"

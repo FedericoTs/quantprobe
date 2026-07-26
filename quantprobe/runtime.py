@@ -29,7 +29,7 @@ def find_llama(explicit, tool):
 def best_flags(a):
     """Run the planner, return (best_config, flags_list) for the winning placement."""
     from . import spec as specmod
-    specmod.apply(a)
+    from_file = specmod.apply(a)      # True when the spec came from the GGUF itself
     if getattr(a, "bits", None) is None:
         a.bits = 2.5
     m = dict(planmod.MODELS[a.model]) if getattr(a, "model", None) in planmod.MODELS else {}
@@ -51,9 +51,15 @@ def best_flags(a):
     rb = a.ram_bw if a.ram_bw is not None else hw.get("rb", 40)
     db = planmod.agg_bw(a.disk_bw, 0.75) if a.disk_bw is not None else hw.get("db", 0.5)
     geta = hw.get("geta", 0.45); gl = hw.get("gl", None)
+    # File-size calibration corrects a PRESET's assumed size against the real file. It must NOT
+    # run when autospec already read the spec from that same file: bits are then derived from
+    # the file size, so scaling by (real size / predicted size) corrects the same discrepancy
+    # twice. Measured 2026-07-26 on three models: the double correction made bench 8-13% more
+    # optimistic than plan on identical input, and plan was the accurate one (predicted 19.6 vs
+    # measured 19.88, +1.4%; bench said 22.1, -11%).
     act_scale = 1.0
     gguf = getattr(a, "gguf", None)
-    if gguf and os.path.isfile(gguf):
+    if gguf and os.path.isfile(gguf) and not from_file:
         ab = max(a.bits, 4.5)
         size_pred = (ne * ab / 8 + (t - ne) * a.bits / 8) * 1.08
         size_real = os.path.getsize(gguf) / 1e9
@@ -65,7 +71,8 @@ def best_flags(a):
     kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None)
            else m.get("kvp", planmod.DEFAULT_KVP))
     _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
-                                  ctx=ctx, kvp=kvp, n_layer=getattr(a, "n_layer", None))
+                                  ctx=ctx, kvp=kvp,
+                                  n_layer=getattr(a, "n_layer", None) or m.get("nl"))
     # run/bench/dashboard LAUNCH stock llama.cpp, so they may only pick placements stock
     # llama.cpp can actually execute. The three-tier expert-cache row's "flags" field is a
     # PROSE description ("+ runtime-managed expert cache"), not argv - exec'ing it hands
