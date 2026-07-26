@@ -219,6 +219,41 @@ def t_anchor_matrix_v13():
     v = float(re.search(r"([0-9.]+) tok/s\s+stream from disk \(cold", out).group(1))
     assert 0.2 <= v <= 0.5, f"laguna anchor drifted: {v}"
 
+# EVERY published measured number becomes a regression test. If a code change makes the law
+# stop retrodicting reality, this fails - which is the only guarantee that matters when the
+# tool and the claims evolve together. Tolerance is the stated +/-25% prediction band unless a
+# tighter one is justified. Add a row here whenever a new number is published.
+MEASURED_ANCHORS = [
+    # (label, plan args, placement row substring, measured value, tolerance)
+    ("30B hybrid on the 2016 box (the flagship 19.3)",
+     ["plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp"],
+     "hybrid", 19.30, 0.30),
+    ("30B all-experts-to-CPU, corrected baseline",
+     ["plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp"],
+     "hybrid", 18.35, 0.30),
+    ("110B GLM-Air streamed from SATA",
+     ["plan", "--model", "glm-air", "--bits", "2.5", "--machine", "2016-xmp"],
+     "stream from disk (cold", 0.19, 0.60),
+    ("Laguna 118B streamed from SATA",
+     ["plan", "--total", "117.6", "--active", "8", "--always-active", "2.5",
+      "--bits", "2.5", "--machine", "2016-xmp"],
+     "stream from disk (cold", 0.38, 0.60),
+]
+
+def t_measured_anchors_still_retrodicted():
+    import re
+    drift = []
+    for label, args, row, measured, tol in MEASURED_ANCHORS:
+        rc, out = cli(*args)
+        assert rc == 0, f"{label}: plan failed"
+        m = re.search(r"([0-9.]+) tok/s\s+" + re.escape(row), out)
+        assert m, f"{label}: placement row '{row}' vanished from the plan output"
+        pred = float(m.group(1))
+        if abs(pred - measured) / measured > tol:
+            drift.append(f"{label}: predicted {pred}, measured {measured} "
+                         f"({(pred-measured)/measured*100:+.0f}%, tolerance +/-{tol*100:.0f}%)")
+    assert not drift, "the law stopped retrodicting measured reality:\n  " + "\n  ".join(drift)
+
 def t_tier_boundary_advisor():
     # file just over the VRAM boundary -> advisor names the shave and prices the promotion
     rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
@@ -245,7 +280,7 @@ def t_optimize_backtest_rediscovers_measured_config():
     tps = float(top.split("tok/s")[0].split()[-1])
     assert tps > 18.9, f"top pick must beat the hybrid config it replaced: {tps}"
     # and the emitted command must be a real -ot regex, not prose or a bare fallback
-    assert "ffn_.*_exps" in out and "blk\.(" in out, "realize-the-pick lost its exact -ot flags"
+    assert "ffn_.*_exps" in out and r"blk\.(" in out, "realize-the-pick lost its exact -ot flags"
 
 def t_optimize_realizable_default():
     rc, out = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
