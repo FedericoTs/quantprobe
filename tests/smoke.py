@@ -506,6 +506,40 @@ def t_invariant_rows_sorted_and_positive():
         assert tps == sorted(tps, reverse=True), f"rows not sorted by tok/s: {tps}"
         assert all(x > 0 for x in tps), f"non-positive prediction: {tps}"
 
+def t_recipes_all_valid_and_evidenced():
+    # every recipe must be well-formed AND carry its evidence - a recipe you cannot check is a
+    # recipe nobody should use, and that bar applies to ours as much as to contributions.
+    from quantprobe.recipes import load_all
+    rs = load_all()
+    assert len(rs) >= 4, f"recipe atlas missing entries: {len(rs)}"
+    for r in rs:
+        m, p, pr = r["model"], r["probe"], r["provenance"]
+        assert m["key"] and m["arch"] and m["n_layer"] > 0, f"bad model block: {m}"
+        lo, hi = p["fragile_band"]
+        assert 0 <= lo <= hi <= m["n_layer"] - 1, f"{m['key']}: band {lo}-{hi} outside 0..{m['n_layer']-1}"
+        assert len(p["band_deltas"]) >= 3, f"{m['key']}: too few bands to locate a fragile one"
+        # the declared fragile band must actually be the worst one measured
+        worst = max(p["band_deltas"], key=lambda b: b["delta_ppl"])
+        assert [worst["lo"], worst["hi"]] == [lo, hi], \
+            f"{m['key']}: declared band {lo}-{hi} is not the measured worst {worst['lo']}-{worst['hi']}"
+        for f in ("raw_log", "eval", "hardware", "measured"):
+            assert pr.get(f), f"{m['key']}: provenance missing '{f}'"
+
+def t_recipes_command_lists_them():
+    rc, out = cli("recipes")
+    assert rc == 0 and "fragility bands" in out and "--recipe" in out, f"recipes cmd broke: {out[:200]}"
+    assert "evidence:" in out, "recipes must show their evidence"
+
+def t_recipe_mismatch_refused():
+    # a band is only meaningful for the model it was measured on
+    rc, out = cli("quantize", "--gguf", "x.gguf", "--out", "o.gguf", "--recipe", "qwen3-30b", "--dry")
+    assert rc != 0 and "Traceback" not in out, f"mismatch not handled: {out[:200]}"
+
+def t_recipe_unknown_key_graceful():
+    rc, out = cli("quantize", "--gguf", "x.gguf", "--out", "o.gguf", "--recipe", "no-such", "--dry")
+    assert rc != 0 and "Traceback" not in out and ("no recipe" in out or "not found" in out), \
+        f"unknown recipe not graceful: {out[:200]}"
+
 def t_python_m_package():
     # `python -m quantprobe` must work identically to the console script -
     # it is the PATH-proof fallback for Windows user-site installs

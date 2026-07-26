@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "model": {
+    "key": "qwen3.5-35b",
+    "name": "Qwen3.5-35B-A3B",
+    "arch": "qwen35moe",
+    "n_layer": 40,
+    "moe": true
+  },
+  "probe": {
+    "reference_ppl": 5.4298,
+    "band_deltas": [
+      {
+        "lo": 0,
+        "hi": 9,
+        "delta_ppl": 0.0909
+      },
+      {
+        "lo": 10,
+        "hi": 19,
+        "delta_ppl": 0.1531
+      },
+      {
+        "lo": 20,
+        "hi": 29,
+        "delta_ppl": 0.1579
+      },
+      {
+        "lo": 30,
+        "hi": 39,
+        "delta_ppl": 0.4492
+      }
+    ],
+    "fragile_band": [
+      30,
+      39
+    ],
+    "fragility_ratio": 2.89,
+    "shape": "late"
+  },
+  "provenance": {
+    "measured": "2026-07-25",
+    "eval": "WikiText-2 test (held out)",
+    "hardware": "GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K",
+    "base_quant": "Q6_K",
+    "raw_log": "weights/data/apex_ab_stageA2.log",
+    "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
+    "contributor": "FedericoTs"
+  }
+}

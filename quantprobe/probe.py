@@ -273,10 +273,40 @@ def quantize(a):
     if not os.path.isfile(a.gguf):
         raise SystemExit(f"GGUF not found: {a.gguf}  (point --gguf at a real high-precision GGUF: f16/bf16/Q8)")
     n_lay = n_layers(a.gguf)
+    rec_key = getattr(a, "recipe", None)
     if a.protect:
         lo, hi = (int(x) for x in a.protect.split("-"))
+    elif rec_key:
+        from . import recipes as recmod
+        r = recmod.find(key=rec_key)
+        if not r:
+            raise SystemExit(f"no recipe '{rec_key}'. See what has been measured: quantprobe recipes")
+        if r["model"]["n_layer"] != n_lay:
+            raise SystemExit(
+                f"recipe '{rec_key}' is for a {r['model']['n_layer']}-layer model; this file has "
+                f"{n_lay}.\n  A fragile band is only meaningful for the model it was measured on.")
+        lo, hi = r["probe"]["fragile_band"]
+        print(f"[quantprobe] using measured recipe '{rec_key}': protect layers {lo}-{hi} "
+              f"({r['probe']['shape']}-fragile, {r['probe']['fragility_ratio']}x median)")
+        print(f"  measured {r['provenance']['measured']} on {r['provenance']['hardware']}; "
+              f"evidence: {r['provenance']['raw_log']}")
     else:
         lo, hi = n_lay - a.protect_late, n_lay - 1
+        # If someone has already measured THIS model, say so - the default is a guess, and a
+        # measured band is strictly better information (Law 3: fragility is not predictable).
+        try:
+            from . import recipes as recmod
+            from .spec import from_gguf
+            arch = from_gguf(a.gguf).get("arch")
+            r = recmod.find(arch=arch, n_layer=n_lay)
+            if r:
+                rlo, rhi = r["probe"]["fragile_band"]
+                if (rlo, rhi) != (lo, hi):
+                    print(f"[quantprobe] a MEASURED recipe exists for this model class "
+                          f"({r['model']['name']}): fragile band {rlo}-{rhi}, not the default "
+                          f"{lo}-{hi}.\n  Use it:  --recipe {r['model']['key']}")
+        except Exception:
+            pass
     out = a.out or os.path.splitext(a.gguf)[0] + "-depthaware.gguf"
     imat = getattr(a, "imatrix", None)
     if imat and not os.path.isfile(imat) and not getattr(a, "dry", False):

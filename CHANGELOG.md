@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.10.0 — 2026-07-26
+
+**`quantprobe recipes` — the community fragility atlas.** The expensive part of the custom
+pipeline is the probe (hours on a large model). But Law 3's result is a property of the MODEL,
+not your machine: Qwen3-30B's fragile band is layers 36-47 whether you measured it on a GTX 1060
+or an H100. So it needs measuring **once, globally, ever** — and everyone after that skips
+straight to the build.
+
+- `quantprobe recipes` lists what has already been measured. Seeded with **four models, every
+  band read from a raw log in this repo** — Mistral-7B (0-7, **early**-fragile, 27x the median
+  band), Qwen2.5-7B (21-27, late, 2.5x), Qwen3-30B-A3B (36-47, late, 3.7x), Qwen3.5-35B-A3B
+  (30-39, late, 2.9x). Gemma-4-12B is claimed in LAWS.md but its band log was not located in
+  this sweep, so it is **not** included — a recipe without evidence does not ship.
+- `quantize --recipe <key>` builds using a measured band instead of the default guess, and
+  **refuses** if the recipe's layer count does not match your file, because a band is only
+  meaningful for the model it was measured on.
+- When you quantize a model someone has already probed, the tool **says so** and names the
+  recipe — the default `--protect-late 12` is a guess, and a measurement beats it.
+- Every recipe carries its evidence: the raw log, the eval corpus, the hardware, the method.
+  Contributions are held to the same bar. A recipe you cannot check is a recipe nobody should use.
+
+Why this matters: Mistral is **early**-fragile while its architectural near-twin Qwen is late.
+The default guess protects the wrong end of that model entirely — which is the whole point of
+Law 3, now enforceable in one flag instead of six hours. 64 tests.
+
 ## 1.9.2 — 2026-07-26
 
 Consistency audit. The trigger: 54 green unit tests sat there while the tool shipped a config
