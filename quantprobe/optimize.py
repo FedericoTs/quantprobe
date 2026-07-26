@@ -86,7 +86,7 @@ def run(a):
                         continue
                     _, _, cfgs = planmod.evaluate(t * pf, ac, ne, moe, bits, vc, vb, rc2, rb, db2,
                                                   geta, 1.0, gl, ctx=ctx, kvp=kvp * kf,
-                                                  n_layer=getattr(a, "n_layer", None) or m.get("nl"))
+                                                  n_layer=planmod.effective_n_layer(a, m))
                     if not cfgs:
                         continue
                     if not getattr(a, "any_runtime", False):

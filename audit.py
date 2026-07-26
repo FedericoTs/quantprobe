@@ -127,6 +127,55 @@ def audit_decision_surface_is_evidenced():
     return sorted(surface), problems
 
 
+def audit_single_source_of_truth():
+    """C. Is any fact expressed in two places with nothing forcing them to agree?
+
+    This is the largest defect class in the project's history: 7 of 22 shipped defects, ~32%.
+    Every one was the same disease - one fact, two expressions, no mechanism keeping them equal:
+    the version in pyproject.toml vs __init__.py; the decode law in Python vs JavaScript; the
+    fits-in-VRAM advisory in plan but not optimize; bench correcting file size twice; and the
+    layer-count fallback hand-written at four separate call sites.
+
+    Point-fixing each instance never worked, because the SHAPE kept reappearing. So check for the
+    shape.
+    """
+    problems = []
+
+    # C1. the layer-count fallback must exist in exactly one place
+    reimpl = []
+    for path in sorted(glob.glob(os.path.join(HERE, "quantprobe", "*.py"))):
+        src = io.open(path, encoding="utf-8").read()
+        for i, line in enumerate(src.splitlines(), 1):
+            if line.lstrip().startswith("#"):
+                continue
+            if re.search(r'getattr\([^)]*["\']n_layer["\'][^)]*\)\s*or\b', line):
+                reimpl.append(f"{os.path.basename(path)}:{i} re-implements the layer-count "
+                              f"fallback - call plan.effective_n_layer() instead")
+    problems += reimpl
+
+    # C2. the machine/model tables exist in Python AND in the published simulator's JavaScript
+    sys.path.insert(0, HERE)
+    from quantprobe.plan import MACHINES
+    page = os.path.join(HERE, "docs", "index.html")
+    if os.path.isfile(page):
+        js = io.open(page, encoding="utf-8").read()
+        rows = re.findall(r'\{n:"([^"]+)",\s*vc:([\d.]+),\s*vb:([\d.]+),\s*rc:([\d.]+),'
+                          r'\s*rb:([\d.]+),\s*db:([\d.]+),\s*geta:([\d.]+)(?:,\s*gl:([\d.]+))?\}', js)
+        pysig = {(m["vc"], m["vb"], m["rc"], m["rb"]): (k, m) for k, m in MACHINES.items()}
+        for n, vc, vb, rc, rb, db, geta, gl in rows:
+            sig = (float(vc), float(vb), float(rc), float(rb))
+            if sig not in pysig:
+                continue                       # simulator-only entry (e.g. "Custom"); not a drift
+            k, m = pysig[sig]
+            for field, sval in (("db", db), ("geta", geta), ("gl", gl)):
+                if not sval:
+                    continue
+                if abs(float(sval) - m[field]) > 1e-9:
+                    problems.append(f"simulator preset '{n}' disagrees with plan.MACHINES['{k}']: "
+                                    f"{field} = {sval} (JS) vs {m[field]} (Python)")
+    return problems
+
+
 def main():
     print("\n=== A. do measured findings reach the code? ===")
     n, pa = audit_findings_reach_code()
@@ -146,7 +195,14 @@ def main():
     if not pb:
         print("  no placement can be recommended without either a measurement or a stated reason")
 
-    problems = pa + pb
+    print("\n=== C. is any fact expressed in two places, unenforced? ===")
+    pc = audit_single_source_of_truth()
+    for p in pc:
+        print("  DUPLICATED  " + p)
+    if not pc:
+        print("  the layer-count resolver is used everywhere; simulator tables agree with Python")
+
+    problems = pa + pb + pc
     print("\n" + "=" * 60)
     if problems:
         print(f"{len(problems)} audit finding(s). These are not test failures - they are places")
