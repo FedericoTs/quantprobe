@@ -115,6 +115,7 @@ TENSOR_ROLES = [
     ("attention",     r"attn_",                     "ALWAYS ACTIVE - protect"),
     ("recurrent/SSM", r"ssm_",                      "ALWAYS ACTIVE - protect"),
     ("embedding",     r"(token_embd|output\.)",     "ALWAYS ACTIVE - protect"),
+    ("mtp-head",      r"nextn",                      "ALWAYS ACTIVE when MTP is on - protect"),
     ("router",        r"ffn_gate_inp",              "tiny, kept at full precision"),
     ("norm",          r"(_norm|norm\.)",            "tiny, kept at full precision"),
     ("dense-ffn",     r"ffn_(gate|up|down)\.",      "dense FFN - the depth-aware band applies here"),

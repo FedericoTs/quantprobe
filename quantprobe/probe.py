@@ -25,8 +25,8 @@ def exe(name):
 # refined from the user's OWN elapsed time after the first step - see _Progress.
 QUANT_GB_PER_MIN = 2.8       # 35 GB source -> 12.6 min per pass, five passes measured
 PPL_MIN_PER_GB_FITS = 0.55   # intermediate fits memory: 13 GB model -> ~7 min / 32 chunks
-PPL_MIN_PER_GB_SPILLS = 2.4
-IMATRIX_MIN_PER_GB = 7.7      # 35 GB source, 100 chunks -> 270 min measured  # intermediate exceeds RAM: 23 GB -> ~55 min (page thrashing)
+PPL_MIN_PER_GB_SPILLS = 2.4  # intermediate exceeds RAM: 23 GB -> ~55 min (page thrashing)
+IMATRIX_MIN_PER_GB = 7.7     # 35 GB source, 100 chunks -> 270 min measured
 
 
 def fmt_dur(minutes):
@@ -235,7 +235,7 @@ def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
                       "open an issue with the model name so the registry can be extended.")
         except Exception:
             pass
-    cmd += ["--tensor-type", "ffn_.*_shexp.*=q8_0"]
+    cmd += ["--tensor-type", "ffn_.*_shexp.*=q8_0", "--tensor-type", "nextn.*=q8_0"]
     if protect_lo > 0:
         cmd += ["--tensor-type", f"{_band_re(0, protect_lo - 1)}=q2_k"]
     if protect_hi < n_lay - 1:

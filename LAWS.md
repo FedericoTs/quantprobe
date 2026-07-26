@@ -107,8 +107,13 @@ the utilization constant η collapsing per memory tier.**
   several accepted tokens per read — so the law reads LOW for them by the acceptance multiplier
   (a community datapoint: ~1.8x on Qwen3.6-35B-A3B with MTP). This is a missing factor, not a
   refutation: the bytes-and-bandwidth term is unchanged and the multiplier sits on top. Measuring
-  it is Law 6's job, and our own measured antagonism result (draft-model speculation 2.3x SLOWER
-  on MoE) means the sign is NOT obvious — MTP heads reuse the forward pass, draft models do not.
+  it is Law 6's job. **Measured 2026-07-26 (arm S-e): the sign FLIPS with placement.** Same
+  model, same file, MTP toggled on the same server: experts-in-RAM **0.76x (a 24% LOSS)**,
+  model-spilling **1.94x (a 94% GAIN)**. MTP trades more work per forward pass for fewer
+  passes, so it pays only where an extra *pass* costs more than an extra *batch*. MTP does
+  NOT escape the expert-union tax that makes draft speculation 2.3x slower on MoE. There is
+  therefore no single multiplier to add to this law - a joint term is required, and the
+  compute-bound regime (model comfortably GPU-resident) remains untested on this hardware.
 - *Scope confirmation (2026-07-26):* pre-registration #12 changed **which** weights carry precision
   (importance-matrix calibration) at identical format and identical file size, and measured CPU
   prefill **unchanged** (44.80 vs 43.67 tok/s, inside run-to-run noise — staked at ±5% and hit).

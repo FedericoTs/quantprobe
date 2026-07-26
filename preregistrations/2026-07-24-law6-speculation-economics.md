@@ -83,3 +83,58 @@ inverted. Misses publish with the same prominence as hits — they are the point
 η_spec enters the planner as a priced column; speculation joins placement, format, KV-policy and
 persistence as a decided atom in the per-machine profile; and the demo writes itself: the same
 2016 desktop, measurably faster, **predicted first**.
+
+---
+
+## Arm S-e scored (2026-07-26, log: weights/data/prereg_se_mtp.log)
+
+Model: `mudler/Qwen3.6-35B-A3B-APEX-MTP-I-Nano` (11.7 GB, 41 layers incl. the MTP head) — the
+same family the reporting user runs. MTP toggled with `--spec-type none` vs `draft-mtp` on the
+**same file**, same prompt, same placement: nothing else moves. Warm-up request discarded.
+
+| placement | MTP off | MTP on | effect |
+|---|---|---|---|
+| hybrid (attention→VRAM, experts→RAM) | 16.39 | 12.42 | **0.76× — a 24% LOSS** |
+| all-GPU (11.7 GB model on a 6 GB card, spilling) | 3.03 | 5.89 | **1.94× — a 94% GAIN** |
+
+- **S-e1: SPLIT, and my stated direction was wrong.** Staked 1.4–2.2× *faster* in both
+  placements. On hybrid it is **0.76×** — below the 1.15 floor I set, which I wrote would mean
+  "MTP inherits the expert-union tax after all". It does. On the spilling placement it is
+  **1.94×**, inside the staked band. Same file, same model, opposite signs.
+- **S-e2: DECISIVE MISS — and this is the real finding.** Staked the multiplier would vary by
+  **less than 25%** across placements. Measured variation: **157%**. I also wrote what a miss
+  would mean, before measuring: *"if they interact strongly, the law needs a joint term rather
+  than a multiplier."* That is now the measured outcome.
+- **S-e3: unscoreable as posed.** It assumed a single multiplier existed to compose with Law 4.
+  None does.
+
+### Why the sign flips (mechanism, consistent with an existing measured corollary)
+
+MTP trades **more work per forward pass** for **fewer forward passes**. Whether that pays depends
+entirely on which side is expensive on your tier:
+
+- **Experts in RAM (hybrid):** a verify batch unions more experts than a single token needs, and
+  every extra expert is a slow RAM read. The extra work costs more than the saved pass. This is
+  the same mechanism as the already-published Law 4 corollary — draft-model speculation measured
+  **2.3× slower** on MoE — and MTP does *not* escape it, despite reusing the forward pass.
+- **Model spilling (all-GPU on too little VRAM):** an extra forward pass means re-paging the
+  model across PCIe. That is enormously expensive, so halving the number of passes nearly doubles
+  throughput.
+
+**The rule for users, which is not what anyone would guess:** MTP is not free acceleration. It
+pays when an extra *pass* is expensive, and costs when an extra *batch* is expensive.
+
+### Scope limit — the regime our hardware cannot test
+
+The all-GPU arm here is a **thrashing** regime, not a healthy compute-bound one: an 11.7 GB model
+on a 6 GB card. The regime the reporting user is actually in — model comfortably GPU-resident on
+12 GB — is **untested on this box** and is the one place a clean 1.8× would be expected. Nothing
+here contradicts his measurement; the two sit in different regimes, and confirming the crossover
+needs either a larger card or a model small enough to fit ours entirely.
+
+### Consequence
+
+`plan --mtp` is **not** shipped: a flag applying a single multiplier would encode exactly the
+model this measurement refuted. The LAWS.md scope limit stands, now with a measured direction
+attached rather than a guess. What users get today is the honest placement-conditional guidance
+above.

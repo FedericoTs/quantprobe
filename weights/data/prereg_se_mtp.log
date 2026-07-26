@@ -1,0 +1,23 @@
+=== LAW 6 ARM S-e: MTP multiplier 2026-07-26 06:56 ===
+[gpu-state] 854 MiB
+CHECKPOINT OK: model present (11G)
+CHECKPOINT OK: payload written
+
+--- placement=hybrid  spec-type=none ---
+CELL warmup-hybrid-none  tg tok/s: 13.03   generated: 84
+CELL hybrid/none  tg tok/s: 16.39   generated: 84
+
+--- placement=hybrid  spec-type=draft-mtp ---
+CELL warmup-hybrid-draft-mtp  tg tok/s: 12.09   generated: 84
+CELL hybrid/draft-mtp  tg tok/s: 12.42   generated: 84
+
+--- placement=allgpu  spec-type=none ---
+CELL warmup-allgpu-none  tg tok/s: 3.06   generated: 84
+CELL allgpu/none  tg tok/s: 3.03   generated: 84
+
+--- placement=allgpu  spec-type=draft-mtp ---
+CELL warmup-allgpu-draft-mtp  tg tok/s: 5.84   generated: 84
+CELL allgpu/draft-mtp  tg tok/s: 5.89   generated: 84
+
+[gpu-state] 859 MiB
+=== S-e MEASUREMENT DONE 2026-07-26 07:00 ===
