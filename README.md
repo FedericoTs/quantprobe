@@ -113,7 +113,7 @@ quantprobe dashboard --gguf 2bit.gguf                    # the law live, every r
 
 ## Help grow the law
 
-`quantprobe bench --contribute` prints exactly what would be shared plus a pre-filled issue link — **you review and submit; nothing is ever sent automatically.** Points that land *outside* the predicted bands are the most valuable ones. Open predictions anyone can settle: [preregistrations/](preregistrations/).
+`quantprobe bench --contribute` prints exactly what would be shared plus a pre-filled issue link — **you review and submit; nothing is ever sent automatically.** Points that land *outside* the predicted bands are the most valuable ones. Open predictions anyone can settle: [preregistrations/](preregistrations/) — including [Law 6, staked before launch](preregistrations/2026-07-24-law6-speculation-economics.md) and scored in public during launch week.
 
 ## Deep dives
 
@@ -123,6 +123,8 @@ quantprobe dashboard --gguf 2bit.gguf                    # the law live, every r
 | [LAWS.md](LAWS.md) | the four laws — statements, measurements, falsifiable predictions |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | worked examples with real output, including the ×5.4 optimizer A/B |
 | [docs/HARDWARE.md](docs/HARDWARE.md) | the 2016 box: exact specs, measured bandwidths, what the next euro buys |
+| [docs/DEEP-DIVE.md](docs/DEEP-DIVE.md) | what's new vs. built-on, parity tables, and the **repository map** (this repo also holds the earlier research spike that led here) |
+| [papers/arxiv/](papers/arxiv/) | the paper (submission-ready LaTeX) |
 | [preregistrations/](preregistrations/) | every staked prediction with its verdict — hits **and** misses |
 | [weights/LAW5_PROTOCOL.md](weights/LAW5_PROTOCOL.md) | the live Law-5 research ledger, including the retraction |
 | [CHANGELOG.md](CHANGELOG.md) | every release |
