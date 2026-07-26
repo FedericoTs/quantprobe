@@ -15,13 +15,13 @@ MODELS = {
     "qwen3-30b":  dict(t=30.5, a=3.3,  ne=1.2,  moe=True,  kvp=98304,  nl=48,  hint="Qwen3-30B-A3B"),          # 48L x 4KV x 128d (exact; calibration anchor)
     "deepseek-16b": dict(t=15.7, a=2.4, ne=1.3,  moe=True,  kvp=31104,  nl=27,  hint="DeepSeek-V2-Lite"),        # MLA: 27L x (512+64) latent (exact)
     "gemma-12b":  dict(t=11.9, a=11.9, ne=11.9, moe=False, kvp=65536,  hint="Gemma 4 12B"),             # [est] SWA: long-ctx slope from global layers only
-    "mistral-7b": dict(t=7.2,  a=7.2,  ne=7.2,  moe=False, kvp=131072, hint="Mistral 7B"),              # 32L x 8KV x 128d (exact)
+    "mistral-7b": dict(t=7.2,  a=7.2,  ne=7.2,  moe=False, kvp=131072, nl=32, hint="Mistral 7B"),              # 32L x 8KV x 128d (exact)
     "glm-air":    dict(t=110,  a=12,   ne=2.7,  moe=True,  kvp=94208,  hint="GLM-4.5-Air 106B"),        # [est]
     "glm-744b":   dict(t=753.3, a=32,  ne=8,    moe=True,  kvp=188416, hint="GLM-5.2 (753B)"),          # total exact (HF safetensors); a/ne/kvp [est]
     "qwen3-235b": dict(t=235.1, a=22,  ne=7.5,  moe=True,  kvp=192512, hint="Qwen3-235B-A22B"),         # total exact; kvp: 94L x 4KV x 128d [est]
     "kimi-k2.6":  dict(t=1058.6, a=32, ne=6,    moe=True,  kvp=70272,  hint="Kimi K2.6 (1T MLA)"),      # total exact; kvp: 61L x 576 MLA latent [est]
     "gpt-oss-120b": dict(t=120.4, a=5.1, ne=1.8, moe=True, kvp=73728,  hint="gpt-oss-120b"),            # total+active official; kvp: 36L x 8KV x 64d [est]
-    "llama-70b":  dict(t=70.6, a=70.6, ne=70.6, moe=False, kvp=327680, hint="Llama-3.3-70B"),           # dense; kvp: 80L x 8KV x 128d
+    "llama-70b":  dict(t=70.6, a=70.6, ne=70.6, moe=False, kvp=327680, nl=80, hint="Llama-3.3-70B"),           # dense; kvp: 80L x 8KV x 128d
 }
 DESKTOP_VRAM_RESERVE = 1.0   # GB held by the OS/desktop on a real machine, not the model's to use.
                              # Measured 0.8-1.5 GB on this box (pre-registration #13 sweep).
@@ -279,10 +279,24 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                     out.append((f"split experts: {f:.0%}->VRAM, rest->RAM", 1 / t_split, None, fl))
     if (not moe) and vc > 0 and size + kv_gb > vc * 0.90 and size + kv_gb <= ra + vc * 0.9:
         g = min(0.95, vc * 0.9 / (size + kv_gb))           # KV splits with its layers
-        kv_t = g * kv_gb / (ETA_KV * vb) + (1 - g) * kv_gb / (ETA_KV * rb)
-        out.append((f"split: {g:.0%} layers->VRAM, rest->RAM",
-                    1 / (g * act / (geta_w * vb) + (1 - g) * act / (eta_r * rb) + kv_t), None,
-                    f"-ngl {int(g * 99)}"))
+        # -ngl takes a LAYER COUNT. This emitted `int(g * 99)`, treating 99 - the all-layers
+        # sentinel used elsewhere in this file - as if it were a layer count. Two failures, and
+        # the second is severe:
+        #   * the split is misreported: llama-70b (80 layers) printed "50% layers->VRAM" and
+        #     emitted -ngl 49, which is 61%.
+        #   * for any model with <= 99*g layers the flag EXCEEDS the layer count and llama.cpp
+        #     puts EVERYTHING on the GPU - on a row that exists only because the model does NOT
+        #     fit in VRAM. A 32-layer model does this for any g > 0.32. That is an OOM, or a
+        #     silent thrash on Windows with driver memory fallback.
+        # Same discipline as moe_split_flags: without a grounded layer count we suppress the row
+        # rather than print a command we cannot honour (the v1.6.5 bug class). --gguf always
+        # unlocks it, since autospec reads block_count from the file.
+        gpu_layers = int(g * n_layer) if n_layer else 0
+        if 0 < gpu_layers < n_layer:
+            kv_t = g * kv_gb / (ETA_KV * vb) + (1 - g) * kv_gb / (ETA_KV * rb)
+            out.append((f"split: {gpu_layers}/{n_layer} layers->VRAM, rest->RAM",
+                        1 / (g * act / (geta_w * vb) + (1 - g) * act / (eta_r * rb) + kv_t), None,
+                        f"-ngl {gpu_layers}"))
     if size + kv_gb <= ra:
         warn = "RAM boundary - expect bimodal speed" if size + kv_gb > ra * 0.85 else None
         out.append(("pure CPU (GPU idle)", 1 / (act / (eta_r * rb) + kv_gb / (ETA_KV * rb)), warn, "-ngl 0"))

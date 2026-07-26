@@ -6,3 +6,5 @@ BLOCKED: llama-cli spun 559s CPU at a 7 MB working set without ever loading the 
 reached generation. llama-bench has no --override-kv (which is why H6 could not close this
 either). Needs a different harness: llama-server with --override-kv plus a timed completion, or
 perplexity-timing as H6 fell back to. Pre-registration #18 stays STAKED and unmeasured.
+--- expert_used_count=4 ---
+DONE

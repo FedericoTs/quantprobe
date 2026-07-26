@@ -321,6 +321,43 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_dense_split_ngl_is_a_layer_count():
+    """-ngl must be a LAYER COUNT, and must never exceed the model's layers on a split row.
+
+    This emitted `int(g * 99)` where g is a FRACTION and 99 is the all-layers sentinel used
+    elsewhere in plan.py. Two failures, the second severe:
+      * llama-70b printed "split: 50% layers->VRAM" and emitted -ngl 49 - which is 61% of 80.
+      * for any model with <= 99*g layers the flag EXCEEDS the layer count, so llama.cpp puts
+        EVERY layer on the GPU - on a row that exists ONLY because the model does not fit in
+        VRAM. A 32-layer model does this for any g > 0.32. OOM, or silent thrash on Windows.
+    """
+    import re
+    from quantprobe.plan import evaluate, MODELS
+    for key in ("llama-70b", "mistral-7b"):
+        m = MODELS[key]
+        nl = m["nl"]
+        for hw in (dict(vc=24, vb=1008, rc=64, rb=83, db=5, geta=0.62),
+                   dict(vc=8, vb=256, rc=32, rb=45, db=2, geta=0.45)):
+            for bits in (2.0, 2.5, 4.5):
+                _, _, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], bits,
+                                      n_layer=nl, **hw)
+                for name, tps, warn, flags in cfgs:
+                    if not name.startswith("split:"):
+                        continue
+                    g = re.search(r"-ngl (\d+)", flags)
+                    assert g, f"{key}: split row emitted no -ngl: {flags}"
+                    n = int(g.group(1))
+                    assert 0 < n < nl, (
+                        f"{key} has {nl} layers but the split row emits -ngl {n} - "
+                        f"llama.cpp would place {'ALL' if n >= nl else 'no'} layers on the GPU, "
+                        f"on a row that only exists because the model does NOT fit in VRAM")
+    # and with no grounded layer count the row must be SUPPRESSED, not guessed
+    _, _, cfgs = evaluate(11.9, 11.9, 11.9, False, 4.5, vc=8, vb=256, rc=32, rb=45, db=2,
+                          geta=0.45, n_layer=None)
+    assert not [c for c in cfgs if c[0].startswith("split:")], \
+        "dense split row offered without a layer count - it cannot emit a correct -ngl"
+
+
 def t_dense_speed_responds_to_bits():
     """A dense model quantized harder must be predicted faster. It was not.
 
@@ -815,9 +852,11 @@ def t_moe_split_no_layer_count_no_bogus_regex():
         assert split[0][2] and "layer count" in split[0][2], "must explain why flags are generic"
 
 def t_dense_split_row_unregressed():
-    # the pre-existing dense split row must still work (no MoE change may break it)
+    # The pre-existing dense split row must still work (no MoE change may break it). It now
+    # REQUIRES a layer count, because -ngl IS a layer count and without one we cannot emit a
+    # correct command - see t_dense_split_ngl_is_a_layer_count for what that cost.
     from quantprobe.plan import evaluate
-    _, _, cfgs = evaluate(13, 13, 13, False, 4.5, 8, 300, 32, 50, 2, 0.5)
+    _, _, cfgs = evaluate(13, 13, 13, False, 4.5, 8, 300, 32, 50, 2, 0.5, n_layer=40)
     assert any(c[0].startswith("split:") for c in cfgs), \
         f"dense split row regressed: {[c[0] for c in cfgs]}"
 
