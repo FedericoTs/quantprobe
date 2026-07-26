@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.11.1 - 2026-07-26
+
+**`quantprobe auto` was recommending a placement 20% slower than the one `plan` finds for the
+same model** — on every preset MoE, via the flagship one-command path. On the reference box it
+proposed the hybrid placement at 22.4 tok/s when the expert-split placement, which it could not
+see, runs **26.9**.
+
+`auto` sets `a.model = None` to hand the law explicit parameters instead of a preset name. That
+also discarded the preset's verified layer count, and without a layer count the planner
+deliberately suppresses the MoE split row rather than print `-ot` flags it cannot ground. So the
+row silently vanished from the entire `optimize` frontier that `auto` drives.
+
+### The class this belongs to, and how it is now closed
+
+Classifying all 22 defects shipped since v1.5.2 by root cause puts **7 of them (~32%) in one
+class: a fact expressed in two places with nothing forcing them to agree.** Inside it, one shape
+recurred **four times** — a value with a fallback gets a second reader written without the
+fallback (v1.9.0 `target.py`, v1.10.5 `runtime.py`, `plan`'s layer-count note, and now `auto`).
+Each was fixed where it was found; the shape never was.
+
+- **One resolver.** `plan.effective_n_layer()` is now the only place that fallback exists.
+  `plan`, `optimize`, `runtime` and `auto` all call it.
+- **`audit.py` check C** fails the build if any module re-implements the fallback, and compares
+  the machine table in `plan.MACHINES` field-by-field against the copy embedded in the published
+  simulator's JavaScript. The existing parity test compared `evalCore` with hardware passed in
+  explicitly, so a drift in that table was invisible to it — and it is already 5 presets behind.
+  Both guards are mutation-tested.
+
+Also fixed: `plan` on a preset printed exact `-ot` flags for layers 10–47 and then told the user
+the layer count was missing and to re-run with `--gguf`. Same shape — the note read the raw CLI
+flag while the placement rows read the effective value.
+
+73 tests green; all five verify layers pass.
+
+
 ## 1.11.0 - 2026-07-26
 
 **quantprobe was telling everyone running a sub-4-bit quant that their GPU was useless for it,
