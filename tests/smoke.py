@@ -321,6 +321,81 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_simulator_law_matches_the_cli():
+    """The published simulator runs its own copy of the law in JavaScript. It must agree.
+
+    docs/index.html is the most-seen surface this project has, and it reimplements evalCore()
+    by hand. Nothing kept the two in step: when the sub-4-bit collapse was removed from plan.py
+    the simulator still had `bitsVal>=4?H.geta:gl` in it, so the website would have gone on
+    telling people their GPU was useless for a Q3 quant after the CLI had stopped.
+
+    Extracts evalCore from the page, runs it under node on fixed cases, and compares every row
+    against plan.evaluate(). Skips (loudly) when node is absent.
+    """
+    import shutil, json, re, tempfile
+    node = shutil.which("node")
+    if not node:
+        print("      (simulator parity: node not installed, SKIPPED)", end="")
+        return
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    page = os.path.join(here, "docs", "index.html")
+    if not os.path.isfile(page):
+        return
+    src = io.open(page, encoding="utf-8").read()
+    js = re.search(r"<script[^>]*>(.*?)</script>", src, re.S).group(1)
+
+    def grab(sig):
+        i = js.index(sig); j = js.index("{", i); d = 0
+        for k in range(j, len(js)):
+            d += (js[k] == "{") - (js[k] == "}")
+            if d == 0:
+                return js[i:k + 1]
+        raise AssertionError("unbalanced braces around " + sig)
+
+    consts = "\n".join(l for l in js.splitlines() if re.match(r"\s*(const|let)\s+ETA_KV\s*=", l))
+    qm = re.search(r"(?:const|let)\s+QUAL\s*=\s*\{.*?\};", js, re.S)
+    harness = consts + "\n" + (qm.group(0) if qm else "") + "\n" + grab("function evalCore(") + """
+const H = {vc:6,vb:192,rc:16,rb:48,db:0.45,geta:0.35,gl:0.04};
+const OUT = [];
+for (const [t,a,ne,moe,b] of [[30.5,3.3,1.2,true,2.95],[7.2,7.2,7.2,false,2.5],
+                              [110,12,2.7,true,2.5],[7.2,7.2,7.2,false,4.5]]) {
+  const e = evalCore(t,a,ne,moe,b,H,0,0);
+  OUT.push(Object.fromEntries(e.cfgs.map(c => [c.n, +c.tps.toFixed(2)])));
+}
+console.log(JSON.stringify(OUT));
+"""
+    fd, path = tempfile.mkstemp(suffix=".js")
+    os.close(fd)
+    io.open(path, "w", encoding="utf-8").write(harness)
+    try:
+        r = subprocess.run([node, path], capture_output=True, text=True)
+        assert r.returncode == 0, f"simulator JS failed to run: {r.stderr[:400]}"
+        sim = json.loads(r.stdout.strip().splitlines()[-1])
+    finally:
+        os.unlink(path)
+
+    sys.path.insert(0, os.path.join(here, "quantprobe"))
+    from quantprobe.plan import evaluate
+    M = dict(vc=6, vb=192, rc=16, rb=48, db=0.45, geta=0.35, gl=0.04)
+    cases = [dict(t=30.5, a=3.3, ne=1.2, moe=True, bits=2.95),
+             dict(t=7.2, a=7.2, ne=7.2, moe=False, bits=2.5),
+             dict(t=110, a=12, ne=2.7, moe=True, bits=2.5),
+             dict(t=7.2, a=7.2, ne=7.2, moe=False, bits=4.5)]
+    drift = []
+    for kw, srows in zip(cases, sim):
+        _, _, cfgs = evaluate(**kw, **M)
+        # normalise the arrows the page renders as unicode
+        srows = {k.replace("→", "->"): v for k, v in srows.items()}
+        for name, tps in ((c[0], c[1]) for c in cfgs):
+            if name not in srows:
+                continue           # rows the simulator has not implemented are a gap, not drift
+            # the page reports toFixed(2), so allow one rounding step in absolute terms as well
+            # as the 1% relative band - at 0.19 tok/s half a cent is already 2.6% relative
+            if abs(srows[name] - tps) > 0.01 and abs(srows[name] - tps) / max(tps, 1e-9) > 0.01:
+                drift.append(f"{kw['t']}B '{name}': CLI {tps:.4f} vs simulator {srows[name]:.2f}")
+    assert not drift, ("the published simulator disagrees with the CLI:\n  " + "\n  ".join(drift))
+
+
 def t_fits_in_vram_warning_is_consistent():
     """plan and optimize must BOTH disclose the fits-in-VRAM trap, and both stay quiet otherwise.
 

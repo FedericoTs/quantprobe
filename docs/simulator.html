@@ -317,7 +317,7 @@
     $("chips").innerHTML = '<span class="chip ok">'+best.n+'</span>'+(e.moe?'<span class="chip ok">MoE</span>':'<span class="chip warn">dense</span>')+(best.warn?'<span class="chip warn">'+best.warn+'</span>':'');
     $("verdict").textContent =
       best.n.indexOf("hybrid")>=0 ? "Always-active weights served at VRAM speed, experts at RAM speed — the placement the law recommends (needs --no-mmap)." :
-      best.n==="all in VRAM" ? "Fully GPU-resident — fastest tier." :
+      best.n==="all in VRAM" ? ("Fully GPU-resident — fastest tier." + (bits<4.5 ? " But it ALREADY fits: measured on a Pascal card, the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. Once a model fits in VRAM, decode stops being bandwidth-bound and a lower quant buys almost nothing — take the highest bits that still fit (pre-registration #16)." : "")) :
       best.n.indexOf("split")>=0 ? "Dense partial offload: each tier serves its share of layers." :
       best.n.indexOf("CPU")>=0 ? (e.moe?"CPU-served MoE: only the active experts move per token.":"CPU-served dense: every weight moves every token.") :
       "Bigger than RAM: cold experts re-stream from disk each token.";
