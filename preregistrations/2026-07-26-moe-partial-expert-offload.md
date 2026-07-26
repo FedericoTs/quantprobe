@@ -107,3 +107,45 @@ a 6 GB card holding only ~⅓ of this model's experts. Users with 12–24 GB car
 fraction and should gain more — an extrapolation along a fitted curve, labelled as such, not a
 measurement. And the cliff is real: the tool must compute the cutoff from *free* VRAM, because
 overshooting costs more than never offloading at all.
+
+---
+
+## CORRECTION (2026-07-26): the baseline above was mis-configured, and +34.7% is overstated
+
+**What was published:** partial expert offload is worth **+34.7%** decode (15.18 → 20.44 tok/s).
+
+**What is wrong with it:** the K=0 baseline was measured **without `--no-mmap`** — a flag this
+tool has recommended on the all-experts-to-CPU row for many versions. llama.cpp itself warns
+that tensor overrides to CPU with mmap enabled cost performance. So the control condition was a
+*worse-than-recommended* version of the thing being beaten. That is a strawman baseline, and it
+was self-inflicted.
+
+**Re-measured with every cell configured the way the tool actually recommends** (log:
+`weights/data/prereg13_fair_baseline.log`, warm cache, r=3):
+
+| config | tok/s | vs correct baseline |
+|---|---|---|
+| K=0 baseline, `--no-mmap` | 18.35 ± 0.48 | — |
+| K=9 (the cutoff the tool currently picks) | 19.47 ± 0.77 | +6.1% |
+| K=12 | 19.61 ± 0.50 | +6.9% |
+| **K=16 (peak)** | **20.62 ± 0.26** | **+12.4%** |
+| K=20 | 10.59 ± 0.07 | −42.3% (the cliff, reproduced) |
+
+**Honest figure: +12.4% at the peak, +6.1% at the cutoff the tool actually chooses** — not
++34.7%. Of the original claim, **~21 percentage points were `--no-mmap` alone**, which the tool
+already recommended and which the baseline was denied.
+
+**What survives unchanged:** the mechanism (monotonic gain with more experts on GPU, P-1), the
+capacity cliff (P-3 — reproduced here at −42.3%), and the prefill result. What changes is only
+the size of the decode win, and it is now measured against the configuration a user would
+actually run.
+
+**How this was caught:** a community user (u/[reddit]) reported that llama.cpp's own `-fit`
+auto-placement worked well on his 12 GB card. Checking whether `-fit` beat our recommendation
+led to re-examining our baseline, which is where the real problem was. The finding cost us a
+headline number and was worth it.
+
+**Process lesson, recorded because it generalises:** a benchmark's *control* deserves the same
+scrutiny as its treatment. Our own tool's recommended flags should have defined the baseline
+from the first run. No amount of unit testing catches this — it is a measurement-design error,
+not a code error.
