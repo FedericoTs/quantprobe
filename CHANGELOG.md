@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.11.0 (unreleased) - 2026-07-26
+## 1.11.0 - 2026-07-26
 
 **quantprobe was telling everyone running a sub-4-bit quant that their GPU was useless for it,
 and recommending a placement 2.4x slower than the one it rejected.** On `gemma4-12b` at 3.51
