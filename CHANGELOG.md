@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.10.4 — 2026-07-26
+
+**A stated scope limit instead of a silent error.** We do not model multi-token prediction or
+speculative decoding. A user measured 29-30 tok/s on Qwen3.6-35B-A3B where this tool predicted
+~16 for the placement alone — MTP emits several accepted tokens per weight read, so the law
+reads LOW by roughly the acceptance multiplier (~1.8x in his case).
+
+That is a **missing factor, not a wrong one**: the bytes-and-bandwidth arithmetic is unchanged
+and the multiplier sits on top of it. Now stated in README's limitations and in LAWS.md at the
+point where Law 4 is defined, so nobody discovers it by being surprised.
+
+Measuring it is staked as a new arm (S-e) of the Law 6 pre-registration, written **before**
+acquiring any MTP-capable model — no GGUF on this machine has MTP heads. The sign is genuinely
+open: our own measured corollary found draft-model speculation **2.3x SLOWER** on MoE, and MTP
+should escape that because its heads reuse the forward pass. "Should" is not "does", which is
+why it is staked rather than assumed.
+
 ## 1.10.3 — 2026-07-26
 
 **`python verify.py` — the pre-release gate, and the answer to "how do we not break this as it

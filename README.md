@@ -136,6 +136,7 @@ quantprobe dashboard --gguf 2bit.gguf                    # the law live, every r
 - Perplexity and KL divergence are my metrics; I haven't run task-level evals (MMLU/HellaSwag) yet.
 - The fragility atlas covers four model families — enough to *disprove* universality, not to chart every architecture.
 - 0.19 tok/s for a 110B is a **capacity demonstration, not usable inference.**
+- **We do not model multi-token prediction (MTP) or speculative decoding.** If your runtime uses either, expect roughly **1.5–2.5× above** our estimate — a user measured 29–30 tok/s where we predicted ~16. That is a missing term, not a wrong one: the placement arithmetic still holds, MTP just emits several tokens per weight read. Being measured and modelled during launch week ([staked here](preregistrations/2026-07-24-law6-speculation-economics.md)).
 - Speed numbers are single-stream decode on one machine (±25% across environments); the η values are fitted, not derived.
 - No custom runtime: everything rides stock llama.cpp.
 
