@@ -83,7 +83,8 @@ QUAL = {True:  {2.0: 1.10, 2.5: 1.07, 3.0: 1.05, 4.5: 1.02, 6.5: 1.01, 8.5: 1.00
 
 def moe_split_flags(frac, n_layer):
     """-ot regex placing the FIRST ceil(frac*L) layers' experts on GPU, the rest on CPU.
-    Measured 2026-07-26 (pre-registration #13): +34.7% decode and ~2-3x prefill on a 6 GB card.
+    Measured 2026-07-26 (pre-registration #13, corrected): +12.4% decode and ~2-3x prefill
+    on a 6 GB card, against a properly configured baseline.
     Returns None when the layer count is unknown - we will not emit a regex we cannot ground."""
     if not n_layer or frac <= 0:
         return None
@@ -93,6 +94,33 @@ def moe_split_flags(frac, n_layer):
     # split placement: 16.45 tok/s with mmap vs 18.70 without (+13.7%).
     return ('-ngl 99 -ot "blk\\.(%s)\\.ffn_.*_exps\\.=CPU" --no-mmap'
             % "|".join(str(i) for i in range(k, n_layer)))
+
+
+def speculation_advice(moe, placement):
+    """What speculative decoding is worth for THIS model and placement.
+
+    Every number here is measured on the reference box (Law 6 arms S-a/S-b/S-e/S-f, 3 runs per
+    cell, raw logs in weights/data/). Speculation drafts tokens and verifies them, so output is
+    identical - the only question is whether the verify batch costs more than the pass it saves.
+
+    dense       code  2.10x | prose 1.01x   (ngram; copyability is the whole mechanism)
+    MoE offload code  1.03x                 (the verify batch unions experts - the tax eats it)
+    dense       MTP   1.17x GPU-resident, 1.046x CPU
+    MoE offload MTP   0.76x                 (an actual LOSS)
+
+    Returns None when we have no measurement for the case rather than guessing.
+    """
+    # Only the fully-offloaded case is measured (exps=CPU). A partial split puts some experts
+    # on the fast tier, which we have NOT measured - so it gets no claim either way.
+    experts_offloaded = "exps=CPU" in (placement or "")
+    if moe and experts_offloaded:
+        return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "
+                "offloaded — a verify batch unions experts, and every extra one is a slow read.")
+    if not moe:
+        return ("if you write CODE, add `--spec-type ngram-simple` — measured **2.10x decode** "
+                "(17.7 -> 37.2 tok/s), one flag, no download, identical output. Prose gains "
+                "nothing (1.01x): it drafts by copying spans from your context.")
+    return None                    # MoE fully resident: untested here, so we say nothing
 
 
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
@@ -122,7 +150,7 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                         1 / (act_ne / (geta * vb) + act_ex / (eta_r * rb) + kv_gb / (ETA_KV * vb)), warn,
                         '-ngl 99 -ot "exps=CPU" --no-mmap'))
         # MoE partial expert offload: attention+KV in VRAM, then as many EXPERT layers as still
-        # fit, remainder on CPU. Measured pre-registration #13 (2026-07-26): +34.7% decode,
+        # fit, remainder on CPU. Measured pre-registration #13 (2026-07-26, corrected): +12.4% decode,
         # ~2-3x prefill vs all-experts-to-CPU, with a hard CLIFF on overcommit (-29% at one step
         # past the ceiling) - so the free-VRAM headroom is deliberately conservative.
         # Desktop reserve: a real machine is not an empty GPU. Measured on this box during the
@@ -257,6 +285,9 @@ def run(args):
         print(f"  {star} {tps:6.1f} tok/s  {name}{w}")
     best = cfgs[0]
     print(f"\n  run it:  llama-server -m model.gguf {best[3]}")
+    adv = speculation_advice(moe, best[0])
+    if adv:
+        print(f"\n  speculation: {adv}")
     # upgrade advisor
     alts = []
     if rb < 40:
@@ -288,7 +319,7 @@ def run(args):
                   f"shave it ({lever}) -> ~{promoted[0][1]:.1f} tok/s (x{promoted[0][1]/best[1]:.1f})")
         break                                          # nearest boundary only
     if moe and vc > 0 and getattr(args, "n_layer", None) is None:
-        print("\n  note: MoE partial expert offload (measured +34.7% decode, ~2-3x prefill) needs this\n"
+        print("\n  note: MoE partial expert offload (measured +12.4% decode, ~2-3x prefill) needs this\n"
               "  model's layer count to emit exact -ot flags - re-run with --gguf <file> to unlock it.")
     print("\n  (eta bands fitted from published measurements; estimates +/-25%. "
           "Hybrid needs --no-mmap.)")
