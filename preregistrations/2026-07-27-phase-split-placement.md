@@ -61,3 +61,54 @@ separate and much larger question — Law 5 H7).
 
 **Explicitly not claimed:** that we can serve both phases optimally *at once*. This measures
 whether the two optima differ, nothing more.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg20_phase_matrix.log`)
+
+**Verdict: P-1, P-2, P-3, P-4 all HIT. And the measurement caught a regression I had shipped
+five hours earlier.**
+
+`Qwen3-30B-A3B-Q2_K`, one session, warm-up discarded, r=3:
+
+| placement | pp2048 @ub512 | pp2048 @ub2048 | tg128 @ub2048 |
+|---|---|---|---|
+| **A** all experts → CPU | 199.90 ± 1.42 | **349.59 ± 1.78** | 18.54 ± 0.16 |
+| **B** split, K=16 → VRAM | **279.07 ± 0.86** | 161.87 ± 0.24 | **20.16 ± 0.18** |
+
+- **P-1 (argmax differs): HIT.** A wins prefill by **2.16×**; B wins decode by 1.09×. One command
+  cannot serve both.
+- **P-2 (A beats B on prefill): HIT** at the shipped `-ub 2048` — and the mechanism is confirmed
+  by the column next to it, which is the more interesting result. See below.
+- **P-3 (B beats A on decode): HIT.** 20.16 vs 18.54, consistent with two prior sessions.
+- **P-4 (≥15% on the sacrificed phase): HIT, by a wide margin.** Choosing B — the decode
+  optimum — costs **116% of the available prefill**. Choosing A costs 8% of decode. The trade is
+  wildly asymmetric.
+
+### The deeper finding: placement and batch are not independent
+
+At the default ubatch, **B wins prefill** (279 vs 200) — the original partial-offload result. At
+`-ub 2048`, **A wins** (350 vs 162). *Adding a lever inverted which placement is fastest.*
+
+The reason is a resource conflict, not a coincidence: the split placement exists to fill spare
+VRAM with experts, and that is precisely the VRAM a larger compute buffer needs. B therefore
+**loses 42%** when given the bigger ubatch — the same sign and nearly the same magnitude as the
+fully-VRAM-resident control in pre-registration #19 (−39%).
+
+So the search cannot treat placement and batch as separable axes. They compete for one budget.
+
+### The regression this caught in v1.13.0
+
+v1.13.0, shipped five hours before this measurement, gated `-b/-ub` on *"is anything
+host-resident"*. The split placement's label is `split experts: N%->VRAM, rest->RAM` — which
+satisfies that test. So the tool was recommending, on its own default placement for the flagship
+MoE, a flag now measured to cost **42% of prompt processing** there.
+
+The gate now excludes the split explicitly, with the measurement in the comment. Fixed in v1.13.1.
+
+**This is the argument for measuring a lever on every placement rather than the one it was
+discovered on.** #19 measured `-ub` on A and on a VRAM-resident control, concluded correctly, and
+still shipped a wrong gate — because the split is neither of those two cases, and nobody had
+looked. A double dissociation proves a mechanism; it does not enumerate a decision surface.
+
+**Wired into:** `quantprobe/plan.py:ubatch_flags` · `quantprobe/plan.py:phase_advice` · `tests/smoke.py:t_ubatch_only_when_host_resident`

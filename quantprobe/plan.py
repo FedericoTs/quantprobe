@@ -110,9 +110,25 @@ def ubatch_flags(placement, vram_resident_gb, vc):
     card costs more than it saves. Decode is unaffected either way (18.46 -> 18.76), because a
     ubatch cannot be filled one token at a time.
     """
-    host_resident = any(k in placement for k in ("->RAM", "CPU", "disk"))
-    if not host_resident or vc <= 0:
+    # The SPLIT placement is excluded even though it is partly host-resident, and this correction
+    # comes from measurement (pre-registration #20) after v1.13.0 shipped the wrong gate:
+    #
+    #   placement                    pp2048 @ub512   pp2048 @ub2048
+    #   all experts -> CPU              199.90          349.59   (+75%)
+    #   split, K=16 experts -> VRAM     279.07          161.87   (-42%)
+    #
+    # The split exists to fill spare VRAM with experts - so by construction it consumes the very
+    # headroom the larger compute buffer needs, and the flag that pays 75% on one placement costs
+    # 42% on the other. v1.13.0 gated on "is anything host-resident", which is true for the split
+    # ("...->VRAM, rest->RAM"), and so recommended it there. Wrong, and measured wrong.
+    #
+    # Note this also INVERTS which placement is fastest at prefill: at the default ub the split
+    # wins (279 vs 200), at ub 2048 the all-CPU placement wins (350 vs 162). Placement and batch
+    # are not independent dimensions - they compete for the same VRAM.
+    if "split experts" in placement or vc <= 0:
         return None
+    if not any(k in placement for k in ("->RAM", "CPU", "disk")):
+        return None                       # nothing host-resident: no transfer to amortise
     if vc * 0.90 - vram_resident_gb < UBATCH_HEADROOM_GB:
         return None                       # no room for the bigger compute buffer; the -39% case
     return "-b 2048 -ub 2048"

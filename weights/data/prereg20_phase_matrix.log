@@ -1,0 +1,14 @@
+=== Pre-reg #20: phase matrix. P-1 argmax differs, P-2 A>B on prefill, P-3 B>A on decode ===
+GPU before: 996 MiB, 746 MHz, 41
+--- warm-up (DISCARDED) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |           pp512 |        194.58 ± 0.00 |
+--- A: all experts -> CPU ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     2048 | exps=CPU              |    0 |          pp2048 |        349.59 ± 1.78 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     2048 | exps=CPU              |    0 |           tg128 |         18.54 ± 0.16 |
+--- B: split K=16 experts -> VRAM ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     2048 | blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        161.87 ± 0.24 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     2048 | blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.16 ± 0.18 |
+GPU: 567 MiB, 1847 MHz, 65
+--- mechanism check: B at DEFAULT ub512 (does -ub cause the inversion?) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        279.07 ± 0.86 |
+GPU: 564 MiB, 1847 MHz, 67
