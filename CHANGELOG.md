@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.11.2 - 2026-07-26
+
+**Says out loud where the law is weakest, and asks for the datapoint that would fix it.**
+
+All-in-VRAM is the most common placement for anyone with adequate VRAM, and it is the one this
+law knows least well. Across all seven models measured there on the reference box, the real speed
+came in **faster than predicted every single time — by 2% to 67%.** That is a one-directional
+bias, not noise, and it has been sitting in a pre-registration rather than in front of the people
+it affects.
+
+`plan` and `optimize` now both say so whenever the winning placement is all-in-VRAM: read that
+number as a floor rather than a ceiling. Below 4.5 bits they add the companion finding — the model
+already fits, and a lower quant buys almost nothing once it does (the same 7B at Q2_K vs Q4_K_M is
+36% smaller and **4% slower**).
+
+**And they ask.** Seven points on one GPU cannot identify a better functional form, and the last
+two times a constant moved on thin evidence it cost a public correction. So instead of quietly
+shipping a number we know is low, the note ends in a request: `quantprobe bench --contribute` on a
+GPU-resident model turns your machine into the datapoint that settles it. Results landing
+*outside* the predicted band are the most valuable ones we can receive.
+
+The regime stays pinned by the `VRAM_GAPS` ratchet, so it can improve but never silently worsen.
+
+Also: the consistency test that guards this now pins the *invariants* — that both commands
+disclose the floor and both make the ask — rather than exact prose, which is what broke it when
+the wording changed.
+
+
 ## 1.11.1 - 2026-07-26
 
 **`quantprobe auto` was recommending a placement 20% slower than the one `plan` finds for the

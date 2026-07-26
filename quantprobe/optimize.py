@@ -135,12 +135,17 @@ def run(a):
     # actually does the ranking, so it has to say so too - a warning only one of two commands
     # gives is the inconsistency class that cost us the plan-vs-bench correction.
     roomier = next((r for r in ranked if r["bits"] >= 4.5 and "all in VRAM" in r["desc"]), None)
-    if roomier and best["bits"] < 4.5 and "all in VRAM" in best["desc"]:
-        print(f"\n  note: everything here already fits in VRAM, and once a model fits, a lower quant")
-        print(f"  buys almost nothing. Measured on this class of card: the same 7B at Q2_K vs Q4_K_M")
-        print(f"  is 36% smaller and 4% SLOWER. The speeds above assume decode is bandwidth-bound,")
-        print(f"  which it stops being once the whole model is resident. The honest pick here is")
-        print(f"  {roomier['bits']:g}-bit (quality x{roomier['q']:.2f}) - same speed in practice, better answers.")
+    if "all in VRAM" in best["desc"]:
+        print(f"\n  note: all-in-VRAM is the placement our law knows least well. Every model we have")
+        print(f"  measured there ran FASTER than predicted - by 2% to 67% - so read the speeds above")
+        print(f"  as a floor, not a ceiling.")
+        if roomier and best["bits"] < 4.5:
+            print(f"  It also already fits, and a lower quant buys almost nothing once it does: the same")
+            print(f"  7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. The honest pick here is")
+            print(f"  {roomier['bits']:g}-bit (quality x{roomier['q']:.2f}) - same speed in practice, better answers.")
+        print(f"  We only have one GPU, and one GPU cannot fix this. `quantprobe bench --contribute`")
+        print(f"  turns your machine into the datapoint that would - you review it before sending, and")
+        print(f"  results OUTSIDE our predicted band are the most valuable ones we can receive.")
     print(f"\n  realize the pick:")
     print(f"    quantprobe {REALIZE.get(best['bits'], 'quantize')}")
     print(f"    quantprobe run --gguf <the file> ...   # launches with: {best['flags']}")
