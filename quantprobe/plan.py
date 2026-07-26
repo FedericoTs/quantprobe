@@ -369,7 +369,12 @@ def run(args):
             print(f"  tier-boundary advisor: this config is {gap:.1f} GB over the {tier_name} boundary - "
                   f"shave it ({lever}) -> ~{promoted[0][1]:.1f} tok/s (x{promoted[0][1]/best[1]:.1f})")
         break                                          # nearest boundary only
-    if moe and vc > 0 and getattr(args, "n_layer", None) is None:
+    # Fires only when the layer count is genuinely unknown. It used to test args.n_layer - the raw
+    # CLI flag - and so told users to "re-run with --gguf to unlock it" while the exact -ot flags
+    # for layers 10-47 sat printed directly above, because presets supply `nl` through the same
+    # fallback the placement rows already use. Same class as the v1.10.5 n_layer divergence: a
+    # second reader of a value that has a fallback, written without the fallback.
+    if moe and vc > 0 and not nlay:
         print("\n  note: MoE partial expert offload (measured +12.4% decode, ~2-3x prefill) needs this\n"
               "  model's layer count to emit exact -ot flags - re-run with --gguf <file> to unlock it.")
     print("\n  (eta bands fitted from published measurements; estimates +/-25%. "
