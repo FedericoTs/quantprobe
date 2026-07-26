@@ -18,7 +18,7 @@ that measured 82% below its own prediction. Case-by-case tests cannot catch that
   reserve, and verified numerically identical to the CLI (0.00% delta on the reference case).
 - Dense paths swept and confirmed unregressed across four hardware classes.
 
-58 tests.
+60 tests (counted, not estimated).
 
 ## 1.9.1 — 2026-07-26
 
