@@ -172,7 +172,12 @@
   function evalCore(t,a,ne,moe,bitsVal,H,ctx,kvp){
     const AB=Math.max(bitsVal,4.5);
     const size=(ne*AB/8+(t-ne)*bitsVal/8)*1.08;
-    const actNe=ne*AB/8*1.15, actEx=(a-ne)*bitsVal/8*1.15, act=actNe+actEx;
+    // Dense models: the recipe protects attn_/ssm_ only, not embeddings and not the FFN,
+    // but the tables set ne = t so the whole model was priced at >=4.5 bits and a dense
+    // model's speed did not respond to its bit-width at all (pre-registration #17).
+    const PROT=0.214;
+    const prot=moe?ne:Math.min(ne,t*PROT);
+    const actNe=prot*AB/8*1.15, actEx=(a-prot)*bitsVal/8*1.15, act=actNe+actEx;
     // Law 4 v2: each token re-reads the whole KV cache from KV's tier; KV also consumes capacity
     const kvGb=(ctx>0?(ctx*(kvp||DEFAULT_KVP))/1e9:0);
     const ra=Math.max(H.rc-4,1), etaR=moe?0.38:0.62;

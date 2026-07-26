@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.12.0 - 2026-07-26
+
+**A dense model's predicted speed did not respond to its quantization at all.** Reported from the
+published calculator: Gemma 4 12B (dense, 11.9B active) shown at 28 tok/s on a DGX Spark while
+GLM-4.5-Air 106B (MoE, 12B active) showed 42 — a 12B behind a 106B with the same active
+parameter count.
+
+The tables set `ne = t` for dense models. That is true for **activation** (every parameter is
+read per token) and false for **quantization**. Since the law prices always-active parameters at
+the recipe's protected precision, `max(bits, 4.5)`, the entire dense model was priced at ≥4.5
+bits: Gemma came out at 7.70 GB/token — and therefore identical tok/s — at 2.5 bits *and* 4.5.
+
+The recipe protects `attn_`/`ssm_` only, not embeddings and not the FFN. Measured from real GGUF
+tensor shapes that share is 10.8% (Qwen2.5-7B), 20.2% (gemma4-12B), 25.1% (Qwen3.5-4B), 29.6%
+(Qwen3-0.6B). `DENSE_PROTECTED_SHARE = 0.214` applies the mean, **dense models only** — MoE is
+untouched, since there `ne` already names the protected set exactly.
+
+Gemma at 2.5 bits now predicts **43.1**, marginally ahead of the 106B MoE with the same active
+parameters, and responds to bit-width at all (43.1 at 2.5 vs 28.0 at 4.5).
+
+### Validation
+
+[Pre-registration #17](preregistrations/2026-07-26-dense-activation-model.md), staked before the
+held-out measurement. Mean |error| over the six dense in-VRAM points falls **18% → 10%**.
+Held-out on `Qwen2.5-7B IQ3_M`, never benchmarked before: **P-1 hit, P-2 hit decisively (error
+−22% → −7%), P-3 miss, P-4 hit** (all four published anchors are MoE and are bit-identical).
+
+The P-3 miss is the more useful result. Measuring the held-out model three times gave **17.53
+(cold, 810 MHz) → 17.03 → 16.89 (settled, 72 °C)**, a 3.8% decay with non-overlapping error bars.
+The band I staked came from siblings measured earlier and evidently cooler, so part of that miss
+is my own protocol. Third GPU-state effect after orphaned-process contention and boost-clock
+inflation; temperature now joins the logging convention.
+
+### New: `weights/plausibility_sweep.py`
+
+Cross-model relational invariants over every model × machine × bit-width the calculator can show
+— 2,987 comparisons. The five verification layers each check the law against something *we*
+chose. None of them asks the question a reader asks: **do these numbers make sense next to each
+other?** That question is what found this bug, so it is now a check.
+
+Its most important invariant is the one that reaches *outside* the law, to declared parameter
+counts: bytes-per-active-parameter must rise with the protected share. The other five compare the
+law's outputs against each other and are therefore blind to an error in how those outputs are
+computed — verified by mutation test, which also caught an earlier version narrowed until it
+could no longer see the bug it was written for.
+
+
 ## 1.11.2 - 2026-07-26
 
 **Says out loud where the law is weakest, and asks for the datapoint that would fix it.**
