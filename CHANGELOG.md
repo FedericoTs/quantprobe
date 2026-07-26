@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.10.3 — 2026-07-26
+
+**`python verify.py` — the pre-release gate, and the answer to "how do we not break this as it
+evolves".** Every bug that reached users was caught by a different layer, and never by the one
+before it. So the gate runs all four, and a skip is never reported as a pass:
+
+1. **unit + invariant tests** — properties over ~380 placement rows, mutation-tested
+2. **installed artifact** — must import and run from site-packages, not a repo cwd, and the
+   installed version must MATCH the repo (this check immediately caught the gate verifying a
+   stale 1.10.0 against a 1.10.2 tree, and passing)
+3. **end-to-end against real llama.cpp** — runs the tool's own recommendation and compares
+   predicted vs measured; fails on >15% measurement spread or a >25% prediction miss. This is
+   the layer that caught the 82%-below-prediction config that 54 green unit tests slept through
+4. **measured anchors** — every published number is now a regression test. If a change makes
+   the law stop retrodicting reality, this fails. Seeded with the flagship 19.3 tok/s (which
+   was *not* previously covered), the corrected 18.35 baseline, and the two disk-stream anchors
+
+Add a row to `MEASURED_ANCHORS` whenever a number is published, and the claim can never
+silently drift away from the code. 66 tests.
+
 ## 1.10.2 — 2026-07-26
 
 **Correction: the MoE partial-offload gain is +12.4%, not the +34.7% shipped in 1.8.0.**
