@@ -217,6 +217,24 @@ def build_depthaware(llama_dir, src, out, protect_lo, protect_hi, n_lay,
     # 2026-07-25), so this must precede the band rules or it silently does nothing. The shared
     # expert fires on EVERY token (routed experts fire ~8/256) and is heavy-tailed: measured
     # -3.2% ppl when protected at q8_0, for ~0.65% more bytes (pre-registration #12).
+    # Pre-flight: does this model contain weight classes we have no protection rule for?
+    # We shipped exactly that bug once (SSM tensors, v1.6.4). Reporting beats silently
+    # compressing something always-active.
+    if not dry and os.path.isfile(src):
+        try:
+            from .spec import tensor_roles
+            roles, unknown = tensor_roles(src)
+            big = {k: v for k, v in unknown.items() if v > 5e7}      # ignore trivia
+            if big:
+                tot = sum(big.values()) / 1e9
+                print(f"[quantprobe] NOTE: {tot:.2f} GB of tensors have no known role and will "
+                      f"take the base quantization level:")
+                for k, v in sorted(big.items(), key=lambda x: -x[1])[:5]:
+                    print(f"    {k}  ({v/1e9:.2f} GB)")
+                print("  If any of those are always-active, they should be protected - please "
+                      "open an issue with the model name so the registry can be extended.")
+        except Exception:
+            pass
     cmd += ["--tensor-type", "ffn_.*_shexp.*=q8_0"]
     if protect_lo > 0:
         cmd += ["--tensor-type", f"{_band_re(0, protect_lo - 1)}=q2_k"]
