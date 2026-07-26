@@ -1,5 +1,74 @@
 # Changelog
 
+## 1.11.0 (unreleased) - 2026-07-26
+
+**quantprobe was telling everyone running a sub-4-bit quant that their GPU was useless for it,
+and recommending a placement 2.4x slower than the one it rejected.** On `gemma4-12b` at 3.51
+effective bits it predicted 1.0 tok/s all-in-VRAM and pointed users to pure CPU at 3.9. Measured
+on the GPU placement it discarded: **9.56 tok/s.** Two compounding bugs, one of them a finding
+this project had already published and never wired into the code.
+
+**1. There is no low-bit GPU decode collapse.** The planner gated efficiency on bit-width
+(`geta if bits >= 4 else gl`, gl = 0.04 on this card), so 3.99 bits predicted 8.75x slower than
+4.00. [Pre-registration #16](preregistrations/2026-07-26-gl-format-not-bitwidth.md) measured the
+same 7B in three quantizations, all in VRAM, changing nothing else:
+
+| format | bits | decode | prefill pp2048 |
+|---|---|---|---|
+| Q4_K_M | 4.5 | 20.03 +/- 0.04 | 27.49 |
+| Q2_K | 2.8 | 19.17 +/- 0.03 | 17.71 |
+| IQ3_XS | 3.3 | 18.11 +/- 0.05 | **4.04** |
+
+A 10% band across 2.8-4.5 bits. The lowest efficiency ever measured on this path is 0.272; the
+constant sat 6.8x below that floor. The collapse is real but lives entirely in **prefill**, where
+IQ3_XS pays 6.8x - dequantization is compute, prefill is compute-bound, decode is not. LAWS.md
+had already recorded that this was format-dependent rather than bit-width-dependent back on
+2026-07-25; the finding simply never reached the code. **That gap - a measured result sitting in
+a document while the tool keeps shipping the thing it disproves - is the real defect here.**
+
+**2. Dense model sizes were inflated by up to 125%.** Size came from params x bits with attention
+held at >=4.5 bits; for a dense model the tables set always-active = total, so the whole model was
+priced at 4.5 bits and size stopped responding to bit-width at all. A real 12B at 3.51 bits read
+as 7.2 GB against an actual 5.2 GB file, which pushed it past the VRAM ceiling and deleted the
+all-in-VRAM row entirely. Capacity checks now use the real file size whenever the GGUF is on disk.
+
+### What this means if you run local models
+
+- **Sub-4-bit quants are fine on old GPUs.** Q2_K, Q3_K_M and Q3_K_L are what people run when a
+  model nearly fits, and quantprobe was steering all of them to their CPU. Re-run `plan`.
+- **Once a model fits in VRAM, quantizing further buys almost nothing.** Q4_K_M -> Q2_K here was
+  36% smaller and **4% slower**. Quantize to make a model FIT; once it fits, take the highest bits
+  that still fit. `plan` now says so, because the ranking alone would tell you otherwise.
+- **Avoid IQ-format quants on Pascal-class cards if you send long prompts.** Decode is unaffected;
+  prompt processing falls off a cliff (6.8x).
+
+### Verification
+
+- Every published anchor is **bit-identical** - largest movement across all anchor rows 0.0000%.
+- 68 tests green. Two of them had **asserted the collapse** and were replaced; one demanded that a
+  2-bit model be slower than a 4.5-bit one, which is backwards on bytes alone.
+- New `VRAM_GAPS` ratchet covers all seven all-in-VRAM points measured on the reference box.
+  Every MEASURED_ANCHOR was a MoE-hybrid or disk-stream row - **not one covered all-in-VRAM**,
+  which is exactly why a 9.5x error survived there through a public release. The law is knowingly
+  pessimistic in this regime (-2% to -67%, always under, never over); rather than refit on a
+  pattern with no clean form, the errors are ratcheted so they may shrink but never grow.
+- `verify.py` now finds llama.cpp and a model itself, and **exits 2 if the end-to-end layer did
+  not run**. It had been reporting "all layers passed" while that layer silently skipped on every
+  single run, because it needed a `--llama-dir` nobody remembered to pass.
+
+### Also
+
+- `auto --custom` declined the surgery based on the speed-winning bit-width, which only ever
+  fired *because* of bug 1. It now asks whether a >=3.5-bit build is viable on hardware the user
+  already owns.
+- Em-dashes removed from every module that prints to a terminal: the Windows console cannot
+  render them, so the tool's own advice displayed a broken character.
+- Recorded: the tool's bench protocol (`-n 32`) agrees with the research protocol (`-n 128`)
+  within 5%, so contributed data is comparable. And a GPU entering a run at a boosted clock
+  (1847 vs 936 MHz) inflated one measurement by 28% - the H3a lesson in the dangerous direction,
+  since a flattering number invites no scrutiny. Clock state is now logged alongside memory.
+
+
 ## 1.10.5 — 2026-07-26
 
 **Two commands in this tool disagreed about the same input, and the disagreement was corrupting
