@@ -183,6 +183,14 @@
     if (moe && H.vc>0){ const vN=ne*AB/8*1.08+1.2+kvGb, rN=size-ne*AB/8*1.08;
       if (vN<=H.vc*0.95 && rN<=ra) cfgs.push({n:"hybrid: attention→VRAM, experts→RAM",
         tps:1/(actNe/(H.geta*H.vb)+actEx/(etaR*H.rb)+kvGb/(ETA_KV*H.vb)), warn:rN>ra*0.85?"RAM boundary":null}); }
+    // MoE partial expert offload — measured +34.7% decode / ~2-3x prefill (pre-registration #13).
+    // Mirrors plan.py: 1 GB desktop reserve because overcommitting VRAM is a -29% cliff, not a taper.
+    if (moe && H.vc>0){ const vNeed=ne*AB/8*1.08+1.2+kvGb, DESK=1.0;
+      const vFreeS=H.vc*0.90-vNeed-DESK, expertsGb=size-ne*AB/8*1.08;
+      if (vFreeS>0.3 && expertsGb>0){ const f=Math.min(1,vFreeS/expertsGb);
+        if (f>0.05 && expertsGb*(1-f)<=ra)
+          cfgs.push({n:"split experts: "+Math.round(f*100)+"%→VRAM, rest→RAM",
+            tps:1/(actNe/(H.geta*H.vb)+f*actEx/(H.geta*H.vb)+(1-f)*actEx/(etaR*H.rb)+kvGb/(ETA_KV*H.vb))}); } }
     if (!moe && H.vc>0 && size+kvGb>H.vc*0.90 && size+kvGb<=ra+H.vc*0.9){ const g=Math.min(0.95,H.vc*0.9/(size+kvGb));
       const kvT=g*kvGb/(ETA_KV*H.vb)+(1-g)*kvGb/(ETA_KV*H.rb);
       cfgs.push({n:"split: "+Math.round(g*100)+"% layers→VRAM", tps:1/(g*act/(getaW*H.vb)+(1-g)*act/(etaR*H.rb)+kvT)}); }

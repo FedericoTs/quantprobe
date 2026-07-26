@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.9.2 — 2026-07-26
+
+Consistency audit. The trigger: 54 green unit tests sat there while the tool shipped a config
+that measured 82% below its own prediction. Case-by-case tests cannot catch that class.
+
+- **Invariant tests over the whole configuration space** (~380 placement rows swept across MoE
+  and dense, five GPU classes, three RAM sizes, four bit-levels, with and without context).
+  They assert properties, not examples: any row overriding tensors to CPU carries `--no-mmap`;
+  no row's flags contain prose; `-ngl` is always a valid integer; split regexes reference only
+  real layer indices; rows are sorted and positive.
+  **Each was mutation-tested** — the two bugs that actually shipped (v1.6.5 prose-in-flags,
+  v1.8.0 missing `--no-mmap`) were deliberately reintroduced and each invariant caught its own
+  bug by name, then went green on restore. A test that cannot fail is not a test.
+- **Browser calculator parity restored.** The simulator did not know about MoE partial expert
+  offload, so it could not show the +34.7% the CLI recommends. Added, with the same 1 GB desktop
+  reserve, and verified numerically identical to the CLI (0.00% delta on the reference case).
+- Dense paths swept and confirmed unregressed across four hardware classes.
+
+58 tests.
+
 ## 1.9.1 — 2026-07-26
 
 Both fixes found by an end-to-end run, not by the unit suite — the tests were all green while
