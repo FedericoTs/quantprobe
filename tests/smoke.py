@@ -447,6 +447,65 @@ def t_dense_split_row_unregressed():
     assert any(c[0].startswith("split:") for c in cfgs), \
         f"dense split row regressed: {[c[0] for c in cfgs]}"
 
+def _all_placement_rows():
+    """Every row the planner can emit, swept across the realistic hardware/model space.
+    Case-by-case tests missed two shipped bugs (prose flags in v1.6.5, a missing --no-mmap in
+    v1.8.0); invariants over the whole space are what actually catch that class."""
+    from quantprobe.plan import evaluate
+    rows = []
+    for moe, t, a, ne, nl in ((True, 30.5, 3.3, 1.2, 48), (True, 110, 12, 2.7, 46),
+                              (False, 7, 7, 7, 32), (False, 70, 70, 70, 80)):
+        for bits in (2.0, 2.5, 3.0, 4.5):
+            for vc, vb in ((0, 0), (6, 192), (12, 360), (24, 936), (96, 1800)):
+                for rc, rb in ((16, 48), (32, 51), (128, 80)):
+                    for ctx in (0, 8192):
+                        _, _, cfgs = evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, 2.0, 0.5,
+                                              gl=0.3, ctx=ctx, kvp=98304, n_layer=nl)
+                        for c in cfgs:
+                            rows.append((c, dict(moe=moe, bits=bits, vc=vc, nl=nl)))
+    assert len(rows) > 300, f"sweep too small to be meaningful: {len(rows)}"
+    return rows
+
+def t_invariant_cpu_override_implies_no_mmap():
+    # llama.cpp warns that tensor overrides to CPU with mmap enabled cost performance, and we
+    # MEASURED it: 16.45 vs 18.70 tok/s (+13.7%). v1.8.0 shipped a row that violated this.
+    bad = [(c[0], c[3]) for c, _ in _all_placement_rows()
+           if "-ot" in c[3] and "=CPU" in c[3] and "--no-mmap" not in c[3]
+           and "expert cache" not in c[0]]
+    assert not bad, f"rows override tensors to CPU without --no-mmap: {bad[:3]}"
+
+def t_invariant_flags_are_valid_argv():
+    # no prose may ever reach a launch command (the v1.6.5 bug: a bare '+' killed llama-cli)
+    for c, _ in _all_placement_rows():
+        if "expert cache" in c[0]:
+            continue                      # aspirational row, filtered by run/bench (tested separately)
+        toks = c[3].replace('"', "").split()
+        assert "+" not in toks, f"prose leaked into flags: {c[0]} -> {c[3]}"
+        for i, tk in enumerate(toks):
+            if tk == "-ngl":
+                assert toks[i+1].isdigit() and 0 <= int(toks[i+1]) <= 99, f"bad -ngl: {c[3]}"
+            if tk == "-ot":
+                assert i + 1 < len(toks) and toks[i+1], f"-ot with no pattern: {c[3]}"
+
+def t_invariant_split_regex_layers_in_range():
+    import re
+    for c, meta in _all_placement_rows():
+        if not c[0].startswith("split experts"):
+            continue
+        m = re.search(r"blk\\\.\(([0-9|]+)\)", c[3])
+        assert m, f"split row without a layer regex: {c[3]}"
+        idx = [int(x) for x in m.group(1).split("|")]
+        assert min(idx) >= 1 and max(idx) == meta["nl"] - 1, \
+            f"regex layers {min(idx)}-{max(idx)} outside 1..{meta['nl']-1}: {c[0]}"
+
+def t_invariant_rows_sorted_and_positive():
+    from quantprobe.plan import evaluate
+    for moe in (True, False):
+        _, _, cfgs = evaluate(30.5, 3.3, 1.2, moe, 2.5, 6, 192, 16, 48, 2.0, 0.5, gl=0.3, n_layer=48)
+        tps = [c[1] for c in cfgs]
+        assert tps == sorted(tps, reverse=True), f"rows not sorted by tok/s: {tps}"
+        assert all(x > 0 for x in tps), f"non-positive prediction: {tps}"
+
 def t_python_m_package():
     # `python -m quantprobe` must work identically to the console script -
     # it is the PATH-proof fallback for Windows user-site installs
