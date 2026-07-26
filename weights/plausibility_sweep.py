@@ -14,11 +14,23 @@ between cells, which no single-cell test can see:
 
   I1  monotone in bits      fewer bits per weight -> never slower, on a bandwidth-bound tier
   I2  monotone in bandwidth faster memory -> never slower, same model and bits
-  I3  active-params rule    at matched bits and machine, the model with fewer ACTIVE parameters
-                            is not slower. This is the one the user's report violated.
-  I4  no free lunch         a model cannot beat one with half its active bytes by more than the
-                            byte ratio - catches a placement being credited with impossible gains
+  I3  fewer bytes wins      at matched bits/machine/tier, reading fewer active bytes must not
+                            be slower (dominance on both axes where a cache is involved)
+  I4  no free lunch         on SINGLE-TIER rows only, the speed gap may not exceed the byte gap
   I5  sane absolute range   nothing exceeds what the tier's raw bandwidth allows at eta = 1.0
+  I6  bytes per parameter   bytes-per-ACTIVE-PARAMETER must rise with the share the recipe holds
+                            at >=4.5 bits. THIS is the one that catches the reported defect, and
+                            the only one that could: I1-I5 compare the law's outputs against each
+                            other, so they are blind to an error in how those outputs are
+                            computed. I6 reaches outside the law, to declared parameter counts.
+
+Every invariant here was wrong at least once before it was right, and each wrong version flagged
+dozens of perfectly sane cells. The binding quantity is tier-dependent (active bytes, not total
+size), eta is architecture-dependent (0.38 MoE vs 0.62 dense on CPU), and multi-tier rows have a
+second free variable (the split, or the cache hit rate). A checker that cries wolf is worse than
+none, so each restriction below is there because a mutation test proved it necessary - and the
+mutation test also caught a version of I3 that had been narrowed until it could no longer see the
+bug it was written for.
 
     python weights/plausibility_sweep.py [--verbose]
 """
@@ -26,7 +38,7 @@ from __future__ import annotations
 import itertools, sys, os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from quantprobe.plan import evaluate, MODELS, MACHINES
+from quantprobe.plan import evaluate, MODELS, MACHINES, DENSE_PROTECTED_SHARE
 
 BITS = [2.0, 2.5, 3.0, 4.5]
 SKIP_MACHINES = set()
@@ -92,7 +104,17 @@ def main():
             # exactly). Comparing across architectures therefore needs the eta ratio, which makes
             # the check restate the law. Within an architecture class eta cancels and bytes alone
             # decide - so compare like with like, and let I1/I2/I5 cover the rest.
-            if r1["moe"] != r2["moe"]:
+            # Cross-architecture comparison is valid exactly where eta does NOT depend on
+            # architecture. On "all in VRAM" both dense and MoE use geta, so bytes alone decide
+            # and a dense model may be compared with a MoE directly - which is the comparison a
+            # reader actually makes, and the one that exposed the dense-activation bug (a 12B
+            # dense shown slower than a 106B MoE with the same active parameters, on a DGX
+            # Spark). Everywhere else the law applies a measured per-architecture eta (0.38 MoE
+            # vs 0.62 dense on a CPU tier), so a MoE reading fewer bytes can legitimately be
+            # slower and the comparison needs the eta ratio - which would just restate the law.
+            # Restricting this to same-architecture EVERYWHERE was tried, and made the sweep
+            # blind to the very bug it was written for; the mutation test caught that.
+            if r1["moe"] != r2["moe"] and r1["place"] != "all in VRAM":
                 continue
             cells += 1
             # ACTIVE bytes per token is the binding quantity on every tier - that is the whole
@@ -132,6 +154,35 @@ def main():
                 if byte_ratio and ratio > byte_ratio * 1.02:
                     bad.append(f"I4 {hk} @{b} [{lean['place'][:28]}]: {lk} beats {fk} by "
                                f"{ratio:.2f}x but only reads {byte_ratio:.2f}x fewer active bytes")
+
+    # I6: bytes per ACTIVE PARAMETER must be monotone in the protected fraction.
+    #
+    # This is the one that matters, and the first five could not have caught the bug that
+    # prompted them. I1-I5 all compare the law's own outputs against each other, so they cannot
+    # see an error in how those outputs are COMPUTED - the law was perfectly self-consistent
+    # while feeding on a wrong byte count. This check reaches outside the law, to the model's
+    # declared parameter counts.
+    #
+    # At a fixed bit-width, active bytes should be active PARAMETERS times bits/8, adjusted only
+    # by the share the recipe holds at >=4.5 bits. So sorting models by that share must sort them
+    # by bytes-per-active-parameter too. When dense models were priced as 100% protected while
+    # declaring 21.4%, they leapt above every MoE - including deepseek-16b at 54.2% - and the
+    # ordering inverted. That is exactly the shape of the reported defect.
+    for hk, b in itertools.product(machines, BITS):
+        rows = []
+        for mk, m in MODELS.items():
+            r = top(mk, hk, b)
+            if not r:
+                continue
+            share = (m["ne"] / m["a"]) if m["moe"] else DENSE_PROTECTED_SHARE
+            rows.append((share, r["act"] / m["a"], mk))
+        rows.sort()
+        for (s1, v1, k1), (s2, v2, k2) in zip(rows, rows[1:]):
+            cells += 1
+            if v2 < v1 * 0.98:
+                bad.append(f"I6 {hk} @{b}: {k1} declares {s1:.1%} protected and reads "
+                           f"{v1:.3f} GB per B-active, but {k2} declares MORE ({s2:.1%}) and reads "
+                           f"LESS ({v2:.3f}) - bytes/active-param must rise with the protected share")
 
     # I5: nothing may exceed the tier's raw bandwidth at eta = 1.0
     for mk, hk, b in itertools.product(MODELS, machines, BITS):
