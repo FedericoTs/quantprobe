@@ -102,6 +102,13 @@ the utilization constant η collapsing per memory tier.**
   prefetch), not scheduling or sync — both eliminated experimentally.
 - *The prediction:* measure any machine's tier bandwidths and any model's active bytes, and this
   equation prices its decode speed before you download a single weight.
+- *Scope limit (2026-07-26), stated before it was measured:* the law prices **one token per
+  weight read**. Multi-token prediction and speculative decoding break that assumption by design —
+  several accepted tokens per read — so the law reads LOW for them by the acceptance multiplier
+  (a community datapoint: ~1.8x on Qwen3.6-35B-A3B with MTP). This is a missing factor, not a
+  refutation: the bytes-and-bandwidth term is unchanged and the multiplier sits on top. Measuring
+  it is Law 6's job, and our own measured antagonism result (draft-model speculation 2.3x SLOWER
+  on MoE) means the sign is NOT obvious — MTP heads reuse the forward pass, draft models do not.
 - *Scope confirmation (2026-07-26):* pre-registration #12 changed **which** weights carry precision
   (importance-matrix calibration) at identical format and identical file size, and measured CPU
   prefill **unchanged** (44.80 vs 43.67 tok/s, inside run-to-run noise — staked at ±5% and hit).

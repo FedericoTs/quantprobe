@@ -46,6 +46,33 @@ priced knob in the machine profile, not folklore.
   a verified batch is worth). Deliberately staked as an ordering only; exact bands will be staked
   after S-a/S-b/S-c land and BEFORE the tier runs, protocol-style.
 
+### Added arm S-e (staked 2026-07-26, before acquiring any MTP-capable model)
+
+A community user reported **29-30 tok/s** on Qwen3.6-35B-A3B (5070 12GB / 32GB) where this
+tool predicted ~16 for the placement alone — a ~1.84x multiplier from **multi-token prediction**.
+No model currently on this machine carries MTP heads, so this is staked before it can be run.
+
+The sign is genuinely not obvious, which is what makes it worth staking: our own measured Law-4
+corollary found draft-model speculation **2.3x SLOWER** on MoE (verify batches union far more
+experts than a single token does). MTP should escape that penalty because its heads reuse the
+same forward pass rather than running a separate draft model — but "should" is not "does".
+
+- **S-e1 (MTP helps MoE where draft models hurt).** On an MTP-capable MoE model, MTP-enabled
+  decode lands **1.4-2.2x** its own MTP-disabled baseline on the same file and placement. Below
+  1.15x means MTP inherits the expert-union tax after all and our corollary generalises further
+  than we thought; above 2.2x means the acceptance rate is higher than any published figure.
+- **S-e2 (the multiplier is placement-independent).** The MTP speedup ratio varies by **less
+  than 25%** between all-in-VRAM and hybrid placements. MTP changes tokens-per-read, placement
+  changes seconds-per-read; if they interact strongly, the law needs a joint term rather than
+  a multiplier.
+- **S-e3 (the law composes).** Predicted tok/s = (Law 4 placement prediction) x (measured MTP
+  multiplier) lands within **±25%** of measured — the same band the law already claims. A miss
+  here means MTP is not a clean multiplier on the placement identity.
+
+If S-e3 holds, `plan` gains an `--mtp` flag applying the measured multiplier, and the scope
+limit now stated in LAWS.md is replaced by a term. If it misses, the honest outcome is that we
+keep telling MTP users we do not model their case.
+
 ## Refuted if
 
 S-a lands outside its band or W-prose ≈ W-code; S-b ratio > 0.9; S-c < ×1.1; S-d ordering
