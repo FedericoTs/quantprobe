@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.10.1 — 2026-07-26
+
+**Tensor-role registry — the part of a recipe that legitimately transfers.** A recipe has two
+halves with opposite properties: the machine half is *computed* (Law 4 already prices any
+hardware combination nobody has ever contributed), and the model half is *measured* (Law 3:
+fragility is not predictable). Between them sits structure — which tensor classes a model has
+and which are always-active — and that IS a property of the architecture, knowable for a model
+nobody has probed.
+
+- The builder now classifies every tensor by role before quantizing, and **reports any weight
+  class it has no protection rule for** instead of silently compressing it. This is the exact
+  bug we shipped once: hybrid SSM models name their state tensors , our pattern matched
+  only , and every one landed at the aggressive base level (v1.6.4, −24% ppl).
+- Verified across three architecture families (dense, classic MoE, SSM-hybrid MoE) with no
+  unrecognised classes.
+
+**Why recipes are not synthesizable from other recipes** — worth stating, since it is tempting:
+using our four measured bands to predict a fifth model would have protected Mistral-7B's layers
+24-31 (all three precedents are late-fragile, and it is a dense 7B like Qwen2.5-7B). Mistral is
+**early**-fragile: quantizing layers 0-7 costs +6.53 ppl versus +0.26 for 24-31. The synthesizer
+gives away the expensive band and protects the cheap one — a **25x** error, in our own atlas.
+Structure transfers. Fragility does not. 65 tests.
+
 ## 1.10.0 — 2026-07-26
 
 **`quantprobe recipes` — the community fragility atlas.** The expensive part of the custom

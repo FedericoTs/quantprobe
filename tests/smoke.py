@@ -540,6 +540,20 @@ def t_recipe_unknown_key_graceful():
     assert rc != 0 and "Traceback" not in out and ("no recipe" in out or "not found" in out), \
         f"unknown recipe not graceful: {out[:200]}"
 
+def t_tensor_role_registry_covers_always_active():
+    # Structure transfers between models; fragility does not. The registry must name every
+    # always-active class we know about - missing one is the v1.6.4 SSM bug (-24% ppl).
+    from quantprobe.spec import TENSOR_ROLES
+    names = [n for n, _, _ in TENSOR_ROLES]
+    for required in ("shared-expert", "attention", "recurrent/SSM", "embedding", "routed-expert"):
+        assert required in names, f"tensor-role registry missing '{required}'"
+    import re
+    for _, pat, _ in TENSOR_ROLES:
+        re.compile(pat)                      # every pattern must actually compile
+    # the roles our builder protects must each have a rule
+    protected = [n for n, _, d in TENSOR_ROLES if "ALWAYS ACTIVE" in d]
+    assert len(protected) >= 4, f"too few always-active classes recognised: {protected}"
+
 def t_python_m_package():
     # `python -m quantprobe` must work identically to the console script -
     # it is the PATH-proof fallback for Windows user-site installs

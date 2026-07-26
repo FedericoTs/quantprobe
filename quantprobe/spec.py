@@ -97,3 +97,44 @@ def apply(a, quiet=False):
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))
     return True
+
+
+# --- tensor-role registry -----------------------------------------------------------------
+# WHAT TRANSFERS between models is structure, not fragility. Which tensor classes exist and
+# which are always-active is a property of the ARCHITECTURE, so it is knowable for a model
+# nobody has ever probed. Which LAYERS are fragile is not (Law 3; Mistral is early-fragile
+# where its near-twin Qwen is late, a 25x error if you guess).
+#
+# This registry exists because we shipped that bug: hybrid SSM architectures name their
+# recurrent-state tensors ssm_*, our protection pattern only matched attn_*, and every SSM
+# tensor silently landed at the aggressive base level (fixed in v1.6.4, cost -24% ppl).
+# Anything unrecognised is now REPORTED rather than silently compressed.
+TENSOR_ROLES = [
+    ("routed-expert", r"ffn_(gate|up|down)_exps",  "compressible: ~8 of N experts fire per token"),
+    ("shared-expert", r"ffn_.*_shexp",             "ALWAYS ACTIVE on every token - protect"),
+    ("attention",     r"attn_",                     "ALWAYS ACTIVE - protect"),
+    ("recurrent/SSM", r"ssm_",                      "ALWAYS ACTIVE - protect"),
+    ("embedding",     r"(token_embd|output\.)",     "ALWAYS ACTIVE - protect"),
+    ("router",        r"ffn_gate_inp",              "tiny, kept at full precision"),
+    ("norm",          r"(_norm|norm\.)",            "tiny, kept at full precision"),
+    ("dense-ffn",     r"ffn_(gate|up|down)\.",      "dense FFN - the depth-aware band applies here"),
+]
+
+
+def tensor_roles(path):
+    """Classify a GGUF's tensors by role. Returns (roles, unknown) with byte totals, so the
+    builder can warn about weight classes it has no protection rule for."""
+    import re
+    from gguf import GGUFReader
+    r = GGUFReader(path)
+    roles, unknown = {}, {}
+    for t in r.tensors:
+        nbytes = int(t.n_bytes) if hasattr(t, "n_bytes") else 0
+        for name, pat, _ in TENSOR_ROLES:
+            if re.search(pat, t.name):
+                roles[name] = roles.get(name, 0) + nbytes
+                break
+        else:
+            key = re.sub(r"blk\.\d+\.", "", t.name)
+            unknown[key] = unknown.get(key, 0) + nbytes
+    return roles, unknown
