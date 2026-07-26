@@ -487,10 +487,22 @@ dense ≈0.65 on the same tier); **soft tier boundaries** (a model near RAM capa
 RAM+paging regime with unstable throughput); and the **disk tier's η≈1** (bandwidth-saturated, codec-free).
 
 Three practical inversions follow, each measured: on Pascal-class GPUs, **serving MoE experts from CPU
-RAM beats VRAM** (+54%, one llama.cpp flag — poor low-bit decode utilization makes the GPU tier
-latency-bound); for a 30B-A3B MoE on a 16 GB box, **the CPU alone (12.6 tok/s) beats the CPU+GPU
+RAM beats VRAM** (+54%, one llama.cpp flag — the experts do not fit, so the GPU tier thrashes rather
+than serves)[^gl-correction]; for a 30B-A3B MoE on a 16 GB box, **the CPU alone (12.6 tok/s) beats the CPU+GPU
 hybrid** (RAM contention); and **batch scaling returns** once experts live on the CPU tier (4.9→22.1
 aggregate tok/s at batch 8, where the GPU-resident MoE was flat).
+
+[^gl-correction]: **Correction, 2026-07-26.** This parenthetical previously read "poor low-bit
+decode utilization makes the GPU tier latency-bound". The **+54% measurement stands**; the
+attributed mechanism does not. Pre-registration #16 measured the same 7B all-in-VRAM at 20.03
+(Q4_K_M, 4.5 bits), 19.17 (Q2_K, 2.8 bits) and 18.11 (IQ3_XS, 3.3 bits) — a 10% band, so low-bit
+decode on this card is not meaningfully penalised and cannot be what makes serving experts from
+VRAM lose. The operative cause is capacity: the experts do not fit, so the GPU tier thrashes.
+The codec *does* dominate **prefill** (IQ3_XS pays 6.8× there), which is consistent with §10's
+decode-utilization argument — dequantization is compute, and prefill is the compute-bound phase.
+The paper's headline claim that decode-utilization rather than bit-count is the speed variable is
+**unaffected and independently supported** by that same triple: 2.8 → 4.5 bits moved decode by 4%.
+
 
 The law also prices the *streaming* frontier: GLM-4.5-Air (110B-A12B, 2.7× our RAM) runs from a SATA
 drive at **0.19 tok/s — inside the band the law predicted before the download finished** (0.2–0.3).
