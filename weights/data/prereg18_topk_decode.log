@@ -1,0 +1,10 @@
+=== Pre-reg #18: top-k on DECODE. staked P-1 24-30, P-2 >=1.25x, P-3 control 18.89 +/-10% ===
+GPU: 1377 MiB, 1063 MHz, 57
+--- P-3 CONTROL: k=8 (default) via llama-cli ---
+--- expert_used_count=8 ---
+BLOCKED: llama-cli spun 559s CPU at a 7 MB working set without ever loading the model - it never
+reached generation. llama-bench has no --override-kv (which is why H6 could not close this
+either). Needs a different harness: llama-server with --override-kv plus a timed completion, or
+perplexity-timing as H6 fell back to. Pre-registration #18 stays STAKED and unmeasured.
+--- expert_used_count=4 ---
+DONE

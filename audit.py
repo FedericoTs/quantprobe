@@ -36,7 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # outstanding. Being on this list is a debt, not an exemption - it is meant to be short and to
 # shrink. A placement that is neither anchored nor listed here fails the audit.
 UNMEASURED_PLACEMENTS = {
-    "split: N layers->VRAM, rest->RAM":
+    "split: N/N layers->VRAM, rest->RAM":
         "dense partial offload - never measured; needs a dense model that overflows this 6 GB card",
     "stream from disk (VRAM+RAM expert cache)":
         "needs an expert-caching runtime (ktransformers/colibri-class); stock llama.cpp cannot run it",

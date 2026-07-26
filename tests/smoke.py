@@ -4,6 +4,20 @@ from __future__ import annotations
 import io, os, subprocess, sys
 from contextlib import redirect_stdout
 
+# Test the code in THIS repo, not whatever happens to be installed.
+#
+# Running `python tests/smoke.py` puts tests/ on sys.path[0] - NOT the cwd - so in-process
+# `from quantprobe.plan import ...` resolved to site-packages while the subprocess CLI tests
+# (`python -m quantprobe.cli`, which does add cwd) resolved to the repo. The suite was silently
+# validating TWO DIFFERENT COPIES of the code at once, and an edit that had not been reinstalled
+# was invisible to exactly the half that imports directly.
+#
+# That cost a real mutation test: re-introducing the -ngl bug showed "ok" here while failing when
+# the same function was called directly, and it took three rewrites of the assertion before the
+# harness itself turned out to be the problem. verify.py layer 2 covers the INSTALLED artifact
+# deliberately and separately; layer 1 should test what the developer just edited.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 FAIL = []
 
 
@@ -319,6 +333,64 @@ def t_vram_regime_error_does_not_grow():
                        "shrink:\n  " + "\n  ".join(worse))
     if checked == 0:
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
+
+
+def t_dense_split_ngl_is_a_layer_count():
+    """-ngl must be a LAYER COUNT, and must never exceed the model's layers on a split row.
+
+    This emitted `int(g * 99)` where g is a FRACTION and 99 is the all-layers sentinel used
+    elsewhere in plan.py. Two failures, the second severe:
+      * llama-70b printed "split: 50% layers->VRAM" and emitted -ngl 49 - which is 61% of 80.
+      * for any model with <= 99*g layers the flag EXCEEDS the layer count, so llama.cpp puts
+        EVERY layer on the GPU - on a row that exists ONLY because the model does not fit in
+        VRAM. A 32-layer model does this for any g > 0.32. OOM, or silent thrash on Windows.
+    """
+    import re
+    from quantprobe.plan import evaluate, MODELS
+    checked = 0
+    for key in ("llama-70b", "mistral-7b"):
+        m = MODELS[key]
+        nl = m["nl"]
+        for hw in (dict(vc=24, vb=1008, rc=64, rb=83, db=5, geta=0.62),
+                   dict(vc=8, vb=256, rc=32, rb=45, db=2, geta=0.45)):
+            for bits in (2.0, 2.5, 4.5):
+                size, _, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], bits,
+                                         n_layer=nl, **hw)
+                for name, tps, warn, flags in cfgs:
+                    if not name.startswith("split:"):
+                        continue
+                    checked += 1
+                    g = re.search(r"-ngl (\d+)", flags)
+                    assert g, f"{key}: split row emitted no -ngl: {flags}"
+                    n = int(g.group(1))
+                    # (a) the flag must be a real layer count, never >= the model's layers
+                    assert 0 < n < nl, (
+                        f"{key} has {nl} layers but the split row emits -ngl {n} - llama.cpp "
+                        f"would place ALL layers on the GPU, on a row that only exists because "
+                        f"the model does NOT fit in VRAM")
+                    # (b) THE PHYSICAL CHECK, and the one that actually bites. The layers we send
+                    # to the GPU must fit in its VRAM - that is the entire reason this row exists
+                    # instead of "all in VRAM". Checking the label against the flag does NOT work
+                    # (both derive from the same variable, so a wrong value agrees with itself),
+                    # and a bare range check does not either: restoring `int(g * 99)` on
+                    # llama-70b yields -ngl 49, comfortably under 80 layers, while asking the card
+                    # to hold 49/80 of a 42.9 GB model = 26.3 GB on a 24 GB GPU. Only the fit test
+                    # sees it. Mutation testing rejected two weaker versions of this assertion.
+                    on_gpu = n / nl * size
+                    assert on_gpu <= hw["vc"] * 0.90 + 1e-6, (
+                        f"{key} @{bits}b: -ngl {n} of {nl} layers puts {on_gpu:.1f} GB on a "
+                        f"{hw['vc']} GB card (usable {hw['vc'] * 0.90:.1f}) - the emitted command "
+                        f"cannot fit what the row promises")
+    # Without this the test can pass VACUOUSLY - if every case gets suppressed the loop body
+    # never runs and nothing is asserted. Mutation testing caught exactly that.
+    assert checked >= 3, (
+        f"only {checked} split rows were actually checked - the cases this test exists for are "
+        f"being suppressed rather than verified, so it is asserting nothing")
+    # and with no grounded layer count the row must be SUPPRESSED, not guessed
+    _, _, cfgs = evaluate(11.9, 11.9, 11.9, False, 4.5, vc=8, vb=256, rc=32, rb=45, db=2,
+                          geta=0.45, n_layer=None)
+    assert not [c for c in cfgs if c[0].startswith("split:")], \
+        "dense split row offered without a layer count - it cannot emit a correct -ngl"
 
 
 def t_dense_speed_responds_to_bits():
@@ -815,9 +887,11 @@ def t_moe_split_no_layer_count_no_bogus_regex():
         assert split[0][2] and "layer count" in split[0][2], "must explain why flags are generic"
 
 def t_dense_split_row_unregressed():
-    # the pre-existing dense split row must still work (no MoE change may break it)
+    # The pre-existing dense split row must still work (no MoE change may break it). It now
+    # REQUIRES a layer count, because -ngl IS a layer count and without one we cannot emit a
+    # correct command - see t_dense_split_ngl_is_a_layer_count for what that cost.
     from quantprobe.plan import evaluate
-    _, _, cfgs = evaluate(13, 13, 13, False, 4.5, 8, 300, 32, 50, 2, 0.5)
+    _, _, cfgs = evaluate(13, 13, 13, False, 4.5, 8, 300, 32, 50, 2, 0.5, n_layer=40)
     assert any(c[0].startswith("split:") for c in cfgs), \
         f"dense split row regressed: {[c[0] for c in cfgs]}"
 
