@@ -1,0 +1,11 @@
+=== llama.cpp -fit (its own default) vs our -ot split, WARM 2026-07-26 05:24 ===
+[gpu-state] 1030 MiB
+--- warm-up pass (pull the file into page cache; discarded) ---
+--- A: our stated baseline (all experts -> CPU, --no-mmap as we recommend) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |            tg32 |         18.02 ± 0.77 |
+--- B: llama.cpp's OWN default auto-fit (nothing specified) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  -1 |            tg32 |          4.06 ± 0.01 |
+--- C: our -ot split recommendation ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |            tg32 |         19.21 ± 1.27 |
+[gpu-state] 910 MiB
+=== DONE 2026-07-26 05:26 ===

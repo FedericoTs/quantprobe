@@ -35,7 +35,7 @@ barely fits, or when it's your own fine-tune that nobody has published.
 
 If you run a mixture-of-experts model (Qwen3-30B-A3B, GLM-Air, most big local models), the usual
 advice puts *every* expert in system RAM and leaves your GPU half empty. Keeping some expert
-layers on the GPU instead — same file, different flags — measured **+34.7% generation and 2–3×
+layers on the GPU instead — same file, different flags — measured **+12.4% generation and 2–3×
 faster prompt reading**. `plan` and `run` now work out the cutoff from your free VRAM and print
 the exact command. No download, no rebuild:
 
