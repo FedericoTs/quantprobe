@@ -349,6 +349,65 @@ def t_auto_reaches_the_split_placement_for_presets():
         "the preset's layer count:\n" + out[:400])
 
 
+def t_auto_transfers_every_model_field():
+    """Every fact auto resolves about the model must actually reach the law.
+
+    auto cannot pass a preset name downstream (a raw HF repo has no preset), so it passes explicit
+    parameters - which means each fact the preset carried has to be transferred by hand. When that
+    was a row of bare assignments, one was forgotten: the layer count, costing the flagship path
+    its best placement for every preset MoE, silently, with nothing raised (v1.11.1).
+
+    This test makes forgetting fail loudly. Add a field to ModelSpec and it goes red until you
+    either transfer it in apply_to or declare it local-only on purpose.
+    """
+    import argparse
+    from quantprobe.auto import ModelSpec, resolve_model, apply_to
+    LOCAL_ONLY = {"repo", "moe"}          # consumed by auto itself; never read from `a` by the law
+    a = argparse.Namespace(total=None, active=None, always_active=None, model=None, n_layer=None)
+    spec = apply_to(resolve_model(a, "qwen3-30b"), a)
+    for f in ModelSpec._fields:
+        if f in LOCAL_ONLY:
+            continue
+        assert getattr(a, f, None) == getattr(spec, f), (
+            f"resolve_model found {f}={getattr(spec, f)} but apply_to never put it on the args "
+            f"the law reads - this is exactly how the layer count was lost")
+    assert spec.n_layer == 48, f"preset layer count lost: {spec.n_layer}"
+    # force a decision about any NEW field rather than letting it silently go nowhere
+    assert set(ModelSpec._fields) == {"repo", "total", "active", "always_active", "moe", "n_layer"}, \
+        ("ModelSpec gained or lost a field. Transfer it in apply_to and list it here, or add it "
+         "to LOCAL_ONLY if auto consumes it directly.")
+
+
+def t_auto_and_plan_recommend_the_same_placement():
+    """auto must not recommend a different placement than plan does for the same model+machine.
+
+    This is the invariant the v1.11.1 bug broke and no test held. auto sets a.model = None to
+    hand the law explicit parameters, which also discarded the preset's layer count, so its whole
+    frontier lost the MoE split row and recommended hybrid at 22.4 tok/s where plan finds split
+    at 26.9. Both commands were internally consistent; they simply disagreed with each other.
+
+    Sibling of t_commands_agree_on_the_same_input, which covers plan/run/bench. auto is the
+    flagship path and was outside that net.
+    """
+    import re
+    rc, out = cli("auto", "qwen3-30b", "--dry", "--machine", "2016-xmp")
+    if rc != 0 or "could not list" in out:
+        return                                    # offline; the frontier still printed above
+    m = re.search(r"\*\s+[0-9.]+ tok/s\s+quality x[0-9.]+\s+\S+\s+([0-9.]+)-bit[^+]*\+\s*([^\n+]+)", out)
+    assert m, f"auto printed no winning row to compare:\n{out[:500]}"
+    bits, auto_place = m.group(1), m.group(2).strip()
+    rc2, out2 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--bits", bits)
+    m2 = re.search(r"\*\s+[0-9.]+ tok/s\s+([^\[\n]+)", out2)
+    assert m2, f"plan printed no winning row:\n{out2[:400]}"
+    plan_place = m2.group(1).strip()
+    # compare the placement KIND, not the percentage (auto and plan may size the split slightly
+    # differently from rounding); disagreeing on the kind is the bug.
+    kind = lambda s: re.sub(r"\d+%?", "N", s).strip()
+    assert kind(auto_place) == kind(plan_place), (
+        f"auto and plan disagree on placement at {bits} bits:\n"
+        f"  auto: {auto_place}\n  plan: {plan_place}")
+
+
 def t_layer_count_note_only_when_genuinely_unknown():
     """The layer-count note must not appear when the flags were already emitted.
 
