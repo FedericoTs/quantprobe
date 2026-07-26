@@ -48,6 +48,23 @@ Most guides put *all* of a mixture-of-experts model's experts in system RAM and 
 
 *This number was first published as +34.7% and is now corrected downward: that baseline was measured without `--no-mmap`, a flag the tool already recommended, so the control was worse than what a user would actually run. The [correction is published in full](preregistrations/2026-07-26-moe-partial-expert-offload.md#correction-2026-07-26-the-baseline-above-was-mis-configured-and-347-is-overstated) beneath the original — a community report about llama.cpp's `-fit` is what led us to check.*
 
+## The other free win: speculation, if you write code
+
+`--spec-type ngram-simple` drafts tokens by finding repeated spans in your own context, then
+verifies them — so output is **identical**, it is one flag, and nothing is downloaded. Measured
+on the same model and box, three runs per cell:
+
+| workload | off | ngram on | effect |
+|---|---|---|---|
+| **code** (edit a file, answer restates its input) | 17.72 | **37.17** | **2.10× — decode doubles** |
+| prose (open-ended continuation) | 18.46 | 18.56 | 1.01× — nothing |
+| code, but **MoE with experts in RAM** | 18.18 | 18.81 | 1.03× — the union tax eats it |
+
+Copyability is the whole mechanism: code answers repeat their input, prose invents. So turn it on
+for coding work on a **dense** model; skip it for prose, and skip it for MoE with offloaded
+experts. ([staked before measuring](preregistrations/2026-07-24-law6-speculation-economics.md) —
+the code result came in *above* my staked ceiling, which still scores as a miss.)
+
 ## Measured results
 
 | result | number |

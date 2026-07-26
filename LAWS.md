@@ -100,6 +100,11 @@ the utilization constant η collapsing per memory tier.**
   to MoE sparsity** on bandwidth-bound tiers (verify-batches union ~40 experts vs 8 — measured 2.3×
   *slower* with a draft); and the MoE scatter penalty is a memory-system property (slab-hopping defeats
   prefetch), not scheduling or sync — both eliminated experimentally.
+  **Strengthened 2026-07-26 (Law 6 arms S-a/S-b/S-e):** THREE independent speculation mechanisms
+  now collapse on offloaded MoE — draft-model (2.3x slower), MTP (0.76x), and ngram prompt-lookup
+  (+3% where the same mode gives a dense model **+110%**). The expert-union tax is a property of
+  speculative decoding on offloaded MoE, not a quirk of any one mechanism. Corollary for users:
+  if your experts live in RAM, no speculation mode will pay.
 - *The prediction:* measure any machine's tier bandwidths and any model's active bytes, and this
   equation prices its decode speed before you download a single weight.
 - *Scope limit (2026-07-26), stated before it was measured:* the law prices **one token per

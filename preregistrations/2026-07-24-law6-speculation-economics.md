@@ -237,3 +237,60 @@ One model per architecture class, one machine, single-stream decode, Pascal-clas
 compute-bound regime with a *large* model comfortably resident (the reporting user's 12 GB case)
 is still untested here — a 4 B model on a 6 GB card is compute-bound, but it is not his
 configuration, and MTP acceptance rates are model-specific.
+
+---
+
+## Arms S-a and S-b scored (2026-07-26, log: weights/data/prereg_sa_ngram.log)
+
+Three runs per cell after a discarded warm-up. `--spec-type none` vs `ngram-simple` on the same
+file and the same two prompts: **W-code** (a real source file from this repo plus a
+localized-edit instruction, so the answer restates most of its input) and **W-prose** (WikiText
+continuation, which invents new text).
+
+| model / workload | speculation off | ngram on | effect |
+|---|---|---|---|
+| dense 7B, **code** | 17.72 ± 0.11 | **37.17 ± 0.04** | **2.10× (+110%)** |
+| dense 7B, **prose** | 18.46 ± 0.01 | 18.56 ± 0.14 | **1.01× (nothing)** |
+| MoE 30B hybrid, **code** | 18.18 ± 0.06 | 18.81 ± 0.06 | **1.03× (+3%)** |
+
+- **S-a (code): MISS — the first one that went ABOVE my band.** Staked ×1.25–2.0, measured
+  **2.10×**. Outside the ceiling, so it scores as a miss.
+- **S-a (prose): HIT.** Staked ≤×1.15, measured **1.01×** — no gain at all, within noise of zero.
+- **The gap is the mechanism, and it is enormous:** the same model on the same hardware gains
+  **110% on code and 1% on prose**. Prompt-lookup speculation drafts by finding repeated spans in
+  context; code answers restate their input, prose does not. Copyability is the whole story, and
+  this is the sharpest confirmation of it we have.
+- **S-b: HIT, decisively.** Staked the MoE gain fraction at ≤0.75× the dense case's. Measured
+  **0.031** — the expert-union tax eats **97%** of the win (+3% vs +110%). Same workload, same
+  speculation mode, only the architecture differs.
+
+### What S-b establishes beyond MTP
+
+Arm S-e found MTP losing 24% on MoE-with-experts-in-RAM and attributed it to the expert union.
+S-b now shows a *completely different* speculation mechanism — ngram, no extra weights, no MTP
+heads — collapsing on the same architecture and placement. Two independent mechanisms, one
+shared failure mode. **The expert-union tax is a property of speculative decoding on offloaded
+MoE, not a quirk of MTP.** That materially strengthens the existing Law 4 corollary, which had
+rested on a single draft-model measurement.
+
+### Correcting my own bias, again
+
+After S-e/S-f I wrote that I had an optimism bias on speculation magnitudes: four predictions,
+four misses high. S-a breaks that pattern in the other direction — I was too **conservative**,
+capping code at 2.0× when reality gave 2.10×. The honest summary is not "I am optimistic about
+speculation"; it is **"I had no reliable intuition for speculation magnitudes in either
+direction, and staking them is the only thing that revealed it."**
+
+### What this is worth to users — the largest free win measured in this project
+
+For a coding workload on a **dense** model, `--spec-type ngram-simple` **doubles decode speed**.
+No extra model, no extra weights, no quality change — the drafts are verified, so output is
+identical. It is one flag.
+
+The conditions are sharp and now measured:
+- **dense + code-like work → turn it on** (+110%)
+- **prose / open-ended generation → do not bother** (+1%)
+- **MoE with experts offloaded to RAM → do not bother** (+3%; the union tax eats it)
+
+For comparison, MTP on the same hardware was worth at most +17%. The cheap, boring, no-download
+option beats it by a wide margin on the workload our users actually run.

@@ -1,0 +1,33 @@
+=== LAW 6 S-a/S-b: ngram speculation 2026-07-26 07:49 ===
+[gpu-state] 860 MiB
+
+##### S-a: DENSE qwen7b-Q4_K_M, all-in-VRAM #####
+--- dense/wcode/none ---
+CELL dense/wcode/none run: 17.84
+CELL dense/wcode/none run: 17.70
+CELL dense/wcode/none run: 17.63
+--- dense/wprose/none ---
+CELL dense/wprose/none run: 18.46
+CELL dense/wprose/none run: 18.46
+CELL dense/wprose/none run: 18.45
+--- dense/wcode/ngram-simple ---
+CELL dense/wcode/ngram-simple run: 37.22
+CELL dense/wcode/ngram-simple run: 37.16
+CELL dense/wcode/ngram-simple run: 37.14
+--- dense/wprose/ngram-simple ---
+CELL dense/wprose/ngram-simple run: 18.42
+CELL dense/wprose/ngram-simple run: 18.58
+CELL dense/wprose/ngram-simple run: 18.69
+
+##### S-b: MoE 30B hybrid (experts->RAM) #####
+--- moe/wcode/none ---
+CELL moe/wcode/none run: 18.24
+CELL moe/wcode/none run: 18.18
+CELL moe/wcode/none run: 18.12
+--- moe/wcode/ngram-simple ---
+CELL moe/wcode/ngram-simple run: 18.76
+CELL moe/wcode/ngram-simple run: 18.87
+CELL moe/wcode/ngram-simple run: 18.79
+
+[gpu-state] 966 MiB
+=== S-a/S-b DONE 2026-07-26 07:59 ===
