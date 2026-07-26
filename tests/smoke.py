@@ -321,6 +321,29 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_fits_in_vram_warning_is_consistent():
+    """plan and optimize must BOTH disclose the fits-in-VRAM trap, and both stay quiet otherwise.
+
+    The law ranks by bandwidth, so once everything fits in VRAM it puts 2-bit above 4.5-bit.
+    Measured, that gain is not there: the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% slower
+    (pre-registration #16). A disclosure that only one of the two commands makes is the same
+    inconsistency class as the plan-vs-bench disagreement - a user gets different advice
+    depending on which command they happened to run.
+    """
+    big = ["--total", "30.5", "--active", "3.3", "--always-active", "1.2", "--vram", "24",
+           "--vram-bw", "936", "--ram", "64", "--ram-bw", "86", "--disk-bw", "3"]
+    _, opt = cli("optimize", *big)
+    assert "already fits in VRAM" in opt, f"optimize lost the fits-in-VRAM note:\n{opt[-400:]}"
+    _, pl = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "2.5")
+    assert "already fits in VRAM" in pl, f"plan lost the fits-in-VRAM note:\n{pl[-400:]}"
+    # and neither may cry wolf when the model genuinely does NOT fit, where bytes really do buy
+    # speed and quantizing down is the correct advice
+    _, opt2 = cli("optimize", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    assert "already fits in VRAM" not in opt2, "optimize warns when the model does not fit VRAM"
+    _, pl2 = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--bits", "2.95")
+    assert "already fits in VRAM" not in pl2, "plan warns when the model does not fit VRAM"
+
+
 def t_commands_agree_on_the_same_input():
     """plan / run / bench MUST predict the same number for the same model+machine.
 
