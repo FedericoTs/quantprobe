@@ -1,7 +1,7 @@
 """Smoke suite for quantprobe — plain asserts, no pytest dependency.
 Run:  python tests/smoke.py   (needs the package installed; llama.cpp NOT required for these)"""
 from __future__ import annotations
-import io, subprocess, sys
+import io, os, subprocess, sys
 from contextlib import redirect_stdout
 
 FAIL = []
@@ -269,6 +269,57 @@ def t_measured_anchors_still_retrodicted():
             drift.append(f"{label}: predicted {pred}, measured {measured} "
                          f"({(pred-measured)/measured*100:+.0f}%, tolerance +/-{tol*100:.0f}%)")
     assert not drift, "the law stopped retrodicting measured reality:\n  " + "\n  ".join(drift)
+
+# Every all-in-VRAM datapoint measured on the reference box, with the law's CURRENT error.
+#
+# This table exists because of a structural hole in the one above it: every MEASURED_ANCHOR is a
+# MoE-hybrid or a disk-stream row. Not one covered "all in VRAM" - the single most common
+# configuration for anyone with enough VRAM - and that is exactly why a 9.5x error (the refuted
+# sub-4-bit collapse, pre-registration #16) lived there undetected through a public release.
+#
+# These are NOT tolerances that certify the law is right. The law is knowingly PESSIMISTIC in
+# this regime - it under-predicts every single point and never over-predicts, which is a bias,
+# not noise (pre-registration #15, unresolved: no clean fit exists, a 12B is off by 9% while a
+# 7B is off by 38%). They are a RATCHET: the error may shrink, never grow. Improve the law and
+# these numbers come down; break it and the suite goes red.
+#
+# (file, measured tok/s all-in-VRAM on 2016-xmp, current |error| bound)
+VRAM_GAPS = [
+    ("Qwen3-0.6B-Q8_0.gguf",            93.12, 0.10),   # -2%   dense GQA, Q8_0
+    ("Qwen3.5-4B-Q4_K_M.gguf",          27.30, 0.32),   # -25%  dense GQA, K-quant
+    ("Qwen2.5-7B-Instruct-Q4_K_M.gguf", 20.03, 0.45),   # -38%  worst of the K-quant dense points
+    ("Qwen2.5-7B-Instruct-Q2_K.gguf",   19.17, 0.36),   # -29%  same model, 2.8 bits
+    ("Qwen2.5-7B-Instruct-IQ3_XS.gguf", 18.11, 0.32),   # -25%  same model, IQ format
+    ("gemma4-12b-B-late12.gguf",         9.56, 0.16),   # -9%   the model that exposed the bug
+    ("Bonsai-27B-Q1_0.gguf",            11.94, 0.74),   # -67%  linear-attention hybrid (Law 2 note)
+]
+GGUF_DIR = os.environ.get("QUANTPROBE_GGUF_DIR", "D:/evo-compress-data/gguf")
+
+
+def t_vram_regime_error_does_not_grow():
+    """Ratchet on the known all-in-VRAM pessimism. Skips per-file when the GGUF is absent."""
+    import re
+    worse, checked = [], 0
+    for fname, measured, bound in VRAM_GAPS:
+        path = os.path.join(GGUF_DIR, fname)
+        if not os.path.isfile(path):
+            continue
+        checked += 1
+        rc, out = cli("plan", "--gguf", path, "--machine", "2016-xmp")
+        assert rc == 0, f"{fname}: plan failed"
+        m = re.search(r"([0-9.]+) tok/s\s+all in VRAM", out)
+        assert m, (f"{fname}: the all-in-VRAM row vanished. That row disappearing IS the bug "
+                   f"pre-registration #16 fixed - the planner recommended pure CPU instead.")
+        pred = float(m.group(1))
+        err = abs(pred - measured) / measured
+        if err > bound + 0.02:                      # 2pp slack for run-to-run bench noise
+            worse.append(f"{fname}: predicted {pred}, measured {measured} "
+                         f"({(pred-measured)/measured*100:+.0f}%, was within {bound*100:.0f}%)")
+    assert not worse, ("the all-in-VRAM regime got WORSE - this is a ratchet, errors may only "
+                       "shrink:\n  " + "\n  ".join(worse))
+    if checked == 0:
+        print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
+
 
 def t_commands_agree_on_the_same_input():
     """plan / run / bench MUST predict the same number for the same model+machine.
