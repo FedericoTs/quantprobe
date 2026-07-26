@@ -1,4 +1,4 @@
-"""quantprobe probe — measure a GGUF's depth-fragility curve, emit the depth-aware recipe.
+"""quantprobe probe - measure a GGUF's depth-fragility curve, emit the depth-aware recipe.
 Adapted from the research script (weights/quant_probe.py); logic identical, llama.cpp located via
 --llama-dir, QUANTPROBE_LLAMA_DIR, or PATH.
 """
@@ -105,7 +105,7 @@ def ppl(perp, gguf, eval_file, chunks, ngl, dry):
     val, out = _ppl_once(perp, gguf, eval_file, chunks, ngl)
     if val is None and ngl != 0 and ("out of memory" in out.lower() or "failed to" in out.lower()):
         # a probe intermediate (Q6_K reference, or a band left at Q6_K) can be far bigger
-        # than the source's final compressed size — retry CPU-only before giving up.
+        # than the source's final compressed size - retry CPU-only before giving up.
         print("  GPU offload failed to fit (likely VRAM); retrying at -ngl 0 (CPU, slower)...", flush=True)
         val, out = _ppl_once(perp, gguf, eval_file, chunks, 0)
     if val is None:

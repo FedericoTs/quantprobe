@@ -1,9 +1,9 @@
-"""quantprobe hw — read the local machine's memory tiers, no questions asked.
+"""quantprobe hw - read the local machine's memory tiers, no questions asked.
 
 Every printed value is tagged with its source:
   [os]      read from the operating system / driver (capacity, stick speed, GPU name)
   [table]   looked up from the device name (bandwidth spec, eta class)
-  [default] a conservative fallback — override it with flags
+  [default] a conservative fallback - override it with flags
 Bandwidths are THEORETICAL peaks (the law's eta absorbs realism, same convention as the presets).
 Nothing is sent anywhere; this only reads local OS interfaces.
 """

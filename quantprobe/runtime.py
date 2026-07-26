@@ -1,9 +1,9 @@
-"""quantprobe run / bench — the runtime layer.
+"""quantprobe run / bench - the runtime layer.
 
 run:   plan the best placement for your model+machine, then LAUNCH llama.cpp with those exact
        flags (chat via llama-cli, or --serve for llama-server). Colibri-style one-command UX,
        riding stock llama.cpp instead of a custom engine.
-bench: measure real decode tok/s with the planned flags and print predicted vs measured —
+bench: measure real decode tok/s with the planned flags and print predicted vs measured -
        every user becomes a validation point for the tiered decode law.
 """
 from __future__ import annotations

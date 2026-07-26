@@ -96,6 +96,30 @@ def moe_split_flags(frac, n_layer):
             % "|".join(str(i) for i in range(k, n_layer)))
 
 
+def fits_in_vram_advice(placement, bits):
+    """Once a model fits in VRAM, quantizing it further buys almost no speed - measured.
+
+    The law prices decode as bandwidth, so it predicts that halving the bits nearly halves the
+    time. In the fits-entirely-in-VRAM regime that is simply not what happens. Same 7B, same
+    card, all in VRAM, only the quantization changed (pre-registration #16, r=3):
+
+        Q4_K_M  4.5 bits  4.68 GB  20.03 +/- 0.04 tok/s
+        Q2_K    2.8 bits  3.01 GB  19.17 +/- 0.03 tok/s     36% smaller, 4% SLOWER
+
+    Decode there is not bandwidth-bound, so bytes stop predicting speed. Until that regime is
+    modelled properly the law over-rewards low bits here, and a user following the ranking alone
+    would trade real quality for nothing. Say so, rather than silently ranking on a number known
+    to be wrong in this direction.
+    """
+    if placement != "all in VRAM" or bits >= 4.5:
+        return None
+    return ("it already fits in VRAM, so going lower-bit buys you almost nothing. Measured on "
+            "this class of card: the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER "
+            "(19.17 vs 20.03 tok/s). The speeds ranked above assume decode is bandwidth-bound, "
+            "which it is not once the whole model sits in VRAM. Quantize to make a model FIT - "
+            "once it fits, take the highest bits that still fit.")
+
+
 def speculation_advice(moe, placement):
     """What speculative decoding is worth for THIS model and placement.
 
@@ -115,9 +139,9 @@ def speculation_advice(moe, placement):
     experts_offloaded = "exps=CPU" in (placement or "")
     if moe and experts_offloaded:
         return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "
-                "offloaded — a verify batch unions experts, and every extra one is a slow read.")
+                "offloaded - a verify batch unions experts, and every extra one is a slow read.")
     if not moe:
-        return ("if you write CODE, add `--spec-type ngram-simple` — measured **2.10x decode** "
+        return ("if you write CODE, add `--spec-type ngram-simple` - measured **2.10x decode** "
                 "(17.7 -> 37.2 tok/s), one flag, no download, identical output. Prose gains "
                 "nothing (1.01x): it drafts by copying spans from your context.")
     return None                    # MoE fully resident: untested here, so we say nothing
@@ -140,7 +164,7 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     act_ex = (a - ne) * bits / 8 * 1.15 * act_scale
     act = act_ne + act_ex
     # Law 4 v2 (context term, v1.1): every generated token re-reads the whole KV cache from
-    # whichever tier KV lives on — kv_gb adds to BOTH the byte budget and that tier's capacity.
+    # whichever tier KV lives on - kv_gb adds to BOTH the byte budget and that tier's capacity.
     kv_gb = ctx * kvp / 1e9 if ctx > 0 else 0.0
     ra = max(rc - 4, 1)
     eta_r = 0.38 if moe else 0.62
@@ -309,6 +333,9 @@ def run(args):
         print(f"  {star} {tps:6.1f} tok/s  {name}{w}")
     best = cfgs[0]
     print(f"\n  run it:  llama-server -m model.gguf {best[3]}")
+    fit_adv = fits_in_vram_advice(best[0], args.bits)
+    if fit_adv:
+        print(f"\n  note: {fit_adv}")
     adv = speculation_advice(moe, best[0])
     if adv:
         print(f"\n  speculation: {adv}")

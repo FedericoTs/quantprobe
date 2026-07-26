@@ -1,14 +1,14 @@
-"""quantprobe auto — one command: model in, running setup out.
+"""quantprobe auto - one command: model in, running setup out.
 
     quantprobe auto qwen3-30b --tps 15          # preset
     quantprobe auto unsloth/Qwen3-30B-A3B-GGUF  # any HF GGUF repo (params read from filenames' size)
 
 The two-speed design:
   FAST PATH (this command): detect the machine -> ask the optimizer for the best effective-bits ->
-  scan the HF repo's file list and pick the closest-matching quant BY SIZE (bits = size*8/params —
+  scan the HF repo's file list and pick the closest-matching quant BY SIZE (bits = size*8/params -
   no fragile name parsing) -> fetch it -> print the prediction and the run command (--run launches).
   CUSTOM PATH (the actual product, printed at the end): probe YOUR model's fragile band and build a
-  depth-aware GGUF at the same bits — better quality at the same bytes. `probe --apply` does it.
+  depth-aware GGUF at the same bits - better quality at the same bytes. `probe --apply` does it.
 """
 from __future__ import annotations
 import json, urllib.request
@@ -37,7 +37,7 @@ MODEL_REPOS = {
 def list_ggufs(repo):
     """[(path, size_bytes)] for a HF repo, via the public tree API (recursive: big repos
     keep quants in subfolders). Split multi-part files (-00001-of-000NN) are grouped into
-    ONE logical entry: path = first part, size = sum of parts — so effective-bits stays honest."""
+    ONE logical entry: path = first part, size = sum of parts - so effective-bits stays honest."""
     import re
     req = urllib.request.Request(f"https://huggingface.co/api/models/{repo}/tree/main?recursive=true",
                                  headers={"User-Agent": "quantprobe-auto"})

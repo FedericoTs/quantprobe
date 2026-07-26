@@ -1,17 +1,17 @@
-"""quantprobe optimize — the cheapest path to a target speed.
+"""quantprobe optimize - the cheapest path to a target speed.
 
 A pure SEARCH LAYER over the frozen decode law: enumerate lever combinations, price each with
-plan.evaluate(), rank by (meets target, quality cost, euros, speed). The law is never modified —
+plan.evaluate(), rank by (meets target, quality cost, euros, speed). The law is never modified -
 the optimizer only reads it, so every published anchor is untouchable by construction.
 
 Levers and their measured gates:
   bits      effective bits/weight ladder, priced with the DEPTH-AWARE quality curve (measured;
-            uniform quantization costs ~1.3x more quality at <=2.5 bits — Gemma 1.91x vs 1.45x)
+            uniform quantization costs ~1.3x more quality at <=2.5 bits - Gemma 1.91x vs 1.45x)
   kv-q8     quantized K-cache (kvp x0.75). GATED OFF on weak-decode GPUs: measured -83%
             at 16k depth on Pascal (2026-07-24, no flash attention -> per-token dequant tax).
             Offered [est] only where geta >= 0.5; verify with `bench --depth`.
   prune     REAP-class 50% expert pruning (total x0.82, file shrinks, active bytes UNCHANGED).
-            Measured +39% out-of-domain perplexity (pre-registration #8) — domain-specialized,
+            Measured +39% out-of-domain perplexity (pre-registration #8) - domain-specialized,
             never ranked first without --allow-prune.
   hardware  upgrade deltas from the projections table: XMP (free), +16GB RAM, NVMe. Ranked by
             relative cost internally; no currency figures are shown (region- and time-dependent).
