@@ -93,5 +93,5 @@ Every row here is a bug I actually hit and diagnosed — the table is the scar t
 | post-reboot benches read low for ~10 min | antivirus first-read scan + cold cache | run once to warm, discard it, then measure |
 | `ModuleNotFoundError: sentencepiece` on conversion | some tokenizers need it and it isn't a hard dep | `pip install sentencepiece` |
 | perplexity step OOMs on a big model | too many GPU layers for 6 GB | lower `--ngl` (e.g. `--ngl 0` for pure CPU) |
-| the GPU makes a MoE *slower*, not faster | Pascal-class low-bit decode collapses (η≈0.04 at 2-bit) | serve experts from CPU: `-ot "exps=CPU"` — often +54% |
+| the GPU makes a MoE *slower*, not faster | the experts don't fit, so the GPU is thrashing rather than serving | serve experts from CPU: `-ot "exps=CPU"` — often +54% |
 

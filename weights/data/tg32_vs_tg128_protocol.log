@@ -1,0 +1,25 @@
+=== Does the tool's bench protocol (tg32) agree with the research protocol (tg128)? ===
+GPU before: 794 MiB
+--- gemma4-12b-B-late12 ---
+| gemma4 ?B Q2_K - Medium        |   4.85 GiB |    11.91 B | CUDA       |  99 |            tg32 |          9.11 ± 0.13 |
+| gemma4 ?B Q2_K - Medium        |   4.85 GiB |    11.91 B | CUDA       |  99 |           tg128 |          9.56 ± 0.06 |
+--- Qwen2.5-7B-Instruct-Q4_K_M ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |            tg32 |         19.78 ± 0.13 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |           tg128 |         19.81 ± 0.01 |
+GPU after: 796 MiB
+
+=== Protocol check: the tool's bench (-n 32) vs the research protocol (-n 128) ===
+  gemma4-12b   tg32 9.11 +/- 0.13   tg128 9.56 +/- 0.06   (-4.7%)
+  Qwen2.5-7B   tg32 19.78 +/- 0.13  tg128 19.81 +/- 0.01  (-0.2%)
+  VERDICT: the protocols agree. Contributed `quantprobe bench` data is comparable to the
+  research measurements; no protocol correction is needed.
+
+=== Methodology note: GPU CLOCK STATE can inflate a result by ~28% ===
+  verify.py layer 3, run back-to-back after a benchmark batch:  measured 11.64 (+33%, FAILED)
+  same command, same file, GPU settled:                          measured 9.08-9.09 (+4%, PASSED)
+  nvidia-smi at the start of the hot run:  1847 MHz.  At the start of the clean run: 936 MHz.
+  This is the H3a lesson in the opposite direction - the orphaned-dashboard contention made a
+  number look WORSE; a boosted clock makes it look BETTER, which is far more dangerous because
+  a flattering result invites no scrutiny.
+  CONVENTION UPDATED: log nvidia-smi memory AND clocks.sm before/after every GPU batch, and
+  discard any run whose entry clock is boosted relative to the settled idle clock.

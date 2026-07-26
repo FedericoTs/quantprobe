@@ -145,7 +145,18 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     ra = max(rc - 4, 1)
     eta_r = 0.38 if moe else 0.62
     if gl is None: gl = geta * 0.6
-    geta_w = geta if bits >= 4 else gl                 # decode-util law: low-bit GPU decode collapses on weak GPUs
+    # The sub-4-bit GPU DECODE collapse does not exist. It was gated on bit-width (`bits >= 4`),
+    # which made 3.99 bits predict 8.75x slower than 4.00. Pre-registration #16 measured decode
+    # all-in-VRAM across three formats and 1.13-3.51 bits and found no collapse anywhere:
+    #   Bonsai-27B Q1_0 @1.13b  11.94   |  gemma4-12b K-mix @3.51b  9.56  |  Qwen2.5-7B IQ3_XS @3.3b  18.11
+    # The lowest efficiency ever measured on this path is 0.272; gl = 0.04 sits 6.8x below that
+    # floor. Worse than inaccurate, it inverted advice: gemma was predicted at 1.0 tok/s so the
+    # planner recommended pure CPU (3.9) over a placement that actually runs 9.56.
+    # What IS real is a PREFILL effect, and it is format-dependent, not bit-width-dependent: on a
+    # matched pair (same model, same card) IQ3_XS costs 6.80x in prefill but only 1.55x in decode
+    # - IQ dequant is compute, prefill is compute-bound, decode is bandwidth-bound and hides it.
+    # `gl` is retained in the machine table for the prefill model; it must not gate decode.
+    geta_w = geta
     out = []
     if vc > 0 and size + kv_gb <= vc * 0.90:
         out.append(("all in VRAM", 1 / (act / (geta_w * vb) + kv_gb / (ETA_KV * vb)), None,

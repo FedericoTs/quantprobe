@@ -64,12 +64,20 @@ def t_law_invariants():
     # dense bigger than RAM must be disk-slow (the 70B honesty fix)
     _, _, c3 = evaluate(70, 70, 70, False, 4.5, 0, 0, 16, 48, 0.45, 0.5)
     assert c3[0][1] < 0.1, f"dense disk-stream too optimistic: {c3[0][1]}"
-    # low-bit VRAM must use gl not geta (decode-util law)
+    # Low-bit all-in-VRAM decode must NOT collapse. This asserted the opposite until
+    # pre-registration #16 measured it: Qwen2.5-7B all in VRAM decodes 19.17 (Q2_K, 2.8 bits),
+    # 18.11 (IQ3_XS, 3.3 bits) and 20.03 (Q4_K_M, 4.5 bits) - a 10% band across 2.8-4.5 bits,
+    # not the 8.75x cliff the old gl gate applied below 4 bits. The old test enforced the cliff,
+    # which is also backwards on bytes alone: fewer bits per weight is fewer bytes to read.
     _, _, c4 = evaluate(7, 7, 7, False, 2.0, 8, 300, 32, 50, 2, 0.5, 1.0, 0.05)
     _, _, c5 = evaluate(7, 7, 7, False, 4.5, 8, 300, 32, 50, 2, 0.5, 1.0, 0.05)
     vr4 = [x for x in c4 if x[0] == "all in VRAM"][0][1]
     vr5 = [x for x in c5 if x[0] == "all in VRAM"][0][1]
-    assert vr4 < vr5, "low-bit VRAM eta collapse not applied"
+    # Equality is the expected answer here and it is what measurement shows: for a DENSE model the
+    # activation term holds attention at >=4.5 bits, so active bytes barely move with the nominal
+    # bit-width - and the 7B measured 19.17 at 2.8 bits vs 20.03 at 4.5, a 4% spread. What must
+    # never come back is the PENALTY.
+    assert vr4 >= vr5 * 0.9, f"low-bit VRAM penalised: {vr4:.1f} vs {vr5:.1f} at 4.5 bits"
 
 
 def t_llama_commands_parse_and_fail_gracefully():
@@ -159,14 +167,22 @@ def t_bench_depth_dry():
                   "--depth", "16384", "--dry")
     assert "-d 16384" in out and "placement" in out.lower(), f"bench --depth --dry broke: {out[:200]}"
 
-def t_plan_uses_preset_gl():
-    # plan CLI must apply the preset's MEASURED low-bit collapse (gl), not geta*0.6
-    # 2016-xmp gl=0.04: dense 7B @2.5 all-in-VRAM ~1.7 tok/s; the geta*0.6 bug gave ~8.7
+def t_low_bit_vram_not_collapsed():
+    # Regression test for the bug pre-registration #16 fixed. This test previously ASSERTED the
+    # collapse (< 3.0 tok/s), locking in a 9.5x error. Measured reality on this exact box:
+    # gemma4-12b at 3.51 bits, all in VRAM, decodes 9.56 tok/s. The old law said 1.0 - so low
+    # that plan recommended pure CPU (3.9) over the GPU placement that actually runs 9.56.
+    # A dense 7B at 2.5 bits is smaller still, so it must comfortably clear the same bar.
     rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "2.5")
     import re
     m = re.search(r"([0-9.]+) tok/s\s+all in VRAM", out)
     assert m, f"no all-in-VRAM row: {out[:200]}"
-    assert float(m.group(1)) < 3.0, f"preset gl ignored: VRAM row {m.group(1)} tok/s (expected ~1.7)"
+    tps = float(m.group(1))
+    assert tps > 9.0, f"low-bit VRAM collapse regressed: {tps} tok/s (measured floor 9.56)"
+    # and it must beat the CPU row - recommending CPU over a working GPU was the user-visible bug
+    c = re.search(r"([0-9.]+) tok/s\s+pure CPU", out)
+    if c:
+        assert tps > float(c.group(1)), f"VRAM {tps} must beat CPU {c.group(1)} for a 7B at 2.5 bits"
 
 def t_hw_command():
     rc, out = cli("hw")
