@@ -9,13 +9,19 @@ never by the one before it:
                                              sat green through
   layer 4  anchors vs measured       catches: the law quietly ceasing to retrodict reality
 
-Layer 3 needs a real GGUF and a real llama.cpp; it SKIPS cleanly when they are absent, and says
-so rather than passing silently. A skip is not a pass.
+Layer 3 needs a real GGUF and a real llama.cpp. It now FINDS BOTH ITSELF — walking up to the
+enclosing checkout for a build (preferring a CUDA one) and picking the smallest real model on
+disk. That matters more than it sounds: this gate had been reporting "all layers passed" while
+layer 3 silently skipped on every single run, because nobody remembered to pass --llama-dir.
+A gate you have to remember to arm is not a gate.
 
-    python verify.py [--gguf FILE --llama-dir DIR]
+If the end-to-end layer still cannot run, the gate exits 2 rather than 0. A skip is not a pass.
+Waive it deliberately with --allow-skip-e2e (a CI box with no GPU); never by accident.
+
+    python verify.py [--gguf FILE --llama-dir DIR] [--allow-skip-e2e]
 """
 from __future__ import annotations
-import argparse, os, re, subprocess, sys
+import argparse, glob, os, re, subprocess, sys
 
 FAIL, SKIP = [], []
 
@@ -108,11 +114,61 @@ def layer3_e2e(gguf, llama_dir):
     assert abs(delta) <= 25, f"prediction outside the stated +/-25% band: {delta:+d}%"
 
 
+def autodiscover_llama():
+    """Find a llama.cpp build without being told where it is.
+
+    Layer 3 is the layer that caught the worst bug this project has had, and it was silently
+    skipping on every run because nobody passed --llama-dir. A gate you have to remember to arm
+    is not a gate. Prefers a CUDA-capable build: a CPU-only binary cannot exercise the GPU
+    placements, which is where the errors have actually been.
+    """
+    # Walk up to the filesystem root: a git worktree lives several levels below the checkout
+    # that actually holds tools/, so a fixed two-level walk found nothing here.
+    root = os.path.dirname(os.path.abspath(__file__))
+    bases, d = [], root
+    while True:
+        bases.append(d)
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    cands = []
+    for base in bases:
+        for pat in ("tools/llamacpp-*", "tools/llama.cpp*/build*/bin", "llama.cpp/build/bin*",
+                    "tools/llama.cpp*/build*/bin/*"):
+            cands += glob.glob(os.path.join(base, pat))
+    exe = "llama-bench.exe" if os.name == "nt" else "llama-bench"
+    found = [d for d in cands if os.path.isfile(os.path.join(d, exe))]
+    if not found:
+        return None
+    # a build shipping a CUDA runtime can measure the GPU rows; prefer it
+    cuda = [d for d in found if glob.glob(os.path.join(d, "*cudart*"))
+            or glob.glob(os.path.join(d, "*ggml-cuda*"))]
+    return (cuda or found)[0]
+
+
 def main():
     ap = argparse.ArgumentParser(description="pre-release verification gate")
     ap.add_argument("--gguf", default=os.environ.get("QUANTPROBE_VERIFY_GGUF"))
     ap.add_argument("--llama-dir", default=os.environ.get("QUANTPROBE_LLAMA_DIR"))
+    ap.add_argument("--allow-skip-e2e", action="store_true",
+                    help="exit 0 even if the end-to-end layer could not run (CI without a GPU)")
     a = ap.parse_args()
+    if not a.llama_dir:
+        a.llama_dir = autodiscover_llama()
+        if a.llama_dir:
+            print(f"[verify] found llama.cpp: {a.llama_dir}")
+    if not a.gguf:
+        for d in (os.environ.get("QUANTPROBE_GGUF_DIR"), "D:/evo-compress-data/gguf"):
+            hits = sorted(glob.glob(os.path.join(d, "*.gguf"))) if d and os.path.isdir(d) else []
+            # An imatrix is calibration data in a .gguf container, not a model - picking one by
+            # size gave "using GGUF: qwen35-35b.imatrix.gguf" and a layer that could never run.
+            hits = [h for h in hits if "imatrix" not in os.path.basename(h).lower()]
+            # smallest real model = fastest honest end-to-end check
+            if hits:
+                a.gguf = min(hits, key=os.path.getsize)
+                print(f"[verify] using GGUF: {os.path.basename(a.gguf)}")
+                break
 
     step("layer 1: unit + invariant tests", layer1_tests)
     step("layer 2: installed artifact", layer2_installed_artifact)
@@ -129,6 +185,14 @@ def main():
         for n, e in FAIL:
             print(f"  {n}: {e}")
         sys.exit(1)
+    # A skipped end-to-end layer must not read as a pass. This gate reported "all layers passed
+    # (with skips above)" and exited 0 on every run where layer 3 never executed - which was
+    # every run, because it could not find llama.cpp. Green now means green.
+    if any(s.startswith("E2E") for s in SKIP) and not a.allow_skip_e2e:
+        print("\nNOT RELEASEABLE: the end-to-end layer never ran, so nothing here has been")
+        print("checked against real llama.cpp. Point it at a build with --llama-dir and a model")
+        print("with --gguf, or pass --allow-skip-e2e to accept a weaker gate deliberately.")
+        sys.exit(2)
     print("all layers passed" + (" (with skips above)" if SKIP else ""))
 
 
