@@ -74,6 +74,18 @@ def layer2_installed_artifact():
             repo_ver = line.split('"')[1]; break
     assert repo_ver == ver, (f"installed {ver} but repo is {repo_ver} - you are verifying stale "
                              f"code. Re-install first: python -m pip install --user .")
+    # THIRD source of truth: pyproject.toml carries the version pip and PyPI actually publish,
+    # and this layer never looked at it. Bumping __init__.py alone built a "1.11.0" release as
+    # 1.10.5 - caught only because the build printed the filename. Two version strings in one
+    # repo will drift; the gate has to compare all of them.
+    import re as _re
+    pyproj = os.path.join(here, "pyproject.toml")
+    pv = _re.search(r'^version\s*=\s*"([^"]+)"', open(pyproj, encoding="utf-8").read(), _re.M)
+    assert pv, "pyproject.toml has no version field"
+    assert pv.group(1) == repo_ver, (
+        f"pyproject.toml says {pv.group(1)} but quantprobe/__init__.py says {repo_ver} - the "
+        f"published artifact would carry the wrong version")
+    print(f"  version agrees across __init__.py and pyproject.toml: {repo_ver}")
 
 
 def layer4_anchors():
