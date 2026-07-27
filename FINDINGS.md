@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 12 |
 | Shipped levers | 11 |
 | Measured dead ends | 11 |
-| Open contradictions | 7 |
+| Open contradictions | 8 |
 | Untried levers | 2 |
 | External work to study | 5 |
 
@@ -258,6 +258,14 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 **Next action:** Three instances is a pattern, not a coincidence. Audit EVERY remaining efficiency constant for the same assumption and add a gate check that refuses a constant fitted at a single format. The saturation point differs by quantity - ~4-bit for weights, ~8-bit for KV - so the lint cannot be a fixed threshold; it must demand that the constant was MEASURED across formats.
 
 `open` · `measured` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization) · wired into: `nothing yet - this is a lint waiting to be written`
+
+### C-08 — quantprobe SUMS multi-device bandwidth, which models tensor-parallel (--split-mode row). llama.cpp's DEFAULT is --split-mode LAYER, which is SERIAL - so for any multi-GPU user on defaults the tool over-predicts decode by roughly the device count.
+
+**Magnitude:** agg_bw() returns sum(v)*eff for a device list (quantprobe/plan.py). Under a layer split each GPU holds a disjoint subset of layers and they run SEQUENTIALLY within a token, so t = sum(bytes_i/BW_i): two IDENTICAL cards give the same decode speed as one card that could hold everything - capacity, not bandwidth. The tool would predict ~2x. For HETEROGENEOUS cards it is worse than wrong in magnitude, it is wrong in DIRECTION: adding a slow card to a fast one makes a fitting model SLOWER (3090 alone 1.30 ms/token vs 3090+1060 at 20/80 = 2.31 ms), while the tool predicts a gain.
+
+**Next action:** Highest-value thing a two-GPU contributor can measure. Until then the honest interim is a WARNING on multi-device input stating that the estimate assumes row-split and that layer-split (the default) adds capacity rather than bandwidth. The moment a second GPU exists on this box, this is the first measurement - it is also the same session that unblocks C-02.
+
+`open` · `inferred` · scope: multi-device inputs (--vram 24,6 style). Single-GPU predictions unaffected. Row-split may approach the summed model, minus sync. · evidence: first-principles from llama.cpp split-mode semantics + Law 4; NOT yet measured - this box has one GPU · wired into: `NOT FIXED - no second GPU to measure on`
 
 ### C-06 — Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.
 

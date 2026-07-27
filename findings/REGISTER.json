@@ -505,6 +505,19 @@
       "priority": 2,
       "wired_into": "FUTURE.md upstream deliverable #1 (build guidance with data)",
       "next_action": "(1) CUDA build with GGML_OPENMP=OFF to test transfer to the split placement. (2) Upstream issue with the A/B and the symbol evidence - build guidance reaches every Windows/gcc builder for free. (3) The tool: consider a bench-time probe that detects the barrier mechanism (a 100-barrier microbench at startup) rather than trusting build metadata."
+    },
+    {
+      "id": "C-08",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "inferred",
+      "claim": "quantprobe SUMS multi-device bandwidth, which models tensor-parallel (--split-mode row). llama.cpp's DEFAULT is --split-mode LAYER, which is SERIAL - so for any multi-GPU user on defaults the tool over-predicts decode by roughly the device count.",
+      "magnitude": "agg_bw() returns sum(v)*eff for a device list (quantprobe/plan.py). Under a layer split each GPU holds a disjoint subset of layers and they run SEQUENTIALLY within a token, so t = sum(bytes_i/BW_i): two IDENTICAL cards give the same decode speed as one card that could hold everything - capacity, not bandwidth. The tool would predict ~2x. For HETEROGENEOUS cards it is worse than wrong in magnitude, it is wrong in DIRECTION: adding a slow card to a fast one makes a fitting model SLOWER (3090 alone 1.30 ms/token vs 3090+1060 at 20/80 = 2.31 ms), while the tool predicts a gain.",
+      "evidence": "first-principles from llama.cpp split-mode semantics + Law 4; NOT yet measured - this box has one GPU",
+      "scope": "multi-device inputs (--vram 24,6 style). Single-GPU predictions unaffected. Row-split may approach the summed model, minus sync.",
+      "priority": 1,
+      "wired_into": "NOT FIXED - no second GPU to measure on",
+      "next_action": "Highest-value thing a two-GPU contributor can measure. Until then the honest interim is a WARNING on multi-device input stating that the estimate assumes row-split and that layer-split (the default) adds capacity rather than bandwidth. The moment a second GPU exists on this box, this is the first measurement - it is also the same session that unblocks C-02."
     }
   ],
   "untried": [
