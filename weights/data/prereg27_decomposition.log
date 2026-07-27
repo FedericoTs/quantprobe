@@ -1,0 +1,8 @@
+=== Pre-reg #27: decode gap decomposition, one session ===
+stream: copy 30.4 GB/s (1t saturates), pure read 26.1 GB/s (4t)
+GPU before: 688 MiB, 139 MHz, 33
+--- kernel arm: pure CPU, no GPU, no sync ---
+  tg32 pure CPU = 14.06 ± 0.28
+--- sync arm: split placement, same session ---
+  tg128 split = 22.25 ± 0.28
+GPU after: 700 MiB, 1885 MHz, 42

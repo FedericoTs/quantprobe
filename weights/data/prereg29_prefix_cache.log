@@ -1,0 +1,5 @@
+=== Pre-reg #29: prefix caching, split placement, 2k-token document ===
+  cold, question A       prompt    5380.8 ms (1889 tok)   decode 21.77 tok/s
+  warm, question B       prompt     183.4 ms (   8 tok)   decode 21.74 tok/s
+  warm, question C       prompt     203.0 ms (   9 tok)   decode 21.73 tok/s
+  identical to C         prompt      49.1 ms (   1 tok)   decode 21.89 tok/s

@@ -73,3 +73,20 @@ in the README limitations; listed here because every quality claim we make inher
 **E1. TurboQuant on Pascal**, promised to u/MoneroApe. Never run.
 **E2. Make `bench --contribute` frictionless.** One contributed datapoint in the project's life is
 the single clearest signal that B1 will not fix itself.
+
+---
+
+## The one measurement we cannot make: C-06 on a modern GPU
+
+Batched decode on our GTX 1060 saturates at ~2× by 4 slots, identically across MoE/dense and
+every placement — and no mechanism we model explains it. We own exactly one GPU, so this is the
+single highest-value contribution a user can make. One command, any post-2020 card:
+
+```bash
+llama-batched-bench -m your-model.gguf -ngl 99 -c 8192 -npp 512 -ntg 128 -npl 1,2,4,8
+```
+
+Send the printed table (plus your GPU model) via `quantprobe bench --contribute` or a GitHub
+issue. If your `S_TG` column scales past ~2.3× from `npl 1` to `npl 8`, our ceiling is a museum
+piece of Pascal and we will publish that. If it does not, it is a law, and we will publish that
+instead. Either answer is valuable; we cannot produce either one ourselves.
