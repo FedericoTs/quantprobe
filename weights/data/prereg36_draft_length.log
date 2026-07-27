@@ -1,0 +1,11 @@
+=== Pre-reg #36: ngram draft-length sweep (edit task, split, f16 KV, r=2) ===
+  m=24        46.10 tok/s   acc 100.0%  (drafted 709, accepted 709)  sha=28a5c1e1c014
+  m=default   49.80 tok/s   acc  88.9%  (drafted 811, accepted 721)  sha=28a5c1e1c014
+  m=96        65.00 tok/s   acc  80.0%  (drafted 911, accepted 729)  sha=28a5c1e1c014
+  m=192       78.01 tok/s   acc  66.8%  (drafted 1098, accepted 733)  sha=28a5c1e1c014
+--- P-3 not yet demonstrated at m=192 (still rising); extending per the stake ---
+  m=384       90.33 tok/s   acc  66.8%  (drafted 1100, accepted 735)  sha=28a5c1e1c014
+  m=768       89.82 tok/s   acc  66.8%  (drafted 1100, accepted 735)  sha=28a5c1e1c014
+--- position control: default re-run LAST (warm), then 384 again ---
+  m=default   49.59 tok/s   acc  88.9%  (drafted 811, accepted 721)  sha=28a5c1e1c014
+  m=384       89.85 tok/s   acc  66.8%  (drafted 1100, accepted 735)  sha=28a5c1e1c014

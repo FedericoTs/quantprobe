@@ -412,12 +412,16 @@ def speculation_advice(moe, placement):
         # that reproduces context spans (edits, refactors, quoting) - most of what coding agents
         # emit, and none of what fresh generation emits.
         return ("if your output REUSES its context - edits, refactors, RAG quoting - add "
-                "`--spec-type ngram-simple` to llama-server: measured **2.41x decode** on THIS "
-                "model and placement (20.7 -> 50.0 tok/s, 89% draft acceptance), one flag, no "
-                "download, identical output. That is 22% ABOVE this box's raw-decode wall - the "
-                "one lever that can pass it. Novel generation gains nothing (0% acceptance), and "
-                "a separate 0.6B DRAFT MODEL is measured NET NEGATIVE here (0.72x): its own "
-                "forward passes cost more than verification saves. Note llama-cli ignores "
+                "`--spec-type ngram-simple --spec-ngram-simple-size-m 384` to llama-server: "
+                "measured **4.15x decode** on THIS model and placement (21.6 -> 90.3 tok/s), one "
+                "flag pair, no download, byte-identical output. The size-m is NOT optional - the "
+                "default of 48 gives only 2.4x, because m is a per-round draft BUDGET and raising "
+                "it delivers the same accepted tokens in FEWER verify rounds, each of which costs "
+                "a full weight read. 90.3 tok/s is 2.2x this box's raw-decode wall, which no "
+                "runtime can pass. Ignore the acceptance rate: it FALLS from 89% to 67% while "
+                "throughput nearly doubles, because rejected drafts are cheap and skipped weight "
+                "reads are not. Novel generation gains nothing (0% acceptance), and a separate "
+                "0.6B DRAFT MODEL is measured NET NEGATIVE here (0.72x). Note llama-cli ignores "
                 "--spec-type silently; the flag only works on llama-server.")
     if moe and experts_offloaded:
         return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "

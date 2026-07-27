@@ -5,7 +5,7 @@ Two windows. Every number prints in the SERVER window (`print_timing` lines).
 ## Window 1 - the server (speculation ON)
 
     cd C:\Users\Federico\Documents\evo-compress
-    tools\llamacpp-b10098\llama-server.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -ngl 99 -ot "blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU" --no-mmap -t 4 -b 1024 -ub 1024 --spec-type ngram-simple --port 8089
+    tools\llamacpp-b10098\llama-server.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -ngl 99 -ot "blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU" --no-mmap -t 4 -b 1024 -ub 1024 --spec-type ngram-simple --spec-ngram-simple-size-m 384 --port 8089
 
 ## Window 2 - the requests
 
@@ -13,8 +13,8 @@ Two windows. Every number prints in the SERVER window (`print_timing` lines).
 
 Watch Window 1. Expected (measured 2026-07-27):
 
-    eval time = ... ( ~17-20 ms per token,  50-57 tokens per second)
-    draft acceptance = ~0.89-0.95
+    eval time = ... ( ~11 ms per token,  ~90 tokens per second)
+    draft acceptance = ~0.67  <- LOWER acceptance, HIGHER speed: see prereg #36
 
 Then the honest control - novel generation on the SAME server:
 
