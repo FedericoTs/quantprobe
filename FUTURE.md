@@ -31,8 +31,13 @@ regardless of interconnect. ds4 publishes a 5× spread from the link alone on id
 constant is wrong — one is +12%, the other unscoreable — so this is untested, not broken.
 → `weights/data/external_glm52_three_clusters.md`
 
-**B3. All-in-VRAM decode is 25–67% under-predicted.** Known, ratcheted so it cannot worsen,
-unresolved. Seven points on one GPU do not identify a functional form. Needs a second card.
+**B3. All-in-VRAM decode has no point prediction — only a measured floor.** Efficiency varies
+0.32–0.56 across 8 models; six candidate explanations refuted (fixed overhead, clock state,
+bytes-per-token, monotone-in-bits, per-format constant, bytes-weighted tensor mix — the last
+forces a negative efficiency for Q5_K when solved). Shipped as a one-sided bound: real ≥ 0.90×
+predicted, 13/13, falsifiable by any single measurement below it. Within one architecture the
+pattern is monotone in the dominant tensor type; across architectures it does not transfer.
+Needs a second card.
 
 **B4. In-VRAM anchors were measured at inconsistent GPU temperatures.** The same file measured
 17.53 → 17.03 → 16.89 as the card warmed to 72 °C, error bars ±0.02. Re-measure the `VRAM_GAPS`
