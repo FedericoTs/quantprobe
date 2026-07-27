@@ -158,6 +158,32 @@ systems level. Measured example: quantized K-cache costs -83% at 16k depth on Pa
 (no flash attention -> per-token dequant tax) while being a plausible win on FA-capable hardware
 [est]. Optimizers over the law must carry measured gates, not assume levers are universal.
 
+**Corollary (levers share one budget, and the budget is fungible).** Measured 2026-07-27 on
+Qwen3-30B-A3B, one session. Weights, KV cache and the compute buffer draw on the same VRAM, so the
+placement dimensions cannot be optimised one at a time:
+
+- `-ub 2048` is worth **+73% prefill** where weights are host-resident and **−39%** where they are
+  not (pre-registration #19) — a double dissociation, so the mechanism is host-to-device
+  amortisation, not generic batching.
+- Adding that lever **inverted which placement is fastest at prefill**: the expert split wins at
+  the default ubatch (279 vs 200) and loses at `-ub 2048` (162 vs 350), because the split spends
+  the VRAM the compute buffer needs (#20).
+- Evicting KV with `-nkvo` recovers **2.42×** of prefill on the split, and **nothing** on
+  all-experts-to-CPU (345 → 336) — fungibility is placement-specific: only a starved
+  configuration can spend the refund (#21).
+
+Consequence: **there is no single best placement, there is a Pareto frontier**, selected by the
+prompt-to-generation ratio. Choosing the wrong point costs up to **2.25×** on a long-prompt
+workload.
+
+**Dead end (measured, 2026-07-27): expert-count reduction.** Halving MoE top-k (8 → 4) behaves
+exactly as the byte model predicts — active parameters 3.3B → 2.25B, decode **20.32 → 27.13
+tok/s (×1.335)**, within 2% of the arithmetic prediction. It still should not be used: measured
+WikiText-2 perplexity rises **9.24 → 11.14 (+20.6%)**, while simply quantizing 2.95 → 2.0 bits on
+the same placement buys **more** speed (×1.424) for **four times less** quality (×1.048). The
+lever is real, correctly modelled, and strictly dominated (pre-registration #18). Recorded so it
+is not re-derived.
+
 ### Law 4 v2 — the context term (v1.1, 2026-07-23)
 
 The formulation above is the **short-context law**. u/RogerAI--fyi (Reddit) correctly observed it
