@@ -1,0 +1,39 @@
+=== Pre-reg #28: speculation on the flagship, one session ===
+GPU before: 688 MiB, 139 MHz, 37
+--- arm B: baseline, no speculation ---
+--- arm B (baseline) ---
+  B/code     21.65 tok/s (n=2)
+  B/prose    21.60 tok/s (n=1)
+  B/prose    21.70 tok/s (n=2)
+--- arm N (ngram-simple) ---
+  N/code     21.55 tok/s (n=2)
+--- server harness (llama-cli ignores --spec-type; llama-server is where V-04 lives) ---
+Traceback (most recent call last):
+  File "C:\Users\Federico\AppData\Roaming\Local\Temp\spec_server.py", line 44, in <module>
+    if arm == "B": measure("B", [], C)
+                   ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Local\Temp\spec_server.py", line 22, in measure
+    prompt = open(path, encoding="utf-8", errors="replace").read()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/code_prompt.txt'
+  B/code    20.73 tok/s (n=2)
+  B/prose   20.77 tok/s (n=2)
+  N/code    37.75 tok/s (n=2)  drafted 332, accepted 332 (100%)
+  N/prose   40.73 tok/s (n=2)  drafted 460, accepted 374 (81%)
+  D/code    14.90 tok/s (n=2)  drafted 446, accepted 360 (81%)
+  D/prose   16.33 tok/s (n=2)  drafted 438, accepted 364 (83%)
+558 MiB, 61
+--- CHAT harness: the raw-completion arms were DEGENERATE (repetition loop, see prereg) ---
+  B-chat/code    21.13 tok/s (n=2)
+    sample: Okay, I need to add a new function called bytes_per_token that takes model_key and bits as parameters. The function shou
+  B-chat/prose   21.35 tok/s (n=2)
+    sample: Okay, let's tackle this query. The user wants a summary of the passage about Robert Boulter and an explanation of its hi
+  N-chat/code    20.62 tok/s (n=2)  drafted 48, accepted 0 (0%)
+    sample: Okay, I need to add a new function called bytes_per_token that takes model_key and bits as parameters. The function shou
+  N-chat/prose   21.32 tok/s (n=2)
+    sample: Okay, let's tackle this query. The user wants a summary of the passage about Robert Boulter and an explanation of its hi
+GPU: 571 MiB, 62
+  B-chat/edit    20.73 tok/s (n=2)
+    sample: """quantprobe plan - the tiered decode law as a CLI. |  | tok/s = eta(tier) x bandwidth / active-bytes-per-token. | Evaluates every placement (full-VRAM, hy
+  N-chat/edit    50.04 tok/s (n=2)  drafted 811, accepted 721 (89%)
+    sample: """quantprobe plan - the tiered decode law as a CLI. |  | tok/s = eta(tier) x bandwidth / active-bytes-per-token. | Evaluates every placement (full-VRAM, hy

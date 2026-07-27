@@ -52,3 +52,62 @@ Whatever the numbers are: the flagship's plan output currently quotes the dense-
 figures; after this it quotes its OWN. If P-4 holds, the wall statement in L-11 gains the corollary
 that it is exceedable and by which lever. Quality is NOT at issue: speculative decoding with
 temp-0 verification is output-identical by construction, so unlike #25 no perplexity gate applies.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg28_speculation.log`)
+
+**Verdict: P-1 HIT but on the WRONG AXIS (see below), P-2 HIT, P-3 MISS decisively, P-4 HIT —
+50.04 tok/s, the measured raw-decode wall exceeded by 22% on a 2016 GPU.**
+
+### First, the trap this measurement nearly fell into
+
+The staked harness (temp-0 raw continuation) produced spectacular numbers — ngram 1.82× on code at
+**100% acceptance**, 1.96× on prose — and inspection of the actual output showed a **repetition
+loop**: `(but 4.5x 32B is 144B, which is 144B / 32B = 4.5x). So 4.5x 32B = 144B` forever. Ngram
+feasts on loops. Those tok/s are real; the content is garbage; scoring on it would have been the
+ubatch-cliff mistake again — quoting a peak from a pathological corner as a property of the
+configuration. All arms were re-measured under the chat template on real tasks with coherent
+output (samples logged). Also: **`llama-cli` silently ignores `--spec-type`** — an hour went to a
+1.00× that was the flag not existing. Speculation lives in `llama-server` only.
+
+### The honest numbers (chat template, coherent output, r=2 each)
+
+| task regime | baseline | ngram-simple | draft 0.6B |
+|---|---|---|---|
+| novel code (write a new function) | 21.13 | 20.62 (0% acc.) | 14.90 (81% acc.) |
+| novel prose (summarise + explain) | 21.35 | 21.32 | 16.33 (83% acc.) |
+| **edit (rename var, emit full file)** | 20.73 | **50.04 (89% acc.)** | — |
+
+- **P-1 (ngram ≥1.5× on code): HIT, but the axis is wrong.** "Code vs prose" is not the variable.
+  **COPY vs NOVEL is.** Novel code generation gets 0% acceptance and 0.98×; an edit task on the
+  same file gets 89% and 2.41×. V-04's shipped claim ("if you write CODE, 2.10×") must be re-scoped:
+  the prize attaches to output that REPRODUCES context spans — edits, refactors, quoting,
+  boilerplate — which happens to be most of what coding agents do all day, but is not "code".
+- **P-2 (prose control ≤1.15×): HIT.** 1.00× on novel prose, exactly as content-dependence demands.
+- **P-3 (draft model ≥1.3× on prose): MISS, decisively — it is NET NEGATIVE (0.72–0.79×) at 81–83%
+  acceptance.** The 0.6B's own forward passes plus the widened expert split cost more than
+  verification saves. On this box the draft-model arm is a dead end at any acceptance rate this
+  model family delivers; the only speculation that pays is the FREE kind.
+- **P-4 (best arm ≥41 tok/s: the wall): HIT. 50.04 ≥ 41.1.** Effective decode 22% above the
+  measured raw-decode ceiling, from 20.73 baseline — 2.41×, output-identical, one flag.
+
+### What this establishes
+
+The axiom-break works exactly as the arithmetic said it must: one 30B weight-read verifies ~3.4
+tokens when 89% of drafts are accepted, so effective bandwidth-per-token exceeds what the memory
+system can physically deliver for token-by-token decode. **The 52.9 "wall" from the old spec-sheet
+arithmetic is 95% reached (50.04) in the one regime where speculation legitimately fires** — and
+raw decode remains hard-limited at 41.1, with 22.25 measured, exactly as #27 concluded.
+
+An honest map of decode on this box, all measured today:
+
+| regime | tok/s | limited by |
+|---|---|---|
+| raw decode, measured | 22.25 | kernel at 66% of real stream |
+| raw decode, wall | 41.1 | measured DRAM (26.1 GB/s) |
+| copy-regime speculation | **50.04** | acceptance × verify cost |
+| novel-generation | 21.3 | the raw wall — nothing to draft |
+
+**Wired into:** `findings/REGISTER.json:V-04` (re-scoped copy-vs-novel) · `findings/REGISTER.json:L-11`
+(exceedability corollary) · `findings/REGISTER.json:D-09` (draft-model dead end) · CLI advice update.
