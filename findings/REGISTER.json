@@ -132,6 +132,29 @@
       "evidence": "gemma vq-lens work",
       "scope": "Gemma-4-12B MLP",
       "wired_into": "documented dead end"
+    },
+    {
+      "id": "L-11",
+      "kind": "law",
+      "status": "established",
+      "confidence": "inferred",
+      "claim": "THE DECODE WALL. On the reference box the flagship runs at 31-41% of its own bandwidth wall - so a decode breakthrough is NOT physically impossible, but the ~2.4x gap is UNATTRIBUTED, and until it is decomposed nobody can say which part is capturable.",
+      "magnitude": "Arithmetic from measured constants, Qwen3-30B-A3B Q2_K (2.95 bits, active 3.3B -> 1.217 GB/token), split placement: VRAM share 0.700 GB @ 192 GB/s = 3.65 ms; host share 0.516 GB @ 48 GB/s (DDR4-3000 theoretical) = 10.75 ms; total 14.4 ms -> 69.5 tok/s at eta=1. At realistic stream (VRAM x0.8, host 36 GB/s): 52.9 tok/s. Measured: 21.58. The law's fitted eta values PREDICT this accurately - but a fitted eta is a description of the gap, not an explanation of it.",
+      "evidence": "machine table (measured vb/rb), prereg #25 frontier rematch (the 21.58), file-derived bits",
+      "scope": "reference box, flagship model. The axiom underneath is tier-agnostic: every active byte on a tier must transit that tier's bus once per token, so tok/s <= 1 / sum(bytes_i / BW_i). No runtime can beat that without reducing bytes or amortising them across tokens.",
+      "wired_into": "the research agenda: U-09 is the decomposition",
+      "what_this_rules_in_and_out": "RULED OUT by the axiom: any runtime gain beyond ~2.4x on this box for this model - the wall is 52.9-69.5 tok/s and nothing that reads every active byte per token can pass it. RULED IN, pending decomposition: up to ~2.4x for a perfect host path. External evidence that part of this gap is capturable: ktransformers reports 1.25-4.09x decode vs llama.cpp on hybrid CPU/GPU MoE - but on server hardware (AMX, many cores, NUMA) whose features our i5-7600K lacks. Whether OUR gap is kernel inefficiency (capturable with effort), 4-core memory-level parallelism limits (not capturable), or per-layer GPU<->CPU synchronisation (partially capturable) is exactly what U-09 measures."
+    },
+    {
+      "id": "L-12",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "THE PREFILL WALL. Batched prefill converges to ~405-445 t/s on this GPU regardless of placement - 65-67% of the card's theoretical FLOP ceiling, which is as close as real kernels get on Pascal. Prefill on this box is CLOSED except for levers that cut FLOPs themselves.",
+      "magnitude": "GTX 1060 6GB ~4.4 TFLOPS FP32; MoE k=8 active 3.3B -> ~6.6 GFLOP/token -> 667 t/s at 100%. Measured convergence: 443.82 (split), 425.31 (all-CPU), 405.22 (dense control) at npl=8 - three different placements, one ceiling. The only measured lever that moves it is top-k reduction, which cuts the FLOPs: +21% to +63% at k=4 (prereg #22).",
+      "evidence": "prereg #26 (the convergence), prereg #22 (the FLOP lever)",
+      "scope": "GTX 1060. A modern GPU has 10-100x the FLOPs; this wall is a property of the card, not of llama.cpp.",
+      "wired_into": "the research agenda: asymmetric top-k Stage 2 (U-07) is the one open prefill lever"
     }
   ],
   "levers": [
@@ -467,6 +490,19 @@
       "why_it_is_promising": "V-04 is our largest single measured decode win and it currently only fires on one content type",
       "protocol": "Qwen2.5-0.5B as draft for a 7B target; sweep draft length; the VRAM cost must be charged against the frontier, not ignored",
       "priority": 3
+    },
+    {
+      "id": "U-09",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "The 2.4x gap between measured decode and the bandwidth wall can be decomposed into kernel efficiency, memory-level parallelism, and GPU<->CPU synchronisation by ablation.",
+      "hypothesis": "L-11 computes the wall at 52.9-69.5 tok/s and we measure 21.58. The gap is currently one fitted number (eta). Three mechanisms could each own a share, and they have OPPOSITE implications: kernel inefficiency says a better runtime wins big (ktransformers' claim), 4-core MLP limits say the hardware is the wall and nothing wins, per-layer sync says a batched-transfer patch wins the sync share.",
+      "predicted_effect": "Staked: pure-CPU decode of the same model lands at 55-70% of DDR4 stream bandwidth (kernel share is the largest), and removing the GPU from the loop entirely (-ngl 0) recovers LESS than 20% versus the hybrid - i.e. sync is NOT the main cost. If sync recovers more than 20%, D-05's no-fork verdict is wrong for this box and must be reopened.",
+      "cost": "2 hours",
+      "why_it_is_promising": "It converts the single biggest unexplained number in the project from a fitted constant into an attributed budget, and it directly decides whether any runtime work (ours or upstream) can pay on this hardware - the exact question the fork decision D-05 answered with an analysis that never profiled the token.",
+      "protocol": "One session: (1) measure DDR4 stream bandwidth with a memcpy benchmark, (2) llama-bench -ngl 0 pure-CPU decode -> effective GB/s vs stream, (3) hybrid split decode -> subtract the VRAM-share time computed from L-11, (4) the residual vs pure-CPU effective bandwidth attributes the sync share. GPU state logged; r=3; every arithmetic step shown.",
+      "priority": 1
     }
   ],
   "external": [

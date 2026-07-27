@@ -351,10 +351,13 @@ def fits_in_vram_advice(placement, bits):
     This is the most common configuration for anyone with adequate VRAM, and it is where the law
     is least trustworthy. Two separate facts, both measured, both worth telling the user:
 
-    1. The prediction is CONSERVATIVE here. Across all seven models measured all-in-VRAM on the
-       reference box the real speed came in FASTER than predicted every single time, by 2% to
-       67%. That is the opposite of the usual failure direction and it is not noise - it is a
-       one-directional bias (pre-registration #15, unresolved).
+    1. There is NO point prediction for this regime - and pretending otherwise is worse than
+       saying so. Measured efficiency varies 0.32-0.56 across 8 models (six candidate
+       explanations refuted, prereg #15/#24); a number quoted with a band that wide is not a
+       prediction. What survives is a ONE-SIDED BOUND with the same logical form as the law's
+       own +/-25% claim, just asymmetric: real speed >= 0.90x the printed number, 13 of 13
+       benchmarks, no exceptions, falsified by any single measurement below it. In 12 of the 13
+       it was strictly above, typically 1.1x-1.8x.
 
     2. Below 4.5 bits, quantizing further buys almost nothing. Same 7B, same card, only the
        quantization changed (pre-registration #16, r=3):
@@ -371,11 +374,12 @@ def fits_in_vram_advice(placement, bits):
     """
     if placement != "all in VRAM":
         return None
-    note = ("this is the placement our law knows least well, and the honest band here is NOT the "
-            "+/-25% we quote elsewhere. Across 8 models measured all-in-VRAM, real speed landed "
-            "between 0.91x and 1.84x the prediction - usually faster, so treat the number above as "
-            "a floor, not a ceiling. One model came in SLOWER (gemma4-12b, -9%), so it is a floor "
-            "with one measured exception, not a guarantee.")
+    note = ("we do not have a point prediction for this placement - measured efficiency varies "
+            "too much across models for the number above to carry a band (0.32-0.56, six candidate "
+            "explanations refuted). What we can state is one-sided and has no exceptions: in 13 of "
+            "13 benchmarks real speed was >= 0.90x this number, and in 12 of 13 it was HIGHER, "
+            "typically 1.1x-1.8x. Read it as a floor, not a ceiling - a single measurement below "
+            "0.90x would falsify this and we ask for exactly that measurement below.")
     if bits < 4.5:
         note += (" It also already fits, and going lower-bit buys almost nothing: the same 7B at "
                  "Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER (19.17 vs 20.03 tok/s). Quantize "

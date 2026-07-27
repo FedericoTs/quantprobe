@@ -8,11 +8,11 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 10 |
+| Established laws | 12 |
 | Shipped levers | 9 |
 | Measured dead ends | 8 |
 | Open contradictions | 6 |
-| Untried levers | 4 |
+| Untried levers | 5 |
 | External work to study | 5 |
 
 ## Established laws
@@ -78,6 +78,18 @@ What we believe, and the measurement that earned it.
 **Magnitude:** 0 dB coding gain
 
 `established` · `measured` · scope: Gemma-4-12B MLP · evidence: gemma vq-lens work · wired into: `documented dead end`
+
+### L-11 — THE DECODE WALL. On the reference box the flagship runs at 31-41% of its own bandwidth wall - so a decode breakthrough is NOT physically impossible, but the ~2.4x gap is UNATTRIBUTED, and until it is decomposed nobody can say which part is capturable.
+
+**Magnitude:** Arithmetic from measured constants, Qwen3-30B-A3B Q2_K (2.95 bits, active 3.3B -> 1.217 GB/token), split placement: VRAM share 0.700 GB @ 192 GB/s = 3.65 ms; host share 0.516 GB @ 48 GB/s (DDR4-3000 theoretical) = 10.75 ms; total 14.4 ms -> 69.5 tok/s at eta=1. At realistic stream (VRAM x0.8, host 36 GB/s): 52.9 tok/s. Measured: 21.58. The law's fitted eta values PREDICT this accurately - but a fitted eta is a description of the gap, not an explanation of it.
+
+`established` · `inferred` · scope: reference box, flagship model. The axiom underneath is tier-agnostic: every active byte on a tier must transit that tier's bus once per token, so tok/s <= 1 / sum(bytes_i / BW_i). No runtime can beat that without reducing bytes or amortising them across tokens. · evidence: machine table (measured vb/rb), prereg #25 frontier rematch (the 21.58), file-derived bits · wired into: `the research agenda: U-09 is the decomposition`
+
+### L-12 — THE PREFILL WALL. Batched prefill converges to ~405-445 t/s on this GPU regardless of placement - 65-67% of the card's theoretical FLOP ceiling, which is as close as real kernels get on Pascal. Prefill on this box is CLOSED except for levers that cut FLOPs themselves.
+
+**Magnitude:** GTX 1060 6GB ~4.4 TFLOPS FP32; MoE k=8 active 3.3B -> ~6.6 GFLOP/token -> 667 t/s at 100%. Measured convergence: 443.82 (split), 425.31 (all-CPU), 405.22 (dense control) at npl=8 - three different placements, one ceiling. The only measured lever that moves it is top-k reduction, which cuts the FLOPs: +21% to +63% at k=4 (prereg #22).
+
+`established` · `measured` · scope: GTX 1060. A modern GPU has 10-100x the FLOPs; this wall is a property of the card, not of llama.cpp. · evidence: prereg #26 (the convergence), prereg #22 (the FLOP lever) · wired into: `the research agenda: asymmetric top-k Stage 2 (U-07) is the one open prefill lever`
 
 ## Shipped levers
 
@@ -252,6 +264,18 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 ## Untried levers
 
 Staked predictions written BEFORE measuring, so a miss is visible. Ordered by expected value.
+
+### U-09 — The 2.4x gap between measured decode and the bandwidth wall can be decomposed into kernel efficiency, memory-level parallelism, and GPU<->CPU synchronisation by ablation.
+
+**Hypothesis:** L-11 computes the wall at 52.9-69.5 tok/s and we measure 21.58. The gap is currently one fitted number (eta). Three mechanisms could each own a share, and they have OPPOSITE implications: kernel inefficiency says a better runtime wins big (ktransformers' claim), 4-core MLP limits say the hardware is the wall and nothing wins, per-layer sync says a batched-transfer patch wins the sync share.
+
+**Predicted effect (staked):** Staked: pure-CPU decode of the same model lands at 55-70% of DDR4 stream bandwidth (kernel share is the largest), and removing the GPU from the loop entirely (-ngl 0) recovers LESS than 20% versus the hybrid - i.e. sync is NOT the main cost. If sync recovers more than 20%, D-05's no-fork verdict is wrong for this box and must be reopened.
+
+**Why it is promising:** It converts the single biggest unexplained number in the project from a fitted constant into an attributed budget, and it directly decides whether any runtime work (ours or upstream) can pay on this hardware - the exact question the fork decision D-05 answered with an analysis that never profiled the token.
+
+**Protocol:** One session: (1) measure DDR4 stream bandwidth with a memcpy benchmark, (2) llama-bench -ngl 0 pure-CPU decode -> effective GB/s vs stream, (3) hybrid split decode -> subtract the VRAM-share time computed from L-11, (4) the residual vs pure-CPU effective bandwidth attributes the sync share. GPU state logged; r=3; every arithmetic step shown.
+
+`untested` · `speculative` · cost: 2 hours
 
 ### U-04 — Prompt/prefix cache reuse dwarfs every placement lever on RAG and document-QA workloads.
 
