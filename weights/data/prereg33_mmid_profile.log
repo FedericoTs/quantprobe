@@ -10,3 +10,6 @@
   k=4  tg32 = 15.02 ± 0.23
   k=2  tg32 = 16.81 ± 0.74
   k=1  tg32 = 18.06 ± 0.41
+--- barrier discriminator: k-sweep endpoints at -t 1 (barriers are free alone) ---
+  t=1 k=1  tg32 = 13.70 ± 0.41
+  t=1 k=8  tg32 = 7.11 ± 0.18

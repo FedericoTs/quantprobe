@@ -84,3 +84,28 @@ captured: 84.7 → ~53 ms ≈ **19 tok/s pure-CPU** (from 11.8), and proportiona
 **Wired into:** `findings/REGISTER.json:D-05` evidence chain · task #28 (retargeted) ·
 `weights/data/prereg33_mmid_profile.log`. The 11 GB `_k_sweep_scratch.gguf` is retained on D: for
 future sweeps (its `expert_used_count` is restored to 8).
+
+### Addendum: the barrier discriminator (same session)
+
+At `-t 1` a barrier costs nothing — there is nobody to wait for. k-sweep endpoints single-threaded:
+k=1 → 13.70 tok/s (73.0 ms), k=8 → 7.11 (140.6 ms). Slope 9.66 ms/expert = 10.0 GB/s
+single-thread (sane); intercept 63.3 ms, of which always-active bytes at single-thread bandwidth
+explain 44.3. So the fixed machinery is **~19 ms at t=1 and ~32 ms at t=4: it GROWS +13 ms with
+threads while the work is identical.** Growth under identical work is synchronization, by
+definition. The final CPU-axis ledger, every line measured:
+
+| component of the 84.7 ms token (t=4, k=8) | ms | verdict |
+|---|---|---|
+| expert weight reads (23.1 GB/s) | 33.5 | **AT PHYSICS** |
+| always-active weight reads | 19.2 | **AT PHYSICS** |
+| thread-sync growth (barriers) | ~13 | **CODE — the upstream target** |
+| serial small-op chain (setup, norms, router, rope) | ~19 | **MIXED** — needs op-level timing to split |
+
+Honest revision of the prize: capturing the barrier share alone is **+18%** (84.7 → 71.7 ms);
+barriers plus half the serial chain ≈ **+35%**. The earlier "+65%" assumed ALL fixed overhead
+removable and full dense parity — too optimistic, corrected here before anyone builds on it.
+
+**Physics found, physics named, code found, code named.** The CPU axis now has no unattributed
+milliseconds: 52.7 of 84.7 are the memory system at its measured wall, ~13 are ggml's per-op
+barriers on 4 threads, ~19 are a serial op chain whose further split is the first task of the
+upstream work.
