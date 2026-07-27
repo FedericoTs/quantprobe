@@ -336,34 +336,154 @@ def t_vram_regime_error_does_not_grow():
 
 
 def t_workload_frontier_is_pareto():
-    """The frontier must contain no dominated point, and must actually move with the workload.
+    """No dominated point may sit on the frontier - and a point must EARN its place by a margin.
 
-    Pre-registration #21 measured four configurations; one (all-experts-to-CPU with KV evicted,
-    336.31/15.82) is beaten on BOTH axes by another and must never be recommended. And if the
-    same configuration won at every ratio there would be no frontier - just a winner - so the
-    selection has to be shown to change.
+    This test has been rewritten three times and each rewrite lowered a number, which is the
+    finding. The claimed workload spread went 2.25x -> 1.33x -> 1.23x -> gone, and every step came
+    from correcting one of our own measurement errors:
+
+      2.25x  a dominated cell (split + KV in VRAM at ub 2048, 163 pp) made the worst choice look
+             far worse than it was - it had been measured past the compute-buffer cliff
+      1.33x  corrected to its ub-512 form (281 pp)
+      1.23x  all four cells re-measured in ONE session, after #24 found 10-13% between-session
+             drift against sub-1% within-session error bars
+      gone   at that width the surviving alternative wins by 0.44 tok/s against combined error bars
+             of 0.456 - 0.96 sigma, which is noise
+
+    So `MOE_FRONTIER` holds one row, and Law 7 ("there is no single best placement, there is a
+    frontier") is refuted for this model on this box. The selection machinery stays, because it
+    would work again the moment a genuinely better configuration is measured. What must never come
+    back is a printed CHOICE that is inside its own error bars.
     """
     from quantprobe.plan import MOE_FRONTIER, workload_frontier
     for i, (li, ppi, tgi, _) in enumerate(MOE_FRONTIER):
         for j, (lj, ppj, tgj, _) in enumerate(MOE_FRONTIER):
             if i == j:
                 continue
-            assert not (ppj >= ppi and tgj >= tgi), \
-                f"'{li}' is dominated by '{lj}' on both axes - it must not be on the frontier"
+            assert not (ppj >= ppi and tgj >= tgi),                 f"'{li}' is dominated by '{lj}' on both axes - it must not be on the frontier"
     chat, rag = workload_frontier(0.5), workload_frontier(200)
-    assert chat["label"] != rag["label"], (
-        "the frontier picks the same configuration for chat and for document QA - then it is not "
-        "a frontier and the whole workload dimension is unnecessary")
-    assert chat["tg"] > rag["tg"], "the chat pick should favour generation"
-    assert rag["pp"] > chat["pp"], "the long-prompt pick should favour prompt processing"
-    # 1.25x, not the 2.0x this originally asserted. That threshold was calibrated against a
-    # frontier containing a DOMINATED point (split + KV in VRAM at ub 2048, 163 pp), which made
-    # the worst available choice look far worse than it is. With that point corrected to its
-    # ub-512 form (281 pp), the spread narrows from 2.25x to 1.33x. Fixing my own error made the
-    # feature less impressive, which is the number that goes in the docs.
-    # Still above the >=15% bar pre-registration #20 set for "worth the added complexity".
-    assert rag["speedup_vs_worst"] > 1.25, \
-        f"long-prompt spread only {rag['speedup_vs_worst']:.2f}x - not worth a recommendation"
+    if len(MOE_FRONTIER) == 1:
+        # The collapsed state. Selection must be degenerate and must not claim a spread.
+        assert chat["label"] == rag["label"], "one row cannot produce two different picks"
+        assert abs(rag["speedup_vs_worst"] - 1.0) < 1e-9,             f"a single-row frontier cannot have a spread, got {rag['speedup_vs_worst']}"
+    else:
+        # If a second row is ever restored it has to beat the alternative by more than the noise
+        # floor that killed the last one - 0.96 sigma is not a recommendation.
+        assert chat["label"] != rag["label"], (
+            "the frontier picks the same configuration for chat and for document QA - then it is "
+            "not a frontier and the whole workload dimension is unnecessary")
+        assert chat["tg"] > rag["tg"], "the chat pick should favour generation"
+        assert rag["pp"] > chat["pp"], "the long-prompt pick should favour prompt processing"
+        assert rag["speedup_vs_worst"] > 1.25,             f"long-prompt spread only {rag['speedup_vs_worst']:.2f}x - not worth a recommendation"
+        assert chat["tg"] / rag["tg"] > 1.03, (
+            f"the chat pick wins by only {(chat['tg']/rag['tg']-1)*100:.1f}% on decode, which is "
+            "inside the error bars that retired the previous frontier - do not ship it as a choice")
+
+
+def t_accuracy_band_is_per_regime():
+    """The published accuracy band must stay REGIME-AWARE, and must stay a gate.
+
+    Until v1.15.0 one symmetric +/-25% covered every placement, and for all-in-VRAM it was false:
+    13 benchmarks over 8 models put the real spread at -9% to +84%. A single +/-25% is not a
+    conservative approximation of that - it is wrong in both directions at once, too wide below and
+    far too narrow above.
+
+    The lower bound is the half that earns its keep. Widening a band to make a test pass would be
+    goalpost-moving; what makes this different is that the band is MEASURED, published as a
+    correction, and still fails on a regression. If the tool ever became OPTIMISTIC about a model
+    that fits in VRAM - the direction that actually costs a user something - -15 is what catches it.
+    """
+    from verify import e2e_band
+    lo_v, hi_v, why_v = e2e_band("all in VRAM")
+    lo_o, hi_o, why_o = e2e_band("hybrid: attention->VRAM, experts->RAM")
+    assert (lo_v, hi_v) != (lo_o, hi_o), "the band is no longer regime-aware - one number is back"
+    assert hi_v >= 84, f"the all-in-VRAM upper bound {hi_v} is below the measured +84% - it would fail on truth"
+    assert lo_v > -100, "the all-in-VRAM band must stay bounded below; an unbounded band is not a gate"
+    assert lo_v >= -20, (
+        f"the all-in-VRAM lower bound has drifted to {lo_v} - that is the half that catches the tool "
+        "becoming optimistic, which is the direction that costs a user something")
+    assert (lo_o, hi_o) == (-25, 25), "the validated regimes must keep the published +/-25%"
+    for why in (why_v, why_o):
+        assert why and len(why) > 20, "each band must say WHY it is what it is"
+
+
+def t_concurrency_is_disclosed_not_modelled():
+    """We must say out loud that our numbers are single-stream, because they understate a server 2x.
+
+    Pre-registration #26 measured aggregate decode from 1 to 8 slots: split 21.93 -> 44.48 (2.03x),
+    all-experts-CPU 19.89 -> 37.70 (1.90x), dense 7B fully in VRAM 22.47 -> 50.48 (2.25x). The same
+    ceiling on every architecture, placement and memory tier, saturating by about 4 slots - and no
+    mechanism this project models predicts it (C-06).
+
+    Two staked explanations died: host-residency amortisation was refuted BY DIRECTION (the arm with
+    MORE host-resident weight gained LESS), and MoE routing divergence was refuted by the dense
+    control. So concurrency must NOT be modelled. It must be disclosed, and this test is what stops
+    the disclosure being quietly dropped the next time the output is tidied.
+    """
+    rc, out = cli("plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp")
+    assert rc == 0, "plan failed"
+    low = out.lower()
+    assert "single-stream" in low, (
+        "the plan output no longer says its numbers are single-stream - anyone sizing a server on "
+        "them is wrong by ~2x in a direction we have measured")
+    assert "#26" in out, "the concurrency disclosure must cite the pre-registration behind it"
+
+
+def t_ubatch_is_sized_not_pinned():
+    """The ubatch must be SIZED from headroom, never pinned - the buffer is linear, VRAM is not.
+
+    Pre-registration #23 measured llama.cpp's CUDA compute buffer at 0.5874 MiB per ubatch token,
+    linear to four figures (601.50 / 902.25 / 1203.00 MiB at ub 1024 / 1536 / 2048). Demand grows
+    smoothly; supply ends abruptly; prefill therefore falls off a CLIFF rather than tapering:
+    381.21 -> 209.64 tok/s in a single -ub step, then flat for every larger value.
+
+    A pinned `-ub 2048` is correct only for whoever has the headroom for it. This asserts the
+    emitted ubatch actually fits the budget it was derived from, and that a tighter card gets a
+    SMALLER ubatch rather than the same one with a warning attached.
+    """
+    from quantprobe.plan import safe_ubatch, ubatch_flags, COMPUTE_BUFFER_MIB_PER_UB_TOKEN
+    # never promise a buffer the headroom cannot hold (half the budget, per the measured margin)
+    for headroom in (0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0):
+        ub = safe_ubatch(headroom)
+        if ub:
+            assert ub * COMPUTE_BUFFER_MIB_PER_UB_TOKEN <= headroom * 1024 * 0.5,                 f"ub {ub} needs {ub*COMPUTE_BUFFER_MIB_PER_UB_TOKEN:.0f} MiB, headroom {headroom} GB"
+            assert ub & (ub - 1) == 0, f"ubatch {ub} is not a power of two"
+    # monotone: more headroom never yields a smaller ubatch
+    sizes = [safe_ubatch(h) for h in (0.5, 1.0, 2.0, 4.0, 8.0)]
+    assert sizes == sorted(sizes), f"ubatch not monotone in headroom: {sizes}"
+    # a roomy card still gets the measured-best 2048; a tight one gets less, not a caveat
+    assert safe_ubatch(6.0) == 2048, "roomy card should still reach the measured optimum"
+    assert safe_ubatch(1.5) < 2048, "tight card must step DOWN, not be handed the cliff"
+    # and the flag string the CLI emits has to agree with the sizer
+    fl = ubatch_flags("hybrid: attention->VRAM, experts->RAM", 0.7, 6)
+    assert fl and str(safe_ubatch(6 * 0.90 - 0.7)) in fl, f"flags disagree with sizer: {fl}"
+
+
+def t_frontier_rows_are_off_the_cliff():
+    """No frontier row may quote a figure measured at the edge of VRAM.
+
+    v1.14.0 shipped `-ub 2048 -nkvo 1` at 391.72 tok/s. The identical command measures 209.64 on
+    the same box with ~250 MiB more desktop VRAM held - one browser window, a 1.85x flip. The
+    number was real and reproducible; it was simply a peak sitting one step from a 45% cliff, and
+    quoting it as a property of the configuration is what made it wrong.
+
+    This test is the cheap, permanent form of that lesson: any row asking for `-ub 2048` alongside
+    a placement that already fills VRAM is refused, because we have measured that combination and
+    it does not survive an ordinary desktop.
+    """
+    import re as _re
+    from quantprobe.plan import MOE_FRONTIER, COMPUTE_BUFFER_MIB_PER_UB_TOKEN
+    for lab, pp, tg, flags in MOE_FRONTIER:
+        m = _re.search(r"-ub\s+(\d+)", flags)
+        assert m, f"frontier row has no explicit ubatch: {lab}"
+        ub = int(m.group(1))
+        # the split fills VRAM with experts; evicting KV buys back ~1 GB, not ~2
+        if "-nkvo" in flags:
+            buf = ub * COMPUTE_BUFFER_MIB_PER_UB_TOKEN
+            assert buf <= 902,                 f"row '{lab}' asks {buf:.0f} MiB of compute buffer; measured cliff is above 902 MiB"
+        assert pp > 0 and tg > 0, f"frontier row {lab} has a non-positive rate"
+    # the row that was wrong must stay fixed: no 2048 next to -nkvo, ever again
+    assert not any("-ub 2048" in f and "-nkvo" in f for _, _, _, f in MOE_FRONTIER),         "the v1.14.0 cliff configuration is back on the frontier"
 
 
 def t_ubatch_only_when_host_resident():

@@ -1,5 +1,107 @@
 # Changelog
 
+## 1.15.0 - 2026-07-27
+
+**Two shipped numbers were wrong, the Pareto frontier turned out to be an artefact, and our
+published accuracy band was false for the most common configuration. All three are corrected here.**
+
+### Correction 1: the +/-25% band did not apply to models that fit in VRAM
+
+We published one symmetric +/-25% accuracy band for every placement. For all-in-VRAM it was simply
+wrong. Thirteen benchmarks across eight models put the real spread at **-9% to +84%** — real speed
+lands between **0.91x and 1.84x** our prediction, usually faster.
+
+`verify.py` now applies a band **per regime**: all-in-VRAM is -15/+90, everything else keeps
++/-25%, which is where the layer-4 anchors validate it. The lower bound is the load-bearing half —
+it is what fails if the tool ever becomes *optimistic*, the direction that actually costs a user
+something.
+
+We have refuted **six** candidate explanations for the gap, four of them our own favourites:
+fixed overhead (pre-reg #15), GPU clock state (cold 144.21 vs warm 143.37 — refuted by its own
+prediction), bytes-per-token (refuted by a control with *fewer* bytes and *higher* efficiency),
+monotone-in-bit-width (Q8_0 at 8.5 bits is less efficient than Q2_K at 2.8), a per-format constant
+(two models both labelled Q4_K_M differ by 21%), and a bytes-weighted mixture over the actual
+tensor types — the most promising of them, which forces a *negative* efficiency for Q5_K when you
+solve the system. Within one architecture the pattern is clean and monotone in the dominant tensor
+type; across architectures it does not transfer at all.
+
+Also corrected: we previously wrote that all-in-VRAM models ran faster than predicted **every
+time**. One does not. `gemma4-12b` (sliding-window attention) is over-predicted by 9%, so "floor"
+is a floor with one measured exception, not a guarantee.
+
+### Correction 2: both GLM KV-cache figures were wrong, in opposite directions
+
+| model | was | now | why |
+|---|---|---|---|
+| `glm-744b` | 188,416 | **89,856** | GLM-5.2 is MLA+DSA: 78L x (512+64) latent |
+| `glm-air` | 94,208 | **188,416** | GLM-4.5-Air is plain GQA: 46L x 8KV x 128d |
+
+`188,416` is *exactly* Air's correct value — it had been written into the 753B row and halved to
+produce the Air row. A transposition, not two independent estimates. Both verified against the
+`zai-org` config.json files directly, never back-solved from an observed datapoint, and the MLA
+convention checks out against our own DeepSeek-V2-Lite row (27 x 576 x 2 = 31,104, the shipped
+value). We had believed this error was "30-60x"; it is 2.10x. Our estimate of our own error was
+wrong by more than an order of magnitude, because it reasoned from a symptom instead of reading the
+architecture.
+
+### Correction 3: there is no Pareto frontier — one configuration wins
+
+v1.14.x offered a workload-dependent choice between three placements. Re-measured with **all four
+cells in one session** — necessary because between-session drift is 10-13% against sub-1%
+within-session error bars — two of the three are dominated outright:
+
+| configuration | pp2048 | tg128 | |
+|---|---|---|---|
+| split, `-ub 1024`, KV in VRAM | **386.04** | **21.58** | **the winner** |
+| split, `-ub 512` | 307.13 | 22.02 | wins decode by 0.96 sigma — noise |
+| all experts to CPU, `-ub 2048` | 381.82 | 19.79 | dominated |
+| split, `-ub 1024`, KV evicted | 381.60 | 17.95 | dominated |
+
+The frontier existed because the winning cell had only ever been benchmarked at `-ub 2048` — past
+a compute-buffer cliff — and was then recorded as "dominated". That claim silently inherited the
+scope of the sweep that produced it: it really meant *dominated at ub 2048*. **Excluding a
+configuration is also a claim, and it needs a scope like any other.**
+
+The whole "evict KV to buy prompt speed" trade was never necessary. Keeping KV in VRAM gives *more*
+prefill and 20% more decode. The claim shrank three times before it died — 2.25x, 1.33x, 1.23x,
+gone — and every shrink came from fixing one of our own measurement errors.
+
+### New: the ubatch cliff, and `-ub` is now sized rather than pinned
+
+llama.cpp's CUDA compute buffer is linear to four figures (0.5874 MiB per ubatch token). Demand
+grows smoothly, VRAM ends abruptly, so prefill falls off a **cliff**: 381.21 -> 209.64 tok/s in one
+`-ub` step, then flat forever. v1.14.x quoted 391.72 for a command that delivers 209 on the same
+machine — the difference was roughly 250 MiB of desktop VRAM, one browser window. `-ub` is now
+derived from measured headroom.
+
+### New: your numbers are single-stream, and a server is ~2x faster
+
+Every figure this tool prints was measured at one request at a time. With 8 parallel slots,
+aggregate throughput is ~2x higher and saturates by about 4 slots — the *same* ratio on the MoE
+split (2.03x), on all-experts-to-CPU (1.90x) and on a dense fully-resident control (2.25x). Two
+explanations died: host-residency amortisation was refuted **by direction** (the arm with more
+host-resident weight gained *less*), and MoE routing divergence was refuted by the dense control.
+We are not naming a mechanism. The plan output now says so.
+
+### New: a findings register the release gate enforces
+
+`findings/REGISTER.json` is the canonical machine-readable record of every law, lever, dead end,
+contradiction and untried lever, each carrying the scope it was measured in. `FINDINGS.md` is
+generated from it. `findings.py` fails the build if a staked pre-registration is uncited, a claim
+lacks a scope, or a "wired into" target no longer exists — and `verify.py` layer 5 runs it. Writing
+it immediately caught four pre-registrations mis-numbered from memory and five that nothing
+referenced.
+
+### Withdrawn as measured dead ends
+
+- **Frequency-ranked expert residency.** Not expressible in stock llama.cpp — all experts of a
+  layer live in one fused tensor and `-ot` matches names, so its finest unit *is* the contiguous
+  split we already ship. ktransformers had to patch llama.cpp for their own comparison, and at our
+  VRAM ratio their matched-memory table shows frequency ranking buys +2.5% to +5.3%, not the +15%
+  to +40% we had staked.
+- **Pinned host memory.** Already in use: `-ot ...=CPU` routes to `CUDA_Host` (`cudaMallocHost`)
+  whenever `--no-mmap` is set, which quantprobe always sets. Predicted +30% is 0%.
+
 ## 1.14.1 - 2026-07-27
 
 **Correction: v1.14.0 shipped a dominated point on the frontier, and fixing it makes the feature

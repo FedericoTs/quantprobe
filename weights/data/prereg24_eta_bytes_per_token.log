@@ -1,0 +1,13 @@
+=== Pre-reg #24: eta vs bytes-per-token vs format, ONE session, all -ngl 99, r=3 ===
+GPU before: 548 MiB, 139 MHz, 35
+Qwen2.5-7B-Instruct-Q2_K         measured: 21.63 +/- 0.12 tok/s (predicted 17.8, +22%)
+   gpu: 43, 1885 MHz
+Qwen2.5-7B-Instruct-IQ3_XS       measured: 20.57 +/- 0.04 tok/s (predicted 16.5, +25%)
+   gpu: 46, 1885 MHz
+Qwen2.5-7B-Instruct-IQ3_M        measured: 19.86 +/- 0.06 tok/s (predicted 15.7, +27%)
+   gpu: 49, 1873 MHz
+Qwen2.5-7B-Instruct-Q4_K_M       measured: 22.55 +/- 0.07 tok/s (predicted 12.5, +81%)
+   gpu: 51, 1847 MHz
+Qwen3.5-4B-Q4_K_M                measured: 30.03 +/- 0.79 tok/s (predicted 20.6, +46%)
+   gpu: 54, 1873 MHz
+GPU after: 542 MiB, 1873 MHz, 54

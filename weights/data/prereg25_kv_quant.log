@@ -1,0 +1,15 @@
+=== Pre-reg #25: KV cache quantization, split placement, -fa 1 all arms, r=3 ===
+GPU before: 543 MiB, 139 MHz, 38
+--- P-1/P-2: decode at d0 and d16384 ---
+  ctk/ctv=f16   tg32=21.81 ± 0.32  tg32 @ d16384=7.73 ± 0.13  
+  ctk/ctv=q8_0  tg32=21.10 ± 0.18  tg32 @ d16384=10.59 ± 0.18  
+  ctk/ctv=q4_0  tg32=20.81 ± 0.23    ctk/ctv=q4_0  tg32=20.76 ± 0.62  tg32 @ d16384=10.80 ± 0.09  
+--- P-3: q8_0 KV in VRAM vs the shipped -nkvo 1 row (386.14 pp / 18.06 tg) ---
+  ub=1024  pp2048  = 382.17 ± 3.11
+  ub=1024  tg128   = 20.18 ± 0.82
+  ub=2048  pp2048  = 205.54 ± 0.18
+  ub=2048  tg128   = 20.72 ± 0.44
+GPU: 555 MiB, 1822 MHz, 69
+--- decisive cell: the SHIPPED -nkvo 1 row at depth, same flags as every arm above ---
+  nkvo=1 f16 KV  tg32=17.06 ± 0.87  tg32 @ d16384=3.48 ± 0.05  
+GPU: 547 MiB, 1822 MHz, 69

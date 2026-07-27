@@ -1,0 +1,18 @@
+=== Pre-reg #23: mapping the VRAM cliff by sweeping ubatch (split + nkvo 1) ===
+GPU before: 539 MiB, 139 MHz, 33
+  ub=512   pp2048 = 303.32 ± 1.57
+  ub=1024  pp2048 = 387.37 ± 1.68
+  ub=1536  pp2048 = 381.21 ± 1.86
+  ub=2048  pp2048 = 209.64 ± 0.26
+  ub=3072  pp2048 = 209.46 ± 0.83
+  ub=4096  pp2048 = 210.84 ± 0.33
+GPU after: 553 MiB, 1847 MHz, 66
+--- compute buffer size per ubatch (llama.cpp's own report) ---
+  ub=1024    601.50 MiB
+  ub=1536    902.25 MiB
+  ub=2048   1203.00 MiB
+--- frontier row C re-measured at the SAFE ubatch, both phases ---
+  ub=1024  pp2048  = 386.14 ± 2.08
+  ub=1024  tg128   = 18.06 ± 0.09
+  [shipped ub=2048 gives 209.64 here - past the cliff]
+GPU: 551 MiB, 1847 MHz, 60

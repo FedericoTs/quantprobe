@@ -1,0 +1,29 @@
+=== frontier re-sweep under MATCHED flags (-fa 1 -ctk q8_0 -ctv q8_0), r=3 ===
+the split/ub1024 cell measured 382.17 pp / 20.18 tg in prereg25_kv_quant.log
+GPU before: 419 MiB, 139 MHz, 62
+row A: all experts -> CPU, ub 2048
+  pp2048  = 373.90 ± 1.01
+  tg128   = 14.65 ± 0.38
+row B: split, ub 512
+  pp2048  = 297.87 ± 1.00
+  tg128   = 17.10 ± 0.37
+GPU after: 421 MiB, 1822 MHz, 68
+ATTRIBUTION CONTROL: same cell as C but f16 KV - isolates q8_0 from (ub1024 + KV in VRAM)
+  f16 KV  pp2048  = 387.24 ± 2.87
+  f16 KV  tg128   = 21.69 ± 0.21
+GPU: 391 MiB, 1835 MHz, 68
+ATTRIBUTION 2: is it the ubatch (off the cliff) or flash attention? same cell, NO -fa
+  no-fa f16 KV  pp2048  = 386.04 ± 2.50
+  no-fa f16 KV  tg128   = 21.58 ± 0.36
+GPU: 379 MiB, 1835 MHz, 67
+=== SAME-SESSION frontier: all cells now f16 KV, no -fa, matched to the winner ===
+row A: all experts -> CPU, ub 2048
+  pp2048  = 381.82 ± 2.97
+  tg128   = 19.79 ± 0.30
+row B: split, ub 512
+  pp2048  = 307.13 ± 2.43
+  tg128   = 22.02 ± 0.28
+row C-old: split, ub 1024, -nkvo 1
+  pp2048  = 381.60 ± 2.57
+  tg128   = 17.95 ± 0.13
+GPU after: 388 MiB, 1822 MHz, 67

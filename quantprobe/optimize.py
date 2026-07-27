@@ -136,9 +136,11 @@ def run(a):
     # gives is the inconsistency class that cost us the plan-vs-bench correction.
     roomier = next((r for r in ranked if r["bits"] >= 4.5 and "all in VRAM" in r["desc"]), None)
     if "all in VRAM" in best["desc"]:
-        print(f"\n  note: all-in-VRAM is the placement our law knows least well. Every model we have")
-        print(f"  measured there ran FASTER than predicted - by 2% to 67% - so read the speeds above")
-        print(f"  as a floor, not a ceiling.")
+        print(f"\n  note: all-in-VRAM is the placement our law knows least well, and the honest band")
+        print(f"  here is NOT the +/-25% we quote elsewhere. Across 8 models, real speed landed between")
+        print(f"  0.91x and 1.84x the prediction - usually faster, so read the speeds above as a")
+        print(f"  floor, not a ceiling. One model came in SLOWER (gemma4-12b, -9%), so it is a floor")
+        print(f"  with one measured exception, not a guarantee.")
         if roomier and best["bits"] < 4.5:
             print(f"  It also already fits, and a lower quant buys almost nothing once it does: the same")
             print(f"  7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. The honest pick here is")

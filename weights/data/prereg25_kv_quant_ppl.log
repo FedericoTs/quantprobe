@@ -1,0 +1,6 @@
+=== Pre-reg #25 quality gate: perplexity cost of q8_0 KV, wikitext2 test, ctx 4096 ===
+  ctk/ctv=f16   Final estimate: PPL = 8.5331 +/- 0.15368
+  ctk/ctv=q8_0  Final estimate: PPL = 8.5273 +/- 0.15332
+--- depth check: same comparison at ctx 16384, where the 3.04x speed claim lives ---
+  ctx16384 ctk/ctv=f16   Final estimate: PPL = 7.3693 +/- 0.12640
+  ctx16384 ctk/ctv=q8_0    ctx16384 ctk/ctv=q8_0  Final estimate: PPL = 7.3686 +/- 0.12631

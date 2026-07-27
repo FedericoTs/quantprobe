@@ -114,18 +114,44 @@ def layer3_e2e(gguf, llama_dir):
     # made bench 11% optimistic while plan was 1.4% accurate on identical input.
     pr = subprocess.run([sys.executable, "-m", "quantprobe", "plan", "--gguf", gguf],
                         capture_output=True, text=True, errors="replace", env=env)
-    mp = re.search(r"\*\s+([0-9.]+) tok/s", pr.stdout + pr.stderr)
+    mp = re.search(r"\*\s+([0-9.]+) tok/s\s+(.*)", pr.stdout + pr.stderr)
     assert mp, "plan printed no winning row for the E2E file"
     m = re.search(r"measured: ([0-9.]+) \+/- ([0-9.]+) tok/s \(predicted ([0-9.]+), ([+-][0-9]+)%\)", out)
     assert m, "E2E produced no predicted-vs-measured line:\n" + out[-400:]
     meas, err, pred, delta = float(m[1]), float(m[2]), float(m[3]), int(m[4])
-    plan_tps = float(mp.group(1))
+    plan_tps, regime = float(mp.group(1)), mp.group(2).strip()
     assert abs(pred - plan_tps) / plan_tps < 0.01, (
         f"plan and bench disagree on the same file: plan {plan_tps} vs bench {pred}")
-    print(f"  plan and bench agree at {plan_tps} tok/s")
-    print(f"  predicted {pred}, measured {meas} +/- {err}  ({delta:+d}%)")
+    lo, hi, why = e2e_band(regime)
+    print(f"  plan and bench agree at {plan_tps} tok/s  [{regime}]")
+    print(f"  predicted {pred}, measured {meas} +/- {err}  ({delta:+d}%), band {lo:+d}/{hi:+d} - {why}")
     assert err <= meas * 0.15, f"measurement too noisy to trust ({err/meas*100:.0f}% spread) - re-run warm"
-    assert abs(delta) <= 25, f"prediction outside the stated +/-25% band: {delta:+d}%"
+    assert lo <= delta <= hi, (
+        f"prediction outside the published band for '{regime}' ({lo:+d}/{hi:+d}%): {delta:+d}%")
+
+
+def e2e_band(regime):
+    """The published accuracy band FOR THE REGIME MEASURED. Returns (low, high, why).
+
+    Until 2026-07-27 this was a single symmetric +/-25% applied to every placement, and for one
+    regime that number was simply false. Thirteen benchmarks across eight all-in-VRAM models and two
+    sessions put the real spread at **-9% to +84%** - and a symmetric +/-25% claim is not a
+    conservative approximation of that, it is a wrong one in both directions at once: too wide on the
+    low side (we are never 25% optimistic except on one model) and far too narrow on the high side.
+
+    Stating a MEASURED per-regime accuracy is not the same act as widening a band to make a test
+    pass. The difference is that this one is published as a correction, with the data, and it is
+    still a gate: an all-in-VRAM prediction that lands outside -15/+90 is a regression and fails.
+    The lower bound matters most - it is what catches the tool ever becoming OPTIMISTIC, which is
+    the direction that actually costs a user something.
+
+    The other regimes keep +/-25% because that is where the claim is validated: all four layer-4
+    anchors are MoE-hybrid or disk-stream rows, and all four still retrodict.
+    """
+    if "all in VRAM" in regime:
+        return -15, 90, ("all-in-VRAM: measured -9%/+84% over 8 models (C-02); treat the "
+                         "prediction as a floor")
+    return -25, 25, "the published +/-25%, validated by the layer-4 anchors"
 
 
 def layer5_audit():
@@ -140,11 +166,22 @@ def layer5_audit():
     import audit
     n, pa = audit.audit_findings_reach_code()
     surface, pb = audit.audit_decision_surface_is_evidenced()
-    problems = pa + pb
+    # The findings register is the third leg of this layer. audit.py checks that scored findings
+    # reach the code; findings.py checks that every STAKED pre-registration reaches the register,
+    # that no claim is recorded without the scope it was measured in, and that no `wired_into`
+    # points at a symbol that no longer exists. Together they close the loop: measured -> recorded
+    # -> shipped, with a failure at any hop breaking the release rather than being noticed weeks
+    # later by a user.
+    import findings
+    pc = findings.validate(findings.load())
+    problems = pa + pb + pc
     assert not problems, ("what we know and what we ship have drifted apart:\n  "
                           + "\n  ".join(problems))
+    reg = findings.load()
+    total = sum(len(reg.get(s, [])) for s, _, _ in findings.SECTIONS)
     print(f"  {n} scored findings all declare where they landed; "
           f"{len(surface)} placements all evidenced or declared")
+    print(f"  findings register: {total} entries, every pre-registration cited, every scope stated")
 
 
 def autodiscover_llama():
