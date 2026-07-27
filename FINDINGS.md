@@ -9,10 +9,10 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 10 |
-| Shipped levers | 8 |
+| Shipped levers | 9 |
 | Measured dead ends | 8 |
-| Open contradictions | 5 |
-| Untried levers | 5 |
+| Open contradictions | 6 |
+| Untried levers | 4 |
 | External work to study | 5 |
 
 ## Established laws
@@ -131,6 +131,12 @@ Things the tool actually recommends, with the number attached.
 
 `open` · `measured` · scope: Qwen3-30B-A3B-Q2_K, split placement, GTX 1060 6GB - one architecture, one flag varied · evidence: prereg #25 (kv-cache-quantization) · wired into: `NOT SHIPPED. Blocked on the perplexity cost, a condition written into the stake before any number existed: D-01 killed a 1.335x lever for costing 1.206x perplexity, and 3.04x is exactly when skipping that step is most tempting.`
 
+### V-09 — quantprobe's numbers are SINGLE-STREAM and understate aggregate server throughput by roughly 2x.
+
+**Magnitude:** ~2.0x at 8 slots, saturating by about 4 (see C-06 for the full table)
+
+`shipped` · `measured` · scope: GTX 1060 6GB; the ratio is unmeasured on modern hardware · evidence: prereg #26 · wired into: `quantprobe/plan.py concurrency disclosure in the plan output`
+
 ## Measured dead ends
 
 Negative results. These are load-bearing: each one is a direction nobody has to spend a day on again.
@@ -211,6 +217,14 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `open` · `measured` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization) · wired into: `nothing yet - this is a lint waiting to be written`
 
+### C-06 — Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.
+
+**Magnitude:** Aggregate decode, npl 1 -> 8, one session: split 21.93 -> 44.48 (2.03x); all-experts-CPU 19.89 -> 37.70 (1.90x); DENSE 7B fully in VRAM 22.47 -> 50.48 (2.25x). Per-step time grows 3.56x while weight bytes per step are unchanged, so weight amortisation works as expected - the cost that grows is per-sequence work, unidentified.
+
+**Next action:** Run the identical sweep on ANY modern GPU. It costs one command and decides whether this is a law or a museum piece. Until then quantprobe must not model concurrency - it can only disclose it.
+
+`open` · `measured` · scope: GTX 1060 6GB, llama-batched-bench, npp 512 / ntg 128. A 2016 card without tensor cores is exactly where a batched-decode ceiling would appear first. · evidence: prereg #26 (parallel-slots); weights/data/prereg26_parallel_slots.log · wired into: `disclosed in the CLI; NOT modelled`
+
 ### C-01 — The GLM kvp values are wrong in BOTH directions and by 2x - not the 30-60x we believed. glm-744b is 2.10x too LARGE, glm-air is 2x too SMALL, and the two are related by a transposition.
 
 **Magnitude:** GLM-5.2 is MLA + DeepSeek Sparse Attention (GlmMoeDsaForCausalLM): 78 layers, kv_lora_rank 512, qk_rope_head_dim 64. By quantprobe's own MLA convention that is 78 x (512+64) x 2 = 89,856 B/token against a shipped 188,416 - 2.10x too large. Separately GLM-4.5-Air is plain GQA: 46 x 8 x (128+128) x 2 = 188,416, EXACTLY the value sitting in the glm-744b row, against a shipped glm-air value of 94,208 - 2x too small.
@@ -238,18 +252,6 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 ## Untried levers
 
 Staked predictions written BEFORE measuring, so a miss is visible. Ordered by expected value.
-
-### U-05 — Batch>1 (parallel slots) changes which placement wins, because it amortises host-weight transfer across concurrent requests.
-
-**Hypothesis:** L-09 says host weights cross PCIe once per ubatch. Concurrent slots fill ubatches that a single stream cannot, so the all-experts-to-CPU placement should improve superlinearly with slot count while all-in-VRAM stays flat.
-
-**Predicted effect (staked):** the frontier reorders at -np 4; aggregate throughput +2x to +4x on the offloaded placements
-
-**Why it is promising:** every measurement in this project is -np 1, so an entire dimension is unexplored
-
-**Protocol:** llama-bench/llama-server at -np {1,2,4,8} across the three frontier rows; report aggregate AND per-request rates
-
-`untested` · `speculative` · cost: 4 hours
 
 ### U-04 — Prompt/prefix cache reuse dwarfs every placement lever on RAG and document-QA workloads.
 

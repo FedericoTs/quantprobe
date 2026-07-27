@@ -698,5 +698,9 @@ def run(args):
     if moe and vc > 0 and not nlay:
         print("\n  note: MoE partial expert offload (measured +12.4% decode, ~2-3x prefill) needs this\n"
               "  model's layer count to emit exact -ot flags - re-run with --gguf <file> to unlock it.")
+    print("\n  concurrency: every number above is SINGLE-STREAM. Measured with 8 parallel slots, "
+          "aggregate\n  throughput is ~2x higher and saturates by about 4 slots "
+          "(pre-registration #26). The same\n  ratio appeared on every placement AND on a dense "
+          "control, so it is a ceiling we do not model -\n  read our figures as one user's speed, not a server's capacity.")
     print("\n  (eta bands fitted from published measurements; estimates +/-25%. "
           "Hybrid needs --no-mmap.)")

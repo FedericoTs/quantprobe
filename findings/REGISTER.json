@@ -222,6 +222,17 @@
       "evidence": "prereg #25 (kv-cache-quantization)",
       "scope": "Qwen3-30B-A3B-Q2_K, split placement, GTX 1060 6GB - one architecture, one flag varied",
       "wired_into": "NOT SHIPPED. Blocked on the perplexity cost, a condition written into the stake before any number existed: D-01 killed a 1.335x lever for costing 1.206x perplexity, and 3.04x is exactly when skipping that step is most tempting."
+    },
+    {
+      "id": "V-09",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "quantprobe's numbers are SINGLE-STREAM and understate aggregate server throughput by roughly 2x.",
+      "magnitude": "~2.0x at 8 slots, saturating by about 4 (see C-06 for the full table)",
+      "evidence": "prereg #26",
+      "scope": "GTX 1060 6GB; the ratio is unmeasured on modern hardware",
+      "wired_into": "quantprobe/plan.py concurrency disclosure in the plan output"
     }
   ],
   "dead_ends": [
@@ -385,6 +396,21 @@
       "priority": 1,
       "wired_into": "nothing yet - this is a lint waiting to be written",
       "next_action": "Three instances is a pattern, not a coincidence. Audit EVERY remaining efficiency constant for the same assumption and add a gate check that refuses a constant fitted at a single format. The saturation point differs by quantity - ~4-bit for weights, ~8-bit for KV - so the lint cannot be a fixed threshold; it must demand that the constant was MEASURED across formats."
+    },
+    {
+      "id": "C-06",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.",
+      "magnitude": "Aggregate decode, npl 1 -> 8, one session: split 21.93 -> 44.48 (2.03x); all-experts-CPU 19.89 -> 37.70 (1.90x); DENSE 7B fully in VRAM 22.47 -> 50.48 (2.25x). Per-step time grows 3.56x while weight bytes per step are unchanged, so weight amortisation works as expected - the cost that grows is per-sequence work, unidentified.",
+      "evidence": "prereg #26 (parallel-slots); weights/data/prereg26_parallel_slots.log",
+      "scope": "GTX 1060 6GB, llama-batched-bench, npp 512 / ntg 128. A 2016 card without tensor cores is exactly where a batched-decode ceiling would appear first.",
+      "priority": 2,
+      "wired_into": "disclosed in the CLI; NOT modelled",
+      "hypotheses_already_refuted": "(a) Host-residency amortisation - staked as P-2 and refuted BY DIRECTION: the placement with MORE host-resident weight gained LESS (1.90x vs 2.03x). (b) MoE routing divergence across slots - refuted by the dense control, which saturates at 2.25x, barely above the MoE split. No mechanism is named here on purpose: in this project the first mechanism guess has been wrong four times, and each wrong guess survived exactly as long as nobody built a control that could kill it.",
+      "next_action": "Run the identical sweep on ANY modern GPU. It costs one command and decides whether this is a law or a museum piece. Until then quantprobe must not model concurrency - it can only disclose it.",
+      "the_part_that_did_work": "PREFILL shows the staked mechanism plainly: arm A gains 2.12x from batching against arm S's 1.44x, because A has the most host-resident weight to amortise - exactly L-09. But all three arms converge to ~405-445 t/s, a ceiling that caps the effect before it can change any recommendation."
     }
   ],
   "untried": [
@@ -400,19 +426,6 @@
       "why_it_is_promising": "our frontier optimises the cost of doing prefill; this avoids it",
       "protocol": "llama-server with --prompt-cache / slot restore; measure time-to-first-token on repeated vs fresh prefixes",
       "priority": 2
-    },
-    {
-      "id": "U-05",
-      "kind": "untried",
-      "status": "untested",
-      "confidence": "speculative",
-      "claim": "Batch>1 (parallel slots) changes which placement wins, because it amortises host-weight transfer across concurrent requests.",
-      "hypothesis": "L-09 says host weights cross PCIe once per ubatch. Concurrent slots fill ubatches that a single stream cannot, so the all-experts-to-CPU placement should improve superlinearly with slot count while all-in-VRAM stays flat.",
-      "predicted_effect": "the frontier reorders at -np 4; aggregate throughput +2x to +4x on the offloaded placements",
-      "cost": "4 hours",
-      "why_it_is_promising": "every measurement in this project is -np 1, so an entire dimension is unexplored",
-      "protocol": "llama-bench/llama-server at -np {1,2,4,8} across the three frontier rows; report aggregate AND per-request rates",
-      "priority": 1
     },
     {
       "id": "U-06",

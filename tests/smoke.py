@@ -380,6 +380,28 @@ def t_workload_frontier_is_pareto():
             "inside the error bars that retired the previous frontier - do not ship it as a choice")
 
 
+def t_concurrency_is_disclosed_not_modelled():
+    """We must say out loud that our numbers are single-stream, because they understate a server 2x.
+
+    Pre-registration #26 measured aggregate decode from 1 to 8 slots: split 21.93 -> 44.48 (2.03x),
+    all-experts-CPU 19.89 -> 37.70 (1.90x), dense 7B fully in VRAM 22.47 -> 50.48 (2.25x). The same
+    ceiling on every architecture, placement and memory tier, saturating by about 4 slots - and no
+    mechanism this project models predicts it (C-06).
+
+    Two staked explanations died: host-residency amortisation was refuted BY DIRECTION (the arm with
+    MORE host-resident weight gained LESS), and MoE routing divergence was refuted by the dense
+    control. So concurrency must NOT be modelled. It must be disclosed, and this test is what stops
+    the disclosure being quietly dropped the next time the output is tidied.
+    """
+    rc, out = cli("plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp")
+    assert rc == 0, "plan failed"
+    low = out.lower()
+    assert "single-stream" in low, (
+        "the plan output no longer says its numbers are single-stream - anyone sizing a server on "
+        "them is wrong by ~2x in a direction we have measured")
+    assert "#26" in out, "the concurrency disclosure must cite the pre-registration behind it"
+
+
 def t_ubatch_is_sized_not_pinned():
     """The ubatch must be SIZED from headroom, never pinned - the buffer is linear, VRAM is not.
 
