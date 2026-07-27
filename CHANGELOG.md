@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.17.0 - 2026-07-27
+
+**A new warning that saves CPU-tier users 2.7x, the honest closure of novel-generation
+speculation, and the complete physics-vs-code ledger of the CPU decode token.**
+
+### New warning: I-quant files on CPU tiers (the user-facing fix)
+
+Measured (pre-registration #31): on the CPU tier, IQ formats deliver **10.6 GB/s where K-quants
+deliver ~29** at the same size - a silent 2.7x decode penalty for anyone who downloaded the IQ
+file because it was smaller. `plan` now reads the bytes-weighted I-quant share from the GGUF and
+warns when >30% lands on a host-resident placement. It stays silent in VRAM, where IQ formats
+measured mid-pack - warning there would be crying wolf.
+
+### Novel-generation speculation: CLOSED, by kill rule
+
+Pre-registration #30 tested every candidate for accelerating FRESH generation: statistical ngram
+variants (1.03x best, zero drafts fired), draft-MTP (unmeasurable - three attempts), an external
+draft model (net negative, from #28). The kill rule fired and the line is closed. One arm briefly
+showed 50 tok/s on a novel task at 100% acceptance - it was `ngram-mod`'s PERSISTENT cross-request
+store replaying an identical second request. The third spectacular number this project has killed
+by reading the model's actual output; "read what the model wrote" is now a protocol rule.
+
+Scope for users: speculation pays 2.4-2.5x when output REUSES context (edits, refactors, RAG
+quoting - most of what coding agents emit), and exactly nothing on fresh reasoning. The plan
+output says both, with this model's own numbers.
+
+### The CPU decode token: zero unattributed milliseconds
+
+Four pre-registrations (#27, #31, #32, #33) took the flagship's 84.7 ms CPU token apart:
+
+| component | ms | verdict |
+|---|---|---|
+| expert weight reads (23.1 GB/s marginal, k-sweep) | 33.5 | at physics |
+| always-active weight reads | 19.2 | at physics |
+| thread-sync growth, 1 -> 4 threads, identical work | ~13 | code (ggml per-op barriers) |
+| serial small-op chain | ~19 | mixed |
+
+Along the way, four attractive stories died by measurement: memory-scatter (shuffled 2 MB
+expert-slab reads lose nothing), expert-major dispatch (null, with proof of mode), scheduling
+flags (six arms, all flat - llama.cpp's defaults are right), and fat-file K-formats (Q2_K and
+Q4_K_M tie at the wall on CPU). The remaining prize is +18-35% via graph-executor sync reduction,
+staked before building, upstream-PR shaped - never a fork.
+
+### Also
+
+- `demo/`: reproduce the 50-59 tok/s speculation result yourself from cmd, payloads included,
+  with the honest control and the VRAM caveats.
+- The fork question (D-05) is reopened SCOPED: the memory system is measured indifferent to
+  expert-slab scatter, so the CPU MoE deficit is code - but every other component measured at the
+  wall, which is precisely why the vehicle is an upstream PR and not a runtime rewrite.
+
 ## 1.16.0 - 2026-07-27
 
 **The wall is measured, and then it is exceeded: 50 tok/s effective decode on a 2016 GPU.**
