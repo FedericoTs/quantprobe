@@ -56,3 +56,32 @@ free-AI ceiling for a 2016 desktop is ~110 tok/s total, not per user.
 The measured aggregate and per-request numbers, as the tool's serving guidance. If they compose,
 that is the headline result of this entire line of work: the cost per user-token on a six-year-old
 GPU, measured rather than extrapolated.
+
+---
+
+## WITHDRAWN, incomplete (2026-07-28, log: `weights/data/prereg39_spec_x_batch.log`)
+
+**Status: not scored. Two of four arms ran before the project's priority changed from multi-user
+serving to single-user quality; arms C and D (`-np 4`) were never measured.**
+
+Recorded rather than deleted, because a staked prediction that quietly disappears is how a
+register stops being trustworthy — and because the release gate caught the omission (layer 5:
+"pre-registration #39 is not cited by any register entry"), which is precisely the job it was
+built for.
+
+What did run, single slot, edit task, 300 tokens:
+
+| arm | aggregate tok/s | per-request tok/s |
+|---|---|---|
+| A `-np 1`, no speculation | 16.16 | 20.62 |
+| B `-np 1`, speculation `m 384 n 4` | 42.79 | 99.28 |
+
+One methodological note worth keeping: **aggregate and per-request diverge sharply** (42.79 vs
+99.28 for the same run) because the aggregate divides total tokens by wall time, which includes
+prompt processing, while `predicted_per_second` times generation only. Both are honest; they
+answer different questions, and quoting either alone would mislead. Any future concurrency work
+must report both — the same discipline #26 imposed.
+
+**If resumed**, the open question is unchanged and still valuable: batching amortises one weight
+read across slots, speculation amortises it across tokens, and whether they compose or contend for
+the same forward pass is unmeasured.

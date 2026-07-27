@@ -1,0 +1,3 @@
+=== Pre-reg #39: speculation x batching, 2x2, concurrent HTTP requests ===
+  A np1 nospec     aggregate   16.16 tok/s   per-request  20.62   (1 slots, 300 tok in 18.6s)  shas=1:19d0be0c6f3e
+  B np1 spec       aggregate   42.79 tok/s   per-request  99.28   (1 slots, 300 tok in 7.0s)  shas=1:19d0be0c6f3e

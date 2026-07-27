@@ -574,6 +574,19 @@
       "why_it_is_promising": "prereg #22 Stage 1 passed its own kill rule",
       "protocol": "slot save/restore between a k=4 and a k=8 server; measure perplexity attributable to each phase",
       "priority": 2
+    },
+    {
+      "id": "U-10",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "Speculation and batching may compose (5x x 2x) or contend for the same forward pass - staked in prereg #39 and WITHDRAWN incomplete when the project's priority moved to single-user quality.",
+      "hypothesis": "Batching amortises one weight read across N slots (#26: ~2.0-2.25x, saturating by 4); speculation amortises it across k tokens within a slot (#36/#37: 4.7x at ~3-bit). They attack the same denominator by different means. The interference mechanism is real though: with continuous batching, one slot's 384-token verify batch may monopolise the forward pass other slots need, and the MoE expert-union tax (Law 6) grows with batch diversity.",
+      "predicted_effect": "staked in #39: aggregate >= 150 tok/s at -np 4 with speculation, and batching's multiplier surviving to within 80% with speculation on",
+      "cost": "1 hour - two arms remain (-np 4 with and without speculation); the harness exists at weights/data/prereg39_spec_x_batch.log",
+      "why_it_is_promising": "it is the only remaining measured-multiplier composition, and it decides whether one cheap box serves one person fast or several people adequately",
+      "protocol": "resume prereg #39 arms C and D; report aggregate AND per-request (they diverge 2.3x - see the withdrawal note)",
+      "priority": 2
     }
   ],
   "external": [
