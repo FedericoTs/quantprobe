@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.14.1 - 2026-07-27
+
+**Correction: v1.14.0 shipped a dominated point on the frontier, and fixing it makes the feature
+less impressive than advertised.**
+
+The frontier was built by sweeping placement and KV while holding `-ub` pinned at 2048. Measured
+afterwards, the point shipped as the *decode champion* is beaten by its own small-batch form:
+
+| split, KV in VRAM | pp2048 | tg128 |
+|---|---|---|
+| `-ub 512` | **280.64 ± 1.32** | **20.25 ± 0.16** |
+| `-ub 2048` (shipped in v1.14.0) | 163.39 ± 0.36 | 20.13 ± 0.23 |
+
+72% more prompt processing for the same generation, free. Pinning one dimension while sweeping the
+others is exactly the error the Law 4 fungibility corollary warns about — made in the code that
+implements that corollary. **A frontier is only Pareto-optimal with respect to the dimensions
+actually swept.**
+
+Consequence, stated plainly: because the worst available choice is now much better than we
+thought, **the benefit of choosing correctly drops from 2.25× to 1.33×** on a long-prompt
+workload. That is still above the ≥15% bar pre-registration #20 set for keeping the feature, but
+it is a materially smaller claim than v1.14.0 made and the smaller number is the true one.
+
+Corrected frontier (all measured, reference box):
+
+| configuration | pp2048 | tg128 | best for |
+|---|---|---|---|
+| split, KV in VRAM, `-ub 512` | 280.64 | **20.25** | chat, short prompts |
+| all experts → CPU, `-ub 2048` | 345.41 | 18.68 | mixed |
+| split, KV evicted, `-ub 2048` | **391.72** | 16.54 | RAG, documents, agents |
+
+
 ## Research note - 2026-07-27 (no code change)
 
 **The last placement dimension is closed, and the answer is "don't use it."**

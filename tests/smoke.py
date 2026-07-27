@@ -356,7 +356,13 @@ def t_workload_frontier_is_pareto():
         "a frontier and the whole workload dimension is unnecessary")
     assert chat["tg"] > rag["tg"], "the chat pick should favour generation"
     assert rag["pp"] > chat["pp"], "the long-prompt pick should favour prompt processing"
-    assert rag["speedup_vs_worst"] > 2.0, \
+    # 1.25x, not the 2.0x this originally asserted. That threshold was calibrated against a
+    # frontier containing a DOMINATED point (split + KV in VRAM at ub 2048, 163 pp), which made
+    # the worst available choice look far worse than it is. With that point corrected to its
+    # ub-512 form (281 pp), the spread narrows from 2.25x to 1.33x. Fixing my own error made the
+    # feature less impressive, which is the number that goes in the docs.
+    # Still above the >=15% bar pre-registration #20 set for "worth the added complexity".
+    assert rag["speedup_vs_worst"] > 1.25, \
         f"long-prompt spread only {rag['speedup_vs_worst']:.2f}x - not worth a recommendation"
 
 

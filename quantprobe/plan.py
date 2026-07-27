@@ -141,12 +141,20 @@ def ubatch_flags(placement, vram_resident_gb, vc):
 #
 #   (label, pp2048, tg128, extra flags beyond the placement's own)
 MOE_FRONTIER = [
-    ("keep KV in VRAM",                 161.59, 20.14, ""),
-    ("evict KV to RAM (-nkvo 1)",       391.72, 16.54, "-nkvo 1"),
-    ("all experts to CPU, KV in VRAM",  345.41, 18.68, ""),
+    ("KV in VRAM, small batch",         280.64, 20.25, "-b 512 -ub 512"),
+    ("all experts to CPU, big batch",   345.41, 18.68, "-b 2048 -ub 2048"),
+    ("evict KV to RAM, big batch",      391.72, 16.54, "-b 2048 -ub 2048 -nkvo 1"),
 ]
-# A fourth cell - all experts to CPU with KV evicted - measured 336.31/15.82 and is DOMINATED by
-# the third on both axes. It is kept out of the frontier deliberately: never recommend it.
+# Two cells are deliberately EXCLUDED because they are dominated on both axes:
+#   all experts to CPU + KV evicted     336.31 / 15.82  - beaten by row 2
+#   split + KV in VRAM + ub 2048        163.39 / 20.13  - beaten by row 1
+#
+# That second one shipped ON this frontier in v1.14.0, as the "decode champion", because the
+# frontier was built with -ub pinned at 2048 while only placement and KV were varied. Measured
+# afterwards: the same configuration at ub 512 gives 280.64 pp for the same 20.25 tg - 72% more
+# prompt processing, free. Pinning one dimension while sweeping the others is precisely the error
+# the Law 4 fungibility corollary warns about, made in the code that implements the corollary.
+# A frontier is only Pareto-optimal with respect to the dimensions actually swept.
 
 
 def workload_frontier(prompt_to_gen):
