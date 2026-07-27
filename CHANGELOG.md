@@ -1,5 +1,41 @@
 # Changelog
 
+## Research note - 2026-07-27 (no code change)
+
+**The last placement dimension is closed, and the answer is "don't use it."**
+
+[Pre-registration #18](preregistrations/2026-07-26-topk-decode.md) measured MoE expert-count
+reduction on decode — never tested before, since every log in this repo showed
+`expert_used_count = 8`.
+
+| | tok/s | WikiText-2 ppl |
+|---|---|---|
+| k=8 | 20.32 ± 0.14 | 9.2364 ± 0.358 |
+| k=4 | **27.13 ± 0.33** | **11.1411 ± 0.436** |
+
+All three speed stakes hit, and the byte model predicted **27.7** against a measured 27.13 —
+accurate to 2%. The lever is real and correctly modelled.
+
+**It is also strictly dominated.** On the same placement, with no metadata surgery:
+
+| lever | speed | quality cost |
+|---|---|---|
+| top-k 8 → 4 | ×1.335 | **×1.206** |
+| bits 2.95 → 2.0 | **×1.424** | **×1.048** |
+
+Quantizing further is faster *and* four times cheaper in quality. Top-k=4 costs more quality than
+the entire 2-bit quantization of the model, and breaches `optimize`'s ×1.12 ceiling on its own.
+There is no operating point where a user should prefer it — so nothing ships, and it is recorded
+in LAWS.md as a measured dead end so it is not re-derived.
+
+The quality figure was measured on **this** file rather than cited: it independently reproduces
+H6's +20.7% from a different model, which is worth knowing separately.
+
+With this, all four dimensions the placement search was blind to are closed — **batch** (#19),
+**phase** (#20) and **KV placement** (#21) shipped in v1.13.0–v1.14.0; **expert count** measured
+and rejected.
+
+
 ## 1.14.0 - 2026-07-27
 
 **There is no single best placement. There is a frontier, and the right point on it depends on
