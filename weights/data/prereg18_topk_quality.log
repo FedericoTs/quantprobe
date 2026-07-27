@@ -1,0 +1,6 @@
+=== Pre-reg #18 quality: WikiText-2 ppl, k=8 vs k=4, SAME box SAME chunking ===
+--- k8 ---
+2.02.288.345 I Final estimate: PPL = 9.2364 +/- 0.35793
+--- k4 ---
+1.44.796.305 I Final estimate: PPL = 11.1411 +/- 0.43649
+DONE
