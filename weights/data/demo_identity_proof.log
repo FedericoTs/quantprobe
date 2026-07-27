@@ -1,0 +1,16 @@
+=== LIVE IDENTITY + SPEED PROOF (temp 0, seed 42, same prompts, same placement) ===
+  edit   baseline  20.96 tok/s | ngram  49.40 tok/s (2.36x, acceptance 89%)
+         sha256 65985276565a8545 vs 65985276565a8545 -> IDENTICAL  (1168 vs 1168 chars)
+  novel  baseline  21.63 tok/s | ngram  21.99 tok/s (1.02x)
+         sha256 5ff7c228d751990d vs 5ff7c228d751990d -> IDENTICAL  (149 vs 149 chars)
+
+=== LIVE BROWSER DEMO (llama-server web UI, 2026-07-27) ===
+Task: rename MODELS -> MODEL_TABLE across the full plan.py excerpt, code only, /no_think.
+Server log, verbatim:
+  eval time = 16671.79 ms / 956 tokens (17.44 ms per token, 57.34 tokens per second)
+  draft acceptance = 0.94792 (910 accepted / 960 generated), mean len = 46.50
+57.34 tok/s EXCEEDS the original 52.9 target (the old spec-sheet "realistic wall") and is 39%
+above the measured raw-decode wall (41.1). Larger output = longer copy runs = higher acceptance
+than the r=2 benchmark (94.8% vs 89%). Small-context control from the same session: a 106-token
+prompt got only 19.8% acceptance and 17.46 tok/s - the prize scales with how much context the
+output genuinely reuses.

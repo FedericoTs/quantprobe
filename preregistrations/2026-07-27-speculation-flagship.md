@@ -111,3 +111,16 @@ An honest map of decode on this box, all measured today:
 
 **Wired into:** `findings/REGISTER.json:V-04` (re-scoped copy-vs-novel) · `findings/REGISTER.json:L-11`
 (exceedability corollary) · `findings/REGISTER.json:D-09` (draft-model dead end) · CLI advice update.
+
+### Live addendum (same day, `weights/data/demo_identity_proof.log`)
+
+Two demonstrations after scoring, both worth keeping:
+
+1. **Byte-identity, proven not asserted.** Same seed, temp 0, same prompts, with and without
+   speculation: SHA-256 of the outputs is **identical** on both the edit task (2.36×) and the
+   novel task (1.02×). The speedup costs literally nothing — same bytes, sooner.
+2. **Live in the server UI, the full-file edit reached 57.34 tok/s at 94.8% acceptance**
+   (956 tokens, mean accepted run 46.5) — past the original 52.9 target. And a 106-token
+   small-context control got 19.8% acceptance and 17.46 tok/s, sharpening the scope: the prize
+   scales with how much context the output genuinely reuses, so tiny prompts gain little even in
+   the copy regime.
