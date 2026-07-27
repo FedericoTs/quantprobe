@@ -1,0 +1,15 @@
+=== Pre-reg #41: does the TUNED drafter reach novel content? (req1, fresh server) ===
+  base    NC   21.02 tok/s  drafted    0  accepted    0  sha=5bd34c5e2f
+  base    NP   21.16 tok/s  drafted    0  accepted    0  sha=3c0e346e05
+  def     NC   20.00 tok/s  drafted   38  accepted    0  sha=1c2a7a785d
+  def     NP   20.80 tok/s  drafted    0  accepted    0  sha=3c0e346e05
+  tuned   NC   21.13 tok/s  drafted    0  accepted    0  sha=5bd34c5e2f
+  tuned   NP   20.95 tok/s  drafted    0  accepted    0  sha=3c0e346e05
+--- reproducibility check on the sha divergence (def/NC drafted 38, accepted 0, output differed) ---
+  def-2   NC   20.18 tok/s  drafted   38  accepted    0  sha=1c2a7a785d
+  def-2   NP   21.31 tok/s  drafted    0  accepted    0  sha=3c0e346e05
+--- and the guard arithmetic: ngram-simple needs cur_len > size_n + size_m + 1 ---
+  m=384,n=4  -> needs context > 389 tokens before it can EVER draft
+  m=48, n=12 -> needs context > 61
+  novel prompts here are ~40 tokens + <=260 generated = ~300 max -> never reaches 389
+  the edit task prompt is ~950 tokens -> clears 389 immediately
