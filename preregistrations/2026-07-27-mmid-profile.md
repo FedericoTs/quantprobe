@@ -38,3 +38,49 @@ problem, expert-major dispatch is a dead end, and the PR target moves to the vec
 
 Numbers and attribution only — the patch, if E2c wins, ships as an UPSTREAM PR (task #28), never a
 fork. Every measured number lands in D-05's evidence chain.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg33_mmid_profile.log`)
+
+**Verdict: P-1 HIT, P-2 MISS (the dispatch hypothesis dies with proof of mode), P-3 HIT — and the
+k-sweep relocates the entire problem.**
+
+- **P-1 (compiler parity ±15%): HIT.** gcc `EM=0` 11.92 ± 0.24 vs the shipped MSVC binary's
+  13.15 — −9.4%. Cross-binary comparisons are valid; within-binary A/Bs are clean.
+- **P-2 (expert-major dispatch ≥10%): MISS — null.** 11.75 (ON, banner captured) vs 11.92 (OFF).
+  Giving each thread whole experts — long sequential streams, zero atomic contention — changes
+  NOTHING. Second independent refutation of every geometry/scatter story (#32 was the first).
+- **P-3 (marginal expert ≥20 GB/s): HIT — 23.1 GB/s.** The k-sweep (k=1/2/4/8 baked into a
+  scratch copy: 18.06 / 16.81 / 15.02 / 11.81 tok/s) is linear with slope **4.19 ms/expert** =
+  96.8 MB of expert weights at 23.1 GB/s, essentially the stream wall. **The per-expert GEMV
+  inner loop is already at physics.**
+
+### The relocation: the cost is the FIXED per-token machinery
+
+| component of the 84.7 ms token (k=8) | ms | share | attribution |
+|---|---|---|---|
+| 8 experts × 4.19 | 33.5 | 40% | **AT PHYSICS** (23.1 GB/s) |
+| always-active bytes (0.44 GB) at the wall | ~19 | 22% | AT PHYSICS |
+| **unattributed fixed machinery** | **~32** | **38%** | **CODE** |
+
+The intercept (51.2 ms) dwarfs what always-active bytes can explain. The remaining ~32 ms/token is
+per-token, per-op machinery — the leading suspect is the CPU graph executor's **per-op thread
+barrier**: a 48-layer MoE graph carries roughly 3–4× the op count of a dense model (router, topk,
+gather, three expert matmuls per layer), and ~700+ barriers × tens of µs on 4 threads lands
+exactly in this range. This is also consistent with everything previously measured: it explains
+the dense-vs-MoE gap (op count, not access pattern), the E2c null (the experts were never the
+problem), the #31 scheduling nulls (OS-level knobs cannot remove ggml-internal barriers), and the
+#32 microbench (memory is fine).
+
+### Consequence for task #28
+
+The upstream target SHIFTS: not `MUL_MAT_ID` dispatch — the graph executor's per-op
+synchronization on small-op-heavy graphs. Next discriminator, stated now: the fixed cost must
+scale with GRAPH OP COUNT, not with bytes — measurable by fitting the intercept across models of
+different layer counts, and by a barrier-fusion prototype in `build-cpu`. Ceiling if fully
+captured: 84.7 → ~53 ms ≈ **19 tok/s pure-CPU** (from 11.8), and proportionally on the split.
+
+**Wired into:** `findings/REGISTER.json:D-05` evidence chain · task #28 (retargeted) ·
+`weights/data/prereg33_mmid_profile.log`. The 11 GB `_k_sweep_scratch.gguf` is retained on D: for
+future sweeps (its `expert_used_count` is restored to 8).
