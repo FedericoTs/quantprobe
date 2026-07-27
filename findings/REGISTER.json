@@ -586,7 +586,8 @@
       "cost": "1 hour - two arms remain (-np 4 with and without speculation); the harness exists at weights/data/prereg39_spec_x_batch.log",
       "why_it_is_promising": "it is the only remaining measured-multiplier composition, and it decides whether one cheap box serves one person fast or several people adequately",
       "protocol": "resume prereg #39 arms C and D; report aggregate AND per-request (they diverge 2.3x - see the withdrawal note)",
-      "priority": 2
+      "priority": 2,
+      "evidence": "prereg #39 (staked then WITHDRAWN incomplete; partial data in weights/data/prereg39_spec_x_batch.log: np1 bare 16.16 aggregate / 20.62 per-request, np1 speculated 42.79 / 99.28)"
     }
   ],
   "external": [

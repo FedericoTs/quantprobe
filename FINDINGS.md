@@ -9,10 +9,10 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 12 |
-| Shipped levers | 11 |
+| Shipped levers | 12 |
 | Measured dead ends | 12 |
 | Open contradictions | 8 |
-| Untried levers | 2 |
+| Untried levers | 3 |
 | External work to study | 5 |
 
 ## Established laws
@@ -113,11 +113,11 @@ Things the tool actually recommends, with the number attached.
 
 `shipped` · `measured` · scope: split placement, reference box · evidence: prereg #21 · wired into: `quantprobe/plan.py:MOE_FRONTIER row 3`
 
-### V-04 — N-gram speculation is worth 5.0x on copy-regime output once BOTH its draft budget and its lookup length are tuned - llama.cpp's defaults capture 2.3x of it. The cost unit is the VERIFY ROUND, not the token.
+### V-04 — N-gram speculation is worth ~4.7x on copy-regime output AT ~3-BIT QUANTIZATION - and the multiplier SHRINKS with bits (3.39x at Q3_K_M), because speculation converts a bandwidth-bound problem into a compute-bound one.
 
 **Magnitude:** Flagship, split placement, chat template, coherent output (prereg #28): edit task 2.41x (20.73 -> 50.04 tok/s, 89% acceptance) - ABOVE the 41.1 raw-decode wall; novel code 0.98x at 0% acceptance; novel prose 1.00x. Dense 7B (original): 2.10x on code. The original 'code vs prose' framing was a proxy: code tasks are usually copy-heavy and prose tasks usually novel, but the edit IS the variable. Also measured: the staked temp-0 raw-continuation harness produced a repetition loop whose 100% acceptance inflated ngram to 1.82-1.96x on garbage output - caught by reading the completion, re-measured under the chat template. COMPOSITION (prereg #35): speculation and q8_0 KV are independent multipliers - stack measured 49.42 vs 47.61 predicted from the product (ratio 1.038, no destructive interference), and output is byte-identical at both KV precisions. DRAFT-LENGTH SWEEP (prereg #36, position-controlled): --spec-ngram-simple-size-m 24/48/96/192/384/768 -> 46.10 / 49.80 / 65.00 / 78.01 / 90.33 / 89.82 tok/s, ALL byte-identical output. Best is m=384 at 90.33 = +81% over the default and 2.2x this box's raw-decode wall. Mechanism: m is a per-round draft BUDGET, so raising it delivers the SAME accepted tokens in FEWER verify rounds (drafted/accepted freeze at 1100/735 from m=192 on while throughput still climbs) - each round costs a full weight read. m=768 returns byte-identical counts to m=384 because the n-gram store has no longer matching spans: the plateau is the DRAFTER's ceiling, not the hardware's. LOOKUP-LENGTH SWEEP (prereg #37, position-controlled, all at size-m 384): size-n 20/12/6/4/2 -> 77.61 / 90.67 / 105.52 / 108.41 / 81.98 tok/s, all byte-identical. Best is n=4 at 108.41 = 5.0x the 21.6 no-speculation baseline and 2.6x the 41.1 raw-decode wall. Stacking ngram-cache is a 10% REGRESSION (97.16).
 
-`shipped` · `measured` · scope: llama-server only - llama-cli silently ignores --spec-type (measured as a 1.00x that was the flag not existing) · evidence: prereg #10 (Law 6 arm S-e, dense), prereg #28 (flagship, re-scoped); prereg #36 (draft-length sweep); prereg #37 (lookup length + stacking) · wired into: `quantprobe/plan.py:speculation_advice (flag pair + the measured 4.15x)`
+`shipped` · `measured` · scope: llama-server only - llama-cli silently ignores --spec-type (measured as a 1.00x that was the flag not existing) QUANTIZATION SCOPE (prereg #40): the multiplier is NOT invariant in bits. Same model (Qwen3-Coder-30B): Q2_K_L 4.63x, Q3_K_M 3.39x = 0.73 of it. Two different models at ~10.5 GB both give 4.6-4.8x, so bits is the variable, not the model. · evidence: prereg #10 (Law 6 arm S-e, dense), prereg #28 (flagship, re-scoped); prereg #36 (draft-length sweep); prereg #37 (lookup length + stacking); prereg #40 (quality scoping, with same-model confound control) · wired into: `quantprobe/plan.py:speculation_advice (flag pair + the measured 4.15x)`
 
 ### V-05 — Depth-aware protection of fragile tensors buys quality at near-zero size.
 
@@ -160,6 +160,12 @@ Things the tool actually recommends, with the number attached.
 **Magnitude:** Pure-CPU decode, same dense 7B, r=3: IQ3_XS 10.6 GB/s effective vs Q2_K 28.4 / Q4_K_M 29.7. K-format dequant is bandwidth-shaped on AVX2; the IQ codebook lookup is compute-shaped and 4 cores cannot hide it. In VRAM the IQ formats measured mid-pack (the eta study), so the warning fires ONLY on host-resident placements.
 
 `shipped` · `measured` · scope: host-resident placements, AVX2-class CPUs; VRAM placements explicitly excluded from the warning · evidence: prereg #31 arm F; C-05 fourth instance · wired into: `quantprobe/spec.py:from_gguf (iq_share) - quantprobe/plan.py (the warning) - tests/smoke.py:t_iq_quants_warned_on_cpu_tiers`
+
+### V-12 — The quality-vs-speed frontier UNDER SPECULATION - the table a person needs to pick a model for their machine, which no published benchmark provides because everyone quotes raw decode.
+
+**Magnitude:** 2016 desktop (GTX 1060 6GB + DDR4-3000), 30B-A3B MoE, single user, copy-regime output, split placement + ngram-simple m384 n4, request 1 of a fresh server: ~3-bit (Q2_K / Q2_K_L) = 99 tok/s at x1.05-1.07 planner quality cost; ~3.9-bit (Q3_K_M) = 59 tok/s at x1.02-1.05. Raw decode for the same rows is 21 and 17. So the published raw numbers understate achievable speed by 3.4-4.8x on work whose output reuses its context.
+
+`shipped` · `measured` · scope: copy-regime output only - novel generation gains nothing (D-10). One box, one model family. · evidence: prereg #40 (with same-model confound control); #36/#37 for the tuning · wired into: `quantprobe/plan.py:speculation_advice carries the multiplier and its quantization scope`
 
 ## Measured dead ends
 
@@ -259,7 +265,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 ### C-05 — A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.
 
-**Magnitude:** D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0. FOURTH INSTANCE (prereg #31): on the CPU tier, IQ formats deliver 10.6 GB/s vs ~29 for K-quants at identical size - dequant cost is format-shaped, again.
+**Magnitude:** D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0. FOURTH INSTANCE (prereg #31): on the CPU tier, IQ formats deliver 10.6 GB/s vs ~29 for K-quants at identical size - dequant cost is format-shaped, again. FIFTH INSTANCE (prereg #40): on the speculation axis. Bytes rise 1.299x from Q2_K_L to Q3_K_M; raw decode cost rises 1.222x (tracks bytes, as Law 4 requires) but SPECULATED decode cost rises 1.670x - 1.37x faster than bytes. A verify round processes ~50 tokens at once, which #26 measured to be compute-bound, and once compute-bound the extra bits cost extra DEQUANTISATION on every one of those tokens rather than extra bytes moved.
 
 **Next action:** Three instances is a pattern, not a coincidence. Audit EVERY remaining efficiency constant for the same assumption and add a gate check that refuses a constant fitted at a single format. The saturation point differs by quantity - ~4-bit for weights, ~8-bit for KV - so the lint cannot be a fixed threshold; it must demand that the constant was MEASURED across formats.
 
@@ -328,6 +334,18 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Protocol:** slot save/restore between a k=4 and a k=8 server; measure perplexity attributable to each phase
 
 `untested` · `speculative` · cost: 1 day
+
+### U-10 — Speculation and batching may compose (5x x 2x) or contend for the same forward pass - staked in prereg #39 and WITHDRAWN incomplete when the project's priority moved to single-user quality.
+
+**Hypothesis:** Batching amortises one weight read across N slots (#26: ~2.0-2.25x, saturating by 4); speculation amortises it across k tokens within a slot (#36/#37: 4.7x at ~3-bit). They attack the same denominator by different means. The interference mechanism is real though: with continuous batching, one slot's 384-token verify batch may monopolise the forward pass other slots need, and the MoE expert-union tax (Law 6) grows with batch diversity.
+
+**Predicted effect (staked):** staked in #39: aggregate >= 150 tok/s at -np 4 with speculation, and batching's multiplier surviving to within 80% with speculation on
+
+**Why it is promising:** it is the only remaining measured-multiplier composition, and it decides whether one cheap box serves one person fast or several people adequately
+
+**Protocol:** resume prereg #39 arms C and D; report aggregate AND per-request (they diverge 2.3x - see the withdrawal note)
+
+`untested` · `speculative` · evidence: prereg #39 (staked then WITHDRAWN incomplete; partial data in weights/data/prereg39_spec_x_batch.log: np1 bare 16.16 aggregate / 20.62 per-request, np1 speculated 42.79 / 99.28) · cost: 1 hour - two arms remain (-np 4 with and without speculation); the harness exists at weights/data/prereg39_spec_x_batch.log
 
 ### U-06 — The disk-streaming tier has ~7x available that our fork verdict (D-05) explicitly does not cover.
 

@@ -85,3 +85,7 @@ must report both — the same discipline #26 imposed.
 **If resumed**, the open question is unchanged and still valuable: batching amortises one weight
 read across slots, speculation amortises it across tokens, and whether they compose or contend for
 the same forward pass is unmeasured.
+
+**Wired into:** `findings/REGISTER.json:U-10` — reopened as an untried lever with its partial data
+and protocol. No code path changed, correctly: two of four arms is not a result, and the tool must
+not carry a serving recommendation this project has not finished measuring.
