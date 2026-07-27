@@ -1,0 +1,1 @@
+CPU decode: GGML_OPENMP=ON with mingw-w64 libgomp costs ~40% on small-op-heavy graphs (every graph barrier is a kernel semaphore; the port cannot spin)
