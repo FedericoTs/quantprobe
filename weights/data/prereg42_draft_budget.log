@@ -1,0 +1,9 @@
+=== Pre-reg #42: draft-model budget sweep on NOVEL content (req1, fresh server) ===
+  base  NC   19.39 tok/s  drafted    0 accepted    0  acc   0.0%  sha=7d826928f6
+  base  NP   21.61 tok/s  drafted    0 accepted    0  acc   0.0%  sha=336bbbb803
+  D3    NC   15.95 tok/s  drafted  238 accepted  179  acc  75.2%  sha=f0212e6eca
+  D3    NP    9.52 tok/s  drafted  309 accepted  111  acc  35.9%  sha=cd1701b65d
+  D8    NC   14.67 tok/s  drafted  373 accepted  212  acc  56.8%  sha=f0212e6eca
+  D8    NP    6.48 tok/s  drafted  744 accepted  131  acc  17.6%  sha=2d555863f6
+  D16   NC   10.58 tok/s  drafted  624 accepted  218  acc  34.9%  sha=1c2a7a785d
+  D16   NP    3.91 tok/s  drafted 1504 accepted  131  acc   8.7%  sha=95b735d0f1

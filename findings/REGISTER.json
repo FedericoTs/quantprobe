@@ -157,6 +157,17 @@
       "evidence": "prereg #26 (the convergence), prereg #22 (the FLOP lever)",
       "scope": "GTX 1060. A modern GPU has 10-100x the FLOPs; this wall is a property of the card, not of llama.cpp.",
       "wired_into": "the research agenda: asymmetric top-k Stage 2 (U-07) is the one open prefill lever"
+    },
+    {
+      "id": "L-13",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "ACCEPTANCE DECAY SEPARATES DRAFTERS. A copy drafter's acceptance is ~flat in draft length; a model drafter's collapses geometrically - so the same 'raise the budget' fix that multiplies one destroys the other.",
+      "magnitude": "n-gram (copy): 66-68% acceptance at 384-token drafts, and raising the budget 48->384 gave +81% throughput (#36). Draft model (0.6B guessing): 75.2% -> 56.8% -> 34.9% on code and 35.9% -> 17.6% -> 8.7% on prose as the budget goes 3 -> 8 -> 16, and throughput falls monotonically (#42). An n-gram draft is verified-correct BY CONSTRUCTION - it reproduces text that occurred - so extending it is nearly free; a model draft compounds its own divergence AND pays a full draft forward per token.",
+      "evidence": "prereg #36 (n-gram budget), prereg #42 (draft-model budget), prereg #28 (the original net-negative)",
+      "scope": "Qwen3-30B-A3B target with a Qwen3-0.6B draft, reference box. The mechanism is general; the crossover point is not measured elsewhere.",
+      "wired_into": "quantprobe/plan.py:speculation_advice (why the two speculation flags behave oppositely)"
     }
   ],
   "levers": [
@@ -396,9 +407,9 @@
       "kind": "dead_end",
       "status": "refuted",
       "confidence": "measured",
-      "claim": "An external draft model (0.6B) for speculation is NET NEGATIVE on this box, at any acceptance this family delivers.",
-      "magnitude": "0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here.",
-      "evidence": "prereg #28 arm D",
+      "claim": "An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not.",
+      "magnitude": "0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here. BUDGET SWEEP (prereg #42, novel content, req1 fresh server): base 19.39 (code) / 21.61 (prose); n-max 3 -> 15.95 / 9.52; n-max 8 -> 14.67 / 6.48; n-max 16 -> 10.58 / 3.91. MONOTONE DOWN, with acceptance collapsing 75->57->35% (code) and 36->18->9% (prose).",
+      "evidence": "prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED)",
       "scope": "reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument",
       "wired_into": "quantprobe/plan.py:speculation_advice"
     },

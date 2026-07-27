@@ -8,7 +8,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 12 |
+| Established laws | 13 |
 | Shipped levers | 12 |
 | Measured dead ends | 12 |
 | Open contradictions | 8 |
@@ -90,6 +90,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** GTX 1060 6GB ~4.4 TFLOPS FP32; MoE k=8 active 3.3B -> ~6.6 GFLOP/token -> 667 t/s at 100%. Measured convergence: 443.82 (split), 425.31 (all-CPU), 405.22 (dense control) at npl=8 - three different placements, one ceiling. The only measured lever that moves it is top-k reduction, which cuts the FLOPs: +21% to +63% at k=4 (prereg #22).
 
 `established` · `measured` · scope: GTX 1060. A modern GPU has 10-100x the FLOPs; this wall is a property of the card, not of llama.cpp. · evidence: prereg #26 (the convergence), prereg #22 (the FLOP lever) · wired into: `the research agenda: asymmetric top-k Stage 2 (U-07) is the one open prefill lever`
+
+### L-13 — ACCEPTANCE DECAY SEPARATES DRAFTERS. A copy drafter's acceptance is ~flat in draft length; a model drafter's collapses geometrically - so the same 'raise the budget' fix that multiplies one destroys the other.
+
+**Magnitude:** n-gram (copy): 66-68% acceptance at 384-token drafts, and raising the budget 48->384 gave +81% throughput (#36). Draft model (0.6B guessing): 75.2% -> 56.8% -> 34.9% on code and 35.9% -> 17.6% -> 8.7% on prose as the budget goes 3 -> 8 -> 16, and throughput falls monotonically (#42). An n-gram draft is verified-correct BY CONSTRUCTION - it reproduces text that occurred - so extending it is nearly free; a model draft compounds its own divergence AND pays a full draft forward per token.
+
+`established` · `measured` · scope: Qwen3-30B-A3B target with a Qwen3-0.6B draft, reference box. The mechanism is general; the crossover point is not measured elsewhere. · evidence: prereg #36 (n-gram budget), prereg #42 (draft-model budget), prereg #28 (the original net-negative) · wired into: `quantprobe/plan.py:speculation_advice (why the two speculation flags behave oppositely)`
 
 ## Shipped levers
 
@@ -219,11 +225,11 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `documented` · scope: CUDA builds, -ot=CPU placements, with --no-mmap set · evidence: U-03 source study: -ot=CPU re-runs buffer selection over the CPU buft list (ACCEL -> GPU-host -> CPU-extra -> CPU); on a CUDA build the GPU-host entry is CUDA_Host, allocated by cudaMallocHost. llama-model-loader.cpp:1197-1205 demotes it back to pageable IF use_mmap is true. · wired into: `U-03 withdrawn; the --no-mmap smoke invariant is now known to be load-bearing for a second reason`
 
-### D-09 — An external draft model (0.6B) for speculation is NET NEGATIVE on this box, at any acceptance this family delivers.
+### D-09 — An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not.
 
-**Magnitude:** 0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here.
+**Magnitude:** 0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here. BUDGET SWEEP (prereg #42, novel content, req1 fresh server): base 19.39 (code) / 21.61 (prose); n-max 3 -> 15.95 / 9.52; n-max 8 -> 14.67 / 6.48; n-max 16 -> 10.58 / 3.91. MONOTONE DOWN, with acceptance collapsing 75->57->35% (code) and 36->18->9% (prose).
 
-`refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D · wired into: `quantprobe/plan.py:speculation_advice`
+`refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED) · wired into: `quantprobe/plan.py:speculation_advice`
 
 ### D-10 — Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself.
 
