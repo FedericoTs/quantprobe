@@ -380,6 +380,33 @@ def t_workload_frontier_is_pareto():
             "inside the error bars that retired the previous frontier - do not ship it as a choice")
 
 
+def t_accuracy_band_is_per_regime():
+    """The published accuracy band must stay REGIME-AWARE, and must stay a gate.
+
+    Until v1.15.0 one symmetric +/-25% covered every placement, and for all-in-VRAM it was false:
+    13 benchmarks over 8 models put the real spread at -9% to +84%. A single +/-25% is not a
+    conservative approximation of that - it is wrong in both directions at once, too wide below and
+    far too narrow above.
+
+    The lower bound is the half that earns its keep. Widening a band to make a test pass would be
+    goalpost-moving; what makes this different is that the band is MEASURED, published as a
+    correction, and still fails on a regression. If the tool ever became OPTIMISTIC about a model
+    that fits in VRAM - the direction that actually costs a user something - -15 is what catches it.
+    """
+    from verify import e2e_band
+    lo_v, hi_v, why_v = e2e_band("all in VRAM")
+    lo_o, hi_o, why_o = e2e_band("hybrid: attention->VRAM, experts->RAM")
+    assert (lo_v, hi_v) != (lo_o, hi_o), "the band is no longer regime-aware - one number is back"
+    assert hi_v >= 84, f"the all-in-VRAM upper bound {hi_v} is below the measured +84% - it would fail on truth"
+    assert lo_v > -100, "the all-in-VRAM band must stay bounded below; an unbounded band is not a gate"
+    assert lo_v >= -20, (
+        f"the all-in-VRAM lower bound has drifted to {lo_v} - that is the half that catches the tool "
+        "becoming optimistic, which is the direction that costs a user something")
+    assert (lo_o, hi_o) == (-25, 25), "the validated regimes must keep the published +/-25%"
+    for why in (why_v, why_o):
+        assert why and len(why) > 20, "each band must say WHY it is what it is"
+
+
 def t_concurrency_is_disclosed_not_modelled():
     """We must say out loud that our numbers are single-stream, because they understate a server 2x.
 

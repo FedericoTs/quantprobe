@@ -371,9 +371,11 @@ def fits_in_vram_advice(placement, bits):
     """
     if placement != "all in VRAM":
         return None
-    note = ("this is the placement our law knows least well. Every model we have measured "
-            "all-in-VRAM ran FASTER than predicted - by 2% to 67% - so treat the number above as "
-            "a floor, not a ceiling.")
+    note = ("this is the placement our law knows least well, and the honest band here is NOT the "
+            "+/-25% we quote elsewhere. Across 8 models measured all-in-VRAM, real speed landed "
+            "between 0.91x and 1.84x the prediction - usually faster, so treat the number above as "
+            "a floor, not a ceiling. One model came in SLOWER (gemma4-12b, -9%), so it is a floor "
+            "with one measured exception, not a guarantee.")
     if bits < 4.5:
         note += (" It also already fits, and going lower-bit buys almost nothing: the same 7B at "
                  "Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER (19.17 vs 20.03 tok/s). Quantize "
