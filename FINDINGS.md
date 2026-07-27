@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 12 |
 | Shipped levers | 11 |
 | Measured dead ends | 11 |
-| Open contradictions | 6 |
+| Open contradictions | 7 |
 | Untried levers | 2 |
 | External work to study | 5 |
 
@@ -266,6 +266,14 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 **Next action:** Run the identical sweep on ANY modern GPU. It costs one command and decides whether this is a law or a museum piece. Until then quantprobe must not model concurrency - it can only disclose it.
 
 `open` · `measured` · scope: GTX 1060 6GB, llama-batched-bench, npp 512 / ntg 128. A 2016 card without tensor cores is exactly where a batched-decode ceiling would appear first. · evidence: prereg #26 (parallel-slots); weights/data/prereg26_parallel_slots.log · wired into: `disclosed in the CLI; NOT modelled`
+
+### C-07 — CPU decode speed depends ~40% on the OpenMP runtime the binary was BUILT with - a variable no hardware spec exposes and the tool cannot currently see.
+
+**Magnitude:** Same source, same box, same model, tg32 t=4: gcc+libgomp (mingw, kernel-semaphore barriers, no spin phase) 11.92; gcc+GGML_OPENMP=OFF (ggml spin barrier) 16.64 (+40%); MSVC+libomp default 13.28; +KMP_BLOCKTIME=infinite 13.89. ~2070 barriers/token; the mechanism, not the count, was most of the tax.
+
+**Next action:** (1) CUDA build with GGML_OPENMP=OFF to test transfer to the split placement. (2) Upstream issue with the A/B and the symbol evidence - build guidance reaches every Windows/gcc builder for free. (3) The tool: consider a bench-time probe that detects the barrier mechanism (a 100-barrier microbench at startup) rather than trusting build metadata.
+
+`open` · `measured` · scope: pure-CPU decode, 4-core Windows box. The split placement runs on libomp (mostly spinning already); CUDA+no-OpenMP is unmeasured. · evidence: prereg #34; the E3 per-op profiler (barrier 30.8 -> 10.8 ms/token); barrier-map desk research (symbol-level libgomp evidence) · wired into: `FUTURE.md upstream deliverable #1 (build guidance with data)`
 
 ### C-01 — The GLM kvp values are wrong in BOTH directions and by 2x - not the 30-60x we believed. glm-744b is 2.10x too LARGE, glm-air is 2x too SMALL, and the two are related by a transposition.
 
