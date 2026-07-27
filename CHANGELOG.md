@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.14.0 - 2026-07-27
+
+**There is no single best placement. There is a frontier, and the right point on it depends on
+how much prompt you read per token you write.**
+
+[Pre-registration #21](preregistrations/2026-07-27-kv-placement.md) added the last missing
+dimension — KV placement, which llama.cpp exposes via `-nkvo` **independently of where the weights
+live**, and which our law had welded to the layers it serves. Measured on the reference box,
+`Qwen3-30B-A3B Q2_K`, one session, `-ub 2048`, r=3:
+
+| placement | KV | pp2048 | tg128 | |
+|---|---|---|---|---|
+| split K=16 | VRAM | 161.59 ± 0.09 | **20.14 ± 0.24** | decode champion |
+| split K=16 | host | **391.72 ± 2.80** | 16.54 ± 0.03 | prefill champion |
+| all → CPU | VRAM | 345.41 ± 0.36 | 18.68 ± 0.27 | balanced |
+| all → CPU | host | 336.31 ± 1.71 | 15.82 ± 0.08 | **dominated — never choose it** |
+
+`plan` now prints the frontier and which end suits which workload:
+
+| workload | best | vs worst choice |
+|---|---|---|
+| chat (0.5 : 1) | split, KV in VRAM | 1.23× |
+| coding (10 : 1) | all → CPU, KV in VRAM | 1.35× |
+| RAG (50 : 1) | split, KV evicted | 1.91× |
+| document QA (200 : 1) | split, KV evicted | **2.25×** |
+
+### The finding underneath
+
+**The VRAM claimants are fungible, and fungibility is placement-specific.** Evicting KV recovers
+**2.42×** of prompt processing on the split — where VRAM binds — and essentially nothing on
+all-experts-to-CPU (345 → 336), where it doesn't. Weights, KV cache and compute buffer draw on one
+budget; only the configuration that is actually starved can spend the refund.
+
+That closes the four dimensions the search was blind to. Batch and KV are now measured and
+disclosed; phase is disclosed; expert count remains open (#18, blocked on a harness).
+
+### A miss worth recording
+
+I staked that `-nkvo` would be **neutral at zero context** — no cache, nothing to read, nothing to
+place. It costs **19.5%** there. The penalty is largely *fixed*, not depth-proportional, which
+means the flag moves where attention is **computed**, not merely where the cache is stored.
+Anyone modelling it as pure cache-read bandwidth, as I was, will mis-predict it.
+
+
 ## 1.13.1 - 2026-07-27
 
 **Correction to v1.13.0, found by measuring the same lever on a placement we had not tested.**

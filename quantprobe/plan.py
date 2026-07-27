@@ -134,6 +134,45 @@ def ubatch_flags(placement, vram_resident_gb, vc):
     return "-b 2048 -ub 2048"
 
 
+# The measured Pareto frontier for a MoE whose experts do not fit VRAM, on the reference box
+# (Qwen3-30B-A3B Q2_K, pre-registration #21, one session, r=3, -ub 2048). There is no single best
+# placement: three configurations are Pareto-optimal and the right one depends on how many prompt
+# tokens you read per token you generate.
+#
+#   (label, pp2048, tg128, extra flags beyond the placement's own)
+MOE_FRONTIER = [
+    ("keep KV in VRAM",                 161.59, 20.14, ""),
+    ("evict KV to RAM (-nkvo 1)",       391.72, 16.54, "-nkvo 1"),
+    ("all experts to CPU, KV in VRAM",  345.41, 18.68, ""),
+]
+# A fourth cell - all experts to CPU with KV evicted - measured 336.31/15.82 and is DOMINATED by
+# the third on both axes. It is kept out of the frontier deliberately: never recommend it.
+
+
+def workload_frontier(prompt_to_gen):
+    """Pick the frontier point that minimises total time at a given prompt:generation ratio.
+
+    Total time for P prompt tokens and G generated is `P/pp + G/tg`, so the optimum moves as the
+    ratio does. Measured crossovers on the reference box:
+
+        chat        0.5:1   -> keep KV in VRAM            (decode dominates)
+        coding       10:1   -> all experts to CPU          (balanced)
+        RAG          50:1   -> evict KV to RAM             (prefill dominates, 1.9x)
+        document QA 200:1   -> evict KV to RAM             (2.25x over the worst choice)
+
+    The spread between best and worst choice reaches **2.25x** at long prompts, which is why this
+    cannot be left as one command ranked by decode - the tool's historical default.
+    """
+    G = 1.0
+    P = max(prompt_to_gen, 0.0) * G
+    scored = [(P / pp + G / tg, lab, pp, tg, fl) for lab, pp, tg, fl in MOE_FRONTIER]
+    scored.sort()
+    best = scored[0]
+    worst = scored[-1]
+    return dict(label=best[1], pp=best[2], tg=best[3], flags=best[4],
+                speedup_vs_worst=worst[0] / best[0])
+
+
 def phase_advice(placement, rows):
     """Which phase does the recommended command actually optimise, and what does it cost?
 
@@ -493,6 +532,12 @@ def run(args):
     ph = phase_advice(best[0], cfgs)
     if ph:
         print(f"\n  phase: {ph}")
+        chat, rag = workload_frontier(0.5), workload_frontier(200)
+        print("\n  workload: there is no single best setup here. Three are Pareto-optimal, and the")
+        print("  right one depends on how much prompt you read per token you write (measured, #21):")
+        print(f"    chat, short prompts     -> {chat['label']:<26} {chat['pp']:>6.0f} pp / {chat['tg']:>5.1f} tg")
+        print(f"    long prompts, RAG, docs -> {rag['label']:<26} {rag['pp']:>6.0f} pp / {rag['tg']:>5.1f} tg")
+        print(f"  Choosing wrong costs up to {rag['speedup_vs_worst']:.2f}x on a long-prompt workload.")
     if ub:
         print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
               f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
