@@ -57,3 +57,67 @@ code (async transfer batching) — upstream-PR territory, priced by #27 at ≤29
 Any lever that HITS goes into the emitted `run it:` command with its measured number — these are
 free flags, exactly like `--no-mmap` was. P-3 hitting opens a follow-up (fatter-file decode test
 on the flagship) but ships nothing by itself.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg31_kernel_sync.log`)
+
+**Verdict: P-1 MISS, P-2 MISS (the refutation clause fires), P-3 MISS as staked — and arm F
+caught two unstaked findings that matter more than every staked one.**
+
+### The scheduling grid: dead, cleanly
+
+| arm | tg128 |
+|---|---|
+| K0 baseline `-t 4` | 21.42 ± 0.20 |
+| K1 `-t 3` | 20.92 ± 0.28 (−2.3%) |
+| K2a `--poll 0` | 21.40 ± 0.36 |
+| K2b `--poll 100` | 21.03 ± 0.48 |
+| K3 `--prio 2` | 21.13 ± 0.09 |
+| K4 `--cpu-strict 1` | 21.42 ± 0.35 |
+
+Nothing clears +5%; two levers lose. K5 (the combination) is vacuous — there is nothing positive
+to combine. **The sync share is not scheduler-shaped.** Capturing it needs actual code (async
+transfer batching), which is upstream-PR territory priced at ≤29% by #27, and llama.cpp's defaults
+are, on this box, already right.
+
+### Arm F, finding 1: the "kernel gap" is not the kernel — it is MoE scatter
+
+Pure-CPU decode, dense 7B, effective GB/s (= bytes × tok/s):
+
+| format | tok/s | effective GB/s |
+|---|---|---|
+| Q2_K | 10.11 ± 0.06 | **28.4** |
+| Q4_K_M | 6.81 ± 0.12 | **29.7** |
+| IQ3_XS | 3.39 ± 0.05 | **10.6** |
+
+**Dense K-quant CPU decode already runs AT the stream wall** (28–30 GB/s vs 26.1 measured
+pure-read, 30.4 copy). llama.cpp's dense kernel has nothing left to give. The flagship's 17.1 GB/s
+(#27) is therefore not kernel inefficiency — it is the **MoE expert-scatter penalty, ~40%**:
+8 scattered expert GEMVs per token defeat the prefetcher where one dense GEMV streams. That is the
+slab-hopping property already recorded in Law 4's scatter note, now with its own number. P-3 as
+staked (Q4_K_M ≥ +20% over Q2_K) is a MISS — the K-quants tie at the wall, which is a *better*
+result than the stake: within K-formats there is no fat-file bonus to chase, and the flagship's
+Q2_K choice is vindicated for the CPU tier.
+
+### Arm F, finding 2: I-quants are catastrophic on CPU tiers — SHIPPED as a warning
+
+IQ3_XS delivers **10.6 GB/s where K-quants deliver ~29** — a 2.7× decode penalty for any
+host-resident placement, invisible to a user who picked the IQ file because it was smaller. The
+planner now warns when a >30% I-quant file lands on a host tier, and stays silent in VRAM where
+IQ formats measured mid-pack (the η study). This is C-05's fourth instance: dequant cost is a
+format property, and on the CPU tier the IQ codebook lookup is compute-shaped where K-format
+dequant is bandwidth-shaped.
+
+### Where this leaves the ceiling chase
+
+22.25 → 41.1 needs ~1.85×. Now attributed: **~40% MoE scatter** (needs expert-gather kernels —
+real code, upstream scale), **~17–25% sync** (needs async transfer batching — real code), **0%
+scheduling** (measured), **0% K-format choice** (measured at the wall). On this box, with stock
+llama.cpp, raw decode is done: every remaining percent costs upstream engineering, and the
+measured payoff for all of it combined is bounded by 1.85×. The register's conclusion stands —
+the wall is passed by not reading bytes (speculation, 50–59 tok/s), not by reading them better.
+
+**Wired into:** `quantprobe/spec.py:from_gguf` (iq_share) · `quantprobe/plan.py` (the warning) ·
+`tests/smoke.py:t_iq_quants_warned_on_cpu_tiers` · `findings/REGISTER.json:D-11, L-11 (scatter
+attribution), C-05 (fourth instance)`.

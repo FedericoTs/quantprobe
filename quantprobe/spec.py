@@ -28,6 +28,7 @@ def from_gguf(path):
     n_layer = _field(r, ".block_count") or 32
     total = 0
     routed = 0
+    iq_bytes = all_bytes = 0
     for t in r.tensors:
         n = 1
         for d in t.shape:
@@ -35,6 +36,15 @@ def from_gguf(path):
         total += n
         if "exps" in t.name or "_expert" in t.name:
             routed += n
+        # bytes-weighted I-quant share. Measured (pre-registration #31): on the CPU tier the
+        # IQ formats deliver 10.6 GB/s against ~29 for K-quants at the same size - a 2.7x
+        # decode penalty for any host-resident placement. The K-format dequant is
+        # bandwidth-shaped on AVX2; the IQ codebook lookup is compute-shaped, and 4 cores
+        # cannot hide it.
+        nb = int(getattr(t, "n_bytes", 0) or 0)
+        all_bytes += nb
+        if t.tensor_type.name.startswith("IQ"):
+            iq_bytes += nb
     ne_params = total - routed
 
     n_exp = _field(r, ".expert_count")
@@ -70,7 +80,8 @@ def from_gguf(path):
                 arch = None
             break
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
-                bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch)
+                bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
+                iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0)
 
 
 def apply(a, quiet=False):
@@ -94,6 +105,7 @@ def apply(a, quiet=False):
         a.kv_per_pos = s["kvp"] / 1024; used.append(f"KV {s['kvp']/1024:.0f} KB/pos")
     if getattr(a, "n_layer", None) is None:
         a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
+    a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))
     return True

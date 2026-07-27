@@ -143,7 +143,8 @@
       "evidence": "prereg #27 (decomposition + measured stream), prereg #28 (the exceedance), prereg #25 (the 22.25)",
       "scope": "reference box, flagship model. The axiom underneath is tier-agnostic: every active byte on a tier must transit that tier's bus once per token, so tok/s <= 1 / sum(bytes_i / BW_i). No runtime can beat that without reducing bytes or amortising them across tokens.",
       "wired_into": "the research agenda: U-09 is the decomposition",
-      "what_this_rules_in_and_out": "RULED OUT: any raw-decode runtime gain past 1.85x on this box (41.1 ceiling), and in practice far less - the CPU path already runs at 66% of real stream, and sync is worth at most ~29%. D-05's no-fork verdict survives with that measured asterisk. RULED IN and MEASURED: exceeding the wall via speculation (50.04, prereg #28) and skipping prefill via prefix caching (29x TTFT, prereg #29). The remaining breakthroughs are not in moving bytes better - they are in not moving bytes at all."
+      "what_this_rules_in_and_out": "RULED OUT: any raw-decode runtime gain past 1.85x on this box (41.1 ceiling), and in practice far less - the CPU path already runs at 66% of real stream, and sync is worth at most ~29%. D-05's no-fork verdict survives with that measured asterisk. RULED IN and MEASURED: exceeding the wall via speculation (50.04, prereg #28) and skipping prefill via prefix caching (29x TTFT, prereg #29). The remaining breakthroughs are not in moving bytes better - they are in not moving bytes at all.",
+      "gap_attribution_final": "The 22.25->41.1 gap is now FULLY attributed (prereg #31): ~40% is the MoE expert-scatter penalty (dense K-quant CPU decode runs AT the stream wall, 28-30 GB/s, so the kernel is blameless - 8 scattered expert GEMVs defeat the prefetcher where one dense GEMV streams); 17-25% is GPU<->CPU sync (needs async transfer code, scheduling measured dead); 0% scheduling; 0% K-format choice (Q2_K and Q4_K_M tie at the wall on CPU). On stock llama.cpp this box's raw decode is FINISHED - every remaining percent costs upstream engineering bounded at 1.85x combined, while speculation already delivers 2.3-2.5x by not reading bytes at all."
     },
     {
       "id": "L-12",
@@ -267,6 +268,17 @@
       "evidence": "prereg #29",
       "scope": "llama-server, one process - a restart is cold; serves many-questions-one-document, not fresh documents",
       "wired_into": "quantprobe/plan.py long-prompt advice"
+    },
+    {
+      "id": "V-11",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "I-quant (IQ*) files are catastrophic on CPU tiers - 2.7x slower than K-quants at the same size - and the planner now warns before a user pays that silently.",
+      "magnitude": "Pure-CPU decode, same dense 7B, r=3: IQ3_XS 10.6 GB/s effective vs Q2_K 28.4 / Q4_K_M 29.7. K-format dequant is bandwidth-shaped on AVX2; the IQ codebook lookup is compute-shaped and 4 cores cannot hide it. In VRAM the IQ formats measured mid-pack (the eta study), so the warning fires ONLY on host-resident placements.",
+      "evidence": "prereg #31 arm F; C-05 fourth instance",
+      "scope": "host-resident placements, AVX2-class CPUs; VRAM placements explicitly excluded from the warning",
+      "wired_into": "quantprobe/spec.py:from_gguf (iq_share) - quantprobe/plan.py (the warning) - tests/smoke.py:t_iq_quants_warned_on_cpu_tiers"
     }
   ],
   "dead_ends": [
@@ -383,6 +395,17 @@
       "evidence": "prereg #30 (kill rule fired), prereg #28 arm D, Law 6 arm S-e",
       "scope": "reference box, Qwen3 MoE family, llama.cpp b10098. Novel decode is bounded by the 41.1 tok/s raw wall (L-11); the remaining novel-workload levers are q8_0 KV at depth, prefix caching for ingest, batching for aggregate, and DRAM bandwidth itself.",
       "wired_into": "quantprobe/plan.py:speculation_advice already scopes the claim to copy-regime output; prereg #30 closes the complement"
+    },
+    {
+      "id": "D-11",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Scheduling-level kernel/sync tuning is DEAD on this box: threads, poll policy, priority and pinning are all flat or negative, so llama.cpp's defaults are already right here.",
+      "magnitude": "tg128, r=3, one session: baseline 21.42; -t 3 20.92 (-2.3%); --poll 0 21.40; --poll 100 21.03; --prio 2 21.13; --cpu-strict 1 21.42. Nothing clears +5%.",
+      "evidence": "prereg #31 arms K0-K4",
+      "scope": "reference box (4-core i5-7600K), split placement, llama.cpp b10098 defaults",
+      "wired_into": "nothing to ship - the absence of a flag IS the result"
     }
   ],
   "contradictions": [
@@ -448,7 +471,7 @@
       "status": "open",
       "confidence": "measured",
       "claim": "A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.",
-      "magnitude": "D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0.",
+      "magnitude": "D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0. FOURTH INSTANCE (prereg #31): on the CPU tier, IQ formats deliver 10.6 GB/s vs ~29 for K-quants at identical size - dequant cost is format-shaped, again.",
       "evidence": "prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization)",
       "scope": "the decode law's constants",
       "priority": 1,

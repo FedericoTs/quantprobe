@@ -649,6 +649,17 @@ def run(args):
     ub = ubatch_flags(best[0], ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc)
     run_flags = f"{best[3]} {ub}" if ub else best[3]
     print(f"\n  run it:  llama-server -m model.gguf {run_flags}")
+    # I-quant files on a host tier: measured 2.7x slower than K-quants at the same size
+    # (pre-registration #31: IQ3_XS 10.6 GB/s vs Q2_K 28.4 / Q4_K_M 29.7 on pure-CPU decode).
+    # The warning fires only when weights actually land on the CPU - in VRAM the IQ formats
+    # are fine, so warning there would be crying wolf.
+    if getattr(args, "iq_share", 0.0) > 0.3 and any(
+            k in best[0] for k in ("->RAM", "CPU", "disk", "split experts")):
+        print(f"\n  WARNING: this file is {args.iq_share*100:.0f}% I-quant (IQ*) tensors and this"
+              f" placement puts weights\n  on the CPU tier, where IQ formats decode ~2.7x slower"
+              f" than K-quants of the same size\n  (measured: 10.6 vs ~29 GB/s effective)."
+              f" Re-download the model as Q_K (e.g. Q3_K_M\n  instead of IQ3_XS) before"
+              f" trusting the speed above.")
     ph = phase_advice(best[0], cfgs)
     if ph:
         print(f"\n  phase: {ph}")

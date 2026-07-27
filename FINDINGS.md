@@ -9,8 +9,8 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 12 |
-| Shipped levers | 10 |
-| Measured dead ends | 10 |
+| Shipped levers | 11 |
+| Measured dead ends | 11 |
 | Open contradictions | 6 |
 | Untried levers | 2 |
 | External work to study | 5 |
@@ -155,6 +155,12 @@ Things the tool actually recommends, with the number attached.
 
 `shipped` · `measured` · scope: llama-server, one process - a restart is cold; serves many-questions-one-document, not fresh documents · evidence: prereg #29 · wired into: `quantprobe/plan.py long-prompt advice`
 
+### V-11 — I-quant (IQ*) files are catastrophic on CPU tiers - 2.7x slower than K-quants at the same size - and the planner now warns before a user pays that silently.
+
+**Magnitude:** Pure-CPU decode, same dense 7B, r=3: IQ3_XS 10.6 GB/s effective vs Q2_K 28.4 / Q4_K_M 29.7. K-format dequant is bandwidth-shaped on AVX2; the IQ codebook lookup is compute-shaped and 4 cores cannot hide it. In VRAM the IQ formats measured mid-pack (the eta study), so the warning fires ONLY on host-resident placements.
+
+`shipped` · `measured` · scope: host-resident placements, AVX2-class CPUs; VRAM placements explicitly excluded from the warning · evidence: prereg #31 arm F; C-05 fourth instance · wired into: `quantprobe/spec.py:from_gguf (iq_share) - quantprobe/plan.py (the warning) - tests/smoke.py:t_iq_quants_warned_on_cpu_tiers`
+
 ## Measured dead ends
 
 Negative results. These are load-bearing: each one is a direction nobody has to spend a day on again.
@@ -219,6 +225,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `measured` · scope: reference box, Qwen3 MoE family, llama.cpp b10098. Novel decode is bounded by the 41.1 tok/s raw wall (L-11); the remaining novel-workload levers are q8_0 KV at depth, prefix caching for ingest, batching for aggregate, and DRAM bandwidth itself. · evidence: prereg #30 (kill rule fired), prereg #28 arm D, Law 6 arm S-e · wired into: `quantprobe/plan.py:speculation_advice already scopes the claim to copy-regime output; prereg #30 closes the complement`
 
+### D-11 — Scheduling-level kernel/sync tuning is DEAD on this box: threads, poll policy, priority and pinning are all flat or negative, so llama.cpp's defaults are already right here.
+
+**Magnitude:** tg128, r=3, one session: baseline 21.42; -t 3 20.92 (-2.3%); --poll 0 21.40; --poll 100 21.03; --prio 2 21.13; --cpu-strict 1 21.42. Nothing clears +5%.
+
+`refuted` · `measured` · scope: reference box (4-core i5-7600K), split placement, llama.cpp b10098 defaults · evidence: prereg #31 arms K0-K4 · wired into: `nothing to ship - the absence of a flag IS the result`
+
 ## Open contradictions
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
@@ -241,7 +253,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 ### C-05 — A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.
 
-**Magnitude:** D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0.
+**Magnitude:** D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0. FOURTH INSTANCE (prereg #31): on the CPU tier, IQ formats deliver 10.6 GB/s vs ~29 for K-quants at identical size - dequant cost is format-shaped, again.
 
 **Next action:** Three instances is a pattern, not a coincidence. Audit EVERY remaining efficiency constant for the same assumption and add a gate check that refuses a constant fitted at a single format. The saturation point differs by quantity - ~4-bit for weights, ~8-bit for KV - so the lint cannot be a fixed threshold; it must demand that the constant was MEASURED across formats.
 
