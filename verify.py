@@ -140,11 +140,22 @@ def layer5_audit():
     import audit
     n, pa = audit.audit_findings_reach_code()
     surface, pb = audit.audit_decision_surface_is_evidenced()
-    problems = pa + pb
+    # The findings register is the third leg of this layer. audit.py checks that scored findings
+    # reach the code; findings.py checks that every STAKED pre-registration reaches the register,
+    # that no claim is recorded without the scope it was measured in, and that no `wired_into`
+    # points at a symbol that no longer exists. Together they close the loop: measured -> recorded
+    # -> shipped, with a failure at any hop breaking the release rather than being noticed weeks
+    # later by a user.
+    import findings
+    pc = findings.validate(findings.load())
+    problems = pa + pb + pc
     assert not problems, ("what we know and what we ship have drifted apart:\n  "
                           + "\n  ".join(problems))
+    reg = findings.load()
+    total = sum(len(reg.get(s, [])) for s, _, _ in findings.SECTIONS)
     print(f"  {n} scored findings all declare where they landed; "
           f"{len(surface)} placements all evidenced or declared")
+    print(f"  findings register: {total} entries, every pre-registration cited, every scope stated")
 
 
 def autodiscover_llama():

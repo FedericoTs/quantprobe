@@ -131,7 +131,51 @@ def ubatch_flags(placement, vram_resident_gb, vc):
         return None                       # nothing host-resident: no transfer to amortise
     if vc * 0.90 - vram_resident_gb < UBATCH_HEADROOM_GB:
         return None                       # no room for the bigger compute buffer; the -39% case
-    return "-b 2048 -ub 2048"
+    ub = safe_ubatch(vc * 0.90 - vram_resident_gb)
+    return "-b %d -ub %d" % (ub, ub) if ub else None
+
+
+# llama.cpp's CUDA compute buffer is EXACTLY LINEAR in the ubatch. Measured (pre-registration #23,
+# Qwen3-30B-A3B-Q2_K, llama-bench -v, the runtime's own report):
+#
+#   -ub 1024   601.50 MiB      -ub 1536   902.25 MiB      -ub 2048  1203.00 MiB
+#
+# 0.5874 MiB per ubatch token at all three points - no curvature, no step. That linearity is what
+# makes the cliff predictable rather than merely observable: the buffer grows smoothly, VRAM runs
+# out abruptly, and the speed falls off where the two cross.
+COMPUTE_BUFFER_MIB_PER_UB_TOKEN = 0.5874
+
+
+def safe_ubatch(headroom_gb, cap=2048):
+    """Largest power-of-two ubatch whose compute buffer fits in `headroom_gb`, or 0.
+
+    This replaces a hard-coded `-ub 2048`, and the replacement is a bug fix, not a refinement.
+    Pre-registration #23 swept the ubatch on the split placement with KV evicted - the exact
+    configuration v1.14.x shipped as the prefill champion - and found a cliff, not a plateau:
+
+        -ub  512  303.32      -ub 1536   381.21  <- buffer 902 MiB, still fits
+        -ub 1024  387.37      -ub 2048   209.64  <- buffer 1203 MiB, does not     -45% in one step
+                              -ub 3072   209.46
+                              -ub 4096   210.84
+
+    Past the edge the runtime does not fail; it silently spills and holds that degraded speed for
+    every larger ubatch. So the failure is invisible to anyone who does not sweep, which is why we
+    shipped it: v1.14.x quoted 391.72 tok/s for a command that delivers 209 on the same box the
+    391.72 was measured on. The difference was ~250 MiB of desktop VRAM - one browser window.
+
+    A HALF of the nominal headroom is required, not all of it: the buffer is not the only thing
+    that grows, and the measured margin between the last good point (902 MiB) and the first bad one
+    (1203 MiB) is under 300 MiB on a 6 GB card. Sizing to the last byte would re-create the cliff
+    one step further out.
+    """
+    budget_mib = max(0.0, headroom_gb) * 1024 * 0.5
+    ub = 0
+    n = 256
+    while n <= cap:
+        if n * COMPUTE_BUFFER_MIB_PER_UB_TOKEN <= budget_mib:
+            ub = n
+        n *= 2
+    return ub
 
 
 # The measured Pareto frontier for a MoE whose experts do not fit VRAM, on the reference box
@@ -143,8 +187,20 @@ def ubatch_flags(placement, vram_resident_gb, vc):
 MOE_FRONTIER = [
     ("KV in VRAM, small batch",         280.64, 20.25, "-b 512 -ub 512"),
     ("all experts to CPU, big batch",   345.41, 18.68, "-b 2048 -ub 2048"),
-    ("evict KV to RAM, big batch",      391.72, 16.54, "-b 2048 -ub 2048 -nkvo 1"),
+    ("evict KV to RAM, safe batch",     386.14, 18.06, "-b 1024 -ub 1024 -nkvo 1"),
 ]
+# Row 3 shipped as `-ub 2048 / 391.72 / 16.54` in v1.14.0-v1.14.1 and that command was ON THE WRONG
+# SIDE OF A CLIFF (pre-registration #23). Re-measured across the ubatch on the same box:
+#
+#   -ub 1024  386.14 pp  18.06 tg   <- shipped now
+#   -ub 1536  381.21 pp
+#   -ub 2048  209.64 pp             <- shipped before: -45.7% prefill, and 16.54 tg
+#
+# The correction costs 1.4% of the quoted prefill number and BUYS 9.2% of decode, so the row is
+# strictly better than the one it replaces on one axis and within noise on the other. The 391.72
+# was not fabricated - it is reproducible on a card with nothing else on it. It is simply not
+# reproducible on a card with a browser open, and advice that needs a clean desktop to hold is
+# advice we should not have given.
 # Two cells are deliberately EXCLUDED because they are dominated on both axes:
 #   all experts to CPU + KV evicted     336.31 / 15.82  - beaten by row 2
 #   split + KV in VRAM + ub 2048        163.39 / 20.13  - beaten by row 1

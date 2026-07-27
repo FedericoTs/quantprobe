@@ -1,0 +1,491 @@
+{
+  "_schema": {
+    "purpose": "Single canonical register of everything this project has measured, refuted, or left untried. Machine-readable source of truth; FINDINGS.md is GENERATED from it by findings.py and must never be hand-edited.",
+    "fields": {
+      "id": "stable identifier, never reused",
+      "kind": "law | lever | dead_end | contradiction | untried | external",
+      "claim": "one sentence, falsifiable, stated as what is true",
+      "magnitude": "the number that matters, with units",
+      "evidence": "prereg number, file:line, or external source",
+      "scope": "the hardware and model class the claim was measured on - a claim outside its scope is a guess",
+      "status": "established | shipped | refuted | open | staked | untested",
+      "confidence": "measured | inferred | speculative",
+      "wired_into": "where it reaches shipped code, or null"
+    },
+    "untried_extra_fields": {
+      "hypothesis": "what we predict, before measuring",
+      "predicted_effect": "staked magnitude - written BEFORE the test, so a miss is visible",
+      "cost": "estimated measurement effort",
+      "protocol": "how to test it",
+      "why_it_is_promising": "which established finding implies this lever should work"
+    },
+    "reference_box": "i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 @ 12.2 GB/s"
+  },
+  "laws": [
+    {
+      "id": "L-01",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Decode speed is bandwidth-bound: tok/s = eta(tier) x BW / active-bytes-per-token.",
+      "magnitude": "+/-25% across 4 measured anchors",
+      "evidence": "LAWS.md Law 4",
+      "scope": "VRAM/RAM/disk tiers, dense and MoE, one GPU",
+      "wired_into": "quantprobe/plan.py:evaluate"
+    },
+    {
+      "id": "L-02",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "KV cache is a first-class bandwidth consumer priced at its own efficiency, ETA_KV = 0.70.",
+      "magnitude": "tg32 20.35 -> 6.30 tok/s from d0 to d16384",
+      "evidence": "prereg #21, LAWS.md Law 4 v2",
+      "scope": "Qwen3-30B-A3B-Q2_K, reference box",
+      "wired_into": "quantprobe/plan.py ETA_KV"
+    },
+    {
+      "id": "L-03",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Quantization fragility is measurable but NOT predictable from architecture; attention and SSM tensors are fragile, embeddings and FFN are not.",
+      "magnitude": "depth-aware recipe protects attn_.*/ssm_.* (+shexp/nextn on MoE)",
+      "evidence": "LAWS.md Law 3",
+      "scope": "measured per-model, does not transfer",
+      "wired_into": "quantprobe recipe"
+    },
+    {
+      "id": "L-04",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Effective rank, not bit-count, is the state variable of quantization; incoherence is rank-conditional.",
+      "magnitude": "gauge hypothesis refuted; cache phase-transition observed",
+      "evidence": "PAPER_MOE round-2",
+      "scope": "MoE weight matrices",
+      "wired_into": null
+    },
+    {
+      "id": "L-05",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Prefill is compute-bound, so the bit ladder runs BACKWARDS there - fewer bits is SLOWER.",
+      "magnitude": "CPU-pure pp2048: Q4_K_M 27.49 > Q4_0 23.73 > Q2_K 17.71 (-36%)",
+      "evidence": "prereg #9 (Law 5 prefill pilot); LAW5_PROTOCOL.md:292 (H12)",
+      "scope": "dense 7B, CPU-pure",
+      "wired_into": "documented; planner does not yet model prefill bits"
+    },
+    {
+      "id": "L-06",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "The VRAM claimants - weights, KV cache, compute buffer - are FUNGIBLE, and fungibility is placement-specific: only a configuration that is actually starved can spend the refund.",
+      "magnitude": "evicting KV recovers 2.42x prefill on the split, and nothing (-3%) on all-experts-to-CPU",
+      "evidence": "prereg #21 P-3",
+      "scope": "reference box, 6 GB VRAM",
+      "wired_into": "quantprobe/plan.py:workload_frontier"
+    },
+    {
+      "id": "L-07",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "There is no single best placement - there is a Pareto frontier selected by the prompt:generation ratio.",
+      "magnitude": "1.33x between best and worst choice across chat/coding/RAG/document-QA",
+      "evidence": "prereg #21, corrected in v1.14.1",
+      "scope": "MoE whose experts exceed VRAM",
+      "wired_into": "quantprobe/plan.py:MOE_FRONTIER + workload_frontier"
+    },
+    {
+      "id": "L-08",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "llama.cpp's CUDA compute buffer is exactly linear in the ubatch, so demand grows smoothly while VRAM supply ends abruptly - producing a cliff, not a taper.",
+      "magnitude": "0.5874 MiB per ubatch token, to four figures; -45% prefill in one -ub step",
+      "evidence": "prereg #23",
+      "scope": "Qwen3-30B-A3B-Q2_K, CUDA backend",
+      "wired_into": "quantprobe/plan.py:safe_ubatch + COMPUTE_BUFFER_MIB_PER_UB_TOKEN"
+    },
+    {
+      "id": "L-09",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "ggml offers host-resident weights to CUDA once the ubatch clears 32 tokens, so host weights cross PCIe once per UBATCH rather than once per token.",
+      "magnitude": "+73% prefill at ub 512 -> 2048 with experts on CPU",
+      "evidence": "prereg #19; ggml-cuda.cu:5565 get_op_batch_size, MUL_MAT_ID -> op->ne[2]",
+      "scope": "CUDA backend, -ot host placements",
+      "wired_into": "quantprobe/plan.py:ubatch_flags"
+    },
+    {
+      "id": "L-10",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "The Gemma MLP weight element stream is white - there is no intra-tensor redundancy for VQ to exploit.",
+      "magnitude": "0 dB coding gain",
+      "evidence": "gemma vq-lens work",
+      "scope": "Gemma-4-12B MLP",
+      "wired_into": "documented dead end"
+    }
+  ],
+  "levers": [
+    {
+      "id": "V-01",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Partial MoE expert offload (-ot blk.(K..N).ffn_.*_exps.=CPU --no-mmap) beats both all-VRAM and all-CPU.",
+      "magnitude": "frontier row at 280.64 pp / 20.25 tg",
+      "evidence": "prereg #13, #20, #21",
+      "scope": "MoE whose experts exceed VRAM",
+      "wired_into": "quantprobe/plan.py placement search"
+    },
+    {
+      "id": "V-02",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Sizing -ub from measured VRAM headroom (never pinning it) is worth up to 73% of prefill and avoids a 45% cliff.",
+      "magnitude": "199.90 -> 345.89 where it applies; -45% where it does not",
+      "evidence": "prereg #19, #20, #23",
+      "scope": "host-resident placements only",
+      "wired_into": "quantprobe/plan.py:safe_ubatch"
+    },
+    {
+      "id": "V-03",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Evicting KV to host RAM (-nkvo 1) buys prefill on a VRAM-starved placement and costs decode.",
+      "magnitude": "3.84x prefill on the split; -47% decode at 16k depth",
+      "evidence": "prereg #21",
+      "scope": "split placement, reference box",
+      "wired_into": "quantprobe/plan.py:MOE_FRONTIER row 3"
+    },
+    {
+      "id": "V-04",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "N-gram speculation (--spec-type ngram-simple) more than doubles code decode at zero download and identical output.",
+      "magnitude": "2.10x on code (17.7 -> 37.2 tok/s); 1.01x on prose",
+      "evidence": "prereg #10 (Law 6 arm S-e)",
+      "scope": "code-like context only",
+      "wired_into": "quantprobe/plan.py speculation advice"
+    },
+    {
+      "id": "V-05",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Depth-aware protection of fragile tensors buys quality at near-zero size.",
+      "magnitude": "see Law 3",
+      "evidence": "prereg #12 (recipe-upgrade shexp+imatrix)",
+      "scope": "per-model",
+      "wired_into": "quantprobe recipe"
+    },
+    {
+      "id": "V-06",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "The probe's band search beats APEX's symmetric prior: real fragility is strictly monotonic and LATE-weighted, not symmetric across depth.",
+      "magnitude": "S-1 HIT sharper than staked (reference PPL 5.4298, WikiText, 40-layer source); out-of-domain rematch confirms calibration generalises - 25.6% on KL against the Q8_0 parent, on a corpus the imatrix never saw",
+      "evidence": "prereg #11 (apex-vs-probe-depthaware), prereg #14 (apex-rematch-ood-kl)",
+      "scope": "depth-aware recipe search, measured per-model",
+      "wired_into": "quantprobe recipe band search"
+    },
+    {
+      "id": "V-07",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Dense models have a measurable PROTECTED share of activated bytes - the attention tensors that stay high-precision - so dense speed responds to bit-width instead of being flat in it.",
+      "magnitude": "DENSE_PROTECTED_SHARE = 0.214, the mean attention share read from GGUF tensor shapes: 10.8% Qwen2.5-7B, 20.2% gemma4-12B, 25.1% Qwen3.5-4B, 29.6% Qwen3-0.6B",
+      "evidence": "prereg #17 (dense-activation-model) - P-1 HIT, P-2 HIT decisively, P-3 MISS",
+      "scope": "dense models, four architectures measured",
+      "wired_into": "quantprobe/plan.py:DENSE_PROTECTED_SHARE"
+    }
+  ],
+  "dead_ends": [
+    {
+      "id": "D-01",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Reducing expert count (top-k 8->4) for DECODE is strictly dominated by simply quantizing further.",
+      "magnitude": "k=4: 1.335x speed for 1.206x perplexity. Bit ladder: 1.424x for 1.048x - faster AND 4x cheaper.",
+      "evidence": "prereg #18",
+      "scope": "Qwen3-30B-A3B decode",
+      "wired_into": "not shipped, deliberately"
+    },
+    {
+      "id": "D-02",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Intra-tensor VQ on Gemma MLP weights cannot pay - the stream is white.",
+      "magnitude": "0 dB coding gain",
+      "evidence": "gemma vq-lens",
+      "scope": "Gemma-4-12B MLP",
+      "wired_into": null
+    },
+    {
+      "id": "D-03",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "k-means matched-rate VQ is a runtime trap - decode cost swamps the compression win.",
+      "magnitude": "n/a",
+      "evidence": "gemma vq-lens",
+      "scope": "general",
+      "wired_into": null
+    },
+    {
+      "id": "D-04",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Two frontier cells are dominated on BOTH axes and must never be recommended.",
+      "magnitude": "all-experts-CPU + KV evicted 336.31/15.82; split + KV VRAM + ub2048 163.39/20.13",
+      "evidence": "prereg #21",
+      "scope": "reference box",
+      "wired_into": "quantprobe/plan.py MOE_FRONTIER exclusion comment"
+    },
+    {
+      "id": "D-05",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "inferred",
+      "claim": "Forking or patching llama.cpp is not worth it in the VRAM/host-resident regimes - a PERFECT custom runtime buys single-digit percent.",
+      "magnitude": "1-6% realistic; 14.3% closed-form ceiling from (a-1)(b-1)/((a-1)+(b-1))",
+      "evidence": "phase-split analysis, prereg #20",
+      "scope": "EXPLICITLY NOT the disk-streaming tier - ds4 shows ~7x there",
+      "wired_into": "documented decision not to fork"
+    },
+    {
+      "id": "D-06",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "The sub-4-bit decode collapse is a FORMAT property, not a bit-width property - gating on bits was wrong.",
+      "magnitude": "gl=0.04 gate removed",
+      "evidence": "prereg #16",
+      "scope": "all",
+      "wired_into": "quantprobe/plan.py geta_w = geta"
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "C-01",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "MODELS['glm-744b']['kvp'] = 188416 is 30-60x too large, making GLM-family predictions wrong.",
+      "magnitude": "30-60x",
+      "evidence": "cross-model plausibility sweep",
+      "scope": "GLM family",
+      "wired_into": "NOT FIXED - task #17",
+      "next_action": "read GLM-5.2's actual attention architecture; do NOT back-solve from a datapoint"
+    },
+    {
+      "id": "C-02",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "The law under-predicts the MOST COMMON configuration - a model that simply fits in VRAM - by up to +85%, because eta rises with bytes per token instead of being the constant 0.35 the law assumes.",
+      "magnitude": "8 all-in-VRAM points across two sessions. Ordered by GB/token: 0.6B-Q8_0 0.73GB +12% (eta 0.354) | 7B-Q2_K ~2.9GB +20% | 4B-Q4_K_M 3.24GB +50% (eta 0.461) | 7B-Q4_K_M 5.38GB +85% (eta 0.560). Monotone above 0.73 GB/token; 0.5B-Q8_0 is an outlier at +31%.",
+      "evidence": "prereg #15 (law4-v3-overhead-term, 2026-07-26) + weights/data/eta_vram_underprediction.log (2026-07-27); verify.py layer 3 FAILS on this",
+      "scope": "dense models fully resident, GTX 1060 6GB",
+      "wired_into": "disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow",
+      "priority": 1,
+      "why_it_is_the_top_item": "It is the placement most users land on, it is the one we undersell, and underselling -ngl 99 pushes people toward complicated offload placements that are actually SLOWER for them. Every other finding in this register is about configurations that are harder than the default.",
+      "what_the_data_rules_out": "(a) The FIXED-OVERHEAD model, refuted decisively by prereg #15: it predicted a small model would be SLOW and the 0.6B is fast, with the existing law right to within 1.5% there. (b) GPU clock state - cold 144.21 vs warm 143.37, a hypothesis stated before the test and refuted by it. (c) Gate model-selection - the 7B misses by MORE than the 0.5B. (d) A FORMAT term, which was my first reading of the two 7Bs today: they differ by 65 points, but they also differ in bytes per token, and once ordered by that axis the format explanation is unnecessary.",
+      "leading_hypothesis": "eta is not a constant but rises with bytes per token - 0.354 -> 0.461 -> 0.560 across the measured span. Larger tensors plausibly use this GPU's memory system better (coalescing, fewer kernel launches per byte of work), but prereg #15 already refused to fit a curve to three points and that refusal still stands at eight.",
+      "next_action": "A SINGLE-SESSION sweep across bytes per token at fixed architecture and format. This is not optional bookkeeping: the 4B measured 27.30 +/- 0.08 on 2026-07-26 and 30.89 +/- 0.07 on 2026-07-27 - tight error bars within each session, 13% apart between them. Any eta fitted across sessions would be fitting that drift. Only after a within-session curve is there something worth staking, and layer 4's anchors must be checked for all-in-VRAM membership before any constant moves.",
+      "also_establishes": "Between-session drift of 10-13% on decode with sub-1% within-session error bars. C-04 recorded this for prefill; it is now known for decode too, and it bounds what any single session can conclude."
+    },
+    {
+      "id": "C-03",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "verify.py layer 3 is sensitive to GPU clock state - the same 0.5B model measures across the +/-25% band depending on whether the card is warm.",
+      "magnitude": "+30% warm vs prediction",
+      "evidence": "2026-07-27 gate run",
+      "scope": "verify layer 3 on the smallest model",
+      "wired_into": "NOT FIXED",
+      "next_action": "either fix the clock state before measuring, or stop selecting the smallest model - a 0.5B decode is overhead-dominated and is the worst possible test of a bandwidth law"
+    },
+    {
+      "id": "C-04",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "Absolute prefill figures are not stable across invocation shapes, only ratios are.",
+      "magnitude": "split/nkvo0/ub2048 measured 85.47 swept alone vs 161.59 in the full matrix",
+      "evidence": "prereg #21 reproducibility note",
+      "scope": "reference box",
+      "wired_into": "flagged, not averaged away",
+      "next_action": "any future use of an absolute figure needs its own controlled run"
+    }
+  ],
+  "untried": [
+    {
+      "id": "U-01",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "KV cache quantization (-ctk q8_0 -ctv q8_0) is the cheapest way to free the fungible claimant.",
+      "hypothesis": "Halving KV bytes frees VRAM that L-06 proves converts directly into compute-buffer headroom, so it should buy BOTH decode (fewer KV bytes to re-read, L-02) and prefill (bigger safe ubatch, L-08) at once - the only lever we know of that pays on both axes.",
+      "predicted_effect": "at 16k depth: decode +20% to +40%; safe ubatch one step larger; may make -nkvo 1 unnecessary entirely",
+      "cost": "1 hour",
+      "why_it_is_promising": "L-02 + L-06 + L-08 jointly imply it, and we have never tested it",
+      "protocol": "llama-bench -ctk/-ctv {f16,q8_0,q4_0} x -d {0,16384} x {split, all-CPU}; measure perplexity cost separately before shipping",
+      "priority": 1
+    },
+    {
+      "id": "U-02",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "MoE expert routing is skewed, so frequency-ranked expert residency beats the contiguous blk-range split we currently ship.",
+      "hypothesis": "Our split assigns experts to VRAM by LAYER INDEX, which is arbitrary with respect to how often each expert is actually selected. Ranking experts by measured activation frequency and pinning the hot ones should dominate a contiguous range at identical VRAM cost.",
+      "predicted_effect": "+15% to +40% decode at the same VRAM budget, IF routing entropy is well below uniform",
+      "cost": "1 day (needs a routing-frequency instrument first)",
+      "why_it_is_promising": "PowerInfer's hot/cold neuron result is the dense analogue and it is large; our split is currently index-based purely because that is what -ot regexes address",
+      "protocol": "instrument expert selection counts over a representative corpus; build an -ot regex from the top-N experts; compare against the contiguous split at matched VRAM",
+      "priority": 2
+    },
+    {
+      "id": "U-03",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "Page-locked (pinned) host memory raises the effective PCIe rate for host-resident expert tensors.",
+      "hypothesis": "Pageable host memory forces the driver through a staging buffer. Our whole host-resident regime is priced at 12.2 GB/s; if that figure is a pageable-memory artifact, the ceiling on every -ot placement moves.",
+      "predicted_effect": "up to +30% on host-resident prefill if currently pageable; 0% if llama.cpp already pins",
+      "cost": "2 hours",
+      "why_it_is_promising": "it would move a constant that every host-resident prediction depends on",
+      "protocol": "first READ llama.cpp's host buffer allocation path to see whether it already uses cudaHostAlloc; only measure if it does not",
+      "priority": 3
+    },
+    {
+      "id": "U-04",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "Prompt/prefix cache reuse dwarfs every placement lever on RAG and document-QA workloads.",
+      "hypothesis": "L-07 says document-QA (200:1) is the workload where placement matters most. But a reused prefix skips prefill ENTIRELY, which is not a percentage improvement - it is a different asymptote.",
+      "predicted_effect": "10x+ on repeated-prefix workloads; 0x on fresh prompts",
+      "cost": "3 hours",
+      "why_it_is_promising": "our frontier optimises the cost of doing prefill; this avoids it",
+      "protocol": "llama-server with --prompt-cache / slot restore; measure time-to-first-token on repeated vs fresh prefixes",
+      "priority": 2
+    },
+    {
+      "id": "U-05",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "Batch>1 (parallel slots) changes which placement wins, because it amortises host-weight transfer across concurrent requests.",
+      "hypothesis": "L-09 says host weights cross PCIe once per ubatch. Concurrent slots fill ubatches that a single stream cannot, so the all-experts-to-CPU placement should improve superlinearly with slot count while all-in-VRAM stays flat.",
+      "predicted_effect": "the frontier reorders at -np 4; aggregate throughput +2x to +4x on the offloaded placements",
+      "cost": "4 hours",
+      "why_it_is_promising": "every measurement in this project is -np 1, so an entire dimension is unexplored",
+      "protocol": "llama-bench/llama-server at -np {1,2,4,8} across the three frontier rows; report aggregate AND per-request rates",
+      "priority": 1
+    },
+    {
+      "id": "U-06",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "The disk-streaming tier has ~7x available that our fork verdict (D-05) explicitly does not cover.",
+      "hypothesis": "D-05 concluded a custom runtime buys 1-6%, but scoped that to the VRAM/host-resident regimes. antirez/ds4 reports order-of-magnitude gains on streaming, where the bottleneck is I/O scheduling rather than bandwidth accounting.",
+      "predicted_effect": "unknown; the point is that our own verdict has a hole in it",
+      "cost": "1 day to characterise",
+      "why_it_is_promising": "it is the one regime where we have already said our no-fork conclusion does not apply",
+      "protocol": "reproduce ds4's approach on the reference box's SATA MX500; compare against our stream-from-disk tier",
+      "priority": 3
+    },
+    {
+      "id": "U-07",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.",
+      "hypothesis": "D-01 killed top-k for decode. Prereg #22 showed the PREFILL prize reaches every shipped placement at +21% to +63%. The open question is whether the +20.6% perplexity cost attaches to ingestion or only to generation.",
+      "predicted_effect": "if the cost is generation-only, asymmetric top-k is real and ships as an upstream PR, never a fork",
+      "cost": "1 day",
+      "why_it_is_promising": "prereg #22 Stage 1 passed its own kill rule",
+      "protocol": "slot save/restore between a k=4 and a k=8 server; measure perplexity attributable to each phase",
+      "priority": 2
+    },
+    {
+      "id": "U-08",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "A draft MODEL (not n-gram) extends V-04's 2.10x from code to prose.",
+      "hypothesis": "ngram-simple gains nothing on prose (1.01x) because it drafts by copying spans from context. A small draft model generalises where copying cannot.",
+      "predicted_effect": "1.5x to 2x on prose decode, at the cost of VRAM for the draft model - which L-06 says competes with everything else",
+      "cost": "4 hours",
+      "why_it_is_promising": "V-04 is our largest single measured decode win and it currently only fires on one content type",
+      "protocol": "Qwen2.5-0.5B as draft for a 7B target; sweep draft length; the VRAM cost must be charged against the frontier, not ignored",
+      "priority": 3
+    }
+  ],
+  "external": [
+    {
+      "id": "E-01",
+      "kind": "external",
+      "status": "open",
+      "repo": "kvcache-ai/ktransformers",
+      "why": "The closest prior art to our entire MoE offload thesis - heterogeneous CPU/GPU MoE inference with explicit expert placement. If they have solved expert residency we should adopt rather than rediscover.",
+      "question_to_answer": "How do they choose WHICH experts stay resident? Index-based like ours, or frequency-based like U-02?",
+      "priority": 1
+    },
+    {
+      "id": "E-02",
+      "kind": "external",
+      "status": "open",
+      "repo": "SJTU-IPADS/PowerInfer",
+      "why": "Hot/cold neuron residency driven by measured activation frequency - the dense analogue of U-02, and the strongest published evidence that frequency-ranked placement beats index-ranked.",
+      "question_to_answer": "What is the measured routing/activation skew, and does it hold for MoE experts as well as dense neurons?",
+      "priority": 1
+    },
+    {
+      "id": "E-03",
+      "kind": "external",
+      "status": "reviewed",
+      "repo": "antirez/ds4",
+      "why": "Reported ~7x on the disk-streaming tier - the one regime our no-fork verdict (D-05) does not cover.",
+      "question_to_answer": "Is the gain I/O scheduling, or a different quantization? See U-06.",
+      "priority": 2
+    },
+    {
+      "id": "E-04",
+      "kind": "external",
+      "status": "reviewed",
+      "repo": "tonyd2wild/GLM-5.2-Abliterated-NVFP4-316K-4x-DGX-Spark",
+      "why": "A GLM-5.2 deployment at known hardware - the datapoint that could close C-01 without back-solving.",
+      "question_to_answer": "What attention architecture does the config declare? That is the input C-01 needs.",
+      "priority": 1
+    },
+    {
+      "id": "E-05",
+      "kind": "external",
+      "status": "open",
+      "repo": "vllm-project/vllm and sgl-project/sglang",
+      "why": "Paged attention and automatic prefix caching are the production form of U-04.",
+      "question_to_answer": "What hit rate does prefix caching achieve on RAG-shaped workloads, and what is the memory overhead of paging?",
+      "priority": 2
+    }
+  ]
+}

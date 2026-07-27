@@ -366,6 +366,63 @@ def t_workload_frontier_is_pareto():
         f"long-prompt spread only {rag['speedup_vs_worst']:.2f}x - not worth a recommendation"
 
 
+def t_ubatch_is_sized_not_pinned():
+    """The ubatch must be SIZED from headroom, never pinned - the buffer is linear, VRAM is not.
+
+    Pre-registration #23 measured llama.cpp's CUDA compute buffer at 0.5874 MiB per ubatch token,
+    linear to four figures (601.50 / 902.25 / 1203.00 MiB at ub 1024 / 1536 / 2048). Demand grows
+    smoothly; supply ends abruptly; prefill therefore falls off a CLIFF rather than tapering:
+    381.21 -> 209.64 tok/s in a single -ub step, then flat for every larger value.
+
+    A pinned `-ub 2048` is correct only for whoever has the headroom for it. This asserts the
+    emitted ubatch actually fits the budget it was derived from, and that a tighter card gets a
+    SMALLER ubatch rather than the same one with a warning attached.
+    """
+    from quantprobe.plan import safe_ubatch, ubatch_flags, COMPUTE_BUFFER_MIB_PER_UB_TOKEN
+    # never promise a buffer the headroom cannot hold (half the budget, per the measured margin)
+    for headroom in (0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0):
+        ub = safe_ubatch(headroom)
+        if ub:
+            assert ub * COMPUTE_BUFFER_MIB_PER_UB_TOKEN <= headroom * 1024 * 0.5,                 f"ub {ub} needs {ub*COMPUTE_BUFFER_MIB_PER_UB_TOKEN:.0f} MiB, headroom {headroom} GB"
+            assert ub & (ub - 1) == 0, f"ubatch {ub} is not a power of two"
+    # monotone: more headroom never yields a smaller ubatch
+    sizes = [safe_ubatch(h) for h in (0.5, 1.0, 2.0, 4.0, 8.0)]
+    assert sizes == sorted(sizes), f"ubatch not monotone in headroom: {sizes}"
+    # a roomy card still gets the measured-best 2048; a tight one gets less, not a caveat
+    assert safe_ubatch(6.0) == 2048, "roomy card should still reach the measured optimum"
+    assert safe_ubatch(1.5) < 2048, "tight card must step DOWN, not be handed the cliff"
+    # and the flag string the CLI emits has to agree with the sizer
+    fl = ubatch_flags("hybrid: attention->VRAM, experts->RAM", 0.7, 6)
+    assert fl and str(safe_ubatch(6 * 0.90 - 0.7)) in fl, f"flags disagree with sizer: {fl}"
+
+
+def t_frontier_rows_are_off_the_cliff():
+    """No frontier row may quote a figure measured at the edge of VRAM.
+
+    v1.14.0 shipped `-ub 2048 -nkvo 1` at 391.72 tok/s. The identical command measures 209.64 on
+    the same box with ~250 MiB more desktop VRAM held - one browser window, a 1.85x flip. The
+    number was real and reproducible; it was simply a peak sitting one step from a 45% cliff, and
+    quoting it as a property of the configuration is what made it wrong.
+
+    This test is the cheap, permanent form of that lesson: any row asking for `-ub 2048` alongside
+    a placement that already fills VRAM is refused, because we have measured that combination and
+    it does not survive an ordinary desktop.
+    """
+    import re as _re
+    from quantprobe.plan import MOE_FRONTIER, COMPUTE_BUFFER_MIB_PER_UB_TOKEN
+    for lab, pp, tg, flags in MOE_FRONTIER:
+        m = _re.search(r"-ub\s+(\d+)", flags)
+        assert m, f"frontier row has no explicit ubatch: {lab}"
+        ub = int(m.group(1))
+        # the split fills VRAM with experts; evicting KV buys back ~1 GB, not ~2
+        if "-nkvo" in flags:
+            buf = ub * COMPUTE_BUFFER_MIB_PER_UB_TOKEN
+            assert buf <= 902,                 f"row '{lab}' asks {buf:.0f} MiB of compute buffer; measured cliff is above 902 MiB"
+        assert pp > 0 and tg > 0, f"frontier row {lab} has a non-positive rate"
+    # the row that was wrong must stay fixed: no 2048 next to -nkvo, ever again
+    assert not any("-ub 2048" in f and "-nkvo" in f for _, _, _, f in MOE_FRONTIER),         "the v1.14.0 cliff configuration is back on the frontier"
+
+
 def t_ubatch_only_when_host_resident():
     """-ub is a prefill lever for HOST-resident weights only, and it is measured to hurt otherwise.
 
