@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 10 |
 | Shipped levers | 7 |
 | Measured dead ends | 6 |
-| Open contradictions | 4 |
+| Open contradictions | 5 |
 | Untried levers | 8 |
 | External work to study | 5 |
 
@@ -169,21 +169,29 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
 
-### C-02 — The law under-predicts the MOST COMMON configuration - a model that simply fits in VRAM - by up to +85%, because eta rises with bytes per token instead of being the constant 0.35 the law assumes.
+### C-02 — The law under-predicts the MOST COMMON configuration - a model that simply fits in VRAM - by up to +81%, because eta is a property of the QUANTIZATION FORMAT CLASS and the law treats it as one constant across all formats.
 
-**Magnitude:** 8 all-in-VRAM points across two sessions. Ordered by GB/token: 0.6B-Q8_0 0.73GB +12% (eta 0.354) | 7B-Q2_K ~2.9GB +20% | 4B-Q4_K_M 3.24GB +50% (eta 0.461) | 7B-Q4_K_M 5.38GB +85% (eta 0.560). Monotone above 0.73 GB/token; 0.5B-Q8_0 is an outlier at +31%.
+**Magnitude:** 13 all-in-VRAM points across three sessions. By format class: sub-4-bit (Q2_K, IQ3_XS, IQ3_M) eta = 0.425 / 0.436 / 0.443 - FLAT within 4% while bytes per token move 13%. 4-bit (Q4_K_M) eta = 0.510 (4B) and 0.631 (7B), with prereg #15 independently measuring 0.461 and 0.560 for the same two. The law assumes 0.35 for all of them.
 
 **Why this is the top item:** It is the placement most users land on, it is the one we undersell, and underselling -ngl 99 pushes people toward complicated offload placements that are actually SLOWER for them. Every other finding in this register is about configurations that are harder than the default.
 
-**What the data rules out:** (a) The FIXED-OVERHEAD model, refuted decisively by prereg #15: it predicted a small model would be SLOW and the 0.6B is fast, with the existing law right to within 1.5% there. (b) GPU clock state - cold 144.21 vs warm 143.37, a hypothesis stated before the test and refuted by it. (c) Gate model-selection - the 7B misses by MORE than the 0.5B. (d) A FORMAT term, which was my first reading of the two 7Bs today: they differ by 65 points, but they also differ in bytes per token, and once ordered by that axis the format explanation is unnecessary.
+**What the data rules out:** (a) FIXED OVERHEAD - refuted decisively by prereg #15. (b) GPU CLOCK STATE - cold 144.21 vs warm 143.37, a hypothesis stated before the test and refuted by it. (c) GATE MODEL-SELECTION - the 7B misses by MORE than the 0.5B. (d) BYTES PER TOKEN AS THE PRIMARY AXIS - refuted by prereg #24's control point, which has FEWER bytes per token than every sub-4-bit 7B point (3.25 vs 3.76-4.26) and a HIGHER eta (0.510 vs 0.425-0.443). That ordering is impossible if bytes drive eta. Note this also overturns my own reading earlier the same day, when arm A's monotonicity looked like support for the bytes axis - it is confounded, because within one architecture bytes and bit-width rise together.
 
-**Leading hypothesis:** eta is not a constant but rises with bytes per token - 0.354 -> 0.461 -> 0.560 across the measured span. Larger tensors plausibly use this GPU's memory system better (coalescing, fewer kernel launches per byte of work), but prereg #15 already refused to fit a curve to three points and that refusal still stands at eight.
+**Leading hypothesis:** TWO factors, neither sufficient alone. (1) FORMAT CLASS sets the level: at matched bytes, 4-bit kernels run far closer to peak bandwidth than sub-4-bit ones, plausibly because sub-4-bit dequantisation costs more compute per byte delivered. (2) WITHIN a format, eta still rises with size - Q4_K_M 0.510 -> 0.631 here, 0.461 -> 0.560 in #15, same direction both sessions.
 
-**Also establishes:** Between-session drift of 10-13% on decode with sub-1% within-session error bars. C-04 recorded this for prefill; it is now known for decode too, and it bounds what any single session can conclude.
+**Also establishes:** Between-session drift is 10-13% on decode against sub-1% within-session error bars, now measured three times on the same 4B model: 27.30 (07-26), 30.89 (07-27 early), 30.03 (07-27 late). C-04 recorded this for prefill; it holds for decode too, and it bounds what any single session can conclude.
 
-**Next action:** A SINGLE-SESSION sweep across bytes per token at fixed architecture and format. This is not optional bookkeeping: the 4B measured 27.30 +/- 0.08 on 2026-07-26 and 30.89 +/- 0.07 on 2026-07-27 - tight error bars within each session, 13% apart between them. Any eta fitted across sessions would be fitting that drift. Only after a within-session curve is there something worth staking, and layer 4's anchors must be checked for all-in-VRAM membership before any constant moves.
+**Next action:** BLOCKED on the layer-4 anchor audit, which must run first: if any anchor is all-in-VRAM and currently retrodicted correctly, it is in direct conflict with a +81% miss on the same tier and THAT conflict is the result. After that, a per-format eta needs a SECOND GPU before any published number moves - every point here is one memory system, and '4-bit kernels use it better' is a hypothesis about a GTX 1060. Between-session drift of 10-13% with sub-1% within-session error bars (prereg #24 P-3) means no fit may cross a session boundary.
 
-`open` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #15 (law4-v3-overhead-term, 2026-07-26) + weights/data/eta_vram_underprediction.log (2026-07-27); verify.py layer 3 FAILS on this · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
+`open` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
+
+### C-05 — A recurring failure mode has now bitten this project twice: a quantity assumed CONSTANT across quantization formats turns out to be a property OF the format.
+
+**Magnitude:** D-06 (the sub-4-bit decode collapse was format-dependent, not bit-width-dependent) and C-02 (eta is format-class-dependent, not constant)
+
+**Next action:** Audit EVERY remaining constant in plan.py for the same assumption, before a user finds the third instance. ETA_KV = 0.70 is the obvious next candidate: it was fitted without varying the KV cache TYPE, and register entry U-01 is about to vary exactly that. If the pattern holds a third time it stops being a coincidence and becomes something the five-layer gate should test for directly.
+
+`open` · `inferred` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token) · wired into: `nothing yet - this is a lint waiting to be written`
 
 ### C-01 — MODELS['glm-744b']['kvp'] = 188416 is 30-60x too large, making GLM-family predictions wrong.
 
