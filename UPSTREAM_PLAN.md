@@ -66,3 +66,46 @@ not worth upstream's review bandwidth and we stop at deliverable #1.
 - No fork (D-05: distribution + maintenance; every other component at the wall).
 - No expert-major dispatch (E2c: measured null).
 - No scheduling flags (six arms, all flat, #31).
+
+---
+
+## Prototype session 1 (2026-07-27, same day): deliverables 2+3 BUILT and correctness-proven
+
+Both fusions implemented in `ggml_cpu_try_fuse_ops` (experiment E4, `tools/llama.cpp-src`),
+each runtime-toggleable (`GGML_FUSE_TOPK`, `GGML_FUSE_ADDCHAIN`), each with a first-fire banner:
+
+- **E4a topk-moe**: 8-node chain ARGSORT→…→DIV fused into one thread-0 pass. Two hard-won
+  correctness properties: (1) it starts at ARGSORT and consumes ggml's OWN softmax output — a
+  first version re-implemented softmax with `expf`, diverged from ggml's SIMD exp in the low
+  bits, and flipped a temp-0 argmax; (2) it BAILS OUT per-token on probability ties, because
+  ggml's argsort is `std::sort` with a strict comparator — unstable — and no reimplementation
+  can replicate implementation-defined tie order. The bailout is computed identically by every
+  thread, so barrier counts stay in lockstep.
+- **E4b add-chain**: the 8-long dependent ADD run (expert aggregation + residual) fused into one
+  accumulation with unchanged float order — bit-identical by construction.
+- **The segfault that taught the real lesson**: the graph allocator reuses buffers, so fused
+  outputs can ALIAS the inputs still being read — corrupted expert ids, out-of-bounds vec_dot,
+  SIGSEGV in `MUL_MAT_ID`, nondeterministic. This is exactly why the CUDA fusion calls
+  `ggml_cuda_check_fusion_memory_ranges`; the CPU port now has its analogue
+  (`e4_ranges_overlap`), and any upstream PR must carry it.
+
+**Correctness gate: PASSED.** 48-token temp-0 generation, both fusions on vs all off:
+byte-identical output (996/996 chars, same SHA), crash-free under gdb.
+
+**Speed vs the staked +5–12% (spin-barrier build, tg32, t=4, r=3):**
+
+| mode | tok/s |
+|---|---|
+| baseline | 16.14 ± 1.24 |
+| topk-only | 17.67 ± 0.90 (+9.5%) |
+| addchain-only | 16.65 ± 2.74 |
+| both | 16.94 ± 1.50 (+5.0%) |
+
+Point estimates sit INSIDE the staked band; error bars (inflated by a full day of thermal load on
+this box) overlap. Verdict: **consistent with the stake, not yet demonstrated at publication
+quality.** Before the upstream PR quotes any number: a clean-session r=5 A/B, cold start, GPU
+idle, plus the E3 barrier-count delta. The stop rule (+3%) is NOT triggered.
+
+Cumulative CPU decode on this box, same model, one day: 11.92 (gomp build) → 13.15 (shipped) →
+16.64 (spin barrier) → **~17.7 point estimate with fusion** — +48% over the shipped binary so
+far, all measured, all reproducible, no fork.

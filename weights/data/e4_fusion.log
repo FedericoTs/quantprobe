@@ -1,0 +1,6 @@
+=== E4 correctness gate: fused vs unfused output must be IDENTICAL (temp 0, 48 tokens) ===
+=== E4 speed A/B: spin-barrier build, tg32 t=4 r=3 (gate: byte-identity PASSED) ===
+  baseline       16.14 ± 1.24
+  topk-only      17.67 ± 0.90
+  addchain-only  16.65 ± 2.74
+  both           16.94 ± 1.50
