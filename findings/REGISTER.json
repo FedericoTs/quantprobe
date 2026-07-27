@@ -198,7 +198,7 @@
       "status": "shipped",
       "confidence": "measured",
       "claim": "N-gram speculation doubles decode when the OUTPUT REUSES ITS CONTEXT - the axis is copy-vs-novel, not code-vs-prose as originally shipped.",
-      "magnitude": "Flagship, split placement, chat template, coherent output (prereg #28): edit task 2.41x (20.73 -> 50.04 tok/s, 89% acceptance) - ABOVE the 41.1 raw-decode wall; novel code 0.98x at 0% acceptance; novel prose 1.00x. Dense 7B (original): 2.10x on code. The original 'code vs prose' framing was a proxy: code tasks are usually copy-heavy and prose tasks usually novel, but the edit IS the variable. Also measured: the staked temp-0 raw-continuation harness produced a repetition loop whose 100% acceptance inflated ngram to 1.82-1.96x on garbage output - caught by reading the completion, re-measured under the chat template.",
+      "magnitude": "Flagship, split placement, chat template, coherent output (prereg #28): edit task 2.41x (20.73 -> 50.04 tok/s, 89% acceptance) - ABOVE the 41.1 raw-decode wall; novel code 0.98x at 0% acceptance; novel prose 1.00x. Dense 7B (original): 2.10x on code. The original 'code vs prose' framing was a proxy: code tasks are usually copy-heavy and prose tasks usually novel, but the edit IS the variable. Also measured: the staked temp-0 raw-continuation harness produced a repetition loop whose 100% acceptance inflated ngram to 1.82-1.96x on garbage output - caught by reading the completion, re-measured under the chat template. COMPOSITION (prereg #35): speculation and q8_0 KV are independent multipliers - stack measured 49.42 vs 47.61 predicted from the product (ratio 1.038, no destructive interference), and output is byte-identical at both KV precisions.",
       "evidence": "prereg #10 (Law 6 arm S-e, dense), prereg #28 (flagship, re-scoped)",
       "scope": "llama-server only - llama-cli silently ignores --spec-type (measured as a 1.00x that was the flag not existing)",
       "wired_into": "quantprobe/plan.py:speculation_advice"
@@ -241,9 +241,9 @@
       "kind": "lever",
       "status": "open",
       "confidence": "measured",
-      "claim": "Quantizing the KV cache to q8_0 and KEEPING it in VRAM dominates the shipped 'evict KV to RAM' row - tied prefill, 3.04x the decode at 16k depth.",
-      "magnitude": "split placement, -fa 1, r=3, one session. tg32 @ d16384: q8_0-in-VRAM 10.59 vs -nkvo-1 3.48 (3.04x); tg32 @ d0: 20.18 vs 17.06 (+18%); pp2048: 382.17 vs 386.14 (-1.0%, inside the error bar). Against f16 KV in VRAM, q8_0 is +37.0% at depth and -3.3% at d0.",
-      "evidence": "prereg #25 (kv-cache-quantization)",
+      "claim": "Quantizing the KV cache to q8_0 pays AT DEPTH ONLY - it dominates the shipped 'evict KV' row at 16k, and it is a ~6% net COST at chat-length context, where the dequant work is paid every token for a negligible byte saving.",
+      "magnitude": "split placement, -fa 1, r=3, one session. tg32 @ d16384: q8_0-in-VRAM 10.59 vs -nkvo-1 3.48 (3.04x); tg32 @ d0: 20.18 vs 17.06 (+18%); pp2048: 382.17 vs 386.14 (-1.0%, inside the error bar). Against f16 KV in VRAM, q8_0 is +37.0% at depth and -3.3% at d0. DEPTH CONDITION (prereg #35): at ~1k context on the same split placement, q8_0 KV measures 20.38 vs f16 21.64 = 0.942x - a 5.8% loss. The +37% is a 16k-depth result and must not be quoted at short context.",
+      "evidence": "prereg #25 (kv-cache-quantization); prereg #35 (the depth condition and the composition test)",
       "scope": "Qwen3-30B-A3B-Q2_K, split placement, GTX 1060 6GB - one architecture, one flag varied",
       "wired_into": "NOT SHIPPED. Blocked on the perplexity cost, a condition written into the stake before any number existed: D-01 killed a 1.335x lever for costing 1.206x perplexity, and 3.04x is exactly when skipping that step is most tempting."
     },
