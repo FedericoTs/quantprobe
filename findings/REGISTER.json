@@ -204,7 +204,8 @@
       "scope": "llama-server only - llama-cli silently ignores --spec-type (measured as a 1.00x that was the flag not existing)",
       "wired_into": "quantprobe/plan.py:speculation_advice (flag pair + the measured 4.15x)",
       "counterintuitive_note": "Acceptance rate is the WRONG optimisation target. It FALLS from 100% (m=24) to 66.8% (m=384) while throughput rises from 46 to 90 tok/s. Rejected drafts are nearly free; skipped weight reads are not. Anyone tuning speculation by maximising acceptance will tune it backwards.",
-      "the_hidden_variable": "Across n=20->4 drafted tokens move only +5% (1068->1121) while throughput moves +40%. Tokens drafted is not the variable; VERIFY ROUNDS are - the same drafted tokens delivered in fewer, longer runs, each round costing one full weight read. Confirmed independently in #36 (throughput rose while drafted/accepted froze). Neither draft_n nor acceptance measures it. n=2 is the proof: it drafts the MOST (1486) and accepts the most (775) and is 25% SLOWER than n=4, because a 2-token lookup matches noise and produces many short quickly-rejected runs."
+      "the_hidden_variable": "Across n=20->4 drafted tokens move only +5% (1068->1121) while throughput moves +40%. Tokens drafted is not the variable; VERIFY ROUNDS are - the same drafted tokens delivered in fewer, longer runs, each round costing one full weight read. Confirmed independently in #36 (throughput rose while drafted/accepted froze). Neither draft_n nor acceptance measures it. n=2 is the proof: it drafts the MOST (1486) and accepts the most (775) and is 25% SLOWER than n=4, because a 2-token lookup matches noise and produces many short quickly-rejected runs.",
+      "identity_scope_note": "Temp-0 identity claims in this project compare MATCHED REQUEST INDEX. Measured in prereg #38: request 1 and request 2 of the same server produce different output (sha 65985276565a vs 28a5c1e1c014) with AND without speculation - that is prompt-cache reuse (cache_prompt defaults true; reused KV is not bit-identical to freshly computed KV), not a speculation effect. Across arms at the same request index, every speculation configuration is byte-identical. Earlier harnesses reported only the last request's sha, so they were comparing req2 to req2 - valid, but blind to this."
     },
     {
       "id": "V-05",
@@ -409,6 +410,19 @@
       "evidence": "prereg #31 arms K0-K4",
       "scope": "reference box (4-core i5-7600K), split placement, llama.cpp b10098 defaults",
       "wired_into": "nothing to ship - the absence of a flag IS the result"
+    },
+    {
+      "id": "D-12",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "The CHAINING drafter (ngram-mod) loses to the dumb contiguous-copy drafter (ngram-simple) on copy-regime output, and its cross-request table POISONS rather than helps.",
+      "magnitude": "Request 1 of a fresh server, edit task, split placement: ngram-simple m384/n4 109.52 tok/s vs ngram-mod tuned 86.42-86.63 (-21%) and ngram-mod at defaults 57.41 (-48%). Raising n_max 512->1024 changes nothing (556 drafted in both): the chain dies on a hash miss long before either cap. Request 2 is 17-25% SLOWER than request 1 (86.42->71.75, 86.63->64.65) while drafting 75% MORE (556->976) at collapsed acceptance (65.6%->39.3%).",
+      "evidence": "prereg #38; source study of llama.cpp@f113e02 (speculative.cpp:1860-1872 chaining, 1811-1813 no-clear accumulation, ngram-map.cpp:96 the single-span copy)",
+      "scope": "copy-regime output (edits/refactors/quoting) on Qwen3-30B-A3B, reference box. A workload whose output is NOT near-copy of context was not tested and mod may differ there.",
+      "wired_into": "no code change - the shipped ngram-simple flags already carry the winner",
+      "why_the_smarter_drafter_loses": "Mod's 4.2M-slot table stores ONE successor per hash slot, no key, overwrite-on-write - so every chaining step can silently be a collision, and the chain is autoregressive, so one wrong step corrupts everything after it. Simple's contiguous copy is verified-correct BY CONSTRUCTION: it reproduces text that actually occurred. On output that is a near-copy of the context, freedom is not the constraint and the smarter drafter's error compounds.",
+      "and_it_explains_D_10": "This is the source-level explanation of the #30 replay artifact, now measured in the OPPOSITE direction: there, mod's accumulated table made a repeated identical request look fast; here, on a real edit task, the same accumulation makes it slower. Either way the number is not reproducible on fresh input - which is why request 1 of a fresh server is the only figure this project quotes for mod."
     }
   ],
   "contradictions": [

@@ -1,0 +1,9 @@
+=== Pre-reg #38: ngram-mod chaining. req1 = fresh table (the result); req2 = accumulated (the hazard) ===
+  ref-simple   req1  109.52 tok/s  drafted   559 accepted   382  acc  68.3%  sha=65985276565a
+  ref-simple   req2  115.45 tok/s  drafted   562 accepted   385  acc  68.5%  sha=28a5c1e1c014
+  MOD-def      req1   57.41 tok/s  drafted   341 accepted   334  acc  97.9%  sha=65985276565a
+  MOD-def      req2   54.53 tok/s  drafted   408 accepted   340  acc  83.3%  sha=28a5c1e1c014
+  MOD-tuned    req1   86.42 tok/s  drafted   556 accepted   365  acc  65.6%  sha=65985276565a
+  MOD-tuned    req2   71.75 tok/s  drafted   976 accepted   384  acc  39.3%  sha=28a5c1e1c014
+  MOD-long     req1   86.63 tok/s  drafted   556 accepted   365  acc  65.6%  sha=65985276565a
+  MOD-long     req2   64.65 tok/s  drafted   963 accepted   371  acc  38.5%  sha=28a5c1e1c014

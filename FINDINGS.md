@@ -10,7 +10,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 |---|---|
 | Established laws | 12 |
 | Shipped levers | 11 |
-| Measured dead ends | 11 |
+| Measured dead ends | 12 |
 | Open contradictions | 8 |
 | Untried levers | 2 |
 | External work to study | 5 |
@@ -230,6 +230,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 **Magnitude:** tg128, r=3, one session: baseline 21.42; -t 3 20.92 (-2.3%); --poll 0 21.40; --poll 100 21.03; --prio 2 21.13; --cpu-strict 1 21.42. Nothing clears +5%.
 
 `refuted` · `measured` · scope: reference box (4-core i5-7600K), split placement, llama.cpp b10098 defaults · evidence: prereg #31 arms K0-K4 · wired into: `nothing to ship - the absence of a flag IS the result`
+
+### D-12 — The CHAINING drafter (ngram-mod) loses to the dumb contiguous-copy drafter (ngram-simple) on copy-regime output, and its cross-request table POISONS rather than helps.
+
+**Magnitude:** Request 1 of a fresh server, edit task, split placement: ngram-simple m384/n4 109.52 tok/s vs ngram-mod tuned 86.42-86.63 (-21%) and ngram-mod at defaults 57.41 (-48%). Raising n_max 512->1024 changes nothing (556 drafted in both): the chain dies on a hash miss long before either cap. Request 2 is 17-25% SLOWER than request 1 (86.42->71.75, 86.63->64.65) while drafting 75% MORE (556->976) at collapsed acceptance (65.6%->39.3%).
+
+`refuted` · `measured` · scope: copy-regime output (edits/refactors/quoting) on Qwen3-30B-A3B, reference box. A workload whose output is NOT near-copy of context was not tested and mod may differ there. · evidence: prereg #38; source study of llama.cpp@f113e02 (speculative.cpp:1860-1872 chaining, 1811-1813 no-clear accumulation, ngram-map.cpp:96 the single-span copy) · wired into: `no code change - the shipped ngram-simple flags already carry the winner`
 
 ## Open contradictions
 
