@@ -9,10 +9,10 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 10 |
-| Shipped levers | 7 |
+| Shipped levers | 8 |
 | Measured dead ends | 6 |
 | Open contradictions | 5 |
-| Untried levers | 8 |
+| Untried levers | 7 |
 | External work to study | 5 |
 
 ## Established laws
@@ -125,6 +125,12 @@ Things the tool actually recommends, with the number attached.
 
 `shipped` · `measured` · scope: dense models, four architectures measured · evidence: prereg #17 (dense-activation-model) - P-1 HIT, P-2 HIT decisively, P-3 MISS · wired into: `quantprobe/plan.py:DENSE_PROTECTED_SHARE`
 
+### V-08 — Quantizing the KV cache to q8_0 and KEEPING it in VRAM dominates the shipped 'evict KV to RAM' row - tied prefill, 3.04x the decode at 16k depth.
+
+**Magnitude:** split placement, -fa 1, r=3, one session. tg32 @ d16384: q8_0-in-VRAM 10.59 vs -nkvo-1 3.48 (3.04x); tg32 @ d0: 20.18 vs 17.06 (+18%); pp2048: 382.17 vs 386.14 (-1.0%, inside the error bar). Against f16 KV in VRAM, q8_0 is +37.0% at depth and -3.3% at d0.
+
+`open` · `measured` · scope: Qwen3-30B-A3B-Q2_K, split placement, GTX 1060 6GB - one architecture, one flag varied · evidence: prereg #25 (kv-cache-quantization) · wired into: `NOT SHIPPED. Blocked on the perplexity cost, a condition written into the stake before any number existed: D-01 killed a 1.335x lever for costing 1.206x perplexity, and 3.04x is exactly when skipping that step is most tempting.`
+
 ## Measured dead ends
 
 Negative results. These are load-bearing: each one is a direction nobody has to spend a day on again.
@@ -185,13 +191,13 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `open` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
 
-### C-05 — A recurring failure mode has now bitten this project twice: a quantity assumed CONSTANT across quantization formats turns out to be a property OF the format.
+### C-05 — A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.
 
-**Magnitude:** D-06 (the sub-4-bit decode collapse was format-dependent, not bit-width-dependent) and C-02 (eta is format-class-dependent, not constant)
+**Magnitude:** D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0.
 
-**Next action:** Audit EVERY remaining constant in plan.py for the same assumption, before a user finds the third instance. ETA_KV = 0.70 is the obvious next candidate: it was fitted without varying the KV cache TYPE, and register entry U-01 is about to vary exactly that. If the pattern holds a third time it stops being a coincidence and becomes something the five-layer gate should test for directly.
+**Next action:** Three instances is a pattern, not a coincidence. Audit EVERY remaining efficiency constant for the same assumption and add a gate check that refuses a constant fitted at a single format. The saturation point differs by quantity - ~4-bit for weights, ~8-bit for KV - so the lint cannot be a fixed threshold; it must demand that the constant was MEASURED across formats.
 
-`open` · `inferred` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token) · wired into: `nothing yet - this is a lint waiting to be written`
+`open` · `measured` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization) · wired into: `nothing yet - this is a lint waiting to be written`
 
 ### C-01 — MODELS['glm-744b']['kvp'] = 188416 is 30-60x too large, making GLM-family predictions wrong.
 
@@ -220,18 +226,6 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 ## Untried levers
 
 Staked predictions written BEFORE measuring, so a miss is visible. Ordered by expected value.
-
-### U-01 — KV cache quantization (-ctk q8_0 -ctv q8_0) is the cheapest way to free the fungible claimant.
-
-**Hypothesis:** Halving KV bytes frees VRAM that L-06 proves converts directly into compute-buffer headroom, so it should buy BOTH decode (fewer KV bytes to re-read, L-02) and prefill (bigger safe ubatch, L-08) at once - the only lever we know of that pays on both axes.
-
-**Predicted effect (staked):** at 16k depth: decode +20% to +40%; safe ubatch one step larger; may make -nkvo 1 unnecessary entirely
-
-**Why it is promising:** L-02 + L-06 + L-08 jointly imply it, and we have never tested it
-
-**Protocol:** llama-bench -ctk/-ctv {f16,q8_0,q4_0} x -d {0,16384} x {split, all-CPU}; measure perplexity cost separately before shipping
-
-`untested` · `speculative` · cost: 1 hour
 
 ### U-05 — Batch>1 (parallel slots) changes which placement wins, because it amortises host-weight transfer across concurrent requests.
 

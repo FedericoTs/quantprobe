@@ -78,3 +78,93 @@ state the trade, name the command, let the user choose.
 
 **Explicitly NOT claimed:** that this generalises off a GTX 1060, or off this model. `ETA_KV` was
 fitted on one architecture and this varies one flag on that same architecture.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg25_kv_quant.log`)
+
+**Verdict: P-1 HIT, P-2 HIT, P-3 MISS by the letter, P-4 HIT decisively. And the shipped
+"evict KV to RAM" row turns out to be dominated.**
+
+All arms, one session, identical flags (`-fa 1`, split placement, `r=3`):
+
+| arm | tg32 @ d0 | tg32 @ d16384 |
+|---|---|---|
+| K1 `f16` KV in VRAM | 21.81 ± 0.32 | 7.73 ± 0.13 |
+| **K2 `q8_0` KV in VRAM** | 21.10 ± 0.18 | **10.59 ± 0.18** |
+| K3 `q4_0` KV in VRAM | 20.76 ± 0.62 | 10.80 ± 0.09 |
+| **`-nkvo 1`, `f16` — the SHIPPED row** | 17.06 ± 0.87 | **3.48 ± 0.05** |
+
+- **P-1 (≥20% at depth): HIT.** K2 gives **+37.0%** over K1 at 16k.
+- **P-2 (neutral at d0, ±5%): HIT.** −3.3%. Stated in advance that the identical reasoning missed
+  for `-nkvo` in #21; this time the flag behaved as modelled, and the difference is exactly the one
+  predicted — `-ctk`/`-ctv` change the cache's element type, `-nkvo` changes where attention is
+  computed.
+- **P-3 (beats the shipped row on BOTH axes): MISS.** Prefill 382.17 ± 3.11 against the shipped
+  386.14 — **−1.0%**, inside the error bar, so it does not *beat* it. Recording this as a miss
+  rather than rounding a tie into a win.
+- **P-4 (>10% departure from the byte model): HIT, decisively, and only below 8 bits.**
+
+### The saturation, which is the real finding
+
+Decomposing each arm's decode time into weight and KV components (`t_KV = 1/tg(16k) − 1/tg(d0)`,
+using each arm's own `d0` so no cross-arm assumption is smuggled in):
+
+| arm | t_KV, normalised to f16 | nominal byte ratio | departure |
+|---|---|---|---|
+| `q8_0` | 0.563 | 0.53 | **+6.2%** — the byte model works |
+| `q4_0` | 0.532 | 0.28 | **+90%** — the byte model fails completely |
+
+`q4_0` halves the KV bytes again and returns **essentially nothing** (10.80 vs 10.59, +2.0%). The
+saving stops being delivered somewhere between 8 and 4 bits: dequantisation cost replaces the
+bandwidth cost it was supposed to remove.
+
+**This is the third instance of C-05**, and the three now share one shape:
+
+| finding | quantity assumed constant | what it actually depends on |
+|---|---|---|
+| D-06 | the sub-4-bit decode collapse | weight FORMAT, not bit-width |
+| C-02 | η, the VRAM-tier efficiency | weight FORMAT CLASS, not one constant |
+| **#25** | `ETA_KV = 0.70` | **KV format — flat to 8 bits, collapses below** |
+
+`ETA_KV` was fitted without ever varying the cache type, and it holds only above 8 bits. Three
+times is not a coincidence: **a quantized byte is not a byte.** Below a format-specific threshold,
+bytes removed from the bandwidth bill reappear as compute, and every constant in this project that
+was fitted at one format is suspect until varied.
+
+### The shipped row is dominated — and it is dominated worst where it is recommended
+
+`MOE_FRONTIER` row 3 evicts KV to host RAM to buy prompt speed. Measured against `q8_0` KV kept in
+VRAM, under identical flags:
+
+| | pp2048 | tg @ d0 | tg @ d16384 |
+|---|---|---|---|
+| shipped: `-nkvo 1`, f16 KV | 386.14 | 17.06 | 3.48 |
+| **`q8_0` KV in VRAM** | 382.17 (−1.0%, tied) | **20.18 (+18%)** | **10.59 (+204%)** |
+
+Same prefill, **3.04× the decode at depth.** And the row exists specifically to serve long-prompt
+workloads — RAG at 50:1, document QA at 200:1 — which are precisely the workloads that run at
+depth, where it is three times worse. We are recommending it in the one regime it loses hardest.
+
+The `-ub 2048` cliff (L-08) reproduces here unchanged at 205.54 vs 382.17, confirming that what
+overflows is the compute buffer and not KV: quantizing the cache does not buy a bigger safe ubatch.
+That part of the fungibility argument does **not** hold.
+
+### What ships — and the condition stated before any of this was measured
+
+**Nothing yet, and the reason was written into the stake before the numbers existed:** the quality
+cost is not measured here. D-01 killed a 1.335× decode lever for costing 1.206× perplexity, and a
+3.04× number is exactly when it is most tempting to skip that step. `q8_0` KV degrades output by an
+amount nobody in this project has measured.
+
+The next measurement is therefore perplexity at `-ctk q8_0 -ctv q8_0` against `f16`, on the same
+model, judged against the bit ladder the same way D-01 was. If the cost is small, row 3 of the
+frontier is **replaced**, not amended. If it is not, `q8_0` KV becomes a disclosed option and the
+`-nkvo` row is withdrawn anyway — because it loses to *something*, and a row that is dominated at
+depth should not be recommended for deep workloads regardless of what replaces it.
+
+**Explicitly NOT claimed:** that this generalises off a GTX 1060 or off Qwen3-30B-A3B. `ETA_KV` was
+fitted on one architecture and this varied one flag on that same architecture.
+
+**Wired into:** `findings/REGISTER.json:C-05` (third instance, pattern promoted) ·
+`findings/REGISTER.json:U-01` (scored) · the frontier is NOT changed until perplexity is measured.
