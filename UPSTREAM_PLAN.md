@@ -153,3 +153,24 @@ correctly-built CPU backend is not worth upstream's review bandwidth, by our own
 
 Same-session contrasts only; the box's absolute numbers moved 16→19 tok/s across the day (thermal
 + background), reaffirming the no-cross-session-absolutes rule for CPU measurements too.
+
+---
+
+## Deliverable #1: FILED — ggml-org/llama.cpp#26200 (2026-07-27)
+
+https://github.com/ggml-org/llama.cpp/issues/26200 — open, authored by FedericoTs.
+
+Contents: the three-build A/B (11.92 libgomp / 13.28 MSVC-libomp / **16.64** spin barrier), the E3
+per-node ledger (30.8 → 10.8 ms/token of barrier), the symbol-level evidence that this libgomp port
+has no spin phase (`sem_wait`, `ReleaseSemaphore`, no `gomp_spin_count_var`), the `GGML_OP_ADD`
+emblem (0.35 ms compute behind 7.7 ms of barriers), a copy-paste repro, and **both negative
+results** — the fusion prototype that gained nothing on a spin build, and the expert-major-dispatch
+null that separates this from in-flight PR #25048 (citation verified live before posting: open,
+dnislno, title as quoted).
+
+Including the negatives was deliberate: the survey found maintainers have rejected sync reworks
+that "always resulted in worse performance", so a report that shows what did NOT work is more
+credible and pre-empts the obvious "why not fuse the nodes?" reply.
+
+Deliverables #2–#4 remain closed by our own stop rule (#31/#33: fusion is a null once the barrier
+mechanism is correct). Nothing further is proposed upstream unless a maintainer asks.

@@ -496,15 +496,15 @@
     {
       "id": "C-07",
       "kind": "contradiction",
-      "status": "open",
+      "status": "reported",
       "confidence": "measured",
       "claim": "CPU decode speed depends ~40% on the OpenMP runtime the binary was BUILT with - a variable no hardware spec exposes and the tool cannot currently see.",
       "magnitude": "Same source, same box, same model, tg32 t=4: gcc+libgomp (mingw, kernel-semaphore barriers, no spin phase) 11.92; gcc+GGML_OPENMP=OFF (ggml spin barrier) 16.64 (+40%); MSVC+libomp default 13.28; +KMP_BLOCKTIME=infinite 13.89. ~2070 barriers/token; the mechanism, not the count, was most of the tax.",
       "evidence": "prereg #34; the E3 per-op profiler (barrier 30.8 -> 10.8 ms/token); barrier-map desk research (symbol-level libgomp evidence)",
       "scope": "pure-CPU decode, 4-core Windows box. The split placement runs on libomp (mostly spinning already); CUDA+no-OpenMP is unmeasured.",
       "priority": 2,
-      "wired_into": "FUTURE.md upstream deliverable #1 (build guidance with data)",
-      "next_action": "(1) CUDA build with GGML_OPENMP=OFF to test transfer to the split placement. (2) Upstream issue with the A/B and the symbol evidence - build guidance reaches every Windows/gcc builder for free. (3) The tool: consider a bench-time probe that detects the barrier mechanism (a 100-barrier microbench at startup) rather than trusting build metadata."
+      "wired_into": "UPSTREAM ISSUE FILED: ggml-org/llama.cpp#26200 (2026-07-27, FedericoTs). Carries the three-build A/B, the E3 barrier ledger, the symbol-level libgomp evidence, a copy-paste repro, and both supporting nulls.",
+      "next_action": "Watch ggml-org/llama.cpp#26200 for maintainer response. Remaining open: whether the finding transfers to a CUDA build - MEASURED NOT to transfer to the shipped split config via the libomp spin-policy A/B (20.12 vs 20.56, bars overlap), but a CUDA + GGML_OPENMP=OFF build is untested here (no nvcc on this box)."
     },
     {
       "id": "C-08",
