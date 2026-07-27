@@ -1,0 +1,6 @@
+=== Pre-reg #32: fork gate. Microbench: seq 23.88 vs SHUFFLED 24.56 GB/s (2MB slabs, +2.9% = noise) ===
+--- diagnostic: thread scaling of the MoE CPU path (barriers/dispatch vs bandwidth) ---
+  MoE pure-CPU -t 1   6.05 ± 0.07
+  MoE pure-CPU -t 2   9.92 ± 0.33
+  MoE pure-CPU -t 4   13.15 ± 0.45
+  [dense 7B Q2_K -t 4 reference: 10.11 tok/s = 28.4 GB/s]

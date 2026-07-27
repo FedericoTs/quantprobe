@@ -144,7 +144,7 @@
       "scope": "reference box, flagship model. The axiom underneath is tier-agnostic: every active byte on a tier must transit that tier's bus once per token, so tok/s <= 1 / sum(bytes_i / BW_i). No runtime can beat that without reducing bytes or amortising them across tokens.",
       "wired_into": "the research agenda: U-09 is the decomposition",
       "what_this_rules_in_and_out": "RULED OUT: any raw-decode runtime gain past 1.85x on this box (41.1 ceiling), and in practice far less - the CPU path already runs at 66% of real stream, and sync is worth at most ~29%. D-05's no-fork verdict survives with that measured asterisk. RULED IN and MEASURED: exceeding the wall via speculation (50.04, prereg #28) and skipping prefill via prefix caching (29x TTFT, prereg #29). The remaining breakthroughs are not in moving bytes better - they are in not moving bytes at all.",
-      "gap_attribution_final": "The 22.25->41.1 gap is now FULLY attributed (prereg #31): ~40% is the MoE expert-scatter penalty (dense K-quant CPU decode runs AT the stream wall, 28-30 GB/s, so the kernel is blameless - 8 scattered expert GEMVs defeat the prefetcher where one dense GEMV streams); 17-25% is GPU<->CPU sync (needs async transfer code, scheduling measured dead); 0% scheduling; 0% K-format choice (Q2_K and Q4_K_M tie at the wall on CPU). On stock llama.cpp this box's raw decode is FINISHED - every remaining percent costs upstream engineering bounded at 1.85x combined, while speculation already delivers 2.3-2.5x by not reading bytes at all."
+      "gap_attribution_final": "The 22.25->41.1 gap is now FULLY attributed (prereg #31): ~40% is the MoE EXPERT-PATH CODE in ggml's CPU MUL_MAT_ID (prereg #32 REFUTED the prefetch story: shuffled 2MB slab reads lose nothing, and the MoE path saturates at 16 GB/s where dense reaches 28.4 identically threaded); 17-25% is GPU<->CPU sync (needs async transfer code, scheduling measured dead); 0% scheduling; 0% K-format choice (Q2_K and Q4_K_M tie at the wall on CPU). On stock llama.cpp this box's raw decode is FINISHED - every remaining percent costs upstream engineering bounded at 1.85x combined, while speculation already delivers 2.3-2.5x by not reading bytes at all."
     },
     {
       "id": "L-12",
@@ -329,13 +329,13 @@
     {
       "id": "D-05",
       "kind": "dead_end",
-      "status": "refuted",
+      "status": "open",
       "confidence": "inferred",
-      "claim": "Forking or patching llama.cpp is not worth it in the VRAM/host-resident regimes - a PERFECT custom runtime buys single-digit percent.",
-      "magnitude": "1-6% realistic; 14.3% closed-form ceiling from (a-1)(b-1)/((a-1)+(b-1))",
-      "evidence": "phase-split analysis, prereg #20",
+      "claim": "REOPENED 2026-07-27 (prereg #32), scoped. Was: 'forking llama.cpp is not worth it (1-6%)'. The fork is still refuted - but the CPU MUL_MAT_ID expert path is measured to leave ~40% of DRAM bandwidth uncaptured, the memory-system excuse is refuted by microbenchmark, and an UPSTREAM PR against that one path has a real, bounded prize.",
+      "magnitude": "Shuffled 2MB expert-slab reads: 24.56 GB/s vs 23.88 sequential (+2.9%, noise) - the memory system is indifferent to the scatter. MoE CPU path: 16.0 GB/s at 4 threads where dense reaches 28.4 identically threaded; thread scaling 1x/1.64x/2.17x. Prize: host share at dense efficiency = +65%, raw decode 22.25 -> ~30 realistic, 41 perfect. Still below free speculation (50-59), so the prize matters for NOVEL generation specifically, where speculation is closed (D-10).",
+      "evidence": "prereg #32 (fork gate); prereg #27 (the decomposition); prereg #31 (dense kernel at the wall)",
       "scope": "EXPLICITLY NOT the disk-streaming tier - ds4 shows ~7x there",
-      "wired_into": "documented decision not to fork"
+      "wired_into": "FUTURE.md upstream-PR target; the fork and the from-scratch runtime remain refuted on measured grounds"
     },
     {
       "id": "D-06",

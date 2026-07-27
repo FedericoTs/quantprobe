@@ -90,3 +90,16 @@ Send the printed table (plus your GPU model) via `quantprobe bench --contribute`
 issue. If your `S_TG` column scales past ~2.3× from `npl 1` to `npl 8`, our ceiling is a museum
 piece of Pascal and we will publish that. If it does not, it is a law, and we will publish that
 instead. Either answer is valuable; we cannot produce either one ourselves.
+
+---
+
+## The one upstream PR worth writing: ggml CPU `MUL_MAT_ID`
+
+Measured (pre-registrations #27/#31/#32): the CPU expert path delivers 17.1 GB/s where the dense
+kernel delivers 28.4 on the same box, same format, same threads - and the memory system is proven
+indifferent to the access pattern (shuffled 2 MB slabs: +2.9%). The ~40% is code: ~1,150 small
+per-expert GEMVs per token against dense's ~140 large ones, with sub-linear thread scaling
+(1x/1.64x/2.17x). Prize if fixed: **+65% on the host share, raw decode 22.25 -> ~30 tok/s
+realistic** on 2016-class hardware - the novel-generation regime where speculation cannot help.
+Vehicle: an upstream PR (batched/fused expert GEMV, per-token expert grouping), never a fork -
+every quantprobe user runs stock llama.cpp, and that property is worth more than any local gain.
