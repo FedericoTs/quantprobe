@@ -335,6 +335,31 @@ def t_vram_regime_error_does_not_grow():
         print("      (VRAM_GAPS: no GGUFs found, set QUANTPROBE_GGUF_DIR)", end="")
 
 
+def t_workload_frontier_is_pareto():
+    """The frontier must contain no dominated point, and must actually move with the workload.
+
+    Pre-registration #21 measured four configurations; one (all-experts-to-CPU with KV evicted,
+    336.31/15.82) is beaten on BOTH axes by another and must never be recommended. And if the
+    same configuration won at every ratio there would be no frontier - just a winner - so the
+    selection has to be shown to change.
+    """
+    from quantprobe.plan import MOE_FRONTIER, workload_frontier
+    for i, (li, ppi, tgi, _) in enumerate(MOE_FRONTIER):
+        for j, (lj, ppj, tgj, _) in enumerate(MOE_FRONTIER):
+            if i == j:
+                continue
+            assert not (ppj >= ppi and tgj >= tgi), \
+                f"'{li}' is dominated by '{lj}' on both axes - it must not be on the frontier"
+    chat, rag = workload_frontier(0.5), workload_frontier(200)
+    assert chat["label"] != rag["label"], (
+        "the frontier picks the same configuration for chat and for document QA - then it is not "
+        "a frontier and the whole workload dimension is unnecessary")
+    assert chat["tg"] > rag["tg"], "the chat pick should favour generation"
+    assert rag["pp"] > chat["pp"], "the long-prompt pick should favour prompt processing"
+    assert rag["speedup_vs_worst"] > 2.0, \
+        f"long-prompt spread only {rag['speedup_vs_worst']:.2f}x - not worth a recommendation"
+
+
 def t_ubatch_only_when_host_resident():
     """-ub is a prefill lever for HOST-resident weights only, and it is measured to hurt otherwise.
 
