@@ -57,3 +57,69 @@ The quality-vs-speed frontier UNDER SPECULATION: for each bit-width, the achieva
 the table a person actually needs to choose a model for their machine, and no such table exists
 anywhere — every published benchmark quotes raw decode, which we now know understates the
 achievable rate by 5× on copy-regime work.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg40_quality_at_speed.log`)
+
+**Verdict: P-1 HIT, P-2 MISS — the KILL RULE FIRES, P-3 MISS (predicted, and worse than
+predicted), P-4 HIT. The speculation multiplier is NOT invariant in bits, and our headline is
+hereby scoped.**
+
+| model / quant | raw | speculated | multiplier | ms/token raw | ms/token spec |
+|---|---|---|---|---|---|
+| Qwen3-30B Q2_K (10.49 GB) | 20.83 | 99.06 | 4.76× | 48.0 | 10.1 |
+| Qwen3-**Coder**-30B Q2_K_L (10.55 GB) | 21.32 | 98.80 | 4.63× | 46.9 | 10.1 |
+| Qwen3-**Coder**-30B Q3_K_M (13.70 GB) | 17.45 | **59.17** | **3.39×** | 57.3 | 16.9 |
+
+The first draft of this comparison was **confounded** — Qwen3-30B vs Qwen3-Coder-30B changes the
+model AND the bits together. The third row plus a same-model control at Q2_K_L isolates it: across
+two different models at ~10.5 GB the multiplier is 4.76× and 4.63×, so **bits is the variable**.
+
+- **P-1 (planner within ±25% on an unseen model): HIT.** Predicted 15.8, measured 17.45 (+10.4%).
+  quantprobe called a model it had never benchmarked, at a bit-width it had never seen, to within
+  10%.
+- **P-2 (multiplier invariant in bits, ±20%): MISS.** 4.63× → 3.39× = **0.73 of it**, well outside
+  the band. The kill rule fires: **#36–#38's 5× is scoped to ~3-bit-class quantization**, and this
+  project will state it that way from now on.
+- **P-3 (≥100 tok/s at higher quality): MISS at 59.17.** I staked a predicted miss at ~83 and the
+  reality is worse. Reported as a miss, not spun.
+- **P-4 (identity): HIT.** Both Coder arms are `867ecdf1eee9` at matched request index, at both
+  bit-widths.
+
+### Why the multiplier shrinks — the mechanism, from our own ledger
+
+Bytes rise 1.299× (10.55 → 13.70 GB), and:
+
+| | ms/token cost ratio Q3/Q2 |
+|---|---|
+| raw decode | **1.222×** — slightly BELOW the byte ratio |
+| speculated | **1.670×** — far ABOVE it |
+
+Raw decode tracks bytes, as Law 4 says it must. Speculated decode degrades **1.37× faster than
+bytes**. The reason is in the ledger we already built: a verify round processes ~50 tokens at once,
+which is a *batched* operation, and #26 measured that batched work converges to a **compute**
+ceiling (~405–445 t/s on this GPU) rather than a bandwidth one. Speculation converts a
+bandwidth-bound problem into a compute-bound one — and once you are compute-bound, extra bits cost
+extra *dequantisation work* on every one of those 50 tokens, not just extra bytes moved. C-05's
+"a quantized byte is not a byte" appearing a fifth time, now on the speculation axis.
+
+**Consequence, stated plainly: speculation and quantization are not independent levers.** The more
+you speculate, the more the low-bit format pays for itself — and the more a high-bit model costs
+you. Nobody publishes this because everyone benchmarks raw decode.
+
+### The honest answer to "100 tok/s at high quality on this box"
+
+**Not reachable at Q3_K_M: 59 tok/s is the measured ceiling with every lever we have.** The
+quality-vs-speed frontier under speculation, on a 2016 desktop, single user:
+
+| quantization | quality cost (planner) | achievable tok/s (copy regime) |
+|---|---|---|
+| Q2_K / Q2_K_L (~3 bits) | ×1.05–1.07 ppl | **99** |
+| Q3_K_M (~3.9 bits) | ×1.02–1.05 ppl | **59** |
+
+100 tok/s at ~3-bit quality is real and reproducible today. 100 tok/s at 4-bit quality is not, on
+this hardware — the gap is ~1.7×, which is exactly the DRAM bandwidth a newer machine would buy.
+
+**Wired into:** `findings/REGISTER.json:V-04` (the 5× scoped to ~3-bit) · `C-05` (fifth instance) ·
+`findings/REGISTER.json:V-12` (the quality-vs-speed frontier table).
