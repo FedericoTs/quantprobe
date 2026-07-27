@@ -1,0 +1,15 @@
+=== Pre-reg #33: expert-path profile. Binary: build-cpu (gcc, CPU-only, E2c toggle) ===
+--- P-1/P-2: the E2c A/B, flagship pure CPU, -t 4, tg32, r=3 ---
+  EM=0 (stock path)      11.78 ± 0.64
+  EM=1 (expert-major)    11.72 ± 0.53
+--- A/B rerun, banner captured in-line as proof of mode ---
+  EM=0 (OFF)  tg32 = 11.92 ± 0.24
+  EM=1 (ON)  tg32 = 11.75 ± 0.49
+--- k-sweep: t(k) = a + b*k, pure CPU, -t 4, tg32, r=3, EM=0 (stock path) ---
+  k=8  tg32 = 11.81 ± 0.41
+  k=4  tg32 = 15.02 ± 0.23
+  k=2  tg32 = 16.81 ± 0.74
+  k=1  tg32 = 18.06 ± 0.41
+--- barrier discriminator: k-sweep endpoints at -t 1 (barriers are free alone) ---
+  t=1 k=1  tg32 = 13.70 ± 0.41
+  t=1 k=8  tg32 = 7.11 ± 0.18

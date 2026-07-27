@@ -1,0 +1,13 @@
+=== Pre-reg #31: kernel/sync levers, split placement, tg128, r=3, one session ===
+GPU before: 526 MiB, 139 MHz, 31
+  K0 baseline -t 4             21.42 ± 0.20
+  K1 -t 3                      20.92 ± 0.28
+  K2a --poll 0                 21.40 ± 0.36
+  K2b --poll 100               21.03 ± 0.48
+  K3 --prio 2                  21.13 ± 0.09
+  K4 --cpu-strict 1            21.42 ± 0.35
+GPU: 53, 1873 MHz
+--- arm F: effective CPU GB/s by format (pure CPU, -ngl 0, dense 7B, r=3) ---
+  Qwen2.5-7B-Instruct-Q2_K     10.11 ± 0.06 tok/s  -> 28.4 GB/s effective
+  Qwen2.5-7B-Instruct-IQ3_XS   3.39 ± 0.05 tok/s  -> 10.6 GB/s effective
+  Qwen2.5-7B-Instruct-Q4_K_M   6.81 ± 0.12 tok/s  -> 29.7 GB/s effective

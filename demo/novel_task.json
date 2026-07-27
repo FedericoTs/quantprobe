@@ -1,0 +1,1 @@
+{"model": "x", "max_tokens": 256, "temperature": 0, "messages": [{"role": "user", "content": "/no_think Write a Python function `median(xs)` that returns the median of a list of numbers without using statistics. Code only."}]}

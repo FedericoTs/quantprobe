@@ -407,6 +407,27 @@ def t_accuracy_band_is_per_regime():
         assert why and len(why) > 20, "each band must say WHY it is what it is"
 
 
+def t_iq_quants_warned_on_cpu_tiers():
+    """IQ files on a host tier must carry the measured 2.7x warning; K files must not.
+
+    Pre-registration #31, pure-CPU decode, same 7B, r=3: Q2_K 28.4 GB/s effective, Q4_K_M 29.7,
+    IQ3_XS 10.6. The K-format dequant is bandwidth-shaped on AVX2; the IQ codebook lookup is
+    compute-shaped, and 4 cores cannot hide it. A user who downloads an IQ file because it is
+    smaller, then lands on a host-resident placement, silently loses 2.7x - unless we tell them.
+    The control matters as much as the warning: in VRAM the IQ formats are fine (the eta study
+    measured IQ3 mid-pack there), so warning on a VRAM row would be crying wolf.
+    """
+    import os
+    iq = os.path.join(GGUF_DIR, "DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf")
+    kq = os.path.join(GGUF_DIR, "Qwen3-30B-A3B-Q2_K.gguf")
+    if not (os.path.isfile(iq) and os.path.isfile(kq)):
+        return  # gguf fixtures absent on this machine; the code path is still covered by review
+    _, out_iq = cli("plan", "--gguf", iq, "--machine", "2016-xmp")
+    assert "I-quant" in out_iq and "2.7x slower" in out_iq,         "IQ MoE on a host placement lost its measured warning"
+    _, out_kq = cli("plan", "--gguf", kq, "--machine", "2016-xmp")
+    assert "I-quant" not in out_kq, "K-quant file must not carry the IQ warning - crying wolf"
+
+
 def t_concurrency_is_disclosed_not_modelled():
     """We must say out loud that our numbers are single-stream, because they understate a server 2x.
 
