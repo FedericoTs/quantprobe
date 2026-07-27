@@ -48,3 +48,51 @@ sync share`, and each open lever (U-07 top-k, speculation #28, batching) multipl
 base this establishes. If P-2 shows the CPU path already runs at ≥70% of *measured* stream, then
 the honest conclusion is that raw decode on this box is within ~1.4× of its true wall and **the
 only route to 52.9+ is speculation** — which is measured next, in #28, regardless.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg27_decomposition.log`)
+
+**Verdict: P-1 MISS (low — the wall was too optimistic), P-2 HIT, P-3 marginal at 17–25%,
+P-4 HIT. The decomposition closes, and it MOVES THE WALL DOWN.**
+
+| measurement | value |
+|---|---|
+| stream, copy (read+write), 1 thread — already saturated | 30.4 GB/s |
+| stream, pure read, 4 threads | **26.1 GB/s** |
+| pure-CPU decode (`-ngl 0 -t 4`) | 14.06 ± 0.28 tok/s |
+| split decode, same session | 22.25 ± 0.28 tok/s |
+
+- **P-1 (stream 34–42 GB/s): MISS, LOW.** 26.1. The DDR4-3000 spec sheet says 48; a single thread
+  already saturates the real controller at ~30 (copy). Both L-11 walls were computed on bandwidth
+  this box cannot deliver.
+- **P-2 (kernel arm at 55–70% of stream): HIT.** 71.1 ms for 1.217 GB = 17.1 GB/s effective =
+  **66% of measured stream**. The CPU path is already decently close to the memory system's real
+  ceiling — mechanisms 1+2 own the bulk of the gap, and most of what they own is the SPEC SHEET'S
+  fiction, not llama.cpp's inefficiency.
+- **P-3 (sync <20% of token time): MARGINAL.** Sync-free expectation: 0.516 GB at the kernel arm's
+  17.1 GB/s = 30.2 ms, plus VRAM share 3.7–7.3 ms (η_vram 1.0–0.5) → 33.9–37.5 ms. Measured 44.9.
+  Excess **7.4–11.1 ms = 17–25%**, straddling the stake. Scored as inconclusive-leaning-miss at the
+  central estimate (22.7%); D-05's no-fork verdict survives but with a measured asterisk: there are
+  ~10 ms/token on the table for a runtime that eliminates per-layer synchronisation, worth ~+29%
+  decode — real, and less than the fork's cost by D-05's own arithmetic, but no longer negligible.
+
+### The wall, recomputed on measured physics
+
+| basis | wall |
+|---|---|
+| L-11 as staked (48 GB/s spec) | 69.5 tok/s |
+| L-11 "realistic" (36 GB/s assumed) | 52.9 tok/s |
+| **measured stream (26.1 GB/s)** | **41.1 tok/s** |
+
+**The 52.9 target is physically unreachable for raw decode on this box.** The complete capturable
+budget — perfect kernel (17.1→26.1 on the host share) plus zero sync — lands exactly on 41. We
+measure 22.25 = **54% of the true wall**. A heroic runtime effort captures at most 1.85×, and
+ktransformers-class engineering on a 4-core AVX2 CPU realistically much less.
+
+**Consequence, stated plainly: any path to ≥52.9 tok/s must break the every-byte-every-token
+axiom itself.** That is speculation (#28) — one weight-read verifying several tokens — and nothing
+else in the register can do it.
+
+**Wired into:** `findings/REGISTER.json:L-11` (walls corrected to measured basis) ·
+`findings/REGISTER.json:U-09` (scored) · pre-registration #28 (the consequence).
