@@ -336,34 +336,48 @@ def t_vram_regime_error_does_not_grow():
 
 
 def t_workload_frontier_is_pareto():
-    """The frontier must contain no dominated point, and must actually move with the workload.
+    """No dominated point may sit on the frontier - and a point must EARN its place by a margin.
 
-    Pre-registration #21 measured four configurations; one (all-experts-to-CPU with KV evicted,
-    336.31/15.82) is beaten on BOTH axes by another and must never be recommended. And if the
-    same configuration won at every ratio there would be no frontier - just a winner - so the
-    selection has to be shown to change.
+    This test has been rewritten three times and each rewrite lowered a number, which is the
+    finding. The claimed workload spread went 2.25x -> 1.33x -> 1.23x -> gone, and every step came
+    from correcting one of our own measurement errors:
+
+      2.25x  a dominated cell (split + KV in VRAM at ub 2048, 163 pp) made the worst choice look
+             far worse than it was - it had been measured past the compute-buffer cliff
+      1.33x  corrected to its ub-512 form (281 pp)
+      1.23x  all four cells re-measured in ONE session, after #24 found 10-13% between-session
+             drift against sub-1% within-session error bars
+      gone   at that width the surviving alternative wins by 0.44 tok/s against combined error bars
+             of 0.456 - 0.96 sigma, which is noise
+
+    So `MOE_FRONTIER` holds one row, and Law 7 ("there is no single best placement, there is a
+    frontier") is refuted for this model on this box. The selection machinery stays, because it
+    would work again the moment a genuinely better configuration is measured. What must never come
+    back is a printed CHOICE that is inside its own error bars.
     """
     from quantprobe.plan import MOE_FRONTIER, workload_frontier
     for i, (li, ppi, tgi, _) in enumerate(MOE_FRONTIER):
         for j, (lj, ppj, tgj, _) in enumerate(MOE_FRONTIER):
             if i == j:
                 continue
-            assert not (ppj >= ppi and tgj >= tgi), \
-                f"'{li}' is dominated by '{lj}' on both axes - it must not be on the frontier"
+            assert not (ppj >= ppi and tgj >= tgi),                 f"'{li}' is dominated by '{lj}' on both axes - it must not be on the frontier"
     chat, rag = workload_frontier(0.5), workload_frontier(200)
-    assert chat["label"] != rag["label"], (
-        "the frontier picks the same configuration for chat and for document QA - then it is not "
-        "a frontier and the whole workload dimension is unnecessary")
-    assert chat["tg"] > rag["tg"], "the chat pick should favour generation"
-    assert rag["pp"] > chat["pp"], "the long-prompt pick should favour prompt processing"
-    # 1.25x, not the 2.0x this originally asserted. That threshold was calibrated against a
-    # frontier containing a DOMINATED point (split + KV in VRAM at ub 2048, 163 pp), which made
-    # the worst available choice look far worse than it is. With that point corrected to its
-    # ub-512 form (281 pp), the spread narrows from 2.25x to 1.33x. Fixing my own error made the
-    # feature less impressive, which is the number that goes in the docs.
-    # Still above the >=15% bar pre-registration #20 set for "worth the added complexity".
-    assert rag["speedup_vs_worst"] > 1.25, \
-        f"long-prompt spread only {rag['speedup_vs_worst']:.2f}x - not worth a recommendation"
+    if len(MOE_FRONTIER) == 1:
+        # The collapsed state. Selection must be degenerate and must not claim a spread.
+        assert chat["label"] == rag["label"], "one row cannot produce two different picks"
+        assert abs(rag["speedup_vs_worst"] - 1.0) < 1e-9,             f"a single-row frontier cannot have a spread, got {rag['speedup_vs_worst']}"
+    else:
+        # If a second row is ever restored it has to beat the alternative by more than the noise
+        # floor that killed the last one - 0.96 sigma is not a recommendation.
+        assert chat["label"] != rag["label"], (
+            "the frontier picks the same configuration for chat and for document QA - then it is "
+            "not a frontier and the whole workload dimension is unnecessary")
+        assert chat["tg"] > rag["tg"], "the chat pick should favour generation"
+        assert rag["pp"] > chat["pp"], "the long-prompt pick should favour prompt processing"
+        assert rag["speedup_vs_worst"] > 1.25,             f"long-prompt spread only {rag['speedup_vs_worst']:.2f}x - not worth a recommendation"
+        assert chat["tg"] / rag["tg"] > 1.03, (
+            f"the chat pick wins by only {(chat['tg']/rag['tg']-1)*100:.1f}% on decode, which is "
+            "inside the error bars that retired the previous frontier - do not ship it as a choice")
 
 
 def t_ubatch_is_sized_not_pinned():

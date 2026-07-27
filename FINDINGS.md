@@ -10,9 +10,9 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 |---|---|
 | Established laws | 10 |
 | Shipped levers | 8 |
-| Measured dead ends | 6 |
+| Measured dead ends | 8 |
 | Open contradictions | 5 |
-| Untried levers | 7 |
+| Untried levers | 5 |
 | External work to study | 5 |
 
 ## Established laws
@@ -55,11 +55,11 @@ What we believe, and the measurement that earned it.
 
 `established` · `measured` · scope: reference box, 6 GB VRAM · evidence: prereg #21 P-3 · wired into: `quantprobe/plan.py:workload_frontier`
 
-### L-07 — There is no single best placement - there is a Pareto frontier selected by the prompt:generation ratio.
+### L-07 — REFUTED (2026-07-27). Was: 'there is no single best placement - there is a Pareto frontier selected by the prompt:generation ratio.' Re-measured with every cell in ONE session, ONE configuration wins at every ratio.
 
-**Magnitude:** 1.33x between best and worst choice across chat/coding/RAG/document-QA
+**Magnitude:** The claimed spread shrank three times, each time from correcting one of our own measurement errors: 2.25x (contained a cell measured past the compute-buffer cliff) -> 1.33x (corrected to ub 512) -> 1.23x (all cells in one session) -> gone (the surviving alternative wins by 0.44 tok/s against combined error bars of 0.456, i.e. 0.96 sigma). Same-session table: split+ub1024+KV-in-VRAM 386.04/21.58 dominates all-experts-CPU 381.82/19.79 and evict-KV 381.60/17.95.
 
-`established` · `measured` · scope: MoE whose experts exceed VRAM · evidence: prereg #21, corrected in v1.14.1 · wired into: `quantprobe/plan.py:MOE_FRONTIER + workload_frontier`
+`refuted` · `measured` · scope: MoE whose experts exceed VRAM · evidence: prereg #21 (original), prereg #25 (refutation); weights/data/prereg25_frontier_rematch.log · wired into: `quantprobe/plan.py:MOE_FRONTIER (one row) · tests/smoke.py:t_workload_frontier_is_pareto (rewritten to assert the collapse)`
 
 ### L-08 — llama.cpp's CUDA compute buffer is exactly linear in the ubatch, so demand grows smoothly while VRAM supply ends abruptly - producing a cliff, not a taper.
 
@@ -171,6 +171,18 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `measured` · scope: all · evidence: prereg #16 · wired into: `quantprobe/plan.py geta_w = geta`
 
+### D-07 — Frequency-ranked MoE expert residency is NOT reachable from stock llama.cpp, and at our VRAM ratio it would buy single digits anyway.
+
+**Magnitude:** ktransformers' own matched-VRAM table (Qwen3-Next-80B-A3B-FP8, 4x RTX 4090, ShareGPT): frequency vs front-loading is +2.5% to +5.3% in the 10-30% GPU-residency band we actually live in - against U-02's staked +15% to +40%. The staked band is reached only by DYNAMIC runtime re-placement (+18% to +27%), which needs a fork, at which point D-05 applies.
+
+`refuted` · `documented` · scope: MoE expert placement via stock llama.cpp -ot, low VRAM-residency ratio · evidence: E-01 study of kvcache-ai/ktransformers (doc/en/kt-kernel/experts-sched-Tutorial.md; SOSP'25 paper); E-02 study of PowerInfer · wired into: `U-02 withdrawn from the register`
+
+### D-08 — Pinned host memory is ALREADY in use for every host-resident row quantprobe recommends - there is no PCIe headroom to reclaim.
+
+**Magnitude:** U-03's predicted '+30% on host-resident prefill if currently pageable' resolves to 0%.
+
+`refuted` · `documented` · scope: CUDA builds, -ot=CPU placements, with --no-mmap set · evidence: U-03 source study: -ot=CPU re-runs buffer selection over the CPU buft list (ACCEL -> GPU-host -> CPU-extra -> CPU); on a CUDA build the GPU-host entry is CUDA_Host, allocated by cudaMallocHost. llama-model-loader.cpp:1197-1205 demotes it back to pageable IF use_mmap is true. · wired into: `U-03 withdrawn; the --no-mmap smoke invariant is now known to be load-bearing for a second reason`
+
 ## Open contradictions
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
@@ -187,7 +199,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Also establishes:** Between-session drift is 10-13% on decode against sub-1% within-session error bars, now measured three times on the same 4B model: 27.30 (07-26), 30.89 (07-27 early), 30.03 (07-27 late). C-04 recorded this for prefill; it holds for decode too, and it bounds what any single session can conclude.
 
-**Next action:** BLOCKED on the layer-4 anchor audit, which must run first: if any anchor is all-in-VRAM and currently retrodicted correctly, it is in direct conflict with a +81% miss on the same tier and THAT conflict is the result. After that, a per-format eta needs a SECOND GPU before any published number moves - every point here is one memory system, and '4-bit kernels use it better' is a hypothesis about a GTX 1060. Between-session drift of 10-13% with sub-1% within-session error bars (prereg #24 P-3) means no fit may cross a session boundary.
+**Next action:** The layer-4 anchor audit is DONE and is a CLEAN PASS: ZERO of the four anchors is all-in-VRAM (two MoE-hybrid, two disk-stream), and raising the VRAM efficiency constant IMPROVES all four. Layer 4 is not the blocker. THE REAL BLOCKER IS LAYER 1: tests/smoke.py VRAM_GAPS + t_vram_regime_error_does_not_grow, 7 measured points under a ratchet ('the error may shrink, never grow'). At ctx=0 the all-in-VRAM row is EXACTLY proportional to geta, so a uniform raise scales all seven by one factor - and no scalar fixes a spread running from -2% to -67%. Fixing the worst point needs k~1.61, which destroys Qwen3-0.6B (-2%, bound 10%) and gemma4-12b (-9%, bound 16%). A uniform raise is therefore ruled out ARITHMETICALLY, independently of the format finding - which is exactly what a per-format eta predicts.
 
 `open` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
 
@@ -199,13 +211,13 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `open` · `measured` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization) · wired into: `nothing yet - this is a lint waiting to be written`
 
-### C-01 — MODELS['glm-744b']['kvp'] = 188416 is 30-60x too large, making GLM-family predictions wrong.
+### C-01 — The GLM kvp values are wrong in BOTH directions and by 2x - not the 30-60x we believed. glm-744b is 2.10x too LARGE, glm-air is 2x too SMALL, and the two are related by a transposition.
 
-**Magnitude:** 30-60x
+**Magnitude:** GLM-5.2 is MLA + DeepSeek Sparse Attention (GlmMoeDsaForCausalLM): 78 layers, kv_lora_rank 512, qk_rope_head_dim 64. By quantprobe's own MLA convention that is 78 x (512+64) x 2 = 89,856 B/token against a shipped 188,416 - 2.10x too large. Separately GLM-4.5-Air is plain GQA: 46 x 8 x (128+128) x 2 = 188,416, EXACTLY the value sitting in the glm-744b row, against a shipped glm-air value of 94,208 - 2x too small.
 
-**Next action:** read GLM-5.2's actual attention architecture; do NOT back-solve from a datapoint
+**Next action:** Verify the config fields directly before changing a shipped number, then fix BOTH rows in quantprobe/plan.py and mirror into docs/index.html and docs/simulator.html. llama.cpp does not implement the DSA indexer yet, so 89,856 is the right target for what we predict against; the indexer would add ~5,376 B/token on top.
 
-`open` · `measured` · scope: GLM family · evidence: cross-model plausibility sweep · wired into: `NOT FIXED - task #17`
+`open` · `measured` · scope: GLM family · evidence: C-01 research from primary configs (zai-org/GLM-5.2 config.json; Glm4MoeForCausalLM configs). NOT back-solved from any observed datapoint. · wired into: `NOT FIXED - task #17`
 
 ### C-03 — verify.py layer 3 is sensitive to GPU clock state - the same 0.5B model measures across the +/-25% band depending on whether the card is warm.
 
@@ -239,18 +251,6 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `untested` · `speculative` · cost: 4 hours
 
-### U-02 — MoE expert routing is skewed, so frequency-ranked expert residency beats the contiguous blk-range split we currently ship.
-
-**Hypothesis:** Our split assigns experts to VRAM by LAYER INDEX, which is arbitrary with respect to how often each expert is actually selected. Ranking experts by measured activation frequency and pinning the hot ones should dominate a contiguous range at identical VRAM cost.
-
-**Predicted effect (staked):** +15% to +40% decode at the same VRAM budget, IF routing entropy is well below uniform
-
-**Why it is promising:** PowerInfer's hot/cold neuron result is the dense analogue and it is large; our split is currently index-based purely because that is what -ot regexes address
-
-**Protocol:** instrument expert selection counts over a representative corpus; build an -ot regex from the top-N experts; compare against the contiguous split at matched VRAM
-
-`untested` · `speculative` · cost: 1 day (needs a routing-frequency instrument first)
-
 ### U-04 — Prompt/prefix cache reuse dwarfs every placement lever on RAG and document-QA workloads.
 
 **Hypothesis:** L-07 says document-QA (200:1) is the workload where placement matters most. But a reused prefix skips prefill ENTIRELY, which is not a percentage improvement - it is a different asymptote.
@@ -274,18 +274,6 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Protocol:** slot save/restore between a k=4 and a k=8 server; measure perplexity attributable to each phase
 
 `untested` · `speculative` · cost: 1 day
-
-### U-03 — Page-locked (pinned) host memory raises the effective PCIe rate for host-resident expert tensors.
-
-**Hypothesis:** Pageable host memory forces the driver through a staging buffer. Our whole host-resident regime is priced at 12.2 GB/s; if that figure is a pageable-memory artifact, the ceiling on every -ot placement moves.
-
-**Predicted effect (staked):** up to +30% on host-resident prefill if currently pageable; 0% if llama.cpp already pins
-
-**Why it is promising:** it would move a constant that every host-resident prediction depends on
-
-**Protocol:** first READ llama.cpp's host buffer allocation path to see whether it already uses cudaHostAlloc; only measure if it does not
-
-`untested` · `speculative` · cost: 2 hours
 
 ### U-06 — The disk-streaming tier has ~7x available that our fork verdict (D-05) explicitly does not cover.
 

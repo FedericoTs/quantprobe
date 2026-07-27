@@ -16,8 +16,8 @@ MODELS = {
     "deepseek-16b": dict(t=15.7, a=2.4, ne=1.3,  moe=True,  kvp=31104,  nl=27,  hint="DeepSeek-V2-Lite"),        # MLA: 27L x (512+64) latent (exact)
     "gemma-12b":  dict(t=11.9, a=11.9, ne=11.9, moe=False, kvp=65536,  hint="Gemma 4 12B"),             # [est] SWA: long-ctx slope from global layers only
     "mistral-7b": dict(t=7.2,  a=7.2,  ne=7.2,  moe=False, kvp=131072, nl=32, hint="Mistral 7B"),              # 32L x 8KV x 128d (exact)
-    "glm-air":    dict(t=110,  a=12,   ne=2.7,  moe=True,  kvp=94208,  hint="GLM-4.5-Air 106B"),        # [est]
-    "glm-744b":   dict(t=753.3, a=32,  ne=8,    moe=True,  kvp=188416, hint="GLM-5.2 (753B)"),          # total exact (HF safetensors); a/ne/kvp [est]
+    "glm-air":    dict(t=110,  a=12,   ne=2.7,  moe=True,  kvp=188416, nl=46, hint="GLM-4.5-Air 106B"), # 46L x 8KV x 128d GQA (exact, zai-org/GLM-4.5-Air config.json)
+    "glm-744b":   dict(t=753.3, a=32,  ne=8,    moe=True,  kvp=89856,  nl=78, hint="GLM-5.2 (753B)"),   # MLA: 78L x (512+64) latent (exact, zai-org/GLM-5.2 config.json); a/ne [est]
     "qwen3-235b": dict(t=235.1, a=22,  ne=7.5,  moe=True,  kvp=192512, hint="Qwen3-235B-A22B"),         # total exact; kvp: 94L x 4KV x 128d [est]
     "kimi-k2.6":  dict(t=1058.6, a=32, ne=6,    moe=True,  kvp=70272,  hint="Kimi K2.6 (1T MLA)"),      # total exact; kvp: 61L x 576 MLA latent [est]
     "gpt-oss-120b": dict(t=120.4, a=5.1, ne=1.8, moe=True, kvp=73728,  hint="gpt-oss-120b"),            # total+active official; kvp: 36L x 8KV x 64d [est]
@@ -185,10 +185,44 @@ def safe_ubatch(headroom_gb, cap=2048):
 #
 #   (label, pp2048, tg128, extra flags beyond the placement's own)
 MOE_FRONTIER = [
-    ("KV in VRAM, small batch",         280.64, 20.25, "-b 512 -ub 512"),
-    ("all experts to CPU, big batch",   345.41, 18.68, "-b 2048 -ub 2048"),
-    ("evict KV to RAM, safe batch",     386.14, 18.06, "-b 1024 -ub 1024 -nkvo 1"),
+    ("KV in VRAM, safe batch",          386.04, 21.58, "-b 1024 -ub 1024"),
 ]
+# Re-measured 2026-07-27 (pre-registration #25), ALL FOUR CELLS IN ONE SESSION with matched flags,
+# because pre-registration #24 established 10-13% of drift BETWEEN sessions against sub-1% error
+# bars within one. The previous table compared numbers from different days.
+#
+#   placement / batch                    pp2048    tg128
+#   split, ub 512                        307.13    22.02   <- kept, but see the margin note
+#   split, ub 1024, KV in VRAM           386.04    21.58   <- NEW, and it dominates two shipped rows
+#   all experts to CPU, ub 2048          381.82    19.79   <- DROPPED: dominated on both axes
+#   split, ub 1024, KV evicted (-nkvo)   381.60    17.95   <- DROPPED: dominated on both axes
+#
+# Two of the three rows we shipped were dominated by a cell nobody had measured, and the reason is
+# instructive. "split + KV in VRAM" was only ever benchmarked at ub 2048 (161.59 pp - past the
+# compute-buffer cliff, see safe_ubatch) and at ub 512 (307.13 pp). At ub 1024 it wins outright.
+# So the whole "evict KV to buy prompt speed" trade was an ARTEFACT of measuring one cell past a
+# cliff: keeping KV in VRAM gives MORE prefill (386.04 vs 381.60) and 20% more decode. The frontier
+# had three points because the search never tried the one that beats them.
+#
+# THE FRONTIER IS GONE, and dropping it is the honest reading of our own numbers. The ub-512 row
+# (307.13 / 22.02) survives Pareto only on decode, by 22.02 vs 21.58 - a 0.44 tok/s gap against
+# combined error bars of 0.456, i.e. 0.96 sigma. That is not a measurement, it is noise, and a row
+# retained on it manufactures exactly the false frontier this table has already produced twice.
+#
+# So Law 7 - "there is no single best placement, there is a frontier selected by the prompt:
+# generation ratio" - is REFUTED for this model on this box. There IS a single best configuration.
+# The frontier existed because three of its four cells were measured in the wrong place: one past
+# the compute-buffer cliff, one on a different day, and one under a flag (-nkvo) that was never
+# needed. Re-measured together, one point wins everything.
+#
+# The claim shrank three times before it died: 2.25x spread, then 1.33x once a dominated point was
+# corrected, then 1.23x once all cells shared a session - and at that width the surviving choice is
+# inside its own error bars. Each shrink came from fixing one of our own measurement errors, which
+# is the pattern worth remembering: a feature that only looks valuable through a flawed measurement
+# stops looking valuable as the measurement improves.
+#
+# Flash attention was tested and does NOTHING here: 387.24/21.69 with -fa 1 against 386.04/21.58
+# without, both inside their error bars. The entire win is the ubatch and KV residency.
 # Row 3 shipped as `-ub 2048 / 391.72 / 16.54` in v1.14.0-v1.14.1 and that command was ON THE WRONG
 # SIDE OF A CLIFF (pre-registration #23). Re-measured across the ubatch on the same box:
 #
@@ -211,21 +245,26 @@ MOE_FRONTIER = [
 # prompt processing, free. Pinning one dimension while sweeping the others is precisely the error
 # the Law 4 fungibility corollary warns about, made in the code that implements the corollary.
 # A frontier is only Pareto-optimal with respect to the dimensions actually swept.
+#
+# EPILOGUE, 2026-07-27: that same excluded cell - "split + KV in VRAM" - is now the WINNER. It was
+# excluded on a measurement at ub 2048, which is past the compute-buffer cliff; at ub 1024 it beats
+# every row we shipped. The lesson repeated itself one level up. Excluding a configuration is also
+# a claim, and it inherits the scope of the sweep that produced it: this one was really "dominated
+# AT ub 2048", which is not the same statement and should never have been recorded as though it was.
 
 
 def workload_frontier(prompt_to_gen):
-    """Pick the frontier point that minimises total time at a given prompt:generation ratio.
+    """Pick the configuration that minimises total time at a given prompt:generation ratio.
 
-    Total time for P prompt tokens and G generated is `P/pp + G/tg`, so the optimum moves as the
-    ratio does. Measured crossovers on the reference box:
+    Kept as a function, and it now returns the SAME row at every ratio, because pre-registration
+    #25 collapsed the frontier to one point. Total time for P prompt tokens and G generated is
+    still `P/pp + G/tg`, so the machinery is correct and would select again the moment a second
+    configuration is measured that beats this one somewhere - which is why this is not deleted.
 
-        chat        0.5:1   -> keep KV in VRAM            (decode dominates)
-        coding       10:1   -> all experts to CPU          (balanced)
-        RAG          50:1   -> evict KV to RAM             (prefill dominates, 1.9x)
-        document QA 200:1   -> evict KV to RAM             (2.25x over the worst choice)
-
-    The spread between best and worst choice reaches **2.25x** at long prompts, which is why this
-    cannot be left as one command ranked by decode - the tool's historical default.
+    What it must NOT do is present a choice that does not exist. Every earlier version of this
+    docstring quoted a workload-dependent crossover (2.25x, then 1.33x, then 1.23x); all three were
+    artefacts of comparing cells measured past a cliff, on different days, or under a flag that was
+    never needed. See MOE_FRONTIER for the numbers that replaced them.
     """
     G = 1.0
     P = max(prompt_to_gen, 0.0) * G
@@ -597,11 +636,18 @@ def run(args):
     if ph:
         print(f"\n  phase: {ph}")
         chat, rag = workload_frontier(0.5), workload_frontier(200)
-        print("\n  workload: there is no single best setup here. Three are Pareto-optimal, and the")
-        print("  right one depends on how much prompt you read per token you write (measured, #21):")
-        print(f"    chat, short prompts     -> {chat['label']:<26} {chat['pp']:>6.0f} pp / {chat['tg']:>5.1f} tg")
-        print(f"    long prompts, RAG, docs -> {rag['label']:<26} {rag['pp']:>6.0f} pp / {rag['tg']:>5.1f} tg")
-        print(f"  Choosing wrong costs up to {rag['speedup_vs_worst']:.2f}x on a long-prompt workload.")
+        if chat["label"] != rag["label"]:
+            print("\n  workload: the best setup depends on how much prompt you read per token you write:")
+            print(f"    chat, short prompts     -> {chat['label']:<26} {chat['pp']:>6.0f} pp / {chat['tg']:>5.1f} tg")
+            print(f"    long prompts, RAG, docs -> {rag['label']:<26} {rag['pp']:>6.0f} pp / {rag['tg']:>5.1f} tg")
+            print(f"  Choosing wrong costs up to {rag['speedup_vs_worst']:.2f}x on a long-prompt workload.")
+        else:
+            print(f"\n  workload: one setup wins at every prompt:generation ratio - {rag['label']}")
+            print(f"  ({rag['pp']:.0f} pp / {rag['tg']:.1f} tg). Earlier versions offered a choice here; "
+                  "re-measuring")
+            print("  every cell in ONE session (pre-registration #25) showed the alternatives were "
+                  "dominated,")
+            print("  so there is nothing to choose. One fewer knob, and the honest number.")
     if ub:
         print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
               f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
