@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.16.0 - 2026-07-27
+
+**The wall is measured, and then it is exceeded: 50 tok/s effective decode on a 2016 GPU.**
+
+Three pre-registrations in one session, chasing one goal - get the flagship as close as possible
+to its physical decode ceiling, or past it.
+
+### #27: the gap is decomposed, and the wall comes DOWN
+
+The DDR4-3000 spec sheet promises 48 GB/s. Measured: **26.1 GB/s** pure read (one thread already
+saturates the controller at 30). So the "realistic wall" we published (52.9 tok/s) was computed on
+bandwidth this box cannot deliver - the true raw-decode wall is **41.1 tok/s**, and we sit at
+22.25 (54%). Decomposed by ablation: the CPU path runs at 66% of real stream (kernel+MLP share),
+and GPU<->CPU sync costs 17-25% of each token. Consequence: no runtime on earth gets this box past
+41.1 for raw decode. Anything more requires breaking the every-byte-every-token axiom.
+
+### #28: the axiom is broken - 50.04 tok/s, 22% above the wall
+
+`--spec-type ngram-simple` on llama-server, on the flagship, on the shipped placement: **2.41x
+decode (20.7 -> 50.0 tok/s, 89% draft acceptance)** on an edit task, output-identical, one flag,
+no download. And two corrections that matter more than the headline:
+
+- **The axis is COPY vs NOVEL, not code vs prose.** Novel generation gets 0% acceptance and
+  gains nothing; output that reuses its context (edits, refactors, RAG quoting) gets 89%. Our
+  earlier "if you write CODE" advice was a proxy for the real variable.
+- **The staked harness was measuring garbage until we read the output.** Temp-0 raw continuation
+  degenerated into a repetition loop; ngram feasts on loops (100% acceptance, 1.82-1.96x on
+  gibberish). Everything was re-measured under the chat template on coherent output. Also:
+  llama-cli silently ignores --spec-type; only llama-server speculates.
+- A 0.6B **draft model is NET NEGATIVE** (0.72x) despite 81% acceptance - its own forward passes
+  and the VRAM it displaces cost more than verification saves.
+
+### #29: prefix caching moves the asymptote
+
+`cache_prompt: true`: the second question against a 2k-token document pays **183 ms instead of
+5381 ms** of prompt time (29x; identical repeat 110x), decode untouched. For RAG and document QA
+this dwarfs every placement decision in the register.
+
+### The honest map of decode on this box, all measured
+
+| regime | tok/s | limited by |
+|---|---|---|
+| raw decode, measured | 22.25 | CPU path at 66% of real stream |
+| raw decode, wall | 41.1 | measured DRAM (26.1 GB/s) |
+| copy-regime speculation | **50.04** | acceptance x verify cost |
+| novel generation | 21.3 | the raw wall - nothing to draft |
+
+Plus the one measurement we cannot make ourselves: whether the ~2x batching ceiling (C-06) is
+Pascal or physics. FUTURE.md now carries the one-command replication ask for anyone with a modern
+GPU.
+
 ## 1.15.0 - 2026-07-27
 
 **Two shipped numbers were wrong, the Pareto frontier turned out to be an artefact, and our

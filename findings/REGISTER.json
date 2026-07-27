@@ -137,13 +137,13 @@
       "id": "L-11",
       "kind": "law",
       "status": "established",
-      "confidence": "inferred",
-      "claim": "THE DECODE WALL. On the reference box the flagship runs at 31-41% of its own bandwidth wall - so a decode breakthrough is NOT physically impossible, but the ~2.4x gap is UNATTRIBUTED, and until it is decomposed nobody can say which part is capturable.",
-      "magnitude": "Arithmetic from measured constants, Qwen3-30B-A3B Q2_K (2.95 bits, active 3.3B -> 1.217 GB/token), split placement: VRAM share 0.700 GB @ 192 GB/s = 3.65 ms; host share 0.516 GB @ 48 GB/s (DDR4-3000 theoretical) = 10.75 ms; total 14.4 ms -> 69.5 tok/s at eta=1. At realistic stream (VRAM x0.8, host 36 GB/s): 52.9 tok/s. Measured: 21.58. The law's fitted eta values PREDICT this accurately - but a fitted eta is a description of the gap, not an explanation of it.",
-      "evidence": "machine table (measured vb/rb), prereg #25 frontier rematch (the 21.58), file-derived bits",
+      "confidence": "measured",
+      "claim": "THE DECODE WALL, measured basis: every active byte on a tier transits its bus once per token, so tok/s <= 1/sum(bytes_i/BW_i). On MEASURED bandwidth (26.1 GB/s pure-read stream, not the 48 spec) the flagship's raw-decode wall is 41.1 tok/s; we measure 22.25 (54%). The wall is EXCEEDABLE only by breaking the axiom: speculation verified 50.04 tok/s - 22% above it - in the copy regime.",
+      "magnitude": "Decomposition (prereg #27): stream measured 26.1 GB/s pure read / 30.4 copy, one thread already saturating; pure-CPU decode 14.06 tok/s = 17.1 GB/s effective = 66% of stream (kernel+MLP share); GPU<->CPU sync excess 7.4-11.1 ms/token = 17-25% of the token. The spec-sheet walls (69.5 / 52.9) were fiction: DDR4-3000 promises 48 GB/s this controller cannot deliver.",
+      "evidence": "prereg #27 (decomposition + measured stream), prereg #28 (the exceedance), prereg #25 (the 22.25)",
       "scope": "reference box, flagship model. The axiom underneath is tier-agnostic: every active byte on a tier must transit that tier's bus once per token, so tok/s <= 1 / sum(bytes_i / BW_i). No runtime can beat that without reducing bytes or amortising them across tokens.",
       "wired_into": "the research agenda: U-09 is the decomposition",
-      "what_this_rules_in_and_out": "RULED OUT by the axiom: any runtime gain beyond ~2.4x on this box for this model - the wall is 52.9-69.5 tok/s and nothing that reads every active byte per token can pass it. RULED IN, pending decomposition: up to ~2.4x for a perfect host path. External evidence that part of this gap is capturable: ktransformers reports 1.25-4.09x decode vs llama.cpp on hybrid CPU/GPU MoE - but on server hardware (AMX, many cores, NUMA) whose features our i5-7600K lacks. Whether OUR gap is kernel inefficiency (capturable with effort), 4-core memory-level parallelism limits (not capturable), or per-layer GPU<->CPU synchronisation (partially capturable) is exactly what U-09 measures."
+      "what_this_rules_in_and_out": "RULED OUT: any raw-decode runtime gain past 1.85x on this box (41.1 ceiling), and in practice far less - the CPU path already runs at 66% of real stream, and sync is worth at most ~29%. D-05's no-fork verdict survives with that measured asterisk. RULED IN and MEASURED: exceeding the wall via speculation (50.04, prereg #28) and skipping prefill via prefix caching (29x TTFT, prereg #29). The remaining breakthroughs are not in moving bytes better - they are in not moving bytes at all."
     },
     {
       "id": "L-12",
@@ -196,11 +196,11 @@
       "kind": "lever",
       "status": "shipped",
       "confidence": "measured",
-      "claim": "N-gram speculation (--spec-type ngram-simple) more than doubles code decode at zero download and identical output.",
-      "magnitude": "2.10x on code (17.7 -> 37.2 tok/s); 1.01x on prose",
-      "evidence": "prereg #10 (Law 6 arm S-e)",
-      "scope": "code-like context only",
-      "wired_into": "quantprobe/plan.py speculation advice"
+      "claim": "N-gram speculation doubles decode when the OUTPUT REUSES ITS CONTEXT - the axis is copy-vs-novel, not code-vs-prose as originally shipped.",
+      "magnitude": "Flagship, split placement, chat template, coherent output (prereg #28): edit task 2.41x (20.73 -> 50.04 tok/s, 89% acceptance) - ABOVE the 41.1 raw-decode wall; novel code 0.98x at 0% acceptance; novel prose 1.00x. Dense 7B (original): 2.10x on code. The original 'code vs prose' framing was a proxy: code tasks are usually copy-heavy and prose tasks usually novel, but the edit IS the variable. Also measured: the staked temp-0 raw-continuation harness produced a repetition loop whose 100% acceptance inflated ngram to 1.82-1.96x on garbage output - caught by reading the completion, re-measured under the chat template.",
+      "evidence": "prereg #10 (Law 6 arm S-e, dense), prereg #28 (flagship, re-scoped)",
+      "scope": "llama-server only - llama-cli silently ignores --spec-type (measured as a 1.00x that was the flag not existing)",
+      "wired_into": "quantprobe/plan.py:speculation_advice"
     },
     {
       "id": "V-05",
@@ -256,6 +256,17 @@
       "evidence": "prereg #26",
       "scope": "GTX 1060 6GB; the ratio is unmeasured on modern hardware",
       "wired_into": "quantprobe/plan.py concurrency disclosure in the plan output"
+    },
+    {
+      "id": "V-10",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Prefix caching (cache_prompt) collapses TTFT on repeated-document workloads - the asymptote moves, and it dwarfs every placement decision for RAG/document-QA.",
+      "magnitude": "29.3x on the second question against a 2k-token document (5380.8 -> 183.4 ms prompt time; only the 8-token suffix is processed); 109.6x on an identical repeat; decode untouched (21.73-21.89 across all cells)",
+      "evidence": "prereg #29",
+      "scope": "llama-server, one process - a restart is cold; serves many-questions-one-document, not fresh documents",
+      "wired_into": "quantprobe/plan.py long-prompt advice"
     }
   ],
   "dead_ends": [
@@ -350,6 +361,17 @@
       "scope": "CUDA builds, -ot=CPU placements, with --no-mmap set",
       "wired_into": "U-03 withdrawn; the --no-mmap smoke invariant is now known to be load-bearing for a second reason",
       "the_conditional_that_matters": "The pinning is CONDITIONAL on --no-mmap, which quantprobe always emits on -ot=CPU rows. llama-bench defaults use_mmap=true, so a run without it is pageable - and that is the identified mechanism behind the ~21 percentage points prereg #13 attributed to --no-mmap alone. We had the right flag for an incompletely understood reason."
+    },
+    {
+      "id": "D-09",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "An external draft model (0.6B) for speculation is NET NEGATIVE on this box, at any acceptance this family delivers.",
+      "magnitude": "0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here.",
+      "evidence": "prereg #28 arm D",
+      "scope": "reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument",
+      "wired_into": "quantprobe/plan.py:speculation_advice"
     }
   ],
   "contradictions": [
@@ -440,19 +462,6 @@
   ],
   "untried": [
     {
-      "id": "U-04",
-      "kind": "untried",
-      "status": "untested",
-      "confidence": "speculative",
-      "claim": "Prompt/prefix cache reuse dwarfs every placement lever on RAG and document-QA workloads.",
-      "hypothesis": "L-07 says document-QA (200:1) is the workload where placement matters most. But a reused prefix skips prefill ENTIRELY, which is not a percentage improvement - it is a different asymptote.",
-      "predicted_effect": "10x+ on repeated-prefix workloads; 0x on fresh prompts",
-      "cost": "3 hours",
-      "why_it_is_promising": "our frontier optimises the cost of doing prefill; this avoids it",
-      "protocol": "llama-server with --prompt-cache / slot restore; measure time-to-first-token on repeated vs fresh prefixes",
-      "priority": 2
-    },
-    {
       "id": "U-06",
       "kind": "untried",
       "status": "untested",
@@ -477,32 +486,6 @@
       "why_it_is_promising": "prereg #22 Stage 1 passed its own kill rule",
       "protocol": "slot save/restore between a k=4 and a k=8 server; measure perplexity attributable to each phase",
       "priority": 2
-    },
-    {
-      "id": "U-08",
-      "kind": "untried",
-      "status": "untested",
-      "confidence": "speculative",
-      "claim": "A draft MODEL (not n-gram) extends V-04's 2.10x from code to prose.",
-      "hypothesis": "ngram-simple gains nothing on prose (1.01x) because it drafts by copying spans from context. A small draft model generalises where copying cannot.",
-      "predicted_effect": "1.5x to 2x on prose decode, at the cost of VRAM for the draft model - which L-06 says competes with everything else",
-      "cost": "4 hours",
-      "why_it_is_promising": "V-04 is our largest single measured decode win and it currently only fires on one content type",
-      "protocol": "Qwen2.5-0.5B as draft for a 7B target; sweep draft length; the VRAM cost must be charged against the frontier, not ignored",
-      "priority": 3
-    },
-    {
-      "id": "U-09",
-      "kind": "untried",
-      "status": "untested",
-      "confidence": "speculative",
-      "claim": "The 2.4x gap between measured decode and the bandwidth wall can be decomposed into kernel efficiency, memory-level parallelism, and GPU<->CPU synchronisation by ablation.",
-      "hypothesis": "L-11 computes the wall at 52.9-69.5 tok/s and we measure 21.58. The gap is currently one fitted number (eta). Three mechanisms could each own a share, and they have OPPOSITE implications: kernel inefficiency says a better runtime wins big (ktransformers' claim), 4-core MLP limits say the hardware is the wall and nothing wins, per-layer sync says a batched-transfer patch wins the sync share.",
-      "predicted_effect": "Staked: pure-CPU decode of the same model lands at 55-70% of DDR4 stream bandwidth (kernel share is the largest), and removing the GPU from the loop entirely (-ngl 0) recovers LESS than 20% versus the hybrid - i.e. sync is NOT the main cost. If sync recovers more than 20%, D-05's no-fork verdict is wrong for this box and must be reopened.",
-      "cost": "2 hours",
-      "why_it_is_promising": "It converts the single biggest unexplained number in the project from a fitted constant into an attributed budget, and it directly decides whether any runtime work (ours or upstream) can pay on this hardware - the exact question the fork decision D-05 answered with an analysis that never profiled the token.",
-      "protocol": "One session: (1) measure DDR4 stream bandwidth with a memcpy benchmark, (2) llama-bench -ngl 0 pure-CPU decode -> effective GB/s vs stream, (3) hybrid split decode -> subtract the VRAM-share time computed from L-11, (4) the residual vs pure-CPU effective bandwidth attributes the sync share. GPU state logged; r=3; every arithmetic step shown.",
-      "priority": 1
     }
   ],
   "external": [

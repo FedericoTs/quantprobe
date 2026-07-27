@@ -405,9 +405,20 @@ def speculation_advice(moe, placement):
 
     Returns None when we have no measurement for the case rather than guessing.
     """
-    # Only the fully-offloaded case is measured (exps=CPU). A partial split puts some experts
-    # on the fast tier, which we have NOT measured - so it gets no claim either way.
     experts_offloaded = "exps=CPU" in (placement or "")
+    if moe and "split experts" in (placement or ""):
+        # Measured on the flagship ITSELF, on this exact placement (pre-registration #28). The
+        # axis that matters is COPY vs NOVEL, not code vs prose: the prize attaches to output
+        # that reproduces context spans (edits, refactors, quoting) - most of what coding agents
+        # emit, and none of what fresh generation emits.
+        return ("if your output REUSES its context - edits, refactors, RAG quoting - add "
+                "`--spec-type ngram-simple` to llama-server: measured **2.41x decode** on THIS "
+                "model and placement (20.7 -> 50.0 tok/s, 89% draft acceptance), one flag, no "
+                "download, identical output. That is 22% ABOVE this box's raw-decode wall - the "
+                "one lever that can pass it. Novel generation gains nothing (0% acceptance), and "
+                "a separate 0.6B DRAFT MODEL is measured NET NEGATIVE here (0.72x): its own "
+                "forward passes cost more than verification saves. Note llama-cli ignores "
+                "--spec-type silently; the flag only works on llama-server.")
     if moe and experts_offloaded:
         return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "
                 "offloaded - a verify batch unions experts, and every extra one is a slow read.")
@@ -654,6 +665,11 @@ def run(args):
             print("  every cell in ONE session (pre-registration #25) showed the alternatives were "
                   "dominated,")
             print("  so there is nothing to choose. One fewer knob, and the honest number.")
+            print()
+            print("  long prompts, same document: send cache_prompt=true to llama-server. Measured")
+            print("  here (pre-registration #29): the second question against a 2k-token document")
+            print("  pays 183 ms of prompt time instead of 5381 - 29x - because the document KV is")
+            print("  reused and only the new question is processed. Restarting the server is cold.")
     if ub:
         print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
               f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
