@@ -412,17 +412,18 @@ def speculation_advice(moe, placement):
         # that reproduces context spans (edits, refactors, quoting) - most of what coding agents
         # emit, and none of what fresh generation emits.
         return ("if your output REUSES its context - edits, refactors, RAG quoting - add "
-                "`--spec-type ngram-simple --spec-ngram-simple-size-m 384` to llama-server: "
-                "measured **4.15x decode** on THIS model and placement (21.6 -> 90.3 tok/s), one "
-                "flag pair, no download, byte-identical output. The size-m is NOT optional - the "
-                "default of 48 gives only 2.4x, because m is a per-round draft BUDGET and raising "
-                "it delivers the same accepted tokens in FEWER verify rounds, each of which costs "
-                "a full weight read. 90.3 tok/s is 2.2x this box's raw-decode wall, which no "
-                "runtime can pass. Ignore the acceptance rate: it FALLS from 89% to 67% while "
-                "throughput nearly doubles, because rejected drafts are cheap and skipped weight "
-                "reads are not. Novel generation gains nothing (0% acceptance), and a separate "
-                "0.6B DRAFT MODEL is measured NET NEGATIVE here (0.72x). Note llama-cli ignores "
-                "--spec-type silently; the flag only works on llama-server.")
+                "`--spec-type ngram-simple --spec-ngram-simple-size-m 384 "
+                "--spec-ngram-simple-size-n 4` to llama-server: measured **5.0x decode** on THIS "
+                "model and placement (21.6 -> 108.4 tok/s), byte-identical output, no download. "
+                "BOTH tunables matter and llama.cpp's defaults (m=48, n=12) capture only 2.3x of "
+                "it: the cost unit is the VERIFY ROUND (one full weight read), not the token, so "
+                "what pays is delivering the same accepted tokens in fewer, longer runs. 108 tok/s "
+                "is 2.6x this box's raw-decode wall, which no runtime, fork or rewrite can pass. "
+                "Two traps, both measured: do NOT tune on acceptance rate (it falls 89%->68% while "
+                "throughput doubles), and do NOT over-shorten n (n=2 drafts 36% MORE and runs 25% "
+                "SLOWER). Novel generation gains nothing (0% acceptance), a 0.6B DRAFT MODEL is net "
+                "negative here (0.72x), and stacking a second drafter costs 10%. Note llama-cli "
+                "ignores --spec-type silently; the flag only works on llama-server.")
     if moe and experts_offloaded:
         return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "
                 "offloaded - a verify batch unions experts, and every extra one is a slow read.")

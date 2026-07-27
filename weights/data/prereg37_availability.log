@@ -1,0 +1,11 @@
+=== Pre-reg #37: draft availability (all at size-m 384) ===
+  ref n=12        89.82 tok/s  acc  66.8%  drafted  1100 accepted   735  sha=28a5c1e1c014
+  N6 n=6         105.52 tok/s  acc  67.9%  drafted  1117 accepted   759  sha=28a5c1e1c014
+  N4 n=4         108.41 tok/s  acc  68.4%  drafted  1121 accepted   767  sha=28a5c1e1c014
+  N20 n=20 (ctrl)  77.61 tok/s  acc  65.8%  drafted  1068 accepted   703  sha=28a5c1e1c014
+  N2 n=2          81.98 tok/s  acc  52.2%  drafted  1486 accepted   775  sha=28a5c1e1c014
+  ST stacked      97.16 tok/s  acc  66.8%  drafted  1148 accepted   767  sha=28a5c1e1c014
+--- position control: winner and reference re-run LAST ---
+  ref n=12 (2)    90.67 tok/s  acc  66.8%  drafted  1100 accepted   735  sha=28a5c1e1c014
+  N4 n=4 (2)     107.65 tok/s  acc  68.4%  drafted  1121 accepted   767  sha=28a5c1e1c014
+GPU: 748 MiB, 57
