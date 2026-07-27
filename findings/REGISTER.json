@@ -372,6 +372,17 @@
       "evidence": "prereg #28 arm D",
       "scope": "reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument",
       "wired_into": "quantprobe/plan.py:speculation_advice"
+    },
+    {
+      "id": "D-10",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself.",
+      "magnitude": "Single-shot, fresh server, temp 0: ngram-mod 1.03x (zero drafts), ngram-cache 0.93x, ngram-map-k4v 1.00x, draft-mtp unmeasurable (three attempts, <0.2 tok/s or hung on the split where its own baseline runs 18.19), external 0.6B draft 0.72x (D-09). The 50.38-at-100%-acceptance first reading was ngram-mod's PERSISTENT cross-request store replaying an identical second request - the third harness artifact this project has caught by reading the output.",
+      "evidence": "prereg #30 (kill rule fired), prereg #28 arm D, Law 6 arm S-e",
+      "scope": "reference box, Qwen3 MoE family, llama.cpp b10098. Novel decode is bounded by the 41.1 tok/s raw wall (L-11); the remaining novel-workload levers are q8_0 KV at depth, prefix caching for ingest, batching for aggregate, and DRAM bandwidth itself.",
+      "wired_into": "quantprobe/plan.py:speculation_advice already scopes the claim to copy-regime output; prereg #30 closes the complement"
     }
   ],
   "contradictions": [

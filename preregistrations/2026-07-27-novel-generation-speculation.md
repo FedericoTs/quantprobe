@@ -53,3 +53,61 @@ past this one without new external evidence.
 
 If P-2 hits: the speculation advice gains an MTP branch for MTP-capable models on the split, with
 the measured number. If the kill rule fires: the advice states the novel-generation bound plainly.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg30_novel_speculation.log`)
+
+**Verdict: P-1 MISS (after diagnosing my own artifact), P-2 MISS (unmeasurable — worse than a
+miss), P-3 MISS for one variant. THE KILL RULE FIRES: novel-generation speculation on this box is
+CLOSED.**
+
+### P-1, and the artifact that nearly became a headline
+
+The first sweep showed `ngram-mod` at **50.38 tok/s on a novel task, 100% acceptance** — an
+apparent 2.38× on fresh generation, which would have overturned the copy-vs-novel scoping a few
+hours after it was established. It is not real, and the diagnosis matters more than the number:
+
+**`ngram-mod` keeps its n-gram store across requests.** The r=2 protocol sent the same prompt
+twice; run 1 generated at baseline speed and populated the store; run 2, at temp 0, regenerated
+identical text — which was now a COPY of run 1. The "novel" speedup was the average of one honest
+run and one replay. Re-measured single-shot on a fresh server, seed pinned: **1.03×, zero drafts
+fired, output byte-identical to baseline.** The full honest table:
+
+| single-shot, fresh server | novel code | novel prose | edit |
+|---|---|---|---|
+| baseline | 21.11 | 21.52 | 20.52 |
+| `ngram-mod` | 21.67 (1.03×, no drafts) | 21.06 (0.98×, no drafts) | **51.28 (2.50×, 97% acc.)** |
+| `ngram-cache` | 19.75 (0.93×, 19% acc.) | — | — |
+| `ngram-map-k4v` | 21.10 (1.00×) | — | — |
+
+This is the third time this project measured a spectacular number and found it was the harness
+(the `-ub 2048` frontier cell, #28's repetition loop, now this). The common thread: **repetition
+is invisible in a throughput number and obvious in the output.** Reading what the model actually
+wrote is now, formally, part of the protocol.
+
+- **P-1 (best variant ≥1.10× on novel): MISS.** 1.03× best, no drafts.
+- **P-2 (MTP on the split ≥1.15×): MISS, worse — unmeasurable.** Three attempts, `draft-mtp` on
+  the APEX model never returned even 96 tokens inside 10 minutes (<0.2 tok/s or hung), on the
+  same split where its own no-spec baseline runs 18.19. Law 6's 0.76× was optimistic for this
+  build. Also collected in passing: the M-B baseline measured 5.64 then 18.19 on the identical
+  command — the #23 VRAM cliff again, fired by 772 MiB of a dying server's memory still draining.
+- **P-3 (no arm loses >5%): MISS for `ngram-cache`** (−7% at 19% acceptance). `ngram-mod` and
+  `ngram-map-k4v` are harmless.
+
+### What survives, positively
+
+`ngram-mod` matched or beat `ngram-simple` on the edit task (**2.50×** vs 2.36–2.41×) with
+byte-identical output, and is measured harmless on novel tasks. One measurement each — not enough
+to switch the shipped default, enough to note. Its cross-request replay is also a real (niche)
+property: deterministic regeneration of a previous response runs ~2.4×.
+
+### The closed conclusion, per the kill rule
+
+Novel generation on this box is bounded by the raw-decode wall: **41.1 tok/s ceiling, 22 measured,
+and no speculation mechanism moves it.** What remains for novel workloads, all already measured:
+q8_0 KV at depth (+37% at 16k, #25) for long sessions, prefix caching for the ingest side (29×,
+#29), batching for aggregate throughput (~2×, #26), sync-elimination upstream (≤29%, #27), and
+hardware — the wall scales linearly with DRAM bandwidth, which is the axis a 2016 box is poorest on.
+
+**Wired into:** `findings/REGISTER.json:D-10` · the protocol rule ("read what the model wrote").

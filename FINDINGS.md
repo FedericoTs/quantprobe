@@ -10,7 +10,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 |---|---|
 | Established laws | 12 |
 | Shipped levers | 10 |
-| Measured dead ends | 9 |
+| Measured dead ends | 10 |
 | Open contradictions | 6 |
 | Untried levers | 2 |
 | External work to study | 5 |
@@ -212,6 +212,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 **Magnitude:** 0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here.
 
 `refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D · wired into: `quantprobe/plan.py:speculation_advice`
+
+### D-10 — Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself.
+
+**Magnitude:** Single-shot, fresh server, temp 0: ngram-mod 1.03x (zero drafts), ngram-cache 0.93x, ngram-map-k4v 1.00x, draft-mtp unmeasurable (three attempts, <0.2 tok/s or hung on the split where its own baseline runs 18.19), external 0.6B draft 0.72x (D-09). The 50.38-at-100%-acceptance first reading was ngram-mod's PERSISTENT cross-request store replaying an identical second request - the third harness artifact this project has caught by reading the output.
+
+`refuted` · `measured` · scope: reference box, Qwen3 MoE family, llama.cpp b10098. Novel decode is bounded by the 41.1 tok/s raw wall (L-11); the remaining novel-workload levers are q8_0 KV at depth, prefix caching for ingest, batching for aggregate, and DRAM bandwidth itself. · evidence: prereg #30 (kill rule fired), prereg #28 arm D, Law 6 arm S-e · wired into: `quantprobe/plan.py:speculation_advice already scopes the claim to copy-regime output; prereg #30 closes the complement`
 
 ## Open contradictions
 
