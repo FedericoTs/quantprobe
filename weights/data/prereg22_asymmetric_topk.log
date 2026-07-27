@@ -1,0 +1,44 @@
+=== Pre-reg #22: does the top-k prefill prize reach the recommended placements? ===
+KILL RULE: row A gains <15% -> line stops permanently
+GPU before: 935 MiB, 139 MHz, 36
+--- warm-up (DISCARDED) ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |           pp512 |        218.75 ± 0.00 |
+--- ROW A: all experts -> CPU, -ub 2048  (control 345.41) ---
+  k8: pp2048 |        387.40 ± 1.48
+  k4: pp2048 |        468.29 ± 2.90
+GPU: 958 MiB, 1860 MHz, 57
+--- ROW B: split, KV in VRAM, -ub 512  (control 280.64) ---
+  k8: pp2048 |        305.88 ± 1.19
+  k4: pp2048 |        376.15 ± 1.64
+--- ROW C: split, KV evicted, -ub 2048  (control 391.72) ---
+  k8: pp2048 |        194.33 ± 0.54
+  k4: pp2048 |        317.42 ± 1.31
+GPU: 714 MiB, 1847 MHz, 64
+--- P-3 diagnosis: row C k=8, ALONE in its own invocation (frontier shape) ---
+pp2048 |        193.11 ± 0.22
+--- and row A k=8 alone, for comparison ---
+pp2048 |        382.24 ± 0.67
+GPU: 713 MiB, 1847 MHz, 64
+--- URGENT: re-run the EXACT #21 sweep shape (-nkvo 0,1 in ONE invocation) ---
+  nkvo=0  pp2048 = 195.15 ± 0.71
+  nkvo=0  pp2048 = 436.00 ± 2.20
+  [standalone nkvo=1 measured 193.11 +/- 0.22 minutes ago]
+--- DECISIVE: nkvo column vs t/s column, parsed by field position ---
+  nkvo=2048   pp2048 = 210.15 ± 0.40
+  nkvo=2048   pp2048 = 436.92 ± 0.81
+  [standalone -nkvo 1 measured 193.11 +/- 0.22]
+--- sweep shape (-nkvo 0,1 in one invocation) ---
+    nkvo=0    pp2048 = 195.75 ± 0.49
+    nkvo=1    pp2048 = 435.89 ± 0.65
+--- standalone, -nkvo 1 only ---
+    nkvo=1    pp2048 = 437.33 ± 1.68
+--- FLAG ORDER TEST: is '-nkvo 1' before '-p' silently ignored? ---
+  order A:  ... -ub 2048 -nkvo 1 -p 2048 -n 0   (what I used for row C)
+    reported nkvo=1   pp2048 = 437.93 ± 2.19
+  order B:  ... -ub 2048 -p 2048 -n 0 -nkvo 1   (correct)
+    reported nkvo=1   pp2048 = 438.15 ± 1.89
+--- REPEATABILITY: identical command, 4 fresh invocations ---
+  run 1: VRAM-before=462 MiB  pp2048 = 438.18 ± 0.69
+  run 2: VRAM-before=472 MiB  pp2048 = 437.52 ± 0.54
+  run 3: VRAM-before=471 MiB  pp2048 = 438.48 ± 1.74
+  run 4: VRAM-before=471 MiB  pp2048 = 438.42 ± 1.63

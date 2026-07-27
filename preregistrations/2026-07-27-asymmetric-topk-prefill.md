@@ -61,3 +61,54 @@ generation**, via slot save/restore between a k=4 and a k=8 server. Only if the 
 generation-only does asymmetric top-k become real — and even then it ships as an **upstream PR
 against a pinned SHA**, never a fork, because the tool's "runs on stock llama.cpp" property is
 worth more than the gain.
+
+---
+
+## Scored (2026-07-27, log: `weights/data/prereg22_asymmetric_topk.log`)
+
+**Verdict: P-1 HIT, P-2 HIT, P-3 partial. The kill rule is NOT triggered — Stage 1 passes.**
+
+| row | k=8 | k=4 | gain |
+|---|---|---|---|
+| **A** all experts → CPU, `-ub 2048` | 387.40 ± 1.48 | **468.29 ± 2.90** | **+20.9%** |
+| **B** split, KV in VRAM, `-ub 512` | 305.88 ± 1.19 | **376.15 ± 1.64** | **+23.0%** |
+| **C** split, KV evicted, `-ub 2048` | 194.33 ± 0.54 | **317.42 ± 1.31** | **+63.3%** |
+
+- **P-1 (row A gains 20–35%): HIT.** +20.9%, at the band's edge.
+- **P-2 (≥2 of 3 rows gain ≥15%): HIT.** All three did.
+- **P-3 (controls within ±10%): PARTIAL.** B +9.0% (inside), A +12.2% (marginally outside, GPU
+  started cold at 36 °C), C not comparable — see below.
+
+**The prefill prize is not a CPU-pure artifact.** It reaches every configuration we recommend, at
++21% to +63%. That clears the frontier's own 14.3% dynamic ceiling comfortably, so Stage 2 — does
+the +20.6% quality cost attach to ingestion or only to generation — is justified.
+
+## The more important finding: row C sits on a VRAM cliff
+
+Chasing P-3's row-C anomaly turned up something that matters more than top-k.
+
+The *identical command* produced **193–195 tok/s** in some invocations and **437–438** in others.
+Not flag ordering (tested: both orders give 438). Not bimodal noise — four consecutive fresh runs
+gave 438.18, 437.52, 438.48, 438.42, error bars under 0.5%. The variable is **desktop VRAM
+occupancy**:
+
+| VRAM held before launch | pp2048 |
+|---|---|
+| 462–472 MiB | **437–438** |
+| 713–714 MiB | **193–195** |
+
+A ~250 MiB difference — one browser window — flips the prefill champion by **2.3×**. This is the
+overcommit cliff pre-registration #13 measured at −29%, except here it is **−56%**, and row C is
+perched on its edge because evicting KV is precisely what lets the compute buffer grow to the size
+that only just fits.
+
+**This is a caveat on shipped advice.** v1.14.0/v1.14.1 recommend "evict KV to RAM" for
+long-prompt workloads, quoting 391.72. That figure is only available on an otherwise-clear card.
+A user with a browser open may get 193 — *worse than every other frontier point* — from the
+configuration we told them was fastest.
+
+Needs its own controlled test (deliberately occupy VRAM in steps, find the cliff edge) before the
+advice is either qualified or withdrawn. Flagged, not fixed, and not quietly averaged away.
+
+**Wired into:** nothing yet — Stage 1 authorises Stage 2, and the cliff finding is staked as its
+own follow-up rather than patched on a correlation.
