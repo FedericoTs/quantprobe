@@ -109,3 +109,47 @@ idle, plus the E3 barrier-count delta. The stop rule (+3%) is NOT triggered.
 Cumulative CPU decode on this box, same model, one day: 11.92 (gomp build) → 13.15 (shipped) →
 16.64 (spin barrier) → **~17.7 point estimate with fusion** — +48% over the shipped binary so
 far, all measured, all reproducible, no fork.
+
+---
+
+## Prototype session 2 (same day): the hardened gate, and the STOP RULE FIRES
+
+**Correctness: proven at strength.** The user mandated re-verification before proceeding, and the
+hardened gate (2 prompts × 160 tokens × all three fusion modes) initially FAILED — on inspection,
+the "divergence" was ANSI color codes and the timing line itself: the fusion being faster changed
+the output file. Content-only comparison (ANSI-stripped, timing-cropped): **all arms byte-identical
+on both prompts.** The aliasing fix holds under load.
+
+**Performance: the stake dies on position control.** r=5, and then the decisive step — re-running
+baseline LAST instead of first:
+
+| mode | tg32 | position |
+|---|---|---|
+| baseline (first, cold) | 17.48 ± 2.42 | the number that made fusion look good |
+| topk-only | 19.85 ± 1.02 | |
+| both | 19.55 ± 1.08 | |
+| **baseline again (last, warm)** | **19.42 ± 0.86** | statistically identical to the fusion arms |
+
+The earlier "+9.5% inside the staked band" was a THERMAL-ORDERING artifact. E3 confirms the
+mechanism independently: barrier time 8.8 → 8.7 ms/token with fusion on — the ~576 barriers the
+fusion removes are the ones that cost ~nothing on a spin build, because threads arrive at a
+1-row-op barrier instantly. Kernel-semaphore barriers cost ~19 µs regardless — which is why
+fusion WOULD pay double digits on `GGML_OPENMP=ON` mingw builds. But the correct fix for those
+builds is the flag, not the fusion.
+
+**Per the pre-stated stop rule (+3%): the fusion PR is NOT submitted.** Fusion at batch-1 on a
+correctly-built CPU backend is not worth upstream's review bandwidth, by our own measurement.
+
+## Final deliverable set
+
+1. **The build-guidance issue** — stands, strengthened: the +40% barrier-mechanism finding now
+   comes with the demonstration that node-count reduction (fusion) is a null on spin builds,
+   i.e. the mechanism fix captures the whole prize. Data: #34's A/B, the symbol-level libgomp
+   evidence, the E3 ledger, and the correctness-proven-but-performance-null fusion prototype.
+2. The E4 prototype is retained in `tools/llama.cpp-src` as evidence, toggles default ON changed
+   to OFF (it buys nothing here and adds code paths). Its three correctness lessons (order-
+   identical arithmetic, tie bailout, memory-range check) are recorded for anyone porting
+   fusions to the CPU backend — they are real, and they were each learned from a real failure.
+
+Same-session contrasts only; the box's absolute numbers moved 16→19 tok/s across the day (thermal
++ background), reaffirming the no-cross-session-absolutes rule for CPU measurements too.

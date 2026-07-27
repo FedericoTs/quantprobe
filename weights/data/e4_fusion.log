@@ -4,3 +4,13 @@
   topk-only      17.67 ± 0.90
   addchain-only  16.65 ± 2.74
   both           16.94 ± 1.50
+=== clean r=5 A/B after the hardened correctness gate (2 prompts x 160 tok, all IDENTICAL) ===
+  baseline     17.48 ± 2.42
+  topk-only    19.85 ± 1.02
+  both         19.55 ± 1.08
+  baseline-2   19.42 ± 0.86   (re-run, last position)
+--- E3 barrier delta: baseline vs both (GGML_OP_PROFILE=1, r=1) ---
+  [base] [e3] per-op profiler: ON
+  [base] [e3] per-op profile (thread 0): compute 1579.1 ms total, barrier 291.8 ms total
+  [both] [e3] per-op profiler: ON
+  [both] [e3] per-op profile (thread 0): compute 1614.6 ms total, barrier 286.1 ms total
