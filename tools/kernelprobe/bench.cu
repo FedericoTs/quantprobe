@@ -385,6 +385,49 @@ __global__ __launch_bounds__(128) void k_matvec_q2k_equiv(
     }
 }
 
+// ===================================== L1h: warp-per-row. Removing the per-row block barrier.
+// k_matvec_q4_dp4a pays a 128-thread reduction + TWO __syncthreads for EVERY output row - 768
+// times per matrix. Here each warp owns a row outright: the reduction is 5 __shfl_down with no
+// cross-warp traffic and no barrier at all, and the block synchronises exactly once, at load time.
+// The row-invariant sum(x) terms are hoisted into shared memory as before.
+// Same format, same bytes, same access pattern as L1d - only the thread mapping changes.
+__global__ __launch_bounds__(128) void k_matvec_q4_dp4a_warp(
+        const uint8_t * __restrict__ base, const int * __restrict__ sel,
+        const int * __restrict__ xq, float sx, float * __restrict__ y)
+{
+    __shared__ int xs[K / 4];
+    __shared__ int sumx[K / 4];
+    for (int i = threadIdx.x; i < K / 4; i += 128) {
+        const int v = xq[i];
+        xs[i] = v; sumx[i] = __dp4a(0x01010101, v, 0);
+    }
+    __syncthreads();                                   // once per BLOCK, not once per row
+
+    const int warp = threadIdx.x >> 5;
+    const int lane = threadIdx.x & 31;
+    const uint8_t * m = base + (size_t)sel[blockIdx.x] * MAT_BYTES;
+
+    for (int r = warp; r < ROWS; r += 4) {             // 4 warps -> 4 rows in flight
+        const uint8_t  * row = m + (size_t)r * ROW_BYTES;
+        const uint32_t * q   = (const uint32_t *)row;
+        const __half   * sc  = (const __half   *)(row + QB_PER_ROW);
+        float acc = 0.0f;
+        #pragma unroll
+        for (int p = 0; p < 8; p++) {                  // 256 u32 per row / 32 lanes
+            const int i  = lane + p * 32;
+            const int sb = i >> 5, l = i & 31;
+            const uint32_t v = q[i];
+            const int xlo = xs[sb*64 + l], xhi = xs[sb*64 + l + 32];
+            acc += (float)(__dp4a((int)( v       & 0x0F0F0F0Fu), xlo, 0) - 8*sumx[sb*64 + l])
+                   * __half2float(sc[sb*8 + (l >> 3)]);
+            acc += (float)(__dp4a((int)((v >> 4) & 0x0F0F0F0Fu), xhi, 0) - 8*sumx[sb*64 + l + 32])
+                   * __half2float(sc[sb*8 + (l >> 3) + 4]);
+        }
+        for (int off = 16; off > 0; off >>= 1) acc += __shfl_down_sync(0xffffffff, acc, off);
+        if (lane == 0) y[blockIdx.x * ROWS + r] = acc * sx;
+    }
+}
+
 static double bench(void (*launch)(void*), void* arg, int iters, double bytes) {
     cudaEvent_t a, b; CHECK(cudaEventCreate(&a)); CHECK(cudaEventCreate(&b));
     launch(arg); CHECK(cudaDeviceSynchronize());              // warm
@@ -698,6 +741,41 @@ int main(int argc, char** argv) {
         printf("%-26s %12.1f %11.2f %10.2f   %6.2f GW/s  ( 2.625 bit, __dp4a)  <- FAIRNESS CONTROL\n",
                "L1g Q2_K-equivalent", g, g / spec, g / l0, g / 0.328125);
         CHECK(cudaFree(d_k)); CHECK(cudaFree(d_s)); CHECK(cudaFree(d_xq));
+    }
+
+    // ---- L1h warp-per-row, and L2d gather+dp4a. Both reuse the L1 buffer, so bytes are identical
+    // to L1d and L2 respectively and only the thread mapping / access pattern differs.
+    {
+        float mx = 0; for (int i = 0; i < K; i++) mx = fmaxf(mx, fabsf(hx[i]));
+        const float sxx = mx / 127.0f;
+        std::vector<int8_t> xi(K); for (int i = 0; i < K; i++) xi[i] = (int8_t)lrintf(hx[i] / sxx);
+        int* d_xq; CHECK(cudaMalloc(&d_xq, K)); CHECK(cudaMemcpy(d_xq, xi.data(), K, cudaMemcpyHostToDevice));
+        struct A { const uint8_t* b; const int* s; const int* xq; float sx; float* y; int n; };
+
+        // reference value from the already-verified L1d kernel, to prove the remap is correct
+        A ad{d_base, d_sel_all, d_xq, sxx, d_y, NMAT};
+        k_matvec_q4_dp4a<<<NMAT, 128>>>(ad.b, ad.s, ad.xq, ad.sx, ad.y);
+        CHECK(cudaDeviceSynchronize());
+        std::vector<float> ref(8); CHECK(cudaMemcpy(ref.data(), d_y, 8*sizeof(float), cudaMemcpyDeviceToHost));
+
+        A ah{d_base, d_sel_all, d_xq, sxx, d_y, NMAT};
+        auto LH = [](void* v) { A* a = (A*)v; k_matvec_q4_dp4a_warp<<<a->n, 128>>>(a->b, a->s, a->xq, a->sx, a->y); };
+        LH(&ah); CHECK(cudaDeviceSynchronize());
+        std::vector<float> got(8); CHECK(cudaMemcpy(got.data(), d_y, 8*sizeof(float), cudaMemcpyDeviceToHost));
+        double werr = 0; for (int i = 0; i < 8; i++)
+            werr = fmax(werr, fabs(ref[i]-got[i]) / (fabs(ref[i]) + 1e-6));
+        double gh = bench(LH, &ah, 20, (double)total);
+        printf("%-26s %12.1f %11.2f %10.2f   %6.2f GW/s  ( 4.5 bit, warp/row)  rel.err %.1e %s\n",
+               "L1h q4 dp4a WARP-PER-ROW", gh, gh / spec, gh / l0, gh / 0.5625, werr,
+               werr < 1e-5 ? "OK" : "*** MISMATCH ***");
+
+        A ag{d_base, d_sel_gat, d_xq, sxx, d_y, (int)sel_gat.size()};
+        auto LG = [](void* v) { A* a = (A*)v; k_matvec_q4_dp4a<<<a->n, 128>>>(a->b, a->s, a->xq, a->sx, a->y); };
+        double gbytes2 = (double)sel_gat.size() * MAT_BYTES;
+        double gg = bench(LG, &ag, 200, gbytes2);
+        printf("%-26s %12.1f %11.2f %10.2f   %6.2f GW/s  ( 4.5 bit, GATHERED 1-in-%d)\n",
+               "L2d q4 dp4a GATHER (MoE)", gg, gg / spec, gg / l0, gg / 0.5625, gather_g);
+        CHECK(cudaFree(d_xq));
     }
 
     printf("\nllama.cpp, same card, measured through the runtime:\n");
