@@ -307,6 +307,17 @@
       "evidence": "prereg #40 (with same-model confound control); #36/#37 for the tuning",
       "scope": "copy-regime output only - novel generation gains nothing (D-10). One box, one model family.",
       "wired_into": "quantprobe/plan.py:speculation_advice carries the multiplier and its quantization scope"
+    },
+    {
+      "id": "V-13",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "A PURE layer split (-ngl N) is equivalent to the -ot expert-offload regex at matched work division - the simpler configuration is not slower.",
+      "magnitude": "-ngl 20 gives 19.70 tok/s / 50.76 ms; -ngl 99 with 32 layers of experts on CPU via -ot gives 19.76 / 50.61. Within noise. (-ngl 16: 15.96; -ngl 12: 12.88 - the equivalence is at MATCHED division, not at any N.)",
+      "evidence": "prereg #43",
+      "scope": "Qwen3-30B-A3B Q2_K, reference box, DECODE only. Prefill was not compared, and the ubatch findings (#19/#20/#23) were all measured on the -ot form.",
+      "wired_into": "documented in prereg #43; the planner still emits -ot because every other measurement used it"
     }
   ],
   "dead_ends": [
@@ -559,6 +570,20 @@
       "priority": 1,
       "wired_into": "NOT FIXED - no second GPU to measure on",
       "next_action": "Highest-value thing a two-GPU contributor can measure. Until then the honest interim is a WARNING on multi-device input stating that the estimate assumes row-split and that layer-split (the default) adds capacity rather than bandwidth. The moment a second GPU exists on this box, this is the first measurement - it is also the same session that unblocks C-02."
+    },
+    {
+      "id": "C-09",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "~20 ms of the split placement's 50.6 ms token is UNATTRIBUTED, and the five obvious explanations are each refuted by their own control.",
+      "magnitude": "Byte accounting: CPU share 0.516 GB at measured 26.1 GB/s = 19.8 ms, GPU share 0.70 GB at eta=1 = 3.6 ms, total 23.4 ms against 50.6 ms measured. Refuted as causes: CPU expert read (at physics, 23.1 GB/s marginal, #33); per-layer GPU<->CPU round trips (prereg #43: -ngl 20 with ONE crossing gives 19.70 tok/s vs -ot with ~32 crossings at 19.76 - eliminating 31 boundaries saves nothing); scheduling (#31, six null arms); memory scatter (#32); graph barriers (#34, the shipped CUDA build already spins). GPU-side inefficiency (C-02, eta 0.32-0.56) accounts for only ~5 ms.",
+      "evidence": "prereg #43 (layer-count sweep + pure-layer-split refutation)",
+      "scope": "Qwen3-30B-A3B Q2_K split placement, reference box, decode",
+      "priority": 1,
+      "wired_into": "nothing - an open measurement, deliberately unexplained",
+      "the_named_blocker": "The instrument that closes this is the E3 per-op profiler (already written, GGML_OP_PROFILE=1) running on a CUDA build. This box has no nvcc, so only CPU-only builds can carry the profiler. A tooling gap, not a conceptual one: install the CUDA toolkit and the decomposition takes one run.",
+      "the_pattern": "Fifth mechanism hypothesis killed by its own control in this project - after fixed overhead (#15), GPU clock state (#24), bytes-per-token (#24), and memory scatter (#32). Every attribution made without a control has been wrong, which is why this entry names no mechanism."
     }
   ],
   "untried": [

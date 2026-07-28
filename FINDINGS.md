@@ -9,9 +9,9 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 13 |
-| Shipped levers | 12 |
+| Shipped levers | 13 |
 | Measured dead ends | 12 |
-| Open contradictions | 8 |
+| Open contradictions | 9 |
 | Untried levers | 3 |
 | External work to study | 5 |
 
@@ -173,6 +173,12 @@ Things the tool actually recommends, with the number attached.
 
 `shipped` · `measured` · scope: copy-regime output only - novel generation gains nothing (D-10). One box, one model family. · evidence: prereg #40 (with same-model confound control); #36/#37 for the tuning · wired into: `quantprobe/plan.py:speculation_advice carries the multiplier and its quantization scope`
 
+### V-13 — A PURE layer split (-ngl N) is equivalent to the -ot expert-offload regex at matched work division - the simpler configuration is not slower.
+
+**Magnitude:** -ngl 20 gives 19.70 tok/s / 50.76 ms; -ngl 99 with 32 layers of experts on CPU via -ot gives 19.76 / 50.61. Within noise. (-ngl 16: 15.96; -ngl 12: 12.88 - the equivalence is at MATCHED division, not at any N.)
+
+`shipped` · `measured` · scope: Qwen3-30B-A3B Q2_K, reference box, DECODE only. Prefill was not compared, and the ubatch findings (#19/#20/#23) were all measured on the -ot form. · evidence: prereg #43 · wired into: `documented in prereg #43; the planner still emits -ot because every other measurement used it`
+
 ## Measured dead ends
 
 Negative results. These are load-bearing: each one is a direction nobody has to spend a day on again.
@@ -284,6 +290,12 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 **Next action:** Highest-value thing a two-GPU contributor can measure. Until then the honest interim is a WARNING on multi-device input stating that the estimate assumes row-split and that layer-split (the default) adds capacity rather than bandwidth. The moment a second GPU exists on this box, this is the first measurement - it is also the same session that unblocks C-02.
 
 `open` · `inferred` · scope: multi-device inputs (--vram 24,6 style). Single-GPU predictions unaffected. Row-split may approach the summed model, minus sync. · evidence: first-principles from llama.cpp split-mode semantics + Law 4; NOT yet measured - this box has one GPU · wired into: `NOT FIXED - no second GPU to measure on`
+
+### C-09 — ~20 ms of the split placement's 50.6 ms token is UNATTRIBUTED, and the five obvious explanations are each refuted by their own control.
+
+**Magnitude:** Byte accounting: CPU share 0.516 GB at measured 26.1 GB/s = 19.8 ms, GPU share 0.70 GB at eta=1 = 3.6 ms, total 23.4 ms against 50.6 ms measured. Refuted as causes: CPU expert read (at physics, 23.1 GB/s marginal, #33); per-layer GPU<->CPU round trips (prereg #43: -ngl 20 with ONE crossing gives 19.70 tok/s vs -ot with ~32 crossings at 19.76 - eliminating 31 boundaries saves nothing); scheduling (#31, six null arms); memory scatter (#32); graph barriers (#34, the shipped CUDA build already spins). GPU-side inefficiency (C-02, eta 0.32-0.56) accounts for only ~5 ms.
+
+`open` · `measured` · scope: Qwen3-30B-A3B Q2_K split placement, reference box, decode · evidence: prereg #43 (layer-count sweep + pure-layer-split refutation) · wired into: `nothing - an open measurement, deliberately unexplained`
 
 ### C-06 — Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.
 
