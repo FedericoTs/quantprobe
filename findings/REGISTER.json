@@ -334,6 +334,18 @@
       "evidence": "prereg #43",
       "scope": "Qwen3-30B-A3B Q2_K, reference box, DECODE only. Prefill was not compared, and the ubatch findings (#19/#20/#23) were all measured on the -ot form.",
       "wired_into": "documented in prereg #43; the planner still emits -ot because every other measurement used it"
+    },
+    {
+      "id": "V-14",
+      "kind": "lever",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "llama.cpp's pre-Ampere CUDA-graph disable is too conservative for MoE: graphs capture correctly on Pascal and give +3.2% on a 30B MoE, while giving 0.0% on a dense model.",
+      "magnitude": "Split placement, tg128, r=3, position-controlled, CUDA 12.9 sm_61 build with the arch check behind GGML_CUDA_FORCE_GRAPHS: graphs off 16.98 / 17.12, graphs on 17.61 / 17.57 = +3.2%. Capture verified firing. Dense 7B all-in-VRAM under the same toggle: 22.81 vs 22.81 = 0.0%.",
+      "evidence": "prereg #48 (MoE), prereg #47 P-3 (dense control)",
+      "scope": "one GTX 1060, Qwen3-30B-A3B Q2_K split placement. NOT output-identity-checked (llama-bench emits no text) and NOT replicated on a second card.",
+      "wired_into": "nothing yet - deliberately. A 3% claim from one machine is inside the noise others will measure.",
+      "before_upstream": "Needs (a) an output-identity check with llama-cli, and (b) a second Pascal-class card. Then it is the same shape as the GGML_OPENMP build finding already filed as ggml-org/llama.cpp#26200."
     }
   ],
   "dead_ends": [
@@ -494,13 +506,14 @@
       "status": "refuted",
       "confidence": "measured",
       "claim": "Kernel-launch overhead is NOT the fixed per-token cost: CUDA graphs engage on Pascal (capture proven) and change decode by 0.0%.",
-      "magnitude": "7B Q4_K_M all-in-VRAM, CUDA 12.9 sm_61 build, position-controlled: graphs disabled 22.81 +/- 0.11, graphs FORCED ON 22.81 +/- 0.02, default re-run last 22.66. Capture verified by instrumenting cudaStreamBeginCapture.",
+      "magnitude": "7B Q4_K_M all-in-VRAM, CUDA 12.9 sm_61 build, position-controlled: graphs disabled 22.81 +/- 0.11, graphs FORCED ON 22.81 +/- 0.02, default re-run last 22.66. Capture verified by instrumenting cudaStreamBeginCapture. MoE CONFIRMATION (prereg #48): the node-denser MoE graph, where a per-node cost should show most, gains only +3.2% (16.98/17.12 -> 17.61/17.57) with capture verified. Removing per-launch cost from a 48-layer MoE graph buys 3%, not the 25% staked and not the ~35% the 15.4 ms constant represents.",
       "evidence": "prereg #47 P-3",
       "scope": "dense 7B all-in-VRAM on GTX 1060. The MoE flagship was NOT tested and hits a different code path (see below).",
       "wired_into": "nothing - the >=25% prize is withdrawn",
       "two_false_negatives_caught_first": "(1) The first A/B measured nothing: ggml/CMakeLists.txt:117 defaults GGML_CUDA_GRAPHS_DEFAULT to OFF, so USE_CUDA_GRAPH was undefined and the whole path - including the arch check being patched - was compiled out. (2) 'Graphs enabled' is not 'graphs captured': the first instrumented build failed with exit 1 and silently ran the previous binary. Only after cudaStreamBeginCapture printed does the null mean anything.",
       "what_it_does_not_kill": "The two-parameter fit stands: marginal bandwidth 155.5 GB/s vs the independently measured 161.3 ceiling (3.6% apart). Law 4 having no intercept still forces a real constant to appear as size-dependent eta. The constant's EXISTENCE is intact; only the launch-overhead IDENTITY is refuted.",
-      "the_next_suspect": "ggml-cuda.cu:3280 [TAG_MUL_MAT_ID_CUDA_GRAPHS]: MUL_MAT_ID forces a stream synchronisation and disables graphs when the type is unquantized or the batch exceeds mmvq_mmid_max. The dense test model has no MUL_MAT_ID, but the MoE flagship hits it EVERY layer. A forced per-layer stream sync is a better candidate for a large fixed cost than launch overhead, and the CUDA build now exists to test it."
+      "the_next_suspect": "ggml-cuda.cu:3280 [TAG_MUL_MAT_ID_CUDA_GRAPHS]: MUL_MAT_ID forces a stream synchronisation and disables graphs when the type is unquantized or the batch exceeds mmvq_mmid_max. The dense test model has no MUL_MAT_ID, but the MoE flagship hits it EVERY layer. A forced per-layer stream sync is a better candidate for a large fixed cost than launch overhead, and the CUDA build now exists to test it.",
+      "a_suspect_refuted_at_source": "#47 named MUL_MAT_ID stream-sync as the next suspect. Refuted before measuring: ggml-cuda.cu:3280 disables graphs only when !quantized || ne[2] > mmvq_mmid_max, and mmvq.cu:125 gives Q2_K a Pascal mmvq_mmid_max of 4 while decode has ne[2]=1. The condition cannot fire at batch 1 for our model."
     }
   ],
   "contradictions": [
