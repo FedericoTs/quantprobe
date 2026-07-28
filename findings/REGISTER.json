@@ -175,13 +175,15 @@
       "kind": "law",
       "status": "established",
       "confidence": "measured",
-      "claim": "The VRAM tier's achievable ceiling is eta 0.84 at fp32 and 0.57 at fp16 on this card - so llama.cpp's 0.31-0.51 is a software gap whose SIZE depends on which arithmetic its quantized kernels are bound by: 1.64x if fp32 is the comparand, ~1.1x if fp16 is.",
+      "claim": "The VRAM tier's bandwidth ceiling is eta 0.84 measured independently; llama.cpp's quantized decode reaches 0.513 at Q4_K_M. The 1.64x gap is NOT hardware and NOT arithmetic - sm_61 uses native __dp4a INT8 at ~4x the fp32 rate, and the fp32 GEMV was already bandwidth-bound.",
       "magnitude": "CuPy on GTX 1060 6GB: pure read 165.6 GB/s (eta 0.86), copy 150.1 (0.78), decode-shaped fp32 GEMV (1x4096)@(4096x14336) 161.3 GB/s (eta 0.84), GEMV within 2.6% of pure read so it is bandwidth-bound and the comparison is valid. llama.cpp all-in-VRAM implies eta 0.32-0.56 (C-02). FORMAT LADDER (same session): llama.cpp all-in-VRAM eta climbs monotonically with bits - Q2_K 0.311, IQ3_XS 0.332, IQ3_M 0.343, Q4_K_M 0.513 - consistent with dequantisation cost, and Q4_K_M's 98.6 GB/s is 91% of the independent fp16 ceiling (108.9) but only 61% of the fp32 one (161.3).",
       "evidence": "prereg #44",
       "scope": "GTX 1060 6GB (Pascal sm_61), fp32. NOT established for quantized kernels - see the caveat below.",
       "wired_into": "findings/REGISTER.json:C-02 (reclassified) - deliberately NOT wired into plan.py: the tool's eta constants describe what llama.cpp achieves, which is what users get, and must not be raised to a ceiling no shipped runtime reaches.",
       "the_caveat_that_bounds_it": "cuBLAS fp32 GEMV and llama.cpp's quantized decode are NOT the same operation - llama.cpp streams Q2_K/Q4_K blocks and dequantises in-kernel, work cuBLAS never does. The fp16 row is the warning: 108.9 GB/s vs fp32's 161.3, because Pascal's fp16 ALU runs at 1/64 rate. On this architecture the arithmetic format can bind before bandwidth does. So 0.84 is the CEILING; how much a quantized kernel can reach is unmeasured.",
-      "the_open_question": "Which ceiling applies depends on the arithmetic ggml's quantized CUDA kernels use on sm_61 (dequantize_mul_mat_vec vs MMQ paths). That is a SOURCE question, answerable with no hardware, and it decides whether the GPU-side prize is 1.1x (not worth pursuing) or 1.64x (worth an upstream PR)."
+      "the_open_question": "Which ceiling applies depends on the arithmetic ggml's quantized CUDA kernels use on sm_61 (dequantize_mul_mat_vec vs MMQ paths). That is a SOURCE question, answerable with no hardware, and it decides whether the GPU-side prize is 1.1x (not worth pursuing) or 1.64x (worth an upstream PR).",
+      "arithmetic_question_closed": "Answered from source: common.cuh:51 defines GGML_CUDA_CC_DP4A=610 and :722 selects __dp4a when __CUDA_ARCH__ >= 610. The GTX 1060 is sm_61 = 610 exactly, so the quantized path uses native INT8 DP4A. The fp16 comparand (108.9 GB/s) does NOT apply and the 1.1x floor it implied is withdrawn. The remaining explanation is the kernel's unpacking/scale work - real work cuBLAS never does - and whether it is reducible is unmeasured.",
+      "revision_history": "This figure moved three times in one session: 1.5-2.6x (fp32 comparand, unexamined) -> 1.1-1.64x (fp16 comparand raised) -> 1.64x (arithmetic determined from source). Each move came from checking a comparand rather than defending the previous number."
     }
   ],
   "levers": [

@@ -146,3 +146,40 @@ sm_61 — a source question, answerable without hardware.
 
 **Wired into:** `findings/REGISTER.json:L-14` (ceiling qualified by arithmetic) · `C-02`
 (headroom range corrected) · `C-05` (sixth instance).
+
+### Final determination (same session): the arithmetic question is answered from source
+
+The addendum said the gap's size depends on which arithmetic ggml's quantized CUDA kernels use,
+and that it was a source question. It is now answered:
+
+- `ggml/src/ggml-cuda/common.cuh:51` — `GGML_CUDA_CC_DP4A 610`, "minimum compute capability for
+  `__dp4a`, an intrinsic for byte-wise dot products".
+- `common.cuh:722` — `#if __CUDA_ARCH__ >= GGML_CUDA_CC_DP4A … return __dp4a(a, b, c);`
+- The GTX 1060 is sm_61 = compute capability **610**, so the condition holds **exactly**: the
+  quantized decode path uses **native INT8 DP4A**, not fp16 and not fp32 float math.
+
+Pascal sm_61 executes DP4A at roughly **4× its fp32 rate**. Our fp32 GEMV was already
+bandwidth-bound (161.3 GB/s against 165.6 pure read — within 2.6%), so a kernel with 4× more
+arithmetic headroom cannot be arithmetic-limited either. **The fp16 comparand raised in the
+addendum does not apply, and the 1.1× floor it implied is withdrawn.**
+
+**Where this lands, and I am done revising it:**
+
+| | value |
+|---|---|
+| card ceiling, bandwidth-bound, measured independently | **161.3 GB/s** (η 0.84) |
+| llama.cpp Q4_K_M all-in-VRAM, measured | **98.6 GB/s** (η 0.513) |
+| **gap** | **1.64×** |
+| explained by hardware bandwidth? | **no** — the card does 161 |
+| explained by arithmetic limits? | **no** — DP4A is native and 4× fp32 |
+| remaining explanation | the kernel's **unpacking/scale work**, which is real work cuBLAS never does — how much of it is reducible is **unmeasured** |
+
+This number moved three times in one session — 1.5–2.6× → 1.1–1.64× → **1.64× with the mechanism
+narrowed** — and each move came from checking a comparand rather than defending the previous
+figure. The final claim is the narrowest one the evidence supports: **the GPU-side gap is 1.64× at
+Q4_K_M, it is not hardware and not arithmetic, and whether a better kernel can close it is the
+open question.**
+
+**Practical consequence for the project's headline:** "no software lever left" was correct for the
+CPU tier (independently corroborated) and **wrong for the GPU tier**, where a measured 1.64×
+remains — invisible for the whole project because every GPU number came through llama.cpp.

@@ -97,7 +97,7 @@ What we believe, and the measurement that earned it.
 
 `established` · `measured` · scope: Qwen3-30B-A3B target with a Qwen3-0.6B draft, reference box. The mechanism is general; the crossover point is not measured elsewhere. · evidence: prereg #36 (n-gram budget), prereg #42 (draft-model budget), prereg #28 (the original net-negative) · wired into: `quantprobe/plan.py:speculation_advice (why the two speculation flags behave oppositely)`
 
-### L-14 — The VRAM tier's achievable ceiling is eta 0.84 at fp32 and 0.57 at fp16 on this card - so llama.cpp's 0.31-0.51 is a software gap whose SIZE depends on which arithmetic its quantized kernels are bound by: 1.64x if fp32 is the comparand, ~1.1x if fp16 is.
+### L-14 — The VRAM tier's bandwidth ceiling is eta 0.84 measured independently; llama.cpp's quantized decode reaches 0.513 at Q4_K_M. The 1.64x gap is NOT hardware and NOT arithmetic - sm_61 uses native __dp4a INT8 at ~4x the fp32 rate, and the fp32 GEMV was already bandwidth-bound.
 
 **Magnitude:** CuPy on GTX 1060 6GB: pure read 165.6 GB/s (eta 0.86), copy 150.1 (0.78), decode-shaped fp32 GEMV (1x4096)@(4096x14336) 161.3 GB/s (eta 0.84), GEMV within 2.6% of pure read so it is bandwidth-bound and the comparison is valid. llama.cpp all-in-VRAM implies eta 0.32-0.56 (C-02). FORMAT LADDER (same session): llama.cpp all-in-VRAM eta climbs monotonically with bits - Q2_K 0.311, IQ3_XS 0.332, IQ3_M 0.343, Q4_K_M 0.513 - consistent with dequantisation cost, and Q4_K_M's 98.6 GB/s is 91% of the independent fp16 ceiling (108.9) but only 61% of the fp32 one (161.3).
 
