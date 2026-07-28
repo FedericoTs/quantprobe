@@ -13,7 +13,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Measured dead ends | 21 |
 | Open contradictions | 10 |
 | Untried levers | 5 |
-| External work to study | 5 |
+| External work to study | 6 |
 
 ## Established laws
 
@@ -273,7 +273,7 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `documented` · scope: MoE expert placement via stock llama.cpp -ot, low VRAM-residency ratio · evidence: E-01 study of kvcache-ai/ktransformers (doc/en/kt-kernel/experts-sched-Tutorial.md; SOSP'25 paper); E-02 study of PowerInfer · wired into: `U-02 withdrawn from the register`
 
-### D-08 — Pinned host memory is ALREADY in use for every host-resident row quantprobe recommends - there is no PCIe headroom to reclaim.
+### D-08 — Pinned host memory is ALREADY in use for every host-resident row quantprobe recommends - there is no PCIe headroom to reclaim. [EXTENDED by E-06: pinning is also a CAPACITY risk - 36.5GB pinned of 64GB fails under memory pressure. v1.19 warns and names the no--ot fallback whenever an -ot row pins >45% of system RAM.]
 
 **Magnitude:** U-03's predicted '+30% on host-resident prefill if currently pageable' resolves to 0%.
 
@@ -285,7 +285,7 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED) · wired into: `quantprobe/plan.py:speculation_advice`
 
-### D-10 — Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself.
+### D-10 — Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself. [INDEPENDENTLY REPLICATED (E-06): 0 drafts on a novel prompt, different model (117B), different hardware (3090), different fork. Also now a TOP-LINE note in plan output - the buried version cost the replicator a debugging session.]
 
 **Magnitude:** Single-shot, fresh server, temp 0: ngram-mod 1.03x (zero drafts), ngram-cache 0.93x, ngram-map-k4v 1.00x, draft-mtp unmeasurable (three attempts, <0.2 tok/s or hung on the split where its own baseline runs 18.19), external 0.6B draft 0.72x (D-09). The 50.38-at-100%-acceptance first reading was ngram-mod's PERSISTENT cross-request store replaying an identical second request - the third harness artifact this project has caught by reading the output. CONFIRMED AT TUNED SETTINGS (prereg #41): the m384/n4 drafter drafts ZERO tokens on novel code and novel prose (21.13 vs 21.02 base; 20.95 vs 21.16) - fewer than the defaults' 38 - because of the 389-token context floor. D-10 was closed on defaults-scoped evidence and now holds at tuned settings too.
 
@@ -413,7 +413,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Next action:** Watch ggml-org/llama.cpp#26200 for maintainer response. Remaining open: whether the finding transfers to a CUDA build - MEASURED NOT to transfer to the shipped split config via the libomp spin-policy A/B (20.12 vs 20.56, bars overlap), but a CUDA + GGML_OPENMP=OFF build is untested here (no nvcc on this box).
 
-`reported` · `measured` · scope: pure-CPU decode, 4-core Windows box. The split placement runs on libomp (mostly spinning already); CUDA+no-OpenMP is unmeasured. · evidence: prereg #34; the E3 per-op profiler (barrier 30.8 -> 10.8 ms/token); barrier-map desk research (symbol-level libgomp evidence) · wired into: `UPSTREAM ISSUE FILED: ggml-org/llama.cpp#26200 (2026-07-27, FedericoTs). Carries the three-build A/B, the E3 barrier ledger, the symbol-level libgomp evidence, a copy-paste repro, and both supporting nulls.`
+`reported` · `measured` · scope: pure-CPU decode, 4-core Windows box. The split placement runs on libomp (mostly spinning already); CUDA+no-OpenMP is unmeasured. · evidence: prereg #34; the E3 per-op profiler (barrier 30.8 -> 10.8 ms/token); barrier-map desk research (symbol-level libgomp evidence); E-06 confirms first-order in the wild (6-of-12 thread auto-detect: 2 -> 9+ t/s from the flag alone); v1.19 emits --threads <logical> on CPU-resident placements · wired into: `UPSTREAM ISSUE FILED: ggml-org/llama.cpp#26200 (2026-07-27, FedericoTs). Carries the three-build A/B, the E3 barrier ledger, the symbol-level libgomp evidence, a copy-paste repro, and both supporting nulls.`
 
 ### C-01 — The GLM kvp values are wrong in BOTH directions and by 2x - not the 30-60x we believed. glm-744b is 2.10x too LARGE, glm-air is 2x too SMALL, and the two are related by a transposition.
 
@@ -493,13 +493,13 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `refuted` · `speculative` · wired into: `next kernelprobe experiment (prereg #56)`
 
-### U-14 — The shipped -ot pattern (expert layers 11-47 to CPU) costs ~13% prompt processing vs the older 16-47 split: pp2048 measured 336.94 at full clocks where the original 386.04 was recorded on the other pattern, tracking the +15.6% CPU expert-layer count. A resident-expert-count sweep would map the pp/tg frontier and may recover the pp without hurting tg.
+### U-14 — The shipped -ot pattern (expert layers 11-47 to CPU) costs ~13% prompt processing vs the older 16-47 split: pp2048 measured 336.94 at full clocks where the original 386.04 was recorded on the other pattern, tracking the +15.6% CPU expert-layer count. A resident-expert-count sweep would map the pp/tg frontier and may recover the pp without hurting tg. [CONFIRMED and SHIPPED by prereg #62: 16 residents beats the shipped 11 on BOTH metrics (+15.3% pp, +6.3% tg, clocks-controlled). Root cause was a double VRAM discount in the pattern generator; fixed, plan now emits 31% residency on the reference box. The VRAM edge is a soft -6.6% degradation at 18 residents, not a hard cliff.]
 
 **Hypothesis:** prefill is CPU-expert-bound, so pp scales inversely with CPU-resident expert layers while tg is roughly flat across nearby splits (tg parity measured repeatedly)
 
 **Predicted effect (staked):** ~+15% pp at 16 resident expert layers if VRAM headroom allows at ub 1024; tg unchanged within noise
 
-`untested` · `speculative` · wired into: `prereg #61 scoring; candidate next single-session sweep`
+`closed` · `speculative` · evidence: prereg #62 (the sweep + the shipped fix) · wired into: `prereg #61 scoring; candidate next single-session sweep`
 
 ## External work to study
 
@@ -544,6 +544,12 @@ Paged attention and automatic prefix caching are the production form of U-04.
 **Question to answer:** What hit rate does prefix caching achieve on RAG-shaped workloads, and what is the memory overhead of paging?
 
 `open`
+
+### E-06 — reddit.com (u/MoneroApe replication report) + TheTom/llama-cpp-turboquant laguna/port + thecodacus/llama.cpp fable5/prefetch-experts (his fork chain)
+
+first external datapoint the project has ever received; converts "one box" from a disclaimer into a testable boundary, and every one of his five suggestions was a real defect or gap
+
+`reviewed` · `measured` · scope: his numbers are his; ours become validated only when he re-runs with v1.19 - the ask is in drafts/reddit_reply_moneroape.md · evidence: his Reddit report (raw timings quoted), analogalok 4090 benchmarks (external), our reconciliation arithmetic · wired into: `quantprobe/detect.py (channel fix), plan.py (cap/pinning/threads/topline/pp2048), calibrate.py, tests t_moneroape_*`
 
 ---
 

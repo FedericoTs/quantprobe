@@ -501,7 +501,7 @@
    "kind": "dead_end",
    "status": "refuted",
    "confidence": "documented",
-   "claim": "Pinned host memory is ALREADY in use for every host-resident row quantprobe recommends - there is no PCIe headroom to reclaim.",
+   "claim": "Pinned host memory is ALREADY in use for every host-resident row quantprobe recommends - there is no PCIe headroom to reclaim. [EXTENDED by E-06: pinning is also a CAPACITY risk - 36.5GB pinned of 64GB fails under memory pressure. v1.19 warns and names the no--ot fallback whenever an -ot row pins >45% of system RAM.]",
    "magnitude": "U-03's predicted '+30% on host-resident prefill if currently pageable' resolves to 0%.",
    "evidence": "U-03 source study: -ot=CPU re-runs buffer selection over the CPU buft list (ACCEL -> GPU-host -> CPU-extra -> CPU); on a CUDA build the GPU-host entry is CUDA_Host, allocated by cudaMallocHost. llama-model-loader.cpp:1197-1205 demotes it back to pageable IF use_mmap is true.",
    "scope": "CUDA builds, -ot=CPU placements, with --no-mmap set",
@@ -524,7 +524,7 @@
    "kind": "dead_end",
    "status": "refuted",
    "confidence": "measured",
-   "claim": "Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself.",
+   "claim": "Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself. [INDEPENDENTLY REPLICATED (E-06): 0 drafts on a novel prompt, different model (117B), different hardware (3090), different fork. Also now a TOP-LINE note in plan output - the buried version cost the replicator a debugging session.]",
    "magnitude": "Single-shot, fresh server, temp 0: ngram-mod 1.03x (zero drafts), ngram-cache 0.93x, ngram-map-k4v 1.00x, draft-mtp unmeasurable (three attempts, <0.2 tok/s or hung on the split where its own baseline runs 18.19), external 0.6B draft 0.72x (D-09). The 50.38-at-100%-acceptance first reading was ngram-mod's PERSISTENT cross-request store replaying an identical second request - the third harness artifact this project has caught by reading the output. CONFIRMED AT TUNED SETTINGS (prereg #41): the m384/n4 drafter drafts ZERO tokens on novel code and novel prose (21.13 vs 21.02 base; 20.95 vs 21.16) - fewer than the defaults' 38 - because of the 389-token context floor. D-10 was closed on defaults-scoped evidence and now holds at tuned settings too.",
    "evidence": "prereg #30 (kill rule fired), prereg #28 arm D, Law 6 arm S-e; prereg #41 (tuned-drafter retest)",
    "scope": "reference box, Qwen3 MoE family, llama.cpp b10098. Novel decode is bounded by the 41.1 tok/s raw wall (L-11); the remaining novel-workload levers are q8_0 KV at depth, prefix caching for ingest, batching for aggregate, and DRAM bandwidth itself.",
@@ -755,7 +755,7 @@
    "confidence": "measured",
    "claim": "CPU decode speed depends ~40% on the OpenMP runtime the binary was BUILT with - a variable no hardware spec exposes and the tool cannot currently see.",
    "magnitude": "Same source, same box, same model, tg32 t=4: gcc+libgomp (mingw, kernel-semaphore barriers, no spin phase) 11.92; gcc+GGML_OPENMP=OFF (ggml spin barrier) 16.64 (+40%); MSVC+libomp default 13.28; +KMP_BLOCKTIME=infinite 13.89. ~2070 barriers/token; the mechanism, not the count, was most of the tax.",
-   "evidence": "prereg #34; the E3 per-op profiler (barrier 30.8 -> 10.8 ms/token); barrier-map desk research (symbol-level libgomp evidence)",
+   "evidence": "prereg #34; the E3 per-op profiler (barrier 30.8 -> 10.8 ms/token); barrier-map desk research (symbol-level libgomp evidence); E-06 confirms first-order in the wild (6-of-12 thread auto-detect: 2 -> 9+ t/s from the flag alone); v1.19 emits --threads <logical> on CPU-resident placements",
    "scope": "pure-CPU decode, 4-core Windows box. The split placement runs on libomp (mostly spinning already); CUDA+no-OpenMP is unmeasured.",
    "priority": 2,
    "wired_into": "UPSTREAM ISSUE FILED: ggml-org/llama.cpp#26200 (2026-07-27, FedericoTs). Carries the three-build A/B, the E3 barrier ledger, the symbol-level libgomp evidence, a copy-paste repro, and both supporting nulls.",
@@ -911,6 +911,19 @@
    "why": "Paged attention and automatic prefix caching are the production form of U-04.",
    "question_to_answer": "What hit rate does prefix caching achieve on RAG-shaped workloads, and what is the memory overhead of paging?",
    "priority": 2
+  },
+  {
+   "id": "E-06",
+   "kind": "external",
+   "status": "reviewed",
+   "confidence": "measured",
+   "claim": "FIRST EXTERNAL REPLICATION (u/MoneroApe: RTX 3090 24GB + Ryzen 8600G + 64GB DDR5, 117.6B MoE at 3.75bpw). The tool nailed the fit (32%-expert split emitted correctly from --gguf) and missed the speed 9x - reconciled to OUR detector, not the law: (1) channel-count bug - detect.py treated 4 DIMMs as 4 channels on dual-channel AM5, quoting 173 GB/s where the platform peaks at ~86; (2) the spec-vs-measured stream gap (#27s own 54% lesson, never applied to the detector). Corrected inputs predict 9.3 tok/s; analogaloks tuned same-class 4090 measured 9.26-11.36. His report also independently replicated D-10 (ngram: 0 drafts on novel generation, different model/hardware/fork), confirmed C-07 as first-order (fork auto-detected 6 of 12 threads: decode struggled at 2 t/s ... this flag alone helped it jump past 9), and exposed the pinned-memory capacity risk (D-08 extension: the advice pinned 36.5GB of his 64GB). His five tool suggestions are ALL shipped in v1.19: dual-channel default + HEDT detection, calibrate-measures-stream, SAFE_UBATCH_CAP 4096 for big-VRAM cards (external datapoint, buffer-math gated), pinned-memory warning with auto-placement fallback, --threads emission with logical-core note, top-line speculation reality, and pp numbers carry their measurement conditions (pp2048).",
+   "magnitude": "prediction error 9x -> reconciled to ~1x with corrected inputs; Law 4 survived its first external contact",
+   "evidence": "his Reddit report (raw timings quoted), analogalok 4090 benchmarks (external), our reconciliation arithmetic",
+   "scope": "his numbers are his; ours become validated only when he re-runs with v1.19 - the ask is in drafts/reddit_reply_moneroape.md",
+   "wired_into": "quantprobe/detect.py (channel fix), plan.py (cap/pinning/threads/topline/pp2048), calibrate.py, tests t_moneroape_*",
+   "repo": "reddit.com (u/MoneroApe replication report) + TheTom/llama-cpp-turboquant laguna/port + thecodacus/llama.cpp fable5/prefetch-experts (his fork chain)",
+   "why": "first external datapoint the project has ever received; converts \"one box\" from a disclaimer into a testable boundary, and every one of his five suggestions was a real defect or gap"
   }
  ]
 }

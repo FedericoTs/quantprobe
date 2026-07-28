@@ -475,9 +475,11 @@ def t_ubatch_is_sized_not_pinned():
     # a roomy card still gets the measured-best 2048; a tight one gets less, not a caveat
     assert safe_ubatch(6.0) == 2048, "roomy card should still reach the measured optimum"
     assert safe_ubatch(1.5) < 2048, "tight card must step DOWN, not be handed the cliff"
-    # and the flag string the CLI emits has to agree with the sizer
+    # and the flag string the CLI emits has to agree with the sizer (at the CLI's own cap,
+    # raised to 4096 for big-VRAM cards after the first external replication - see SAFE_UBATCH_CAP)
+    from quantprobe.plan import SAFE_UBATCH_CAP
     fl = ubatch_flags("hybrid: attention->VRAM, experts->RAM", 0.7, 6)
-    assert fl and str(safe_ubatch(6 * 0.90 - 0.7)) in fl, f"flags disagree with sizer: {fl}"
+    assert fl and str(safe_ubatch(6 * 0.90 - 0.7, cap=SAFE_UBATCH_CAP)) in fl, f"flags disagree with sizer: {fl}"
 
 
 def t_frontier_rows_are_off_the_cliff():
@@ -1275,6 +1277,55 @@ def t_calibrate_roundtrip():
 def t_calibrate_cli_registered():
     rc, out = cli("calibrate", "--help")
     assert rc == 0 and "--model" in out and "--skip-bench" in out
+
+
+def t_moneroape_channel_count():
+    # THE 3.7x INPUT BUG from the first external replication: 4 DIMMs on consumer AM5 must be
+    # treated as DUAL channel, not 4-channel. HEDT names keep their width.
+    import quantprobe.detect as d, platform
+    orig = platform.processor
+    try:
+        platform.processor = lambda: "AMD Ryzen 5 8600G w/ Radeon"
+        # simulate the detect() channel logic directly: consumer + 4 sticks -> 2 channels
+        cpu = platform.processor().lower()
+        wide = any(w in cpu for w in ("threadripper", "epyc", "xeon w-3"))
+        assert not wide
+        platform.processor = lambda: "AMD Ryzen Threadripper 7970X"
+        cpu = platform.processor().lower()
+        assert "threadripper" in cpu
+    finally:
+        platform.processor = orig
+    # and the real detect() on THIS box must not crash and must mention calibrate in the RAM note
+    _, notes = d.detect()
+    ram_notes = [n for n in notes if n.startswith("RAM:")]
+    assert ram_notes and ("calibrate" in ram_notes[0] or "unknown" in ram_notes[0]), ram_notes
+
+
+def t_moneroape_ubatch_cap():
+    # cap raised for big-VRAM cards (external 3090/4090 datapoint), buffer math still gates
+    from quantprobe.plan import safe_ubatch, SAFE_UBATCH_CAP
+    assert SAFE_UBATCH_CAP == 4096
+    assert safe_ubatch(20.0, cap=SAFE_UBATCH_CAP) == 4096      # 24GB-class headroom reaches 4096
+    assert safe_ubatch(1.5, cap=SAFE_UBATCH_CAP) == 1024       # 6GB-class card unchanged
+    assert safe_ubatch(0.05, cap=SAFE_UBATCH_CAP) == 0
+
+
+def t_moneroape_pinning_warning():
+    # a 3090+64GB with a 55GB MoE must warn about pinned host memory on -ot rows
+    rc, out = cli("plan", "--total", "117.6", "--active", "8.4", "--bits", "3.75",
+                  "--vram", "24", "--vram-bw", "936", "--ram", "64", "--ram-bw", "86",
+                  "--disk-bw", "3")
+    assert rc == 0 and "pins" in out and "auto-placement" in out, out[:600]
+
+
+def t_moneroape_threads_and_topline():
+    # CPU-resident placements must carry --threads, and the speculation reality must be top-line
+    rc, out = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    assert rc == 0
+    assert "--threads" in out, "no --threads in emitted command"
+    head = out[:out.index("run it:")]
+    assert "0 drafts" in out and "speculation: pays ONLY" in out
+    assert "pp2048" in out, "pp published without its measurement conditions"
 
 
 def t_version():

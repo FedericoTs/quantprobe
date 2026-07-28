@@ -96,11 +96,27 @@ def detect():
         total, mts, sticks = kb / 2**20, None, None
     if total is None:
         total = 16.0; notes.append("RAM capacity: 16 GB [default - detection failed]")
-    channels = max(1, min(sticks or 2, 8)) if sticks else 2
+    # CHANNEL COUNT IS NOT STICK COUNT. The first external replication (RTX 3090 + Ryzen 8600G,
+    # 4 DIMMs on dual-channel AM5) hit exactly this: min(sticks, 8) assumed 4-channel and quoted
+    # 173 GB/s where the platform delivers ~86 peak - a 2x input error that a correct Law 4
+    # turned into a 2x wrong prediction. Consumer desktop platforms (AM4/AM5, LGA17xx/18xx) are
+    # DUAL-channel regardless of stick count; only HEDT/server parts go wider, and those we can
+    # recognize by CPU name. When in doubt: 2, plus a note - `quantprobe calibrate` measures the
+    # real stream and overrides all of this.
+    cpu_name = platform.processor().lower() if platform.processor() else ""
+    WIDE = ("threadripper", "epyc", "xeon w-3", "xeon(r) w9", "xeon(r) w7", "xeon gold",
+            "xeon platinum", "xeon silver")
+    if any(w in cpu_name for w in WIDE):
+        channels = max(1, min(sticks or 4, 8))
+        chan_src = f"assumes {channels}-channel [HEDT/server CPU detected]"
+    else:
+        channels = min(sticks, 2) if sticks else 2
+        chan_src = (f"dual-channel [consumer platform; {sticks} sticks does NOT mean {sticks} "
+                    f"channels]" if sticks and sticks > 2 else f"assumes {channels}-channel")
     if mts:
         ram_bw = round(channels * mts * 8 / 1000)   # theoretical peak, preset convention
         notes.append(f"RAM: {total:.0f} GB, {sticks} stick(s) @ {mts:.0f} MT/s [os] -> {ram_bw} GB/s peak "
-                     f"(assumes {channels}-channel)")
+                     f"({chan_src}); real stream is typically ~55% of this - run `quantprobe calibrate` to measure yours")
     else:
         ram_bw = 48
         notes.append(f"RAM: {total:.0f} GB [os]; speed unknown -> 48 GB/s [default: DDR4-3000 dual, pass --ram-bw]")

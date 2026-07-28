@@ -131,7 +131,7 @@ def ubatch_flags(placement, vram_resident_gb, vc):
         return None                       # nothing host-resident: no transfer to amortise
     if vc * 0.90 - vram_resident_gb < UBATCH_HEADROOM_GB:
         return None                       # no room for the bigger compute buffer; the -39% case
-    ub = safe_ubatch(vc * 0.90 - vram_resident_gb)
+    ub = safe_ubatch(vc * 0.90 - vram_resident_gb, cap=SAFE_UBATCH_CAP)
     return "-b %d -ub %d" % (ub, ub) if ub else None
 
 
@@ -167,6 +167,14 @@ def safe_ubatch(headroom_gb, cap=2048):
     that grows, and the measured margin between the last good point (902 MiB) and the first bad one
     (1203 MiB) is under 300 MiB on a 6 GB card. Sizing to the last byte would re-create the cliff
     one step further out.
+
+    The cap: 2048 was the ceiling this 6 GB box could validate - past it the buffer math already
+    said no, so larger values were never reachable here. On big-VRAM cards that cap was doing the
+    limiting itself: the first external replication (RTX 3090 24GB, 117B MoE) reported prefill
+    jumping 90 -> 470 tok/s at -b 4096 -ub 4096 [external datapoint, analogalok's 4090 numbers via
+    u/MoneroApe - NOT validated on our hardware; the buffer-fit math still gates it, so a card
+    without the headroom never sees 4096]. MoE prefill benefits disproportionately: each layer's
+    expert dispatch is one big matmul, and the batch amortizes it.
     """
     budget_mib = max(0.0, headroom_gb) * 1024 * 0.5
     ub = 0
@@ -176,6 +184,9 @@ def safe_ubatch(headroom_gb, cap=2048):
             ub = n
         n *= 2
     return ub
+
+
+SAFE_UBATCH_CAP = 4096      # raised from 2048 for big-VRAM cards; see safe_ubatch docstring
 
 
 # The measured Pareto frontier for a MoE whose experts do not fit VRAM, on the reference box
@@ -545,6 +556,16 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         r_need = size - ne * ab / 8 * 1.08
         if v_need <= vc * 0.95 and r_need <= ra:
             warn = "RAM boundary - needs --no-mmap; can be unstable" if r_need > ra * 0.85 else None
+            # PINNED-MEMORY CAPACITY RISK (first external replication, u/MoneroApe, extends D-08):
+            # `-ot ...=CPU` host buffers are CUDA-pinned. Pinning is why the PCIe path is fast -
+            # and pinning a large share of system RAM fails outright under memory pressure. On his
+            # 64 GB box the advice tried to pin 36.5 GB. The fallback when this bites: drop -ot
+            # entirely and let llama.cpp auto-placement decide (slower, but it starts). APPENDED
+            # to any existing warning, never masked by it - his rig had both problems at once.
+            if r_need > ra * 0.45:
+                pin = (f"pins {r_need:.0f}GB of {ra:.0f}GB RAM (CUDA host memory) - fails under "
+                       "memory pressure; if it does, drop -ot and let auto-placement decide")
+                warn = f"{warn}; {pin}" if warn else pin
             out.append(("hybrid: attention->VRAM, experts->RAM",
                         1 / (act_ne / (geta * vb) + act_ex / (eta_r * rb) + kv_gb / (ETA_KV * vb)), warn,
                         '-ngl 99 -ot "exps=CPU" --no-mmap'))
@@ -574,7 +595,10 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                 # printed flags cannot deliver is the v1.6.5 bug class; without a layer count
                 # the row is suppressed and the footer tells the user how to unlock it.
                 if fl:
-                    out.append((f"split experts: {f:.0%}->VRAM, rest->RAM", 1 / t_split, None, fl))
+                    pin_warn = ((f"pins {ram_left:.0f}GB of {ra:.0f}GB RAM (CUDA host memory) - "
+                                 "fails under memory pressure; if it does, drop -ot and let "
+                                 "auto-placement decide") if ram_left > ra * 0.45 else None)
+                    out.append((f"split experts: {f:.0%}->VRAM, rest->RAM", 1 / t_split, pin_warn, fl))
     if (not moe) and vc > 0 and size + kv_gb > vc * 0.90 and size + kv_gb <= ra + vc * 0.9:
         g = min(0.95, vc * 0.9 / (size + kv_gb))           # KV splits with its layers
         # -ngl takes a LAYER COUNT. This emitted `int(g * 99)`, treating 99 - the all-layers
@@ -730,11 +754,30 @@ def run(args):
         w = f"   [{warn}]" if warn else ""
         print(f"  {star} {tps:6.1f} tok/s  {name}{w}")
     best = cfgs[0]
+    # Speculation reality, TOP-LINE (first external replication, u/MoneroApe: the buried version
+    # of this note cost him a debugging session - the drafter silently produced 0 drafts on a
+    # novel prompt, exactly as D-10 measured, and the warning was ten paragraphs down).
+    print("\n  speculation: pays ONLY when output copies its context (edits, refactors, RAG"
+          " quoting)\n  - on novel generation the ngram drafter produces 0 drafts and changes"
+          " nothing (D-10,\n  independently replicated on an RTX 3090). Details below.")
     # Prefill lever, appended only where the measurement says it pays (host-resident weights with
     # VRAM headroom). Not part of the law: `evaluate` is untouched and no anchor can move.
     ub = ubatch_flags(best[0], ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc)
     run_flags = f"{best[3]} {ub}" if ub else best[3]
+    # --threads: llama.cpp's auto-detection can pick PHYSICAL cores only (the first external
+    # replication got 6 of 12 on a Ryzen 8600G and reported "decode struggled at 2 t/s ... this
+    # flag alone helped it jump past 9"; our own C-07 measured a 40% swing from the CPU-thread
+    # runtime alone). Emit the logical count explicitly whenever the placement has CPU-resident
+    # work; harmless when it does not.
+    import os as _os2
+    nthreads = _os2.cpu_count() or 0
+    if nthreads and any(k in best[0] for k in ("->RAM", "CPU", "disk", "split experts")):
+        run_flags = f"{run_flags} --threads {nthreads}"
     print(f"\n  run it:  llama-server -m model.gguf {run_flags}")
+    if "--threads" in run_flags:
+        print(f"           (--threads {nthreads} = this machine's LOGICAL cores; llama.cpp's own"
+              " auto-detect may pick\n           physical-only and cost 2x on CPU-bound decode -"
+              " verify with your fork if unsure)")
     # I-quant files on a host tier: measured 2.7x slower than K-quants at the same size
     # (pre-registration #31: IQ3_XS 10.6 GB/s vs Q2_K 28.4 / Q4_K_M 29.7 on pure-CPU decode).
     # The warning fires only when weights actually land on the CPU - in VRAM the IQ formats
@@ -757,8 +800,10 @@ def run(args):
             print(f"  Choosing wrong costs up to {rag['speedup_vs_worst']:.2f}x on a long-prompt workload.")
         else:
             print(f"\n  workload: one setup wins at every prompt:generation ratio - {rag['label']}")
-            print(f"  ({rag['pp']:.0f} pp / {rag['tg']:.1f} tg). Earlier versions offered a choice here; "
-                  "re-measuring")
+            print(f"  ({rag['pp']:.0f} pp2048 / {rag['tg']:.1f} tg128 - REFERENCE-BOX numbers at "
+                  "those exact batch sizes;")
+            print("  a 22-token prompt measures startup, not prefill). Earlier versions offered a "
+                  "choice here; re-measuring")
             print("  every cell in ONE session (pre-registration #25) showed the alternatives were "
                   "dominated,")
             print("  so there is nothing to choose. One fewer knob, and the honest number.")
