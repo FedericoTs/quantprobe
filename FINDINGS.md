@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 17 |
 | Shipped levers | 17 |
 | Measured dead ends | 21 |
-| Open contradictions | 9 |
+| Open contradictions | 10 |
 | Untried levers | 4 |
 | External work to study | 5 |
 
@@ -129,7 +129,7 @@ Things the tool actually recommends, with the number attached.
 
 **Magnitude:** frontier row at 280.64 pp / 20.25 tg
 
-`shipped` · `measured` · scope: MoE whose experts exceed VRAM · evidence: prereg #13, #20, #21 · wired into: `quantprobe/plan.py placement search`
+`shipped` · `measured` · scope: MoE whose experts exceed VRAM; tg-parity with plain -ngl splits reconfirmed fresh (#60): the lever wins prompt processing, KV safety and speculation-enablement, NOT raw generation · evidence: prereg #13, #20, #21 · wired into: `quantprobe/plan.py placement search`
 
 ### V-02 — Sizing -ub from measured VRAM headroom (never pinning it) is worth up to 73% of prefill and avoids a 45% cliff.
 
@@ -438,6 +438,12 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 **Next action:** any future use of an absolute figure needs its own controlled run
 
 `open` · `measured` · scope: reference box · evidence: prereg #21 reproducibility note · wired into: `flagged, not averaged away`
+
+### C-10 — The tool prints +/-25% bands calibrated on a fresh box, but the SAME box after ~9h of sustained benchmarking measures -29% on the flagship frontier row (21.58 printed -> 15.29 fresh interleaved, contamination excluded). Session-to-session drift was known at 10-13%; sustained-load day-drift exceeds the printed band itself. Bands are now labeled cold-box ceilings in the plan output; the open question is whether the driver is thermal throttling, memory-clock state, or OS degradation - undiagnosed, needs a cold-boot A/B.
+
+**Magnitude:** -29% on arm (c), -11% under-prediction reversal on pure CPU (the CPU arm degrades least)
+
+`open` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1) · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
 
 ## Untried levers
 

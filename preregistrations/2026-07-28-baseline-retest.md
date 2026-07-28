@@ -42,3 +42,57 @@ If **P-1** fails, the frontier row constants are re-measured and updated (the ±
 tool's own printed promise — missing it is a shipped-claim failure, handled as such).
 
 **Wired into:** pending scoring; this is the project's recurring honesty checkpoint.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg60_baseline_retest.log`)
+
+**Verdict: P-2 HIT, P-1 MISS, P-3 FAILS — both kill rules fire, and both shipped-copy
+corrections were made in the same commit as this score.**
+
+### First, an instrument catch that would have corrupted the verdict
+
+The first six-run block measured everything 25-30% low with a 34% intra-run error bar on the CPU
+arm. Cause found before scoring: a **runaway `find` orphan with 16,285 CPU-seconds** (4.5
+CPU-hours, from an earlier shell pipeline) holding idle load at 47%. Killed; load fell to 9%;
+the block is recorded as INVALIDATED in the log and excluded. Fourth harness artifact this
+project has caught by refusing to read a suspicious number.
+
+### The clean block (interleaved x2, r=2 each)
+
+| arm | tg128 | staked band | verdict |
+|---|---|---|---|
+| (c) tool-advised `-ot` split + `-b/-ub 1024` | 15.04, 15.53 → **15.29** | [16.5, 27.5] | **P-1 MISS** (7% under the floor) |
+| (b) plain `-ngl 20` | 15.08, 15.40 → **15.24** | — | c/b = **1.003** → **P-3 FAILS** |
+| (a) pure CPU `-ngl 0` | 13.18, 13.19 → **13.19** | [8.9, 14.9] | **P-2 HIT** (tool under-predicted by 11% — CPU is the arm the box's thermal state hurts least) |
+
+### What the two failures actually mean, and the corrections shipped
+
+**P-3 (the -ot split does not beat a plain -ngl split on generation).** This is not new physics —
+prereg #43 measured the same equality weeks ago (19.70 vs 19.76) and today reconfirms it
+(15.29 vs 15.24). What failed is the COPY: the plan output's ranked list reads as if the -ot row
+wins generation. Correction shipped: the plan now states the tg equality explicitly and grounds
+the -ot advice where it is actually earned — prompt processing (2.2x measured), KV-in-VRAM
+safety, and enabling the speculation numbers. The v2 floor model, for the record, predicted this
+equality (its GPU-call term barely distinguishes the two placements); the old byte-only intuition
+did not.
+
+**P-1 (the printed 22.0 ±25% missed at 15.29).** The frontier constant was measured on a fresh
+box; today's measurement came after ~9 hours of sustained benchmarking. Same-day earlier runs of
+a near-identical arm gave 16.87 — the box degrades under sustained load beyond the printed band.
+Correction shipped: the plan output now labels reference numbers as COLD-BOX ceilings and quotes
+the measured -29% loaded-state figure with the prereg reference. The constants were NOT rewritten
+from tonight's degraded state — overwriting cold-box calibration with end-of-marathon numbers
+would replace good data with bad; instead the band's meaning is now stated honestly.
+
+### The fresh original-case scoreboard, as it stands tonight
+
+```
+pure CPU                 13.19 tok/s
+plain -ngl 20            15.24
+tool -ot split           15.29     (equal tg; wins pp 2.2x and enables speculation)
+copy-regime + ngram      ~4.7x on top of split decode (measured #28, cold-box)
+```
+
+**Wired into:** `findings/REGISTER.json:C-10` (new: printed band vs loaded-state drift) ·
+`quantprobe/plan.py` workload copy (both corrections, tests green) · V-01 scope note.

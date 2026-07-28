@@ -1,0 +1,27 @@
+=== #60 original-case retest, one session, interleaved ===
+--- arm c ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         12.11 ± 0.74 |
+--- arm b ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |    0 |           tg128 |         12.18 ± 0.27 |
+--- arm a ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |    0 |           tg128 |          7.59 ± 2.58 |
+--- arm c ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         11.39 ± 0.54 |
+--- arm b ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |    0 |           tg128 |         12.05 ± 0.35 |
+--- arm a ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |    0 |           tg128 |          9.43 ± 0.23 |
+=== BLOCK 1 INVALIDATED: runaway 'find' orphan, 16285 CPU-s, idle load 47%. Killed; load 9%. ===
+=== BLOCK 2 (clean) ===
+--- arm c ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         15.04 ± 0.18 |
+--- arm b ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |    0 |           tg128 |         15.08 ± 0.18 |
+--- arm a ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |    0 |           tg128 |         13.18 ± 0.68 |
+--- arm c ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         15.53 ± 0.20 |
+--- arm b ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |    0 |           tg128 |         15.40 ± 0.10 |
+--- arm a ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |    0 |           tg128 |         13.19 ± 0.62 |

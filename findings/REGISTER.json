@@ -229,7 +229,7 @@
    "claim": "Partial MoE expert offload (-ot blk.(K..N).ffn_.*_exps.=CPU --no-mmap) beats both all-VRAM and all-CPU.",
    "magnitude": "frontier row at 280.64 pp / 20.25 tg",
    "evidence": "prereg #13, #20, #21",
-   "scope": "MoE whose experts exceed VRAM",
+   "scope": "MoE whose experts exceed VRAM; tg-parity with plain -ngl splits reconfirmed fresh (#60): the lever wins prompt processing, KV safety and speculation-enablement, NOT raw generation",
    "wired_into": "quantprobe/plan.py placement search"
   },
   {
@@ -790,6 +790,17 @@
    "the_arithmetic_that_shapes_the_lead": "CPU does 24.70 ms, GPU should do 4.34 ms. Perfectly overlapped that is ~25 ms = 40 tok/s. Measured 58 ms. The system behaves as if NOTHING overlaps and something additionally waits - consistent with the ~22 ms/token GPU idle the red-team computed independently (D-14 survival note). Strongest remaining lead.",
    "three_hypotheses_it_killed": "(1) GPU idle - the red-team's ~22 ms/token idle and my own 'nothing overlaps' reading from #49 are both wrong, the device executes 23.88 of 61.20 ms. (2) Submission overhead - 2.96 ms, 11% of backend time, consistent with CUDA graphs buying only +3.2% in #48. (3) The CPU path - 28 GB/s, above the measured DRAM stream.",
    "what_it_becomes": "a GPU-KERNEL EFFICIENCY question, tracked under C-02"
+  },
+  {
+   "id": "C-10",
+   "kind": "contradiction",
+   "status": "open",
+   "confidence": "measured",
+   "claim": "The tool prints +/-25% bands calibrated on a fresh box, but the SAME box after ~9h of sustained benchmarking measures -29% on the flagship frontier row (21.58 printed -> 15.29 fresh interleaved, contamination excluded). Session-to-session drift was known at 10-13%; sustained-load day-drift exceeds the printed band itself. Bands are now labeled cold-box ceilings in the plan output; the open question is whether the driver is thermal throttling, memory-clock state, or OS degradation - undiagnosed, needs a cold-boot A/B.",
+   "magnitude": "-29% on arm (c), -11% under-prediction reversal on pure CPU (the CPU arm degrades least)",
+   "evidence": "prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1)",
+   "scope": "this box; the lesson (bands must name their thermal state) is general",
+   "wired_into": "quantprobe/plan.py workload copy (cold-box labeling shipped)"
   }
  ],
  "untried": [
