@@ -1,0 +1,8 @@
+=== Pre-reg #49: E3 per-op profile of the MoE flagship on the CUDA build ===
+[e3] per-op profiler: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         17.20 ± 0.00 |
+[e3] per-op profile (thread 0): compute 2386.3 ms total, barrier 800.3 ms total
+[e3] op                      calls   compute_ms   barrier_ms
+[e3] MUL_MAT_ID              12384       2379.6        783.3
+[e3] GET_ROWS                  129          1.4          0.0
+[e3] GLU                      4128          5.3         17.1
