@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.18.0 - 2026-07-28
+
+**The format lever: on old GPUs the quantization FORMAT sets decode speed, not just the bytes.**
+
+### New advice: prefer Q4_0 over Q4_K_M on pre-Ampere; never Q2_K when a 4-bit file fits
+
+Measured (pre-registrations #52/#53, same card, same session, interleaved):
+
+    Qwen2.5-7B all-in-VRAM:   Q4_K_M  22.72 tok/s     Q4_0  26.87 tok/s   (+19%, bytes explain 5.7%)
+                              Q2_K    21.67 tok/s     <- SLOWER than Q4_0 while 32% smaller
+
+`plan` now surfaces this whenever the all-in-VRAM row wins at <=5.0 bits, with its scope stated:
+one Pascal-class card, speed-only (Q4_K_M is higher quality per byte), and explicitly unverified
+on Ampere+ where the ranking may invert.
+
+### The mechanism, isolated at the metal (Law 4 amended: L-15)
+
+A standalone CUDA benchmark with zero llama.cpp (`tools/kernelprobe/`) shows a matvec with NO
+unpacking runs at 95% of the streaming ceiling, while the same bytes unpacked naively run at 42%.
+The decode wall on ALU-weak GPUs is unpack instruction cost, not bandwidth. This names the cause
+of C-05 ("a quantized byte is not a byte"), sighted six times before without a mechanism.
+
+### Recorded with equal prominence: what was refuted this session
+
+Fragmentation (#51, +6.5% at a 30x contrast), our own Q2_A format (#54, killed by its own
+fairness control), multi-row mmvq blocking (#55, -22%; upstream's Pascal carve-out validated),
+and the "MoE gather penalty" (an occupancy artifact of our benchmark - scattered expert reads
+are free at real block counts). Register: 68 entries, 5 verification layers green.
+
 ## 1.17.0 - 2026-07-27
 
 **A new warning that saves CPU-tier users 2.7x, the honest closure of novel-generation

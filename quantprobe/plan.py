@@ -384,11 +384,52 @@ def fits_in_vram_advice(placement, bits):
         note += (" It also already fits, and going lower-bit buys almost nothing: the same 7B at "
                  "Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER (19.17 vs 20.03 tok/s). Quantize "
                  "to make a model FIT - once it fits, take the highest bits that still fit.")
+    fmt = format_advice(placement, bits)
+    if fmt:
+        note += "\n  " + fmt
     note += ("\n  We only have one GPU, and one GPU cannot fix this. If you run this model, "
              "`quantprobe bench --contribute` turns your machine into the datapoint that does - "
              "it prints exactly what would be shared and you submit it yourself. Results that "
              "land OUTSIDE our predicted band are the most valuable ones we can receive.")
     return note
+
+
+def format_advice(placement, bits):
+    """The format lever: on an ALU-weak GPU, the quantization FORMAT sets decode speed, not just
+    the byte count. Measured (preregs #52/#53/#54, kernelprobe controls, 2026-07-28):
+
+        Qwen2.5-7B, all-in-VRAM, same card, same session, interleaved:
+            Q4_K_M  4.36 GB   22.72 tok/s   eta 0.553
+            Q4_0    4.12 GB   26.87 tok/s   eta 0.619   <- +19% where bytes explain +5.7%
+            Q2_K    2.80 GB   21.67 tok/s   eta 0.340   <- SLOWER than Q4_0 while 32% smaller
+
+    Mechanism, isolated at the metal (own CUDA, zero llama.cpp): a matvec with NO unpacking runs
+    at 95% of the streaming ceiling; the same bytes unpacked naively run at 42%. The cost is the
+    per-block metadata decode - K-quants unpack a 6-bit scale AND a 6-bit min before any dot
+    product, Q4_0 reads one fp16 scale. So eta is a property of (format x kernel), not the tier.
+
+    Scope, stated rather than implied: measured on ONE Pascal-class card (GTX 1060, cc 6.1),
+    where ALU is scarce relative to bandwidth. On Ampere+ the unpack has headroom to hide and
+    the ranking may invert - we say so and ask for the datapoint. SPEED-only claim: Q4_0 is
+    lower-quality per byte than Q4_K_M; at equal fit take K-quants on a modern card, Q4_0 on an
+    old one, and never Q2_K when a 4-bit file also fits (it is smaller, slower AND lower quality
+    there - strictly dominated).
+    """
+    if placement != "all in VRAM":
+        return None
+    if bits <= 3.0:
+        return ("FORMAT LEVER (pre-Ampere cards): this bit-width is in the regime where unpack "
+                "cost has REVERSED the byte ordering - measured Q2_K decodes 19% slower than Q4_0 "
+                "on the same model while being 32% smaller. If a ~4.5-bit file fits in VRAM, use "
+                "it instead; prefer Q4_0 over Q4_K_M on pre-Ampere (+19% measured, bytes explain "
+                "only 5.7%). On Ampere+ this is unverified and may invert.")
+    if bits <= 5.0:
+        return ("FORMAT LEVER (pre-Ampere cards): at this bit-width the FORMAT is worth more than "
+                "the bytes - Q4_0 measured +19% over Q4_K_M on the same model (26.87 vs 22.72 "
+                "tok/s) because its metadata unpacks in 1 fp16 read where K-quants decode packed "
+                "6-bit scales and mins. Speed-only: Q4_K_M is higher quality per byte. On Ampere+ "
+                "this is unverified and may invert.")
+    return None
 
 
 def speculation_advice(moe, placement):

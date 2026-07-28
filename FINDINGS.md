@@ -8,11 +8,11 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 14 |
-| Shipped levers | 13 |
-| Measured dead ends | 13 |
+| Established laws | 15 |
+| Shipped levers | 17 |
+| Measured dead ends | 18 |
 | Open contradictions | 9 |
-| Untried levers | 3 |
+| Untried levers | 4 |
 | External work to study | 5 |
 
 ## Established laws
@@ -103,6 +103,12 @@ What we believe, and the measurement that earned it.
 
 `established` · `measured` · scope: GTX 1060 6GB (Pascal sm_61), fp32. NOT established for quantized kernels - see the caveat below. · evidence: prereg #44 · wired into: `findings/REGISTER.json:C-02 (reclassified) - deliberately NOT wired into plan.py: the tool's eta constants describe what llama.cpp achieves, which is what users get, and must not be raised to a ceiling no shipped runtime reaches.`
 
+### L-15 — Law 4 AMENDED: eta is a function of the FORMAT's unpack instruction cost, not the tier alone. A matvec with no unpacking runs at 95% of the streaming ceiling; the same bytes with a naive unpack run at 42%; dp4a recovers 80%. On an ALU-weak GPU the format sets decode speed as much as the byte count.
+
+**Magnitude:** Same tier, same card, same model, same session: Q4_0 eta 0.619 vs Q4_K_M 0.553 vs Q2_K 0.340. Bare-metal ladder (own CUDA, zero llama.cpp): no-unpack 152.5 GB/s (0.79 spec), naive 4.5-bit 67.8 (0.35), dp4a 4.5-bit 128.7-132.1 (0.67-0.69), stream 161.0 (0.84).
+
+`established` · `measured` · scope: measured on ONE Pascal card (cc 6.1); on Ampere+ the ALU/BW ratio flips and the ranking may invert - unverified, replication asked · evidence: prereg #52, prereg #53, tools/kernelprobe/bench.cu (every kernel correctness-checked vs double host reference) · wired into: `quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; explains C-05 (6 prior sightings, mechanism now named)`
+
 ## Shipped levers
 
 Things the tool actually recommends, with the number attached.
@@ -184,6 +190,30 @@ Things the tool actually recommends, with the number attached.
 **Magnitude:** -ngl 20 gives 19.70 tok/s / 50.76 ms; -ngl 99 with 32 layers of experts on CPU via -ot gives 19.76 / 50.61. Within noise. (-ngl 16: 15.96; -ngl 12: 12.88 - the equivalence is at MATCHED division, not at any N.)
 
 `shipped` · `measured` · scope: Qwen3-30B-A3B Q2_K, reference box, DECODE only. Prefill was not compared, and the ubatch findings (#19/#20/#23) were all measured on the -ot form. · evidence: prereg #43 · wired into: `documented in prereg #43; the planner still emits -ot because every other measurement used it`
+
+### V-14 — llama.cpp's pre-Ampere CUDA-graph disable is too conservative for MoE: graphs capture correctly on Pascal and give +3.2% on a 30B MoE, while giving 0.0% on a dense model.
+
+**Magnitude:** Split placement, tg128, r=3, position-controlled, CUDA 12.9 sm_61 build with the arch check behind GGML_CUDA_FORCE_GRAPHS: graphs off 16.98 / 17.12, graphs on 17.61 / 17.57 = +3.2%. Capture verified firing. Dense 7B all-in-VRAM under the same toggle: 22.81 vs 22.81 = 0.0%.
+
+`open` · `measured` · scope: one GTX 1060, Qwen3-30B-A3B Q2_K split placement. NOT output-identity-checked (llama-bench emits no text) and NOT replicated on a second card. · evidence: prereg #48 (MoE), prereg #47 P-3 (dense control) · wired into: `nothing yet - deliberately. A 3% claim from one machine is inside the noise others will measure.`
+
+### V-16 — On pre-Ampere GPUs, prefer Q4_0 over Q4_K_M for all-in-VRAM decode: +19.0% measured where the byte difference explains +5.7%. Effective bandwidth RISES 106.4 -> 119.1 GB/s, which a pure byte model forbids. SPEED-only: Q4_K_M is higher quality per byte.
+
+**Magnitude:** Qwen2.5-7B all-in-VRAM interleaved: Q4_K_M 22.72, Q4_0 26.87/27.09 tok/s
+
+`shipped` · `measured` · scope: one Pascal card, all-in-VRAM, speed-only claim; Q4_0 test file requantized FROM Q4_K_M so its quality is strictly worse than a source-built Q4_0 · evidence: prereg #52 · wired into: `quantprobe/plan.py format_advice (tests t_format_advice_*)`
+
+### V-17 — On pre-Ampere, Q2_K is STRICTLY DOMINATED when a ~4.5-bit file also fits: measured slower in absolute tok/s than Q4_0 (21.67 vs 26.87) while 32% smaller and lower quality. At 2 bits the unpack tax reverses the byte ordering; the byte model predicts 39.5 tok/s and measures 21.67 (45% short).
+
+**Magnitude:** Q2_K 65.4 GB/s effective vs Q4_0 119.1; GW/s 165.1 vs 204.7
+
+`shipped` · `measured` · scope: one Pascal card; changes nothing when the 4-bit file does NOT fit (Q2_K remains the only way to fit large MoE in 6 GB) · evidence: prereg #53 · wired into: `quantprobe/plan.py format_advice bits<=3.0 branch`
+
+### V-15 — Scheduler orphan-fragment fix (GGML_SCHED_MIN_GPU_RUN): llama.cpp bounces a 2-node GPU fragment inside every CPU-resident layer of an -ngl split (pass-3 tie-break favors the highest-priority backend). Flipping runs shorter than N nodes back to CPU collapses 60 splits -> 2 and buys +6.5% on -ngl offload; 0 flips (no effect) on the -ot placement the tool ships.
+
+**Magnitude:** -ngl 20: 15.00 -> 15.98 tok/s paired; submission/wait -85%; NOT output-identical (placement-sensitivity class llama.cpp already has: stock -ngl 20 vs 19 also diverge)
+
+`reported` · `measured` · scope: only benefits fixed -ngl layer splits, which our advice already avoids in favor of -ot; not upstreamed · evidence: prereg #51 (part 2) · wired into: `documented here; deliberately NOT in plan.py (does not affect the shipped placement)`
 
 ## Measured dead ends
 
@@ -267,6 +297,36 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `inferred` · scope: host-resident MoE weights. Data already in VRAM is a different placement, swept in #43 and #21. · evidence: prereg #45 (the empirical arm was VOID on protocol - baseline drifted +25% across the session - so the refutation rests on the physical argument, not the measurement) · wired into: `nothing - Law 4's SUM survives unchanged for this workload`
 
+### D-15 — Kernel-launch overhead is NOT the fixed per-token cost: CUDA graphs engage on Pascal (capture proven) and change decode by 0.0%.
+
+**Magnitude:** 7B Q4_K_M all-in-VRAM, CUDA 12.9 sm_61 build, position-controlled: graphs disabled 22.81 +/- 0.11, graphs FORCED ON 22.81 +/- 0.02, default re-run last 22.66. Capture verified by instrumenting cudaStreamBeginCapture. MoE CONFIRMATION (prereg #48): the node-denser MoE graph, where a per-node cost should show most, gains only +3.2% (16.98/17.12 -> 17.61/17.57) with capture verified. Removing per-launch cost from a 48-layer MoE graph buys 3%, not the 25% staked and not the ~35% the 15.4 ms constant represents.
+
+`refuted` · `measured` · scope: dense 7B all-in-VRAM on GTX 1060. The MoE flagship was NOT tested and hits a different code path (see below). · evidence: prereg #47 P-3 · wired into: `nothing - the >=25% prize is withdrawn`
+
+### D-16 — Graph FRAGMENTATION does not explain the split placement's GPU eta 0.15. Cutting dispatches/token 30 -> 1 (60 splits -> 2, the strongest possible contrast) moved end-to-end +6.5% and device-busy eta only 0.154 -> 0.164. Submission/wait collapsed 85% exactly as fragmentation predicts - but that term was only ~2 ms of a 61 ms token.
+
+**Magnitude:** ninth mechanism candidate refuted; device-busy time is untouchable by scheduling
+
+`refuted` · `measured` · scope: MoE flagship split placement, this box · evidence: prereg #51 · wired into: `GROK_KERNEL_BRIEF.md retraction #1`
+
+### D-17 — Q2_A (own dp4a-native asymmetric 2-bit format, byte-aligned scale+min, measured 0.995x Q2_K reconstruction RMSE) is REFUTED by its own fairness control: Q2_K's exact cost model in the same harness is 25% FASTER (352.7 vs 282.0 GW/s). The nibble unpack costs ~2 ALU ops per 16 weights; Q2_A's extra 0.5 bits/weight costs real bytes on every access. New-format project dropped.
+
+**Magnitude:** Design fact retained: at the ALU-bound end, GB/s is flat across formats (108-117), so buy quality with BITS, never with instructions
+
+`refuted` · `measured` · scope: kernel-vs-kernel, same harness, this card · evidence: prereg #54 (stakes hit against an invalid baseline; retracted same session by the control) · wired into: `GROK_KERNEL_BRIEF.md retraction #3; tools/kernelprobe/quality.py (asymmetry required at 2 bits: sym parity impossible - zero level XOR symmetry)`
+
+### D-18 — Multi-row mmvq blocking for Q2_K on Pascal is 22% SLOWER (22.25 -> 17.33 tok/s, validity-gated: rows/block genuinely 1->4). Upstream's slow_pascal carve-out is CORRECT and independently validated. Decisive second half: Q4_0, at 87% of its kernel ceiling, ALSO runs 1 row per block - blocking never distinguished the healthy format from the sick one. What survives: Q2_K issues 8 dp4a per 16 weights where Q4_0 issues 4; twice the ALU where ALU binds.
+
+**Magnitude:** the 2.07x Q2_K headroom (#53) is a real ceiling, not claimable via blocking
+
+`refuted` · `measured` · scope: Pascal; the in-tree GGML_MMVQ_SMALL_K toggle remains for other cards · evidence: prereg #55 · wired into: `findings/Q2K_MIN_TERM.md (closed); GROK_KERNEL_BRIEF.md retraction #4`
+
+### D-20 — The 'MoE expert gather penalty' (reported ~1.8-1.9x) was an OCCUPANCY ARTIFACT of the benchmark, not a scatter cost. Sweeping gather ratio at matched kernel: 1-in-2 -> 1.00x penalty, 1-in-4 -> 1.04x, 1-in-8 -> 1.18x, 1-in-16 -> 1.97x. The penalty tracks launched block count on a 10-SM card. A real expert matmul launches thousands of blocks: scattered expert reads are FREE.
+
+**Magnitude:** removes a claimed structural MoE barrier
+
+`refuted` · `measured` · scope: VRAM-resident experts; says nothing about PCIe/DRAM expert traffic · evidence: kernelprobe gather-ratio sweep (commit 102f518), GROK_KERNEL_BRIEF.md retraction #5 · wired into: `GROK_KERNEL_BRIEF.md retraction #5`
+
 ## Open contradictions
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
@@ -285,7 +345,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Next action:** DISCRIMINATING TEST: measure llama.cpp all-in-VRAM eta against FORMAT at fixed model and size, on a 7B+ model so per-token overhead does not dominate: Q8_0 (trivial dequant) vs Q4_K_M vs Q2_K. If eta rises toward 0.84 as dequant cheapens, the gap is ARITHMETIC and Pascal owns it. If eta stays ~0.4 at Q8_0, the gap is the KERNEL and it is addressable. Existing C-02 data hints at the awkward answer - Q8_0 measured the LOWEST eta (0.354) - but those were 0.5-0.6B models where overhead dominates, so it must be re-run at 7B+.
 
-`reclassified` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
+`reclassified` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this; 2026-07-28 closure at kernel level: fragmentation refuted (#51), the all-in-VRAM eta band is FORMAT-dependent (L-15), and Q2_K's deficit is structural ALU count (8 vs 4 dp4a per 16 weights, #55). Remaining unexplained: split-placement GPU share eta 0.15 vs all-in-VRAM Q2_K eta 0.34 - factor ~2.3, sharpest open question · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
 
 ### C-05 — A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.
 
@@ -293,7 +353,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Next action:** Three instances is a pattern, not a coincidence. Audit EVERY remaining efficiency constant for the same assumption and add a gate check that refuses a constant fitted at a single format. The saturation point differs by quantity - ~4-bit for weights, ~8-bit for KV - so the lint cannot be a fixed threshold; it must demand that the constant was MEASURED across formats.
 
-`open` · `measured` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization) · wired into: `nothing yet - this is a lint waiting to be written`
+`closed` · `measured` · scope: the decode law's constants · evidence: prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization); MECHANISM NAMED 2026-07-28: format unpack instruction cost (L-15, preregs #52/#53) - K-quants decode packed 6-bit scales AND mins before any dot product; below ~4.5 bits the tax reverses the byte ordering · wired into: `quantprobe/plan.py format_advice; L-15`
 
 ### C-08 — quantprobe SUMS multi-device bandwidth, which models tensor-parallel (--split-mode row). llama.cpp's DEFAULT is --split-mode LAYER, which is SERIAL - so for any multi-GPU user on defaults the tool over-predicts decode by roughly the device count.
 
@@ -303,11 +363,11 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `open` · `inferred` · scope: multi-device inputs (--vram 24,6 style). Single-GPU predictions unaffected. Row-split may approach the summed model, minus sync. · evidence: first-principles from llama.cpp split-mode semantics + Law 4; NOT yet measured - this box has one GPU · wired into: `NOT FIXED - no second GPU to measure on`
 
-### C-09 — ~20 ms of the split placement's 50.6 ms token is UNATTRIBUTED, and the five obvious explanations are each refuted by their own control.
+### C-09 — CLOSED 2026-07-28 by GPU-side CUDA event timing: the split token is 87% accounted. CPU executor 26.30 ms, CUDA backend wall 26.84 ms (device busy 23.88, submission/wait 2.96), residual 8.06 ms of 61.20 ms. The missing time was GPU DEVICE-BUSY, not idle, not waiting, not the CPU path.
 
-**Magnitude:** Byte accounting: CPU share 0.516 GB at measured 26.1 GB/s = 19.8 ms, GPU share 0.70 GB at eta=1 = 3.6 ms, total 23.4 ms against 50.6 ms measured. Refuted as causes: CPU expert read (at physics, 23.1 GB/s marginal, #33); per-layer GPU<->CPU round trips (prereg #43: -ngl 20 with ONE crossing gives 19.70 tok/s vs -ot with ~32 crossings at 19.76 - eliminating 31 boundaries saves nothing); scheduling (#31, six null arms); memory scatter (#32); graph barriers (#34, the shipped CUDA build already spins). GPU-side inefficiency (C-02, eta 0.32-0.56) accounts for only ~5 ms.
+**Magnitude:** prereg #50, E6 profiler: 33 graph_compute calls/token; device busy 23.88 ms against a byte model of 4.34 ms (0.700 GB at the card's measured 161.3 GB/s) = 5.5x, effective 29.3 GB/s, eta 0.15.
 
-`open` · `measured` · scope: Qwen3-30B-A3B Q2_K split placement, reference box, decode · evidence: prereg #43 (layer-count sweep + pure-layer-split refutation) · wired into: `nothing - an open measurement, deliberately unexplained`
+`closed` · `measured` · scope: Qwen3-30B-A3B Q2_K split placement, reference box, decode · evidence: prereg #46 (the staking that split into #49/#50), prereg #50 (E6 GPU events), prereg #49 (E3 on CUDA), prereg #44 (independent card ceiling) · wired into: `nothing - an open measurement, deliberately unexplained`
 
 ### C-06 — Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.
 
@@ -388,6 +448,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Protocol:** reproduce ds4's approach on the reference box's SATA MX500; compare against our stream-from-disk tier
 
 `untested` · `speculative` · cost: 1 day to characterise
+
+### U-13 — Q2_K's min-term dp4a can be removed WITHOUT multi-row blocking: precompute per-16-weight activation sums ONCE PER TOKEN into a side buffer (128 floats for K=2048 - L1-cache resident, every row reads the same values), then apply the min as a scalar FMA. Halves the group dp4a count at llama.cpp's existing 1-row-per-block geometry. This is the H-REOPEN idea from KERNEL_BREAKTHROUGH_BRAINSTORM.md and corrects #55's 'the two fixes are mutually exclusive' - there is a third fix.
+
+**Hypothesis:** the extra dp4a + 3 broadcast ops per group are ~half of Q2_K's group ALU; removing them should recover a large part of the 165 -> 356 GW/s gap without touching block_q8_1 (side buffer is CUDA-backend-local; precedent: quantize_mmq_q8_1 already uses a path-specific activation layout)
+
+**Predicted effect (staked):** kernelprobe A/B at 1-row-per-block geometry first; if the isolated min-term cost is >= 1.3x, an in-tree patch targets Q2_K e2e from 21.7 toward 26 tok/s
+
+`untested` · `speculative` · wired into: `next kernelprobe experiment (prereg #56)`
 
 ## External work to study
 
