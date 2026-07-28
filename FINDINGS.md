@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 17 |
 | Measured dead ends | 21 |
 | Open contradictions | 10 |
-| Untried levers | 4 |
+| Untried levers | 5 |
 | External work to study | 5 |
 
 ## Established laws
@@ -443,7 +443,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Magnitude:** -29% on arm (c), -11% under-prediction reversal on pure CPU (the CPU arm degrades least)
 
-`open` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1); DRIVER IDENTIFIED same session: clock polling under load caught SM at 1506 MHz (vs 1835 recorded during the original 21.58 measurement) at 38 C on a quiet box - a stuck lower boost state, not thermal, not OS load. nvidia-smi clock reset unsupported on consumer Pascal; reboot required. prereg #61 staked with the cold-boot A/B protocol (weights/coldboot_ab.cmd) including a pristine zero-patch binary for the fair-comparison arm. · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
+`closed` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1); DRIVER IDENTIFIED same session: clock polling under load caught SM at 1506 MHz (vs 1835 recorded during the original 21.58 measurement) at 38 C on a quiet box - a stuck lower boost state, not thermal, not OS load. nvidia-smi clock reset unsupported on consumer Pascal; reboot required. prereg #61 staked with the cold-boot A/B protocol (weights/coldboot_ab.cmd) including a pristine zero-patch binary for the fair-comparison arm.; RESOLVED by prereg #61 cold-boot A/B: after reboot SM sustains 1847-1898 MHz (vs 1506 stuck), memory full 4006, and the flagship measures 21.11-21.68 - the original 21.58 reproduced to 0.5%. Mechanism confirmed: stuck boost state, cleared by reboot. Pristine zero-patch binary agrees with the instrumented build within 1.4% (P-3), so the session corpus stands. · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
 
 ## Untried levers
 
@@ -492,6 +492,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** kernelprobe A/B at 1-row-per-block geometry first; if the isolated min-term cost is >= 1.3x, an in-tree patch targets Q2_K e2e from 21.7 toward 26 tok/s
 
 `refuted` · `speculative` · wired into: `next kernelprobe experiment (prereg #56)`
+
+### U-14 — The shipped -ot pattern (expert layers 11-47 to CPU) costs ~13% prompt processing vs the older 16-47 split: pp2048 measured 336.94 at full clocks where the original 386.04 was recorded on the other pattern, tracking the +15.6% CPU expert-layer count. A resident-expert-count sweep would map the pp/tg frontier and may recover the pp without hurting tg.
+
+**Hypothesis:** prefill is CPU-expert-bound, so pp scales inversely with CPU-resident expert layers while tg is roughly flat across nearby splits (tg parity measured repeatedly)
+
+**Predicted effect (staked):** ~+15% pp at 16 resident expert layers if VRAM headroom allows at ub 1024; tg unchanged within noise
+
+`untested` · `speculative` · wired into: `prereg #61 scoring; candidate next single-session sweep`
 
 ## External work to study
 
