@@ -798,7 +798,7 @@
    "confidence": "measured",
    "claim": "The tool prints +/-25% bands calibrated on a fresh box, but the SAME box after ~9h of sustained benchmarking measures -29% on the flagship frontier row (21.58 printed -> 15.29 fresh interleaved, contamination excluded). Session-to-session drift was known at 10-13%; sustained-load day-drift exceeds the printed band itself. Bands are now labeled cold-box ceilings in the plan output; the open question is whether the driver is thermal throttling, memory-clock state, or OS degradation - undiagnosed, needs a cold-boot A/B.",
    "magnitude": "-29% on arm (c), -11% under-prediction reversal on pure CPU (the CPU arm degrades least)",
-   "evidence": "prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1)",
+   "evidence": "prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1); DRIVER IDENTIFIED same session: clock polling under load caught SM at 1506 MHz (vs 1835 recorded during the original 21.58 measurement) at 38 C on a quiet box - a stuck lower boost state, not thermal, not OS load. nvidia-smi clock reset unsupported on consumer Pascal; reboot required. Prereg #61 staked with the cold-boot A/B protocol (weights/coldboot_ab.cmd) including a pristine zero-patch binary for the fair-comparison arm.",
    "scope": "this box; the lesson (bands must name their thermal state) is general",
    "wired_into": "quantprobe/plan.py workload copy (cold-box labeling shipped)"
   }
