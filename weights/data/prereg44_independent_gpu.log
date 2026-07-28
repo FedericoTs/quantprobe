@@ -1,0 +1,15 @@
+  warnings.warn(
+=== Pre-reg #44: independent GPU bandwidth (CuPy, NOT llama.cpp) ===
+device: NVIDIA GeForce GTX 1060 6GB
+
+  1. pure READ  (256MB sum)        :   165.6 GB/s
+  2. COPY (read+write)            :   150.1 GB/s
+  3. GEMV fp32 (1x4096)@(4096x14336):   161.3 GB/s   <- decode-shaped
+  4. GEMV fp16 (same shape)       :   108.9 GB/s
+
+=== vs llama.cpp-derived ===
+  spec sheet                      : 192 GB/s
+  llama.cpp implied eta (C-02)    : 0.32-0.56 -> 61-108 GB/s
+  independent READ                : 165.6 = eta 0.86
+  independent GEMV fp32           : 161.3 = eta 0.84
+  independent GEMV fp16           : 108.9 = eta 0.57

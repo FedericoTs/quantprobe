@@ -1,0 +1,22 @@
+=== Pre-reg #47 P-3: baseline on the fresh CUDA build (graphs DISABLED by arch check) ===
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.80 ± 0.24 |
+--- P-3 A/B: 7B Q4_K_M all-in-VRAM, r=3, same session ---
+[e5] CUDA graphs on pre-Ampere: default (disabled)
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.88 ± 0.03 |
+[e5] CUDA graphs on pre-Ampere: FORCED ON
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.85 ± 0.07 |
+--- P-3 REDONE: graphs now COMPILED IN (-DGGML_CUDA_GRAPHS=ON). Previous A/B was void. ---
+[e5] CUDA graphs on pre-Ampere: default (disabled)
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.81 ± 0.11 |
+[e5] CUDA graphs on pre-Ampere: FORCED ON
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.81 ± 0.02 |
+--- position control: default re-run LAST ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.66 ± 0.00 |
+--- capture proof: does cudaStreamBeginCapture actually fire when forced? ---
+[e5] CUDA graphs on pre-Ampere: FORCED ON
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.77 ± 0.07 |
+--- capture proof (instrumented build) ---
+[e5] CUDA graphs on pre-Ampere: FORCED ON
+[e5] cudaStreamBeginCapture fired #1
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |            tg32 |         22.80 ± 0.06 |

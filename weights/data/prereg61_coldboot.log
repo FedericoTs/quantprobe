@@ -1,0 +1,22 @@
+================================================================ 
+=== COLD BOOT RUN 28/07/2026 15:42:50,68 === 
+139 MHz, 405 MHz, 33, 9.16 W
+--- arm 1: INSTRUMENTED, tool -ot split, tg128 --- 
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         21.11 ± 0.95 |
+1898 MHz, 4006 MHz, 40
+--- arm 2: PRISTINE, tool -ot split, tg128 --- 
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.82 ± 0.43 |
+1885 MHz, 4006 MHz, 44
+--- arm 3: INSTRUMENTED, plain -ngl 20, tg128 --- 
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |    0 |           tg128 |         20.59 ± 0.44 |
+1847 MHz, 45
+--- arm 4: PRISTINE, plain -ngl 20, tg128 --- 
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |    0 |           tg128 |         20.79 ± 0.21 |
+1873 MHz, 48
+--- arm 5: PRISTINE, -ot split, pp2048 (the original 386 claim) --- 
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        336.94 ± 1.33 |
+1873 MHz, 4006 MHz, 54
+--- position control: repeat arm 1 LAST --- 
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         21.68 ± 0.20 |
+1873 MHz, 4006 MHz, 55
+=== DONE 15:46:30,40 === 

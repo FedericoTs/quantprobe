@@ -1,0 +1,50 @@
+=== #58 arm A: MoE flagship split -ot, per-op attribution ===
+[e6] GPU-side profiler: ON
+[e9] per-op GPU profiler: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         12.52 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                        87.3      12513         6.98
+[e9] MUL                        52.7       6192         8.51
+[e9] RMS_NORM                  304.0      24897        12.21
+[e9] MUL_MAT                  2592.1      31089        83.38
+[e9] MUL_MAT_ID               1476.1       4128       357.57
+[e9] GET_ROWS                    2.0        258         7.70
+[e9] SET_ROWS                   50.5       6192         8.15
+[e9] SOFT_MAX                   82.2       6192        13.27
+[e9] ROPE                       90.6      12384         7.32
+[e9] FLASH_ATTN_EXT            335.1       6192        54.11
+[e9] TOTAL                    5072.5     110037
+[e9] matmul time by src0 type:
+[e9]   type f32               104.5 ms     6192 calls
+[e9]   type q2_K             1391.1 ms    14448 calls
+[e9]   type q3_K             1824.7 ms     8256 calls
+[e9]   type q4_K              124.8 ms     6192 calls
+[e9]   type q6_K              623.1 ms      129 calls
+[e6] CUDA backend: 4257 graph_compute calls
+[e6]   device busy (CUDA events) :   5233.7 ms total
+[e6]   wall inside backend       :   5729.2 ms total
+[e6]   submission/wait (wall-dev):    495.5 ms total  (9%)
+=== #58 arm B: 7B Q2_K all-in-VRAM, per-op attribution ===
+[e6] GPU-side profiler: ON
+[e9] per-op GPU profiler: ON
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         21.42 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                         0.8        129         6.01
+[e9] RMS_NORM                   86.6       7353        11.78
+[e9] MUL_MAT                  5483.7      21801       251.53
+[e9] GET_ROWS                    5.0        258        19.24
+[e9] SET_ROWS                   23.7       3612         6.56
+[e9] ROPE                       47.0       7224         6.51
+[e9] FLASH_ATTN_EXT            267.1       3612        73.95
+[e9] TOTAL                    5913.9      43989
+[e9] matmul time by src0 type:
+[e9]   type q2_K             2665.3 ms    10836 calls
+[e9]   type q3_K             2187.5 ms     7224 calls
+[e9]   type q4_K               72.2 ms     3612 calls
+[e9]   type q6_K              558.7 ms      129 calls
+[e6] CUDA backend: 129 graph_compute calls
+[e6]   device busy (CUDA events) :   5965.7 ms total
+[e6]   wall inside backend       :   5999.1 ms total
+[e6]   submission/wait (wall-dev):     33.4 ms total  (1%)

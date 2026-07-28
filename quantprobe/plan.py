@@ -384,11 +384,53 @@ def fits_in_vram_advice(placement, bits):
         note += (" It also already fits, and going lower-bit buys almost nothing: the same 7B at "
                  "Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER (19.17 vs 20.03 tok/s). Quantize "
                  "to make a model FIT - once it fits, take the highest bits that still fit.")
+    fmt = format_advice(placement, bits)
+    if fmt:
+        note += "\n  " + fmt
     note += ("\n  We only have one GPU, and one GPU cannot fix this. If you run this model, "
              "`quantprobe bench --contribute` turns your machine into the datapoint that does - "
              "it prints exactly what would be shared and you submit it yourself. Results that "
              "land OUTSIDE our predicted band are the most valuable ones we can receive.")
     return note
+
+
+def format_advice(placement, bits):
+    """The format lever: on an ALU-weak GPU, the quantization FORMAT sets decode speed, not just
+    the byte count. Measured (preregs #52/#53/#54, kernelprobe controls, 2026-07-28):
+
+        Qwen2.5-7B, all-in-VRAM, same card, same session, interleaved:
+            Q4_K_M  4.36 GB   22.72 tok/s   eta 0.553
+            Q4_0    4.12 GB   26.87 tok/s   eta 0.619   <- +19% where bytes explain +5.7%
+            Q2_K    2.80 GB   21.67 tok/s   eta 0.340   <- SLOWER than Q4_0 while 32% smaller
+
+    Mechanism, isolated at the metal (own CUDA, zero llama.cpp): a matvec with NO unpacking runs
+    at 95% of the streaming ceiling; the same bytes unpacked naively run at 42%. The cost is the
+    per-block metadata decode - K-quants unpack a 6-bit scale AND a 6-bit min before any dot
+    product, Q4_0 reads one fp16 scale. So eta is a property of (format x kernel), not the tier.
+
+    Scope, stated rather than implied: measured on ONE Pascal-class card (GTX 1060, cc 6.1),
+    where ALU is scarce relative to bandwidth. On Ampere+ the unpack has headroom to hide and
+    the ranking may invert - we say so and ask for the datapoint. SPEED-only claim: Q4_0 is
+    lower-quality per byte than Q4_K_M; at equal fit take K-quants on a modern card, Q4_0 on an
+    old one, and never Q2_K when a 4-bit file also fits (it is smaller, slower AND lower quality
+    there - strictly dominated).
+    """
+    if placement != "all in VRAM":
+        return None
+    if bits <= 3.0:
+        return ("FORMAT LEVER (pre-Ampere cards): this bit-width is in the regime where unpack "
+                "cost has REVERSED the byte ordering - measured Q2_K decodes 19% slower than Q4_0 "
+                "on the same model while being 32% smaller. If a ~4.5-bit file fits in VRAM, use "
+                "it instead; prefer Q4_0 over Q4_K_M on pre-Ampere (+19% measured, bytes explain "
+                "only 5.7%). On Ampere+ this is unverified and may invert.")
+    if bits <= 5.0:
+        return ("FORMAT LEVER (pre-Ampere cards): at this bit-width the FORMAT is worth more than "
+                "the bytes - Q4_0 measured +19% over Q4_K_M on the same model (26.87 vs 22.72 "
+                "tok/s). Mechanism (measured, preregs #56/#57): metadata application DENSITY - "
+                "K-quants apply fine-grained scale+min chains far more often per byte, and that "
+                "cost is intrinsic to the format definition, not a kernel bug. Speed-only: "
+                "Q4_K_M is higher quality per byte. On Ampere+ this is unverified and may invert.")
+    return None
 
 
 def speculation_advice(moe, placement):
@@ -412,13 +454,28 @@ def speculation_advice(moe, placement):
         # that reproduces context spans (edits, refactors, quoting) - most of what coding agents
         # emit, and none of what fresh generation emits.
         return ("if your output REUSES its context - edits, refactors, RAG quoting - add "
-                "`--spec-type ngram-simple` to llama-server: measured **2.41x decode** on THIS "
-                "model and placement (20.7 -> 50.0 tok/s, 89% draft acceptance), one flag, no "
-                "download, identical output. That is 22% ABOVE this box's raw-decode wall - the "
-                "one lever that can pass it. Novel generation gains nothing (0% acceptance), and "
-                "a separate 0.6B DRAFT MODEL is measured NET NEGATIVE here (0.72x): its own "
-                "forward passes cost more than verification saves. Note llama-cli ignores "
-                "--spec-type silently; the flag only works on llama-server.")
+                "`--spec-type ngram-simple --spec-ngram-simple-size-m 384 "
+                "--spec-ngram-simple-size-n 4` to llama-server: measured **4.7x decode at ~3-bit** "
+                "(21.3 -> 98.8 tok/s), no download. REQUIRES A LONG PROMPT: with these values the drafter "
+                "cannot fire until the context exceeds size_m+size_n+1 = 389 tokens, so on short "
+                "prompts it does NOTHING and llama.cpp's default m=48 (61-token floor) is better. "
+                "Output was byte-identical in every copy-regime test we ran, but that is evidence, "
+                "not a guarantee - a verify pass batches several positions and batched reductions "
+                "are not bit-identical to single-token decode, which at temp 0 can flip an argmax "
+                "(measured: a rejected-draft case diverged reproducibly). The multiplier SHRINKS "
+                "with bit-width - the SAME model at Q3_K_M gives 3.4x (17.5 -> 59.2) - because a "
+                "verify round is compute-bound, so extra bits cost dequantisation on every drafted "
+                "token, not just extra bytes moved. Speculation and quantization are NOT "
+                "independent levers. "
+                "BOTH tunables matter and llama.cpp's defaults (m=48, n=12) capture only 2.3x of "
+                "it: the cost unit is the VERIFY ROUND (one full weight read), not the token, so "
+                "what pays is delivering the same accepted tokens in fewer, longer runs. 108 tok/s "
+                "is 2.6x this box's raw-decode wall, which no runtime, fork or rewrite can pass. "
+                "Two traps, both measured: do NOT tune on acceptance rate (it falls 89%->68% while "
+                "throughput doubles), and do NOT over-shorten n (n=2 drafts 36% MORE and runs 25% "
+                "SLOWER). Novel generation gains nothing (0% acceptance), a 0.6B DRAFT MODEL is net "
+                "negative here (0.72x), and stacking a second drafter costs 10%. Note llama-cli "
+                "ignores --spec-type silently; the flag only works on llama-server.")
     if moe and experts_offloaded:
         return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "
                 "offloaded - a verify batch unions experts, and every extra one is a slow read.")
@@ -676,6 +733,16 @@ def run(args):
             print("  every cell in ONE session (pre-registration #25) showed the alternatives were "
                   "dominated,")
             print("  so there is nothing to choose. One fewer knob, and the honest number.")
+            print()
+            print("  honesty on GENERATION speed (preregs #43/#60/#61): a plain fixed -ngl split measures")
+            print("  EQUAL tg to this -ot placement - three times, at degraded AND full clocks. The -ot")
+            print("  advice earns its keep on PROMPT PROCESSING (2.2x measured), on keeping KV in VRAM,")
+            print("  and on enabling the speculation numbers below - not on raw generation.")
+            print("  IF YOUR NUMBERS SAG 25-30% after hours of GPU churn: the cause on our box was a")
+            print("  STUCK BOOST STATE (SM 1506 vs 1835+ MHz at cool temps - diagnosed and confirmed by")
+            print("  cold-boot A/B, preregs #60/#61). Check `nvidia-smi --query-gpu=clocks.sm` under")
+            print("  load; consumer cards cannot reset it - reboot restores full speed. Not thermal,")
+            print("  not your config.")
             print()
             print("  long prompts, same document: send cache_prompt=true to llama-server. Measured")
             print("  here (pre-registration #29): the second question against a 2k-token document")

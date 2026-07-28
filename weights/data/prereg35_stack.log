@@ -1,0 +1,8 @@
+=== does the barrier mechanism reach the SHIPPED split config? (libomp spin policy A/B) ===
+  KMP=default   tg128 = 20.12 ± 0.91
+  KMP=infinite  tg128 = 20.56 ± 0.27
+--- composition arms (edit task, split, r=2) ---
+  B    21.64 tok/s  sha=28a5c1e1c014
+  K    20.38 tok/s  sha=65985276565a
+  S    50.55 tok/s  acc 89%  sha=28a5c1e1c014
+  KS   49.42 tok/s  acc 89%  sha=65985276565a

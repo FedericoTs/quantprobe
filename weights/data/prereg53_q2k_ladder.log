@@ -1,0 +1,4 @@
+=== #53: Qwen2.5-7B all-in-VRAM format ladder, interleaved ===
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         21.76 ± 0.11 |
+| qwen2 7B Q4_0                  |   4.12 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         26.87 ± 0.27 |
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         21.58 ± 0.15 |

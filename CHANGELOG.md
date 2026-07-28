@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.18.0 - 2026-07-28
+
+**The format lever: on old GPUs the quantization FORMAT sets decode speed, not just the bytes.**
+
+### New advice: prefer Q4_0 over Q4_K_M on pre-Ampere; never Q2_K when a 4-bit file fits
+
+Measured (pre-registrations #52/#53, same card, same session, interleaved):
+
+    Qwen2.5-7B all-in-VRAM:   Q4_K_M  22.72 tok/s     Q4_0  26.87 tok/s   (+19%, bytes explain 5.7%)
+                              Q2_K    21.67 tok/s     <- SLOWER than Q4_0 while 32% smaller
+
+`plan` now surfaces this whenever the all-in-VRAM row wins at <=5.0 bits, with its scope stated:
+one Pascal-class card, speed-only (Q4_K_M is higher quality per byte), and explicitly unverified
+on Ampere+ where the ranking may invert.
+
+### The mechanism, isolated at the metal (Law 4 amended: L-15)
+
+A standalone CUDA benchmark with zero llama.cpp (`tools/kernelprobe/`) shows a matvec with NO
+unpacking runs at 95% of the streaming ceiling, while the same bytes unpacked naively run at 42%.
+The decode wall on ALU-weak GPUs is unpack instruction cost, not bandwidth. This names the cause
+of C-05 ("a quantized byte is not a byte"), sighted six times before without a mechanism.
+
+### Recorded with equal prominence: what was refuted this session
+
+Fragmentation (#51, +6.5% at a 30x contrast), our own Q2_A format (#54, killed by its own
+fairness control), multi-row mmvq blocking (#55, -22%; upstream's Pascal carve-out validated),
+the "MoE gather penalty" (an occupancy artifact of our benchmark - scattered expert reads are
+free at real block counts), the K-quant min-term tax at real geometry (#56, 0.9-1.8% - counting
+instructions is not measuring them), the layout walk (#57, bitwise-matched pairs at 0.99-1.02),
+and TWO of our own laws killed by their own out-of-sample kill rules (#56, #59).
+
+### The mechanism that survived every control: metadata application density (L-16)
+
+Q2_K's definition forces a scale+min chain every 4 bytes at 2 bits - 4x Q4_K's density per byte.
+Confirmation arm with identical loads and identical dp4a count: +23%. The full decomposition of
+real Q2_K decode lands within 9-12% of measurement, closing a contradiction open for weeks.
+
+### Two shipped-copy corrections from a fresh original-case retest (#60/#61)
+
+The plan output now states plainly that a fixed -ngl split measures EQUAL generation speed to the
+-ot placement (three measurements, degraded and full clocks) - the -ot advice is earned on prompt
+processing (2.2x), KV-in-VRAM safety, and speculation, not raw tg. And a new machine-state
+diagnostic: a 25-30% sag after hours of GPU churn was diagnosed (clock polling) and confirmed
+(cold-boot A/B) as a STUCK BOOST STATE - SM 1506 vs 1835+ MHz at cool temps. The tool now tells
+users to check clocks and reboot; consumer cards cannot reset it in place. After reboot the
+original calibration reproduced to 0.5%, and a pristine zero-patch llama.cpp build agreed with
+our instrumented build within 1.4% - the whole measurement corpus stands on clean footing.
+
+Register: 75 entries, 11 pre-registrations this cycle (#51-#61), 8 kill rules fired and honoured,
+5 verification layers green. New: tools/kernelprobe (the standalone CUDA measurement harness,
+zero llama.cpp) and GROK_KERNEL_BRIEF.md (the full kernel ladder with the retraction log, for
+external red-teaming).
+
 ## 1.17.0 - 2026-07-27
 
 **A new warning that saves CPU-tier users 2.7x, the honest closure of novel-generation

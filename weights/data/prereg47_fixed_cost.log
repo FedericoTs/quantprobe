@@ -1,0 +1,5 @@
+=== Pre-reg #47 P-1: does the fixed per-token constant appear in the SPLIT placement too? ===
+one session, r=3, tg128, same split ratio (2/3 of expert layers on CPU)
+  Qwen3-30B-A3B-Q2_K                       10.485 GB file  tg128 17.35 ± 0.07      57.64 ms/token
+  Qwen3-Coder-30B-A3B-Instruct-Q2_K_L      10.553 GB file  tg128 12.82 ± 4.08      78.00 ms/token
+  Qwen3.5-35B-A3B-UD-Q2_K_XL               11.322 GB file  tg128 4.54 ± 0.47      220.26 ms/token

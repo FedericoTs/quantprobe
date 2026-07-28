@@ -1,0 +1,14 @@
+=== Pre-reg #43: decompose the SPLIT token by sweeping CPU-resident layer count K ===
+t(K) = fixed + K * per_layer_cpu_cost. Slope = marginal cost of one layer on CPU
+(expert read + its GPU<->CPU round trip); intercept = everything not per-CPU-layer.
+GPU: 721 MiB, 31
+  K=32  layers on CPU   tg128 = 19.76 ± 0.18       50.61 ms/token
+  K=36  layers on CPU   tg128 = 16.07 ± 0.55       62.23 ms/token
+  K=40  layers on CPU   tg128 = 15.28 ± 0.34       65.45 ms/token
+  K=44  layers on CPU   tg128 = 15.01 ± 0.30       66.62 ms/token
+  K=48  layers on CPU   tg128 = 15.01 ± 0.64       66.62 ms/token
+--- the idea the failed fit points at: PURE layer split (1 GPU<->CPU transition, not 32) ---
+  -ngl 12  (pure layer split)  tg128 = 12.88 ± 3.91     77.64 ms/token
+  -ngl 16  (pure layer split)  tg128 = 15.96 ± 0.63     62.66 ms/token
+  -ngl 20  (pure layer split)  tg128 = 19.70 ± 0.29     50.76 ms/token
+  [reference: -ngl 99 + -ot 32 layers of experts on CPU = 19.76 tok/s, 50.61 ms]

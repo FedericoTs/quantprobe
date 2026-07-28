@@ -1,0 +1,11 @@
+=== Pre-reg #34: barrier mechanism A/B ===
+--- arm A: gcc GGML_OPENMP=OFF (ggml spin barrier), tg32 t=4 r=3 ---
+[e3] per-op profiler: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CPU        |       4 |    0 |            tg32 |         16.64 ± 1.97 |
+[e3] per-op profile (thread 0): compute 4962.4 ms total, barrier 1048.5 ms total
+[e3] ADD                     41904         36.2        187.0
+[e3] MUL_MAT                 23377       2227.1        198.4
+--- arm B: shipped MSVC binary, KMP_BLOCKTIME=infinite OMP_WAIT_POLICY=active, tg32 t=4 r=3 ---
+  B: KMP infinite   13.89 ± 0.55
+--- B control: shipped binary, default env, same session ---
+  B: default        13.28 ± 0.83

@@ -101,5 +101,9 @@ indifferent to the access pattern (shuffled 2 MB slabs: +2.9%). The ~40% is code
 per-expert GEMVs per token against dense's ~140 large ones, with sub-linear thread scaling
 (1x/1.64x/2.17x). Prize if fixed: **+65% on the host share, raw decode 22.25 -> ~30 tok/s
 realistic** on 2016-class hardware - the novel-generation regime where speculation cannot help.
-Vehicle: an upstream PR (batched/fused expert GEMV, per-token expert grouping), never a fork -
+Vehicle: TWO upstream deliverables, never a fork. #1 (measured 2026-07-27, prereg #34): build
+guidance - GGML_OPENMP=ON on Windows/mingw routes ~2,070 barriers/token through kernel
+semaphores and costs ~40% of CPU decode; GGML_OPENMP=OFF recovers it with ggml's own spin
+barrier (11.92 -> 16.64 tok/s, one flag). #2: elementwise-chain fusion under the existing
+ggml_cpu_try_fuse_ops hook against the residual 10.8 ms/token. Vehicle for both -
 every quantprobe user runs stock llama.cpp, and that property is worth more than any local gain.

@@ -1,0 +1,29 @@
+=== Pre-reg #51: does GPU eta rise as subgraph count falls? ===
+--- arm A ---
+[e6] GPU-side profiler: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         16.87 ± 0.00 |
+[e6] CUDA backend: 4257 graph_compute calls
+[e6]   device busy (CUDA events) :   3076.4 ms total
+[e6]   wall inside backend       :   3452.3 ms total
+[e6]   submission/wait (wall-dev):    375.9 ms total  (11%)
+--- arm B ---
+[e6] GPU-side profiler: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |     1024 |    0 |           tg128 |         15.79 ± 0.00 |
+[e6] CUDA backend: 3870 graph_compute calls
+[e6]   device busy (CUDA events) :   2135.4 ms total
+[e6]   wall inside backend       :   2309.3 ms total
+[e6]   submission/wait (wall-dev):    173.9 ms total  (8%)
+--- arm C ---
+[e6] GPU-side profiler: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  12 |     1024 |    0 |           tg128 |         13.35 ± 0.00 |
+[e6] CUDA backend: 4902 graph_compute calls
+[e6]   device busy (CUDA events) :   1811.5 ms total
+[e6]   wall inside backend       :   2017.1 ms total
+[e6]   submission/wait (wall-dev):    205.6 ms total  (10%)
+--- arm A ---
+[e6] GPU-side profiler: ON
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         16.74 ± 0.00 |
+[e6] CUDA backend: 4257 graph_compute calls
+[e6]   device busy (CUDA events) :   3092.4 ms total
+[e6]   wall inside backend       :   3463.0 ms total
+[e6]   submission/wait (wall-dev):    370.6 ms total  (11%)

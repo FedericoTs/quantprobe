@@ -1213,6 +1213,35 @@ def t_python_m_package():
     assert r.returncode == 0 and "plan" in r.stdout and "auto" in r.stdout, \
         f"python -m quantprobe broken: rc={r.returncode} {(r.stdout + r.stderr)[:200]}"
 
+def t_format_advice_lever():
+    # The format lever (preregs #52/#53): all-in-VRAM + low bits must surface the Q4_0-over-K-quant
+    # advice, with its scope (pre-Ampere, speed-only, may invert on Ampere+) stated in the text.
+    from quantprobe.plan import format_advice
+    a = format_advice("all in VRAM", 4.5)
+    assert a and "Q4_0" in a and "+19%" in a and "Ampere" in a, f"4.5-bit lever wrong: {a}"
+    b = format_advice("all in VRAM", 2.8)
+    assert b and "REVERSED" in b and "Q2_K" in b, f"2.8-bit dominance warning wrong: {b}"
+    # ...and must NOT fire where it was not measured
+    assert format_advice("hybrid (waterfall)", 4.5) is None
+    assert format_advice("all in VRAM", 8.0) is None
+
+
+def t_format_advice_reaches_user():
+    # the note must actually reach plan output through fits_in_vram_advice
+    from quantprobe.plan import fits_in_vram_advice
+    n = fits_in_vram_advice("all in VRAM", 4.5)
+    assert n and "FORMAT LEVER" in n, "format advice not wired into the all-in-VRAM note"
+
+
+def t_format_advice_honesty():
+    # the claim must never appear without its limits: one card, speed-only
+    from quantprobe.plan import format_advice
+    for bits in (2.5, 3.0, 4.5, 5.0):
+        a = format_advice("all in VRAM", bits)
+        if a:
+            assert ("unverified" in a and "invert" in a), f"missing scope honesty at {bits}: {a}"
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

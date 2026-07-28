@@ -1,0 +1,14 @@
+=== Pre-reg #48: MoE flagship on the CUDA build - does MUL_MAT_ID block graphs at decode? ===
+source says Q2_K mmvq_mmid_max=4 on Pascal and ne[2]=1 at decode, so the disable should NOT fire
+--- graphs default (arch check disables) ---
+[e5] CUDA graphs on pre-Ampere: default (disabled)
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         16.98 ± 0.32 |
+--- graphs FORCED ON ---
+[e5] CUDA graphs on pre-Ampere: FORCED ON
+[e5] cudaStreamBeginCapture fired #1
+[e5] cudaStreamBeginCapture fired #2
+[e5] cudaStreamBeginCapture fired #3
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         17.61 ± 0.24 |
+--- position control: default re-run LAST, then forced ON again ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         17.12 ± 0.18 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         17.57 ± 0.27 |

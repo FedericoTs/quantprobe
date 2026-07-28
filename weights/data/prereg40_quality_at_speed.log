@@ -1,0 +1,8 @@
+=== Pre-reg #40: does the 5x multiplier survive higher quality? (req1, fresh server) ===
+  Q2-raw         20.83 tok/s   drafted     0 accepted     0   sha=19d0be0c6f3e
+  Q2-spec        99.06 tok/s   drafted   363 accepted   282   sha=19d0be0c6f3e
+  Q3-raw         17.45 tok/s   drafted     0 accepted     0   sha=867ecdf1eee9
+  Q3-spec        59.17 tok/s   drafted   371 accepted   286   sha=867ecdf1eee9
+--- CONFOUND CONTROL: same model (Qwen3-Coder-30B) at two bit-widths ---
+  CodQ2-raw      21.32 tok/s   drafted     0 accepted     0   sha=867ecdf1eee9
+  CodQ2-spec     98.80 tok/s   drafted   371 accepted   286   sha=867ecdf1eee9
