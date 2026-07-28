@@ -8,9 +8,9 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 15 |
+| Established laws | 16 |
 | Shipped levers | 17 |
-| Measured dead ends | 19 |
+| Measured dead ends | 20 |
 | Open contradictions | 9 |
 | Untried levers | 4 |
 | External work to study | 5 |
@@ -108,6 +108,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** Same tier, same card, same model, same session: Q4_0 eta 0.619 vs Q4_K_M 0.553 vs Q2_K 0.340. Bare-metal ladder (own CUDA, zero llama.cpp): no-unpack 152.5 GB/s (0.79 spec), naive 4.5-bit 67.8 (0.35), dp4a 4.5-bit 128.7-132.1 (0.67-0.69), stream 161.0 (0.84).
 
 `established` · `measured` · scope: measured on ONE Pascal card (cc 6.1); on Ampere+ the ALU/BW ratio flips and the ranking may invert - unverified, replication asked · evidence: prereg #52, prereg #53, tools/kernelprobe/bench.cu (every kernel correctness-checked vs double host reference); prereg #56 NARROWS the mechanism: at real 1-row geometry with dp4a, marginal instruction differences (min term, packed scales) cost <=5% - the naive-float->dp4a 1.9x remains the proven instruction effect, and the residual K-quant e2e deficit is attributed to layout/occupancy, OPEN · wired into: `quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; explains C-05 (6 prior sightings, mechanism now named)`
+
+### L-16 — THE K-QUANT DEFICIT MECHANISM: metadata application DENSITY. A format that defines scale+min per 16 weights forces a metadata FMA chain every 4 bytes at 2 bits - 4x the application density of Q4_K per byte. Confirmation arm with identical loads and identical dp4a count, scale applied per-u32 instead of per-quad: 83.8 -> 103.2 GB/s (+23%). Full decomposition of real Q2_K: 131 (Q4_K-class ceiling) x0.64 (density) x0.885 (e2e dilution) = 74 vs 65.4 measured - 88% accounted; Q4_K 91% accounted. The deficit is intrinsic to the format DEFINITION because quality at 2 bits requires exactly the fine asymmetric metadata that costs the density (quality.py: every coarser/symmetric variant loses).
+
+**Magnitude:** +23% density arm; residuals 9-12% unattributed (occupancy / q8_1-struct walk)
+
+`established` · `measured` · scope: one Pascal card; the density cost shrinks wherever ALU/BW ratio is higher · evidence: prereg #57 (incl. exploratory density arm, labeled post-hoc), prereg #56, quality.py ladder · wired into: `quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; C-02 closure`
 
 ## Shipped levers
 
@@ -333,6 +339,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `measured` · scope: Pascal, 4.5-bit cost models; the real-layout oracle is the named next experiment · evidence: prereg #56 (arms i-iv, bitwise-identity check between i and ii) · wired into: `quantprobe/plan.py format_advice (mechanism text corrected); KERNEL_BREAKTHROUGH_BRAINSTORM.md N1 closed`
 
+### D-22 — The LAYOUT WALK is acquitted: bitwise-matched pairs differing only in byte placement (planar vs llama.cpp 84B/144B interleaved structs, mmvq geometry) measure ratio 0.99-1.02. The repack idea is dead before it was built. Third acquitted suspect in two preregs (#56 arithmetic, #57 layout).
+
+**Magnitude:** Q2_K-shaped 0.99-1.00, Q4_K-shaped 1.02
+
+`refuted` · `measured` · scope: Pascal, mmvq 1-row geometry · evidence: prereg #57 · wired into: `preregistrations/2026-07-28-layout-walk.md`
+
 ## Open contradictions
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
@@ -351,7 +363,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Next action:** DISCRIMINATING TEST: measure llama.cpp all-in-VRAM eta against FORMAT at fixed model and size, on a 7B+ model so per-token overhead does not dominate: Q8_0 (trivial dequant) vs Q4_K_M vs Q2_K. If eta rises toward 0.84 as dequant cheapens, the gap is ARITHMETIC and Pascal owns it. If eta stays ~0.4 at Q8_0, the gap is the KERNEL and it is addressable. Existing C-02 data hints at the awkward answer - Q8_0 measured the LOWEST eta (0.354) - but those were 0.5-0.6B models where overhead dominates, so it must be re-run at 7B+.
 
-`reclassified` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this; 2026-07-28 closure at kernel level: fragmentation refuted (#51), the all-in-VRAM eta band is FORMAT-dependent (L-15), and Q2_K's deficit is structural ALU count (8 vs 4 dp4a per 16 weights, #55). Remaining unexplained: split-placement GPU share eta 0.15 vs all-in-VRAM Q2_K eta 0.34 - factor ~2.3, sharpest open question · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
+`closed` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this; 2026-07-28 closure at kernel level: fragmentation refuted (#51), the all-in-VRAM eta band is FORMAT-dependent (L-15), and Q2_K's deficit is structural ALU count (8 vs 4 dp4a per 16 weights, #55). Remaining unexplained: split-placement GPU share eta 0.15 vs all-in-VRAM Q2_K eta 0.34 - factor ~2.3, sharpest open question; CLOSED for the all-in-VRAM regime 2026-07-28: the eta band 0.32-0.62 is explained by format metadata application density (L-16), decomposed to within 9-12% per format. The SPLIT-placement residual (GPU share 0.15 vs all-in-VRAM Q2_K 0.34, factor ~2.3) is re-scoped as the N5 experiment and is the last big open number. · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
 
 ### C-05 — A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.
 

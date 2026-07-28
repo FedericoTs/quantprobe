@@ -196,6 +196,17 @@
    "evidence": "prereg #52, prereg #53, tools/kernelprobe/bench.cu (every kernel correctness-checked vs double host reference); prereg #56 NARROWS the mechanism: at real 1-row geometry with dp4a, marginal instruction differences (min term, packed scales) cost <=5% - the naive-float->dp4a 1.9x remains the proven instruction effect, and the residual K-quant e2e deficit is attributed to layout/occupancy, OPEN",
    "scope": "measured on ONE Pascal card (cc 6.1); on Ampere+ the ALU/BW ratio flips and the ranking may invert - unverified, replication asked",
    "wired_into": "quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; explains C-05 (6 prior sightings, mechanism now named)"
+  },
+  {
+   "id": "L-16",
+   "kind": "law",
+   "status": "established",
+   "confidence": "measured",
+   "claim": "THE K-QUANT DEFICIT MECHANISM: metadata application DENSITY. A format that defines scale+min per 16 weights forces a metadata FMA chain every 4 bytes at 2 bits - 4x the application density of Q4_K per byte. Confirmation arm with identical loads and identical dp4a count, scale applied per-u32 instead of per-quad: 83.8 -> 103.2 GB/s (+23%). Full decomposition of real Q2_K: 131 (Q4_K-class ceiling) x0.64 (density) x0.885 (e2e dilution) = 74 vs 65.4 measured - 88% accounted; Q4_K 91% accounted. The deficit is intrinsic to the format DEFINITION because quality at 2 bits requires exactly the fine asymmetric metadata that costs the density (quality.py: every coarser/symmetric variant loses).",
+   "magnitude": "+23% density arm; residuals 9-12% unattributed (occupancy / q8_1-struct walk)",
+   "evidence": "prereg #57 (incl. exploratory density arm, labeled post-hoc), prereg #56, quality.py ladder",
+   "scope": "one Pascal card; the density cost shrinks wherever ALU/BW ratio is higher",
+   "wired_into": "quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; C-02 closure"
   }
  ],
  "levers": [
@@ -614,6 +625,17 @@
    "evidence": "prereg #56 (arms i-iv, bitwise-identity check between i and ii)",
    "scope": "Pascal, 4.5-bit cost models; the real-layout oracle is the named next experiment",
    "wired_into": "quantprobe/plan.py format_advice (mechanism text corrected); KERNEL_BREAKTHROUGH_BRAINSTORM.md N1 closed"
+  },
+  {
+   "id": "D-22",
+   "kind": "dead_end",
+   "status": "refuted",
+   "confidence": "measured",
+   "claim": "The LAYOUT WALK is acquitted: bitwise-matched pairs differing only in byte placement (planar vs llama.cpp 84B/144B interleaved structs, mmvq geometry) measure ratio 0.99-1.02. The repack idea is dead before it was built. Third acquitted suspect in two preregs (#56 arithmetic, #57 layout).",
+   "magnitude": "Q2_K-shaped 0.99-1.00, Q4_K-shaped 1.02",
+   "evidence": "prereg #57",
+   "scope": "Pascal, mmvq 1-row geometry",
+   "wired_into": "preregistrations/2026-07-28-layout-walk.md"
   }
  ],
  "contradictions": [
@@ -633,11 +655,11 @@
   {
    "id": "C-02",
    "kind": "contradiction",
-   "status": "reclassified",
+   "status": "closed",
    "confidence": "measured",
    "claim": "RECLASSIFIED 2026-07-28: the all-in-VRAM shortfall is a SOFTWARE gap of 1.5-2.6x, not an unexplained property of the hardware. Independent measurement (prereg #44) puts the card's decode-shaped ceiling at eta 0.84; llama.cpp reaches 0.32-0.56.",
    "magnitude": "Implied eta from the 7 ratchet points, same box, plan --gguf: gemma4-12b custom mix 0.319 (the only OVER-prediction, +9.8%) | Qwen3-0.6B Q8_0 0.357 | Qwen2.5-7B Q2_K 0.377 | Qwen2.5-7B IQ3_XS 0.384 | Bonsai-27B Q1_0 0.445 | Qwen3.5-4B Q4_K_M 0.464 | Qwen2.5-7B Q4_K_M 0.561. The law assumes 0.35 for all of them. HEADROOM CORRECTED (same session): the 1.5-2.6x figure compared against the fp32 GEMV ceiling; against the fp16 ceiling (108.9 GB/s, Pascal fp16 is 1/64 rate) llama.cpp's Q4_K_M at 98.6 GB/s sits at 91%. Honest range: 1.1x-1.64x at Q4_K_M, pending which arithmetic the kernels use.",
-   "evidence": "prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this; 2026-07-28 closure at kernel level: fragmentation refuted (#51), the all-in-VRAM eta band is FORMAT-dependent (L-15), and Q2_K's deficit is structural ALU count (8 vs 4 dp4a per 16 weights, #55). Remaining unexplained: split-placement GPU share eta 0.15 vs all-in-VRAM Q2_K eta 0.34 - factor ~2.3, sharpest open question",
+   "evidence": "prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this; 2026-07-28 closure at kernel level: fragmentation refuted (#51), the all-in-VRAM eta band is FORMAT-dependent (L-15), and Q2_K's deficit is structural ALU count (8 vs 4 dp4a per 16 weights, #55). Remaining unexplained: split-placement GPU share eta 0.15 vs all-in-VRAM Q2_K eta 0.34 - factor ~2.3, sharpest open question; CLOSED for the all-in-VRAM regime 2026-07-28: the eta band 0.32-0.62 is explained by format metadata application density (L-16), decomposed to within 9-12% per format. The SPLIT-placement residual (GPU share 0.15 vs all-in-VRAM Q2_K 0.34, factor ~2.3) is re-scoped as the N5 experiment and is the last big open number.",
    "scope": "dense models fully resident, GTX 1060 6GB",
    "wired_into": "disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow",
    "priority": 1,

@@ -488,6 +488,125 @@ __global__ __launch_bounds__(128) void k_mmvq_geom(
     if (threadIdx.x == 0) y[blockIdx.x] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
 }
 
+// ==================== L1n: prereg #57 — the LAYOUT WALK oracle. Matched pairs, only bytes move.
+// Q2_K cost model: 256-weight superblocks, per-16 packed scale/min nibbles, fp16 d/dmin,
+// QR2_K-style unpack (one u32 = 16 weights via 4 shift+dp4a), min via dp4a (free per #56).
+// Thread map = llama.cpp mmvq: 16 lanes per superblock, lane reads word (t%16). 128 thr = 8 sb = K.
+//
+// LAY=0 planar:  [all qs words][all scale bytes][all d/dmin half pairs]  (coalesced)
+// LAY=1 struct:  84-byte blocks: scales[16] | qs[64] | d,dmin            (llama.cpp block_q2_K)
+template <int LAY>
+__global__ __launch_bounds__(128) void k_q2k_layout(
+        const uint8_t * __restrict__ base, const int * __restrict__ xq,
+        float sx, float * __restrict__ y, int rows_total)
+{
+    const int t   = threadIdx.x;
+    const int sb  = t >> 4;                    // superblock 0..7
+    const int w   = t & 15;                    // word within the superblock's 64B qs
+    const size_t row_bytes = (K / 256) * 84;   // 672 B either way — SAME bytes, moved
+    const uint8_t * row = base + (size_t)blockIdx.x * row_bytes;
+
+    const uint8_t  * qs_p; const uint8_t * sc_p; const __half * dm_p;
+    if (LAY == 0) {                            // planar planes for the whole row
+        qs_p = row;                                        // K/4 = 512 B of qs
+        sc_p = row + K/4;                                  // K/16 = 128 B of packed scale/min
+        dm_p = (const __half *)(row + K/4 + K/16);         // 8 x (d,dmin) half pairs
+    } else {                                   // interleaved 84 B struct per superblock
+        const uint8_t * blk = row + (size_t)sb * 84;
+        sc_p = blk;                                        // scales[16] at the block head
+        qs_p = blk + 16;                                   // qs[64]
+        dm_p = (const __half *)(blk + 80);                 // d, dmin
+    }
+
+    const uint32_t v = (LAY == 1) ? ((const uint32_t *)qs_p)[w]
+                                  : ((const uint32_t *)qs_p)[sb*16 + w];
+    float acc = 0.0f;
+    const float d    = __half2float(LAY == 1 ? dm_p[0] : dm_p[2*sb]);
+    const float dmin = __half2float(LAY == 1 ? dm_p[1] : dm_p[2*sb+1]);
+    if (LAY == 2) {
+        // post-#57 exploratory arm (NOT staked): identical loads and dp4a count, but the
+        // scale/min are applied ONCE PER u32 (16 weights) instead of once per quad — the
+        // metadata-application-DENSITY test. Uses the first scale byte for all four quads,
+        // so it is a THROUGHPUT arm only (different math, no bitwise check).
+        int accd = 0, accm = 0;
+        const uint8_t p = sc_p[sb*16 + (w >> 2)];
+        #pragma unroll
+        for (int i = 0; i < 4; i++) {
+            const int qv = (int)((v >> (2*i)) & 0x03030303u);
+            const int xv = xq[sb*64 + i*16 + w];
+            accd += __dp4a(qv, xv, 0);
+            accm += __dp4a(0x01010101, xv, 0);
+        }
+        acc = (float)accd * d * (float)(p & 0xF) - (float)accm * dmin * (float)(p >> 4);
+    } else {
+    #pragma unroll
+    for (int i = 0; i < 4; i++) {              // 4 weight-quads per u32, QR2_K pattern
+        const int qv = (int)((v >> (2*i)) & 0x03030303u);
+        // logical weights: superblock sb, plane i, word w -> x ints at sb*64 + i*16 + w
+        const int xv = xq[sb*64 + i*16 + w];
+        const uint8_t p = (LAY == 1) ? sc_p[i*4 + (w >> 2)]
+                                     : sc_p[sb*16 + i*4 + (w >> 2)];
+        acc += (float)__dp4a(qv, xv, 0)          * d    * (float)(p & 0xF);
+        acc -= (float)__dp4a(0x01010101, xv, 0)  * dmin * (float)(p >> 4);
+    }
+    }
+    for (int off = 16; off > 0; off >>= 1) acc += __shfl_down_sync(0xffffffff, acc, off);
+    __shared__ float warp[4];
+    if ((t & 31) == 0) warp[t >> 5] = acc;
+    __syncthreads();
+    if (t == 0) y[blockIdx.x] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
+}
+
+// Q4_K pair: 144-byte blocks (dm | scales[12] | qs[128]), 16 lanes per block, lane reads
+// words 2*(t%16) and 2*(t%16)+1 of the block's 128 B qs. Planar twin has the same logical map.
+template <int LAY>
+__global__ __launch_bounds__(128) void k_q4k_layout(
+        const uint8_t * __restrict__ base, const int * __restrict__ xq,
+        float sx, float * __restrict__ y, int rows_total)
+{
+    const int t  = threadIdx.x;
+    const int sb = t >> 4;                     // superblock 0..7 (K=2048 -> 8 x 256 weights)
+    const int w  = (t & 15) * 2;               // first of two words in the 32-word qs
+    const size_t row_bytes = (K / 256) * 144;  // 1152 B either way
+    const uint8_t * row = base + (size_t)blockIdx.x * row_bytes;
+
+    const uint8_t * qs_p; const uint8_t * sc_p; const __half * dm_p;
+    if (LAY == 0) {
+        qs_p = row;                                        // K/2 = 1024 B of qs
+        sc_p = row + K/2;                                  // 8 x 12 B of scales
+        dm_p = (const __half *)(row + K/2 + (K/256)*12);   // 8 x (d,dmin)
+    } else {
+        const uint8_t * blk = row + (size_t)sb * 144;
+        dm_p = (const __half *)blk;
+        sc_p = blk + 4;
+        qs_p = blk + 16;
+    }
+
+    const uint32_t v0 = (LAY == 0) ? ((const uint32_t *)qs_p)[sb*32 + w]     : ((const uint32_t *)qs_p)[w];
+    const uint32_t v1 = (LAY == 0) ? ((const uint32_t *)qs_p)[sb*32 + w + 1] : ((const uint32_t *)qs_p)[w + 1];
+    const float d    = __half2float(LAY == 0 ? dm_p[2*sb]   : dm_p[0]);
+    const float dmin = __half2float(LAY == 0 ? dm_p[2*sb+1] : dm_p[1]);
+    const uint8_t s0 = (LAY == 0) ? sc_p[sb*12 + (w >> 2)]     : sc_p[w >> 2];
+    const uint8_t s1 = (LAY == 0) ? sc_p[sb*12 + (w >> 2) + 4] : sc_p[(w >> 2) + 4];
+
+    float acc = 0.0f;
+    const int x0 = xq[sb*64 + w],     x1 = xq[sb*64 + w + 1];      // lo nibbles: weights 4w..
+    const int x2 = xq[sb*64 + w + 32], x3 = xq[sb*64 + w + 33];    // hi nibbles: +128 weights
+    acc += (float)(__dp4a((int)(v1 & 0x0F0F0F0Fu), x1, __dp4a((int)(v0 & 0x0F0F0F0Fu), x0, 0)))
+           * d * (float)(s0 & 0x3F);
+    acc -= (float)(__dp4a(0x01010101, x1, __dp4a(0x01010101, x0, 0)))
+           * dmin * (float)(s0 >> 6);
+    acc += (float)(__dp4a((int)((v1 >> 4) & 0x0F0F0F0Fu), x3, __dp4a((int)((v0 >> 4) & 0x0F0F0F0Fu), x2, 0)))
+           * d * (float)(s1 & 0x3F);
+    acc -= (float)(__dp4a(0x01010101, x3, __dp4a(0x01010101, x2, 0)))
+           * dmin * (float)(s1 >> 6);
+    for (int off = 16; off > 0; off >>= 1) acc += __shfl_down_sync(0xffffffff, acc, off);
+    __shared__ float warp[4];
+    if ((t & 31) == 0) warp[t >> 5] = acc;
+    __syncthreads();
+    if (t == 0) y[blockIdx.x] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
+}
+
 static double bench(void (*launch)(void*), void* arg, int iters, double bytes) {
     cudaEvent_t a, b; CHECK(cudaEventCreate(&a)); CHECK(cudaEventCreate(&b));
     launch(arg); CHECK(cudaDeviceSynchronize());              // warm
@@ -879,6 +998,105 @@ int main(int argc, char** argv) {
                100.0 * (g2 - g0) / g0, (g2 > g0) ? 100.0 * (g1 - g0) / (g2 - g0) : 0.0,
                100.0 * (g0 - g3) / g0);
         CHECK(cudaFree(d_xq)); CHECK(cudaFree(d_s4));
+    }
+
+    // ---- L1n: prereg #57 — matched-pair layout oracle. Same logical content, two byte layouts.
+    {
+        float mx = 0; for (int i = 0; i < K; i++) mx = fmaxf(mx, fabsf(hx[i]));
+        const float sxx = mx / 127.0f;
+        std::vector<int8_t> xi(K); for (int i = 0; i < K; i++) xi[i] = (int8_t)lrintf(hx[i] / sxx);
+        int* d_xq; CHECK(cudaMalloc(&d_xq, K)); CHECK(cudaMemcpy(d_xq, xi.data(), K, cudaMemcpyHostToDevice));
+        const size_t budget = ((size_t)target_mb << 20) / 2;   // per layout buffer
+        struct A { const uint8_t* b; const int* xq; float sx; float* y; int n; };
+
+        printf("\n--- prereg #57: layout walk, matched pairs (mmvq geometry) ---\n");
+        double rq2[2] = {0, 0}, rq4[2] = {0, 0};
+
+        {   // ---------- Q2_K-shaped pair: 672 B/row logical, planar vs 84 B struct
+            const int SBR = K / 256;                       // 8 superblocks per row
+            const size_t row_b = (size_t)SBR * 84;
+            const int nrows = (int)(budget / row_b);
+            std::vector<uint8_t> h0(nrows * row_b), h1(nrows * row_b);
+            srand(1234);
+            for (int r = 0; r < nrows; r++) {
+                uint8_t * p0 = h0.data() + (size_t)r * row_b;      // planar
+                uint8_t * p1 = h1.data() + (size_t)r * row_b;      // struct
+                for (int sb = 0; sb < SBR; sb++) {
+                    uint8_t S[16]; uint32_t W[16];
+                    for (int j = 0; j < 16; j++) { S[j] = (uint8_t)(rand() & 0xFF); W[j] = ((uint32_t)rand() << 16) ^ rand(); }
+                    memcpy(p0 + (size_t)(sb*16)*4, W, 64);                          // qs plane
+                    memcpy(p0 + (size_t)K/4 + sb*16, S, 16);                        // scale plane
+                    __half * dm0 = (__half *)(p0 + K/4 + K/16);
+                    dm0[2*sb] = __float2half(0.002f); dm0[2*sb+1] = __float2half(0.001f);
+                    uint8_t * blk = p1 + (size_t)sb * 84;                           // struct
+                    memcpy(blk, S, 16); memcpy(blk + 16, W, 64);
+                    ((__half *)(blk + 80))[0] = __float2half(0.002f);
+                    ((__half *)(blk + 80))[1] = __float2half(0.001f);
+                }
+            }
+            uint8_t *d0, *d1;
+            CHECK(cudaMalloc(&d0, h0.size())); CHECK(cudaMemcpy(d0, h0.data(), h0.size(), cudaMemcpyHostToDevice));
+            CHECK(cudaMalloc(&d1, h1.size())); CHECK(cudaMemcpy(d1, h1.data(), h1.size(), cudaMemcpyHostToDevice));
+            A a0{d0, d_xq, sxx, d_y, nrows}, a1{d1, d_xq, sxx, d_y, nrows};
+            auto LP = [](void* v) { A* a = (A*)v; k_q2k_layout<0><<<a->n, 128>>>(a->b, a->xq, a->sx, a->y, a->n); };
+            auto LS = [](void* v) { A* a = (A*)v; k_q2k_layout<1><<<a->n, 128>>>(a->b, a->xq, a->sx, a->y, a->n); };
+            LP(&a0); CHECK(cudaDeviceSynchronize());
+            std::vector<float> yp(8); CHECK(cudaMemcpy(yp.data(), d_y, 32, cudaMemcpyDeviceToHost));
+            LS(&a1); CHECK(cudaDeviceSynchronize());
+            std::vector<float> ys(8); CHECK(cudaMemcpy(ys.data(), d_y, 32, cudaMemcpyDeviceToHost));
+            int same = (yp[0] != 0.0f); for (int i = 0; i < 8; i++) same &= (yp[i] == ys[i]);
+            rq2[0] = bench(LP, &a0, 20, (double)nrows * row_b);
+            rq2[1] = bench(LS, &a1, 20, (double)nrows * row_b);
+            printf("Q2_K-shaped  planar %7.1f GB/s   struct-84B %7.1f GB/s   ratio %.3f   bitwise %s\n",
+                   rq2[0], rq2[1], rq2[1] / rq2[0], same ? "OK" : "*** MISMATCH — VOID ***");
+            auto LD = [](void* v) { A* a = (A*)v; k_q2k_layout<2><<<a->n, 128>>>(a->b, a->xq, a->sx, a->y, a->n); };
+            double gd = bench(LD, &a0, 20, (double)nrows * row_b);
+            printf("  exploratory: scale/min per-u32 instead of per-quad  %7.1f GB/s  (density arm, throughput only)\n", gd);
+            CHECK(cudaFree(d0)); CHECK(cudaFree(d1));
+        }
+        {   // ---------- Q4_K-shaped pair: 1152 B/row, planar vs 144 B struct
+            const int SBR = K / 256;
+            const size_t row_b = (size_t)SBR * 144;
+            const int nrows = (int)(budget / row_b);
+            std::vector<uint8_t> h0(nrows * row_b), h1(nrows * row_b);
+            srand(4321);
+            for (int r = 0; r < nrows; r++) {
+                uint8_t * p0 = h0.data() + (size_t)r * row_b;
+                uint8_t * p1 = h1.data() + (size_t)r * row_b;
+                for (int sb = 0; sb < SBR; sb++) {
+                    uint8_t S[12]; uint32_t W[32];
+                    for (int j = 0; j < 12; j++) S[j] = (uint8_t)(rand() & 0xFF);
+                    for (int j = 0; j < 32; j++) W[j] = ((uint32_t)rand() << 16) ^ rand();
+                    memcpy(p0 + (size_t)(sb*32)*4, W, 128);
+                    memcpy(p0 + (size_t)K/2 + sb*12, S, 12);
+                    __half * dm0 = (__half *)(p0 + K/2 + SBR*12);
+                    dm0[2*sb] = __float2half(0.002f); dm0[2*sb+1] = __float2half(0.001f);
+                    uint8_t * blk = p1 + (size_t)sb * 144;
+                    ((__half *)blk)[0] = __float2half(0.002f);
+                    ((__half *)blk)[1] = __float2half(0.001f);
+                    memcpy(blk + 4, S, 12); memcpy(blk + 16, W, 128);
+                }
+            }
+            uint8_t *d0, *d1;
+            CHECK(cudaMalloc(&d0, h0.size())); CHECK(cudaMemcpy(d0, h0.data(), h0.size(), cudaMemcpyHostToDevice));
+            CHECK(cudaMalloc(&d1, h1.size())); CHECK(cudaMemcpy(d1, h1.data(), h1.size(), cudaMemcpyHostToDevice));
+            A a0{d0, d_xq, sxx, d_y, nrows}, a1{d1, d_xq, sxx, d_y, nrows};
+            auto LP = [](void* v) { A* a = (A*)v; k_q4k_layout<0><<<a->n, 128>>>(a->b, a->xq, a->sx, a->y, a->n); };
+            auto LS = [](void* v) { A* a = (A*)v; k_q4k_layout<1><<<a->n, 128>>>(a->b, a->xq, a->sx, a->y, a->n); };
+            LP(&a0); CHECK(cudaDeviceSynchronize());
+            std::vector<float> yp(8); CHECK(cudaMemcpy(yp.data(), d_y, 32, cudaMemcpyDeviceToHost));
+            LS(&a1); CHECK(cudaDeviceSynchronize());
+            std::vector<float> ys(8); CHECK(cudaMemcpy(ys.data(), d_y, 32, cudaMemcpyDeviceToHost));
+            int same = (yp[0] != 0.0f); for (int i = 0; i < 8; i++) same &= (yp[i] == ys[i]);
+            rq4[0] = bench(LP, &a0, 20, (double)nrows * row_b);
+            rq4[1] = bench(LS, &a1, 20, (double)nrows * row_b);
+            printf("Q4_K-shaped  planar %7.1f GB/s   struct-144B %6.1f GB/s   ratio %.3f   bitwise %s\n",
+                   rq4[0], rq4[1], rq4[1] / rq4[0], same ? "OK" : "*** MISMATCH — VOID ***");
+            CHECK(cudaFree(d0)); CHECK(cudaFree(d1));
+        }
+        printf("P-2 ordering (q4k ratio > q2k ratio): %s\n",
+               (rq4[1]/rq4[0] > rq2[1]/rq2[0]) ? "HOLDS" : "FAILS");
+        CHECK(cudaFree(d_xq));
     }
 
     printf("\nllama.cpp, same card, measured through the runtime:\n");

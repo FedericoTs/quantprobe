@@ -426,10 +426,10 @@ def format_advice(placement, bits):
     if bits <= 5.0:
         return ("FORMAT LEVER (pre-Ampere cards): at this bit-width the FORMAT is worth more than "
                 "the bytes - Q4_0 measured +19% over Q4_K_M on the same model (26.87 vs 22.72 "
-                "tok/s). The deficit is intrinsic to the K-quant format/kernel pair (cost-model "
-                "kernels acquit the arithmetic itself, prereg #56 - the suspects are layout walk "
-                "and occupancy). Speed-only: Q4_K_M is higher quality per byte. On Ampere+ this "
-                "is unverified and may invert.")
+                "tok/s). Mechanism (measured, preregs #56/#57): metadata application DENSITY - "
+                "K-quants apply fine-grained scale+min chains far more often per byte, and that "
+                "cost is intrinsic to the format definition, not a kernel bug. Speed-only: "
+                "Q4_K_M is higher quality per byte. On Ampere+ this is unverified and may invert.")
     return None
 
 
