@@ -9,10 +9,10 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 17 |
-| Shipped levers | 17 |
+| Shipped levers | 18 |
 | Measured dead ends | 21 |
 | Open contradictions | 10 |
-| Untried levers | 5 |
+| Untried levers | 6 |
 | External work to study | 6 |
 
 ## Established laws
@@ -119,7 +119,7 @@ What we believe, and the measurement that earned it.
 
 **Magnitude:** 853 vs 341 GPU nodes/token; matmuls 80% of split device time running 5-15x their byte cost per call; known floor contributor: q8_1 activation re-quantization inside every quantized matmul (~1.5-3 ms/token)
 
-`open` · `refuted-out-of-sample` · scope: one Pascal/WDDM box, batch 1; the floor constant is machine-specific, the LAW (floor x calls + format tax) should transfer · evidence: prereg #58 (E9 per-op attribution, reconciled 96.9%/99.1% against E6), prereg #48 (graphs null), prereg #50 (E6 baseline); prereg #59 (out-of-sample test: FAILED, kill rule honoured) · wired into: `quantprobe plan.py eta constants gain mechanistic justification; preregistrations/2026-07-28-split-eta-attribution.md`
+`open` · `refuted-out-of-sample` · scope: one Pascal/WDDM box, batch 1; the floor constant is machine-specific, the LAW (floor x calls + format tax) should transfer · evidence: prereg #58 (E9 per-op attribution, reconciled 96.9%/99.1% against E6), prereg #48 (graphs null), prereg #50 (E6 baseline); prereg #59 (out-of-sample test: FAILED, kill rule honoured); prereg #64 REVISES the #59 DS-Lite attribution: at healthy clocks DS measures 23.08, inside its staked band - that miss was substantially the stuck-boost state. The L-17 kill stands on the 0.5B arm alone. · wired into: `quantprobe plan.py eta constants gain mechanistic justification; preregistrations/2026-07-28-split-eta-attribution.md`
 
 ## Shipped levers
 
@@ -226,6 +226,12 @@ Things the tool actually recommends, with the number attached.
 **Magnitude:** -ngl 20: 15.00 -> 15.98 tok/s paired; submission/wait -85%; NOT output-identical (placement-sensitivity class llama.cpp already has: stock -ngl 20 vs 19 also diverge)
 
 `reported` · `measured` · scope: only benefits fixed -ngl layer splits, which our advice already avoids in favor of -ot; not upstreamed · evidence: prereg #51 (part 2) · wired into: `documented here; deliberately NOT in plan.py (does not affect the shipped placement)`
+
+### V-19 — ANCHORED PREDICTIONS (v1.20, default-on by its pre-registered gate): calibrate anchor runs become tier-local ratios (measured/law-predicted for the anchor arm, clamped 0.70-1.40) that scale that tier bandwidth for every OTHER prediction. The target arm is never consulted. LOO gate on 5 same-state targets: anchored median |error| 5.8% vs plain law 19.0%, every arm improved, floor semantics preserved (all misses under-promise).
+
+**Magnitude:** median error 19.0% -> 5.8%; flagship split predicted +1.6%, 0.6B +1.8%
+
+`shipped` · `measured` · scope: one box; the ratios are per-machine BY DESIGN (that is the point); format blindness of the single GPU ratio documented (Q4_0 -43% under-promise), fix logged as U-15 · evidence: prereg #64 (gate staked before any number; anchor arms excluded from targets) · wired into: `quantprobe/plan.py anchor composition; quantprobe/calibrate.py gpu_anchor; tests t_anchored_predictions_wiring`
 
 ## Measured dead ends
 
@@ -501,6 +507,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `speculative` · evidence: prereg #62 (the sweep + the shipped fix) · wired into: `prereg #61 scoring; candidate next single-session sweep`
 
+### U-15 — Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it.
+
+**Hypothesis:** eta_format(target) = eta_format(anchor) x ladder_ratio from kernelprobe measurements
+
+**Predicted effect (staked):** Q4_0 all-in-VRAM error from -43% to within +/-15% without new benchmark runs
+
+`untested` · `speculative` · wired into: `candidate v1.21; prereg #64 P-3`
+
 ## External work to study
 
 Prior art that could make one of the above unnecessary.
@@ -549,7 +563,7 @@ Paged attention and automatic prefix caching are the production form of U-04.
 
 first external datapoint the project has ever received; converts "one box" from a disclaimer into a testable boundary, and every one of his five suggestions was a real defect or gap
 
-`reviewed` · `measured` · scope: his numbers are his; ours become validated only when he re-runs with v1.19 - the ask is in drafts/reddit_reply_moneroape.md · evidence: his Reddit report (raw timings quoted), analogalok 4090 benchmarks (external), our reconciliation arithmetic · wired into: `quantprobe/detect.py (channel fix), plan.py (cap/pinning/threads/topline/pp2048), calibrate.py, tests t_moneroape_*`
+`reviewed` · `measured` · scope: his numbers are his; ours become validated only when he re-runs with v1.19 - the ask is in drafts/reddit_reply_moneroape.md · evidence: his Reddit report (raw timings quoted), analogalok 4090 benchmarks (external), our reconciliation arithmetic; prereg #63: the full v1.19 chain closed end-to-end on the reference box - the tool PRINTED 19.4 tok/s from calibrated inputs, the emitted command measured 21.21 on the pristine binary (-8.5%, under-promise), and the 3090-sim through the shipped code lands at 10.6 vs 9.26-11.36 measured externally · wired into: `quantprobe/detect.py (channel fix), plan.py (cap/pinning/threads/topline/pp2048), calibrate.py, tests t_moneroape_*`
 
 ---
 

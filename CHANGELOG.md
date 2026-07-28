@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.20.0 - 2026-07-28
+
+**Anchored predictions: your own two benchmark runs cut the tool's median error from 19% to 6%.**
+
+calibrate's anchor runs (pure-CPU + all-in-VRAM on your own GGUF) now become tier-local
+correction ratios - measured-vs-law for the anchor arm, clamped 0.70-1.40 - that scale that
+tier's constants for every OTHER prediction. The target arm is never consulted: this is a
+calibrated law, not a lookup.
+
+Shipped default-on because it passed the gate it pre-registered (prereg #64) BEFORE any number
+existed: leave-one-out across 5 same-state arms (anchor arms excluded), anchored median |error|
+5.8% vs the plain law's 19.0%, every arm improved, and every miss in the under-promise
+direction. --no-anchors restores the plain law.
+
+Known limit, stated: one GPU ratio prices all formats alike, so Q4_0 (measured 1.8x healthier
+than Q2_K-class, L-16) is under-promised by ~43%. Per-format anchoring is U-15, next.
+
+Also in this release:
+- The calibration+anchor logic lives in ONE function shared by plan and bench - layer 3 of the
+  verification gate caught the two commands disagreeing (the v1.10.5 bug class) within hours of
+  the anchors existing, and the release was blocked until unified.
+- The boost-state verdict gained a minimum-sample guard after false-positiving on its own short
+  anchor run (model-load clocks at 1506 MHz read as "stuck" while real benchmarks sustained
+  1873-1898). GPU anchor is now tg128 with 1 s sampling and a 3-sample minimum.
+- Prereg #59's DS-Lite "structural miss" is REVISED: at healthy clocks it measures inside its
+  staked band - that miss was substantially the stuck-boost state. The out-of-sample kill of the
+  L-17 constant stands regardless, on the other arm.
+
 ## 1.19.0 - 2026-07-28
 
 **The first external replication found five real defects. All five are fixed, plus the two the

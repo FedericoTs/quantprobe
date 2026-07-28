@@ -84,7 +84,7 @@ def gpu_state():
 class ClockSampler:
     """Samples clocks.sm in a thread while a benchmark runs - the boost-state instrument."""
 
-    def __init__(self, every=3.0):
+    def __init__(self, every=1.0):
         self.every, self.samples, self._stop = every, [], threading.Event()
         self._t = threading.Thread(target=self._loop, daemon=True)
 
@@ -104,9 +104,15 @@ class ClockSampler:
         self._t.join(timeout=5)
 
     def sustained(self):
-        """Median SM MHz over loaded samples (>1000 MHz), or None."""
+        """Median SM MHz over loaded samples (>1000 MHz); None below 3 samples.
+
+        The minimum matters: a short benchmark gives the sampler only the model-LOAD phase,
+        where clocks sit mid-ramp - measured on the reference box as a false STUCK-BOOST verdict
+        (1506 read during load; the very next real benchmarks sustained 1873-1898). One or two
+        samples are a coin flip, not a diagnosis.
+        """
         loaded = sorted(s for s, _ in self.samples if s > 1000)
-        return loaded[len(loaded) // 2] if loaded else None
+        return loaded[len(loaded) // 2] if len(loaded) >= 3 else None
 
 
 def boost_verdict(sustained, sm_max, temp):
@@ -125,31 +131,49 @@ def boost_verdict(sustained, sm_max, temp):
             "cards cannot reset it live: REBOOT, then re-run calibrate")
 
 
-def cpu_anchor(model_path, llama_dir=None):
-    """Pure-CPU tg32 on the user's own file: a real measured reference point.
-
-    Placement chosen because it needs no VRAM-fit logic and no MoE byte accounting - it is the
-    one arm that runs identically on every machine that can load the file at all.
-    """
+def _bench_anchor(model_path, ngl, metric_tokens, llama_dir=None):
+    """One llama-bench arm on the user's own file, clocks sampled. Returns (dict, err)."""
     from .runtime import find_llama
     try:
         binp = find_llama(llama_dir, "llama-bench")
     except SystemExit:
         return None, "llama-bench not found - anchor skipped (pass --llama-dir)"
+    tag = f"tg{metric_tokens}"
     with ClockSampler() as clk:
-        out = _run([binp, "-m", model_path, "-ngl", "0", "-n", "32", "-p", "0", "-r", "1"],
-                   timeout=1800)
+        out = _run([binp, "-m", model_path, "-ngl", str(ngl), "-n", str(metric_tokens),
+                    "-p", "0", "-r", "1"], timeout=1800)
     for line in out.splitlines():
-        if "tg32" in line and "|" in line:
+        if tag in line and "|" in line:
             try:
                 toks = float(line.split("|")[-2].strip().split()[0])
-                return dict(placement="pure CPU (-ngl 0)", metric="tg32", tok_s=toks,
+                return dict(placement=("pure CPU (-ngl 0)" if ngl == 0 else "all-in-VRAM (-ngl 99)"),
+                            metric=tag, tok_s=toks,
                             model=os.path.basename(model_path),
                             model_gb=round(os.path.getsize(model_path) / 1e9, 3),
                             sustained_sm=clk.sustained()), None
             except (ValueError, IndexError):
                 break
     return None, "could not parse llama-bench output - anchor skipped"
+
+
+def cpu_anchor(model_path, llama_dir=None):
+    """Pure-CPU tg32 on the user's own file: a real measured reference point.
+
+    Placement chosen because it needs no VRAM-fit logic and no MoE byte accounting - it is the
+    one arm that runs identically on every machine that can load the file at all.
+    """
+    return _bench_anchor(model_path, 0, 32, llama_dir)
+
+
+def gpu_anchor(model_path, vram_gb, llama_dir=None):
+    """All-in-VRAM tg128 on the user's own file - the GPU-tier anchor. Only offered when the file
+    clearly fits (80% of detected VRAM), because an OOM teaches nothing and wastes minutes.
+    tg128 rather than tg64: the run must outlast the model-load phase by enough for the clock
+    sampler to collect real loaded samples (see ClockSampler.sustained)."""
+    gb = os.path.getsize(model_path) / 1e9
+    if not vram_gb or gb > 0.8 * vram_gb:
+        return None, f"model {gb:.1f} GB does not clearly fit {vram_gb or 0:.0f} GB VRAM - GPU anchor skipped"
+    return _bench_anchor(model_path, 99, 128, llama_dir)
 
 
 def load():
@@ -189,19 +213,34 @@ def run(a):
         cal["disk_bw_measured"] = round(measure_disk(model), 2)
         print(f"  disk: {cal['disk_bw_measured']:.2f} GB/s sequential on your file [measured]")
         if not getattr(a, "skip_bench", False):
+            cal["anchors"] = []
             print("  anchor: running llama-bench -ngl 0 tg32 on your file (1-10 min on big models)...")
             anchor, why = cpu_anchor(model, getattr(a, "llama_dir", None))
             if anchor:
-                cal["anchors"] = [anchor]
+                cal["anchors"].append(anchor)
                 print(f"  anchor: {anchor['tok_s']:.2f} tok/s pure-CPU on "
                       f"{anchor['model']} ({anchor['model_gb']:g} GB) [measured]")
-                v = boost_verdict(anchor.get("sustained_sm"), st and st.get("sm_max"),
+            else:
+                print(f"  anchor: {why}")
+            vram_gb = None
+            if st:
+                out = _run(["nvidia-smi", "--query-gpu=memory.total", "--format=csv,noheader,nounits"])
+                try:
+                    vram_gb = float(out.strip().splitlines()[0]) / 1024
+                except (ValueError, IndexError):
+                    pass
+            ganchor, gwhy = gpu_anchor(model, vram_gb, getattr(a, "llama_dir", None))
+            if ganchor:
+                cal["anchors"].append(ganchor)
+                print(f"  anchor: {ganchor['tok_s']:.2f} tok/s all-in-VRAM on "
+                      f"{ganchor['model']} [measured]")
+                v = boost_verdict(ganchor.get("sustained_sm"), st and st.get("sm_max"),
                                   st and st.get("temp"))
                 if v:
                     cal["boost_verdict"] = v
                     print(f"  GPU under load: {v}")
             else:
-                print(f"  anchor: {why}")
+                print(f"  anchor: {gwhy}")
     elif model:
         print(f"  --model: file not found: {model}")
     else:

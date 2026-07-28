@@ -45,6 +45,8 @@ def main():
     q.add_argument("--gguf", default=None, help="optional: read total/active/bits/KV exactly from this GGUF")
     q.add_argument("--ctx", type=int, default=0, help="context depth: adds KV reads/token + KV memory to the prediction (Law 4 v2)")
     q.add_argument("--kv-per-pos", type=float, default=None, help="KV bytes per position in KB (default: model preset, or 96)")
+    q.add_argument("--no-anchors", action="store_true",
+                   help="ignore calibrate's anchor runs; use the plain law constants")
 
     def hwargs(sp):
         sp.add_argument("--model", default=None); sp.add_argument("--machine", default=None)
@@ -57,6 +59,8 @@ def main():
         sp.add_argument("--ctx", type=int, default=0, help="context depth for the prediction (Law 4 v2)")
         sp.add_argument("--kv-per-pos", type=float, default=None, help="KV bytes per position in KB")
         sp.add_argument("--llama-dir", default=None); sp.add_argument("--dry", action="store_true")
+        sp.add_argument("--no-anchors", action="store_true",
+                        help="ignore calibrate's anchor runs; use the plain law constants")
 
     r = sub.add_parser("run", help="plan the best placement, then launch llama.cpp chat with those flags")
     r.add_argument("--gguf", required=True); hwargs(r)
