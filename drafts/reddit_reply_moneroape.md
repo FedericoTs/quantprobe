@@ -4,7 +4,7 @@
 
 u/MoneroApe — your report was the single most valuable input this project has received, and I
 want to give it the answer it deserves: not thanks, but fixes. All five of your suggestions were
-real defects or gaps. **v1.19.0 ships every one of them**, plus the two bugs your numbers exposed
+real defects or gaps. **v1.19-v1.20.1 ship every one of them**, plus the two bugs your numbers exposed
 underneath. (`pip install -U quantprobe`)
 
 **First, the reconciliation of your 9×, because you deserve to know where it went:**
@@ -39,6 +39,13 @@ The remaining gap to your 3.64 was your configuration, which you diagnosed yours
 5. **ngram visibility** — the "novel generation drafts 0 tokens" fact now prints top-line, right
    under the placement list. You independently replicated our D-10 finding (different model,
    hardware, and fork) and then got bitten by our burying it. Both are fixed.
+
+**And your calibrate runs now do more than check the fit.** v1.20 turned the two anchor runs
+into per-machine correction ratios (pre-registered gate: median prediction error 19% -> 5.8% on
+our box), and v1.20.1 added per-format pricing after a 0.5B-30B ladder we published
+(MACHINE_LADDER.md in the repo - naive default vs informed llama.cpp vs the tool vs the staked
+law, every miss listed with its cause). Current state on our box: median error 8.6%, worst 14%,
+misses biased toward under-promising. Your rig is the first true out-of-sample test of all of it.
 
 **The ask, since you offered:** two commands on your rig would convert all of this from
 "reconciled on paper" to "validated on the second machine this project has ever touched":
