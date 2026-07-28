@@ -1,0 +1,21 @@
+=== #62 resident-expert sweep (retry: patterns in-script) ===
+--- K=11 pp ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        341.44 ± 0.75 |
+--- K=11 tg ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.89 ± 0.09 |
+1885 MHz, 42
+--- K=14 pp ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[4-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        391.11 ± 1.71 |
+--- K=14 tg ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[4-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         21.67 ± 0.18 |
+1885 MHz, 49
+--- K=16 pp ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        393.71 ± 1.71 |
+--- K=16 tg ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         22.21 ± 0.03 |
+1860 MHz, 55
+--- K=18 pp ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[8-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        367.51 ± 2.46 |
+--- K=18 tg ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[8-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         21.80 ± 0.69 |
+1860 MHz, 56

@@ -554,9 +554,14 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         # past the ceiling) - so the free-VRAM headroom is deliberately conservative.
         # Desktop reserve: a real machine is not an empty GPU. Measured on this box during the
         # pre-registration #13 sweep: Explorer + compositor + browser held 0.8-1.5 GB throughout.
-        # Overshooting the cutoff costs -29% (measured cliff), undershooting costs a few percent,
-        # so the asymmetry is deliberately resolved toward caution.
-        v_free = vc * 0.90 - v_need - DESKTOP_VRAM_RESERVE
+        # The 0.90 multiplier that used to stack on top of the reserve was a DOUBLE discount:
+        # the #62 resident-expert sweep measured the config it forbade (16 of 48 resident) as
+        # strictly better than the one it emitted (11 resident) - +15.3% prompt processing AND
+        # +6.3% generation, fitting fine at ub 1024 - while the overshoot it feared is now a
+        # SOFT edge (-6.6% pp at 18 resident, not the historical -29% hard cliff, which was the
+        # ubatch compute-buffer cliff and is guarded by safe_ubatch since v1.15). One reserve,
+        # counted once.
+        v_free = vc - v_need - DESKTOP_VRAM_RESERVE
         experts_gb = size - ne * ab / 8 * 1.08
         if v_free > 0.3 and experts_gb > 0:
             f = min(1.0, v_free / experts_gb)

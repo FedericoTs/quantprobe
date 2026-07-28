@@ -36,3 +36,35 @@ pattern generation moves from "fixed 25% residency" to "max residents that fit t
 shipped with the sweep as evidence.
 
 **Wired into:** pending; `findings/REGISTER.json:U-14` scores either way.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg62_resident_sweep.log`, clocks 1860-1885 MHz throughout)
+
+**Verdict: P-1 band HIT with the predicted magnitude, P-2 HIT (around-mean), P-3 exposed a third
+outcome the stake did not name. The shipped pattern was DOMINATED and the fix is shipped.**
+
+| residents | pp2048 | tg128 |
+|---|---|---|
+| 11 (shipped) | 341.44 ± 0.75 | 20.89 ± 0.09 |
+| 14 | 391.11 ± 1.71 | 21.67 ± 0.18 |
+| **16** | **393.71 ± 1.71** | **22.21 ± 0.03** |
+| 18 | 367.51 ± 2.46 | 21.80 ± 0.69 |
+
+- **P-1:** K=16 landed at 393.71, inside the staked [375-400], +15.3% over shipped — the
+  CPU-expert-bound mechanism confirmed through K=16. Monotonicity BREAKS at K=18: the VRAM edge
+  is a SOFT degradation (-6.6% pp), not the OOM the stake named — the third outcome.
+- **P-2:** tg spread ±3.2% around the mean (pairwise extreme 6.3%, disclosed). And the direction
+  is a bonus: tg IMPROVES with residents (+6.3% at K=16) — more bytes on the 161 GB/s bus.
+- **The real finding: the tool's pattern generator and its own frontier measurement disagreed.**
+  The 386.04 frontier constant was measured at ~16 residents; the generator's VRAM budget
+  (a 0.90 multiplier STACKED on the desktop reserve — a double discount) emitted 11. K=16 fits
+  fine at ub 1024 and wins both metrics.
+
+**Shipped in the same commit:** the double discount removed (one reserve, counted once), with
+the #62 numbers and the soft-edge margin in the comment. The plan's split row moves 25% -> 31%
+residency on the reference box — inside the measured optimum, one notch off the measured edge.
+U-14 closes CONFIRMED with the fix live; the -29% hard cliff the old caution feared was the
+ubatch compute-buffer cliff, guarded separately by safe_ubatch since v1.15.
+
+**Wired into:** `quantprobe/plan.py` v_free (the fix) · `findings/REGISTER.json:U-14` (closed).
