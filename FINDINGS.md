@@ -521,13 +521,13 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `speculative` · evidence: prereg #65: the ladder measured the blindness at -34% on 7B Q4_K_M (Q8_0-anchored ratio pricing a K-quant) · wired into: `candidate v1.21; prereg #64 P-3`
 
-### U-16 — The as-emitted MoE split command leaves ~30% prefill on the table: #66 measured 301 pp2048 at the emitted flagship config (no -b/-ub, a #20-era gate) where #62 measured 394 at the SAME placement with -ub 1024 and no tg cost. The #20 harm was ub 2048 (compute-buffer cliff); moderate ub on the split was measured safe in #62.
+### U-16 — The as-emitted MoE split command leaves ~30% prefill on the table: #66 measured 301 pp2048 at the emitted flagship config (no -b/-ub, a #20-era gate) where #62 measured 394 at the SAME placement with -ub 1024 and no tg cost. The #20 harm was ub 2048 (compute-buffer cliff); moderate ub on the split was measured safe in #62. [CLOSED-SHIPPED: split placements now get ub capped at a HARD 1024 (never the measured-cliff 2048), emitted identically by plan AND run/bench (the audit caught run dropping it, same class as --threads). Measured fresh at the emitted flagship config: pp 301 -> 389.5 (+29%), tg 21.2 -> 20.4 (-3.6%, the compute-buffer share at 13 residents) - the balanced default the #25 frontier always claimed, with the plan phase note covering pure-generation users who can drop -b/-ub.]
 
 **Hypothesis:** extend ubatch_flags to offer capped ub (<=1024, safe_ubatch-gated) on the split placement
 
 **Predicted effect (staked):** +25-30% pp on MoE splits, tg unchanged; one sweep to confirm the safety margin across models
 
-`untested` · `speculative` · wired into: `prereg #66 pp column; candidate next release`
+`closed` · `speculative` · wired into: `prereg #66 pp column; candidate next release`
 
 ### U-17 — The IQ-on-CPU warning is prose but not priced: both IQ2_XS arms OVER-predicted (-15.7% split, -18.9% pure CPU) - the only over-predictions in the #66 program. The tool warns about the measured 2.7x IQ decode penalty (prereg #31) and then prices the bytes at full K-quant speed anyway.
 

@@ -94,9 +94,13 @@ def best_flags(a):
         print(f"[quantprobe] note: the fastest placement ({cfgs[0][0]}, {cfgs[0][1]:.1f} tok/s) needs an "
               f"expert-caching runtime; launching the fastest STOCK-llama.cpp placement instead.")
     best = runnable[0]
-    # same --threads logic as plan's printout - the command a user SEES must be the command
-    # run/bench EXECUTE (found by the end-to-end audit: plan printed --threads, run dropped it)
-    fl_str, _ = planmod.append_threads_flag(best[3].replace('"', ""), best[0])
+    # same --threads AND -ub logic as plan's printout - the command a user SEES must be the
+    # command run/bench EXECUTE (the audit found plan printing flags run dropped, twice)
+    fl_str = best[3].replace('"', "")
+    ubf = planmod.ubatch_flags(best[0], ne * max(a.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc)
+    if ubf and "-ub" not in fl_str:
+        fl_str = f"{fl_str} {ubf}"
+    fl_str, _ = planmod.append_threads_flag(fl_str, best[0])
     return best, fl_str.split()
 
 

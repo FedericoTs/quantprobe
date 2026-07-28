@@ -524,12 +524,13 @@ def t_ubatch_only_when_host_resident():
                       "pure CPU (GPU idle)",
                       "stream from disk (cold experts)"):
         assert ubatch_flags(placement, 0.7, 6), f"ubatch not offered for host-resident: {placement}"
-    # The SPLIT is host-resident in part, but it EXISTS to fill spare VRAM with experts, so it
-    # consumes the headroom the bigger compute buffer needs. Measured (pre-registration #20):
-    # the same flag is worth +75% on all-experts-to-CPU and -42% on the split. v1.13.0 shipped
-    # this gate wrong - it tested only "is anything host-resident", which the split satisfies.
-    assert ubatch_flags("split experts: 21%->VRAM, rest->RAM", 0.7, 6) is None, \
-        "ubatch offered on the split placement - measured there it costs 42% prefill"
+    # The SPLIT: #20 measured ub 2048 at -42% there (the compute-buffer cliff), so v1.13-v1.20
+    # excluded it entirely. #62 then measured the SAME placement at ub 1024 with pp 393.7 AND
+    # tg 22.21 - both at their best - while the excluded config left ~30% prefill on the table
+    # (#66: pp 301). The gate is now a HARD 1024 CAP, never the measured-cliff 2048.
+    sp = ubatch_flags("split experts: 21%->VRAM, rest->RAM", 0.7, 6)
+    assert sp and "-ub 1024" in sp and "2048" not in sp, \
+        f"split must get ub capped at 1024 (measured best, #62) and never 2048 (measured cliff, #20): {sp}"
     # fully VRAM-resident -> never, this is the measured -39% case
     assert ubatch_flags("all in VRAM", 4.7, 6) is None, \
         "ubatch offered for an all-in-VRAM placement - measured there it LOSES 39%"

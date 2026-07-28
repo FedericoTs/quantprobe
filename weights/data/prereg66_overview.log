@@ -92,3 +92,7 @@
 | deepseek2 16B IQ2_XS - 2.3125 bpw |   5.55 GiB |    15.71 B | CUDA       |  22 |           tg128 |         18.65 ± 8.47 |
 1885 MHz, 43
 --- 35B Q8_0 informed (-ngl 7): tg32 = 0.61 (SLOWER than -ngl 0 at 0.66 - GPU layers add paging churn at the disk tier) ---
+=== U-16 shipped: the emitted flagship config, measured fresh ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[3-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.43 ± 0.12 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[3-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |          pp2048 |        389.53 ± 0.76 |
+1885 MHz, 46

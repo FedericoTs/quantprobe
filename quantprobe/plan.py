@@ -125,8 +125,17 @@ def ubatch_flags(placement, vram_resident_gb, vc):
     # Note this also INVERTS which placement is fastest at prefill: at the default ub the split
     # wins (279 vs 200), at ub 2048 the all-CPU placement wins (350 vs 162). Placement and batch
     # are not independent dimensions - they compete for the same VRAM.
-    if "split experts" in placement or vc <= 0:
+    if vc <= 0:
         return None
+    if "split experts" in placement:
+        # U-16, closed by measurement: the #20-era total exclusion of the split was over-broad.
+        # #20's harm was ub 2048 (the compute-buffer cliff: 279 -> 162); #62 measured the SAME
+        # split placement at ub 1024 with pp 393.7 AND tg 22.21 - no cliff, both metrics at
+        # their best - while the excluded emitted config measured pp 301 (#66). The split gets
+        # ub capped at 1024 HARD (never 2048, where the measured cliff lives), still sized by
+        # the buffer math against the residual headroom.
+        ub = safe_ubatch(vc * 0.90 - vram_resident_gb, cap=1024)
+        return "-b %d -ub %d" % (ub, ub) if ub else None
     if not any(k in placement for k in ("->RAM", "CPU", "disk")):
         return None                       # nothing host-resident: no transfer to amortise
     if vc * 0.90 - vram_resident_gb < UBATCH_HEADROOM_GB:
