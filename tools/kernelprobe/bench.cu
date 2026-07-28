@@ -265,6 +265,71 @@ __global__ __launch_bounds__(128) void k_matvec_q2_dp4a(
     }
 }
 
+// ============================================================ L1f: "Q2_A" — the candidate format
+// Asymmetric 2-bit, group 16, byte-aligned scale AND min, superblock 256. 3.125 bits/weight.
+// quality.py measures this at 0.995x Q2_K's reconstruction RMSE on real weights — parity.
+//
+// Per 256-weight superblock: 64 B quants + 16 B scales + 16 B mins + fp16 d + fp16 dmin = 100 B.
+// Row layout keeps each field in its own plane so every load is coalesced:
+//   [128 x uint32 quants][128 B scales][128 B mins][8 x fp16 d][8 x fp16 dmin] = 800 B for K=2048
+//
+// One uint32 IS one group of 16 weights, pre-permuted (byte j holds weights j, j+4, j+8, j+12) so
+// that (v >> 2j) & 0x03030303 yields four CONTIGUOUS weights straight into dp4a's int8 lanes.
+//
+// The asymmetric reconstruction x = q*s - m costs nothing extra in the inner loop:
+//     sum((q*s - m) * x) = s * dp4a(q, x) - m * sum(x)
+// and sum(x) is row-independent, so it is hoisted into shared memory once per block. That is the
+// whole trick: Q2_K's asymmetry is paid per row, this pays it once.
+static const int A2_ROW_BYTES = (K / 16) * 4 + (K / 16) + (K / 16) + (K / 256) * 4;  // 800 B
+static const int A2_MAT_BYTES = ROWS * A2_ROW_BYTES;
+
+__global__ __launch_bounds__(128) void k_matvec_q2a_dp4a(
+        const uint8_t * __restrict__ base, const int * __restrict__ sel,
+        const int * __restrict__ xq, float sx, float * __restrict__ y)
+{
+    __shared__ int xs[K / 4];
+    __shared__ int sumx[K / 4];
+    for (int i = threadIdx.x; i < K / 4; i += 128) {
+        const int v = xq[i];
+        xs[i]   = v;
+        sumx[i] = __dp4a(0x01010101, v, 0);
+    }
+    __syncthreads();
+
+    const int t  = threadIdx.x;           // one group of 16 weights per thread
+    const int sb = t >> 4;                // superblock index
+    const uint8_t * m = base + (size_t)sel[blockIdx.x] * A2_MAT_BYTES;
+
+    // per-group activation sum, also row-independent
+    const int sg = sumx[4*t] + sumx[4*t+1] + sumx[4*t+2] + sumx[4*t+3];
+
+    for (int r = 0; r < ROWS; r++) {
+        const uint8_t  * row  = m + (size_t)r * A2_ROW_BYTES;
+        const uint32_t * q    = (const uint32_t *)row;
+        const uint8_t  * ls   = row + (K/16)*4;
+        const uint8_t  * lm   = ls  + (K/16);
+        const __half   * d    = (const __half *)(lm + (K/16));
+        const __half   * dmin = d + (K/256);
+
+        const uint32_t v = q[t];
+        int acc = 0;
+        #pragma unroll
+        for (int j = 0; j < 4; j++) {
+            acc += __dp4a((int)((v >> (2*j)) & 0x03030303u), xs[4*t + j], 0);
+        }
+        const float s = (float)ls[t] * __half2float(d[sb]);
+        const float mn = (float)lm[t] * __half2float(dmin[sb]);
+        float f = s * (float)acc - mn * (float)sg;
+
+        for (int off = 16; off > 0; off >>= 1) f += __shfl_down_sync(0xffffffff, f, off);
+        __shared__ float warp[4];
+        if ((t & 31) == 0) warp[t >> 5] = f;
+        __syncthreads();
+        if (t == 0) y[blockIdx.x * ROWS + r] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
+        __syncthreads();
+    }
+}
+
 static double bench(void (*launch)(void*), void* arg, int iters, double bytes) {
     cudaEvent_t a, b; CHECK(cudaEventCreate(&a)); CHECK(cudaEventCreate(&b));
     launch(arg); CHECK(cudaDeviceSynchronize());              // warm
@@ -500,7 +565,62 @@ int main(int argc, char** argv) {
         CHECK(cudaFree(d_b)); CHECK(cudaFree(d_s)); CHECK(cudaFree(d_xq));
     }
 
+    // ---- L1f: Q2_A, the parity-quality candidate. Packed by a real host packer that exercises
+    // the permutation, and checked against a double reference read in LOGICAL weight order.
+    {
+        const int na = (int)(((size_t)target_mb << 20) / A2_MAT_BYTES);
+        std::vector<uint8_t> ha((size_t)na * A2_MAT_BYTES);
+        std::vector<uint8_t> qref(K); std::vector<float> sref(K/16), mref(K/16);
+        for (int mm = 0; mm < na; mm++) for (int r = 0; r < ROWS; r++) {
+            uint8_t * row = ha.data() + (size_t)mm * A2_MAT_BYTES + (size_t)r * A2_ROW_BYTES;
+            uint32_t * q = (uint32_t *)row;
+            uint8_t * ls = row + (K/16)*4, * lm = ls + (K/16);
+            __half * d = (__half *)(lm + (K/16)), * dmn = d + (K/256);
+            for (int s = 0; s < K/256; s++) { d[s] = __float2half(0.002f); dmn[s] = __float2half(0.003f); }
+            for (int g = 0; g < K/16; g++) {
+                uint8_t w[16];
+                for (int i = 0; i < 16; i++) {
+                    w[i] = (uint8_t)(rand() & 3);
+                    if (mm == 0 && r == 0) qref[g*16 + i] = w[i];
+                }
+                uint32_t v = 0;                       // byte j <- weights j, j+4, j+8, j+12
+                for (int j = 0; j < 4; j++)
+                    v |= (uint32_t)(w[j] | (w[j+4] << 2) | (w[j+8] << 4) | (w[j+12] << 6)) << (8*j);
+                q[g] = v;
+                ls[g] = (uint8_t)(rand() & 0xFF);
+                lm[g] = (uint8_t)(rand() & 0xFF);
+                if (mm == 0 && r == 0) { sref[g] = ls[g] * 0.002f; mref[g] = lm[g] * 0.003f; }
+            }
+        }
+        uint8_t* d_a; CHECK(cudaMalloc(&d_a, ha.size()));
+        CHECK(cudaMemcpy(d_a, ha.data(), ha.size(), cudaMemcpyHostToDevice));
+        std::vector<int> s(na); for (int i = 0; i < na; i++) s[i] = i;
+        int* d_s; CHECK(cudaMalloc(&d_s, na * sizeof(int)));
+        CHECK(cudaMemcpy(d_s, s.data(), na * sizeof(int), cudaMemcpyHostToDevice));
+        float mx = 0; for (int i = 0; i < K; i++) mx = fmaxf(mx, fabsf(hx[i]));
+        const float sx = mx / 127.0f;
+        std::vector<int8_t> xi(K); for (int i = 0; i < K; i++) xi[i] = (int8_t)lrintf(hx[i] / sx);
+        int* d_xq; CHECK(cudaMalloc(&d_xq, K)); CHECK(cudaMemcpy(d_xq, xi.data(), K, cudaMemcpyHostToDevice));
+
+        struct A { const uint8_t* b; const int* s; const int* xq; float sx; float* y; int n; } a{d_a, d_s, d_xq, sx, d_y, na};
+        auto L = [](void* v) { A* a = (A*)v; k_matvec_q2a_dp4a<<<a->n, 128>>>(a->b, a->s, a->xq, a->sx, a->y); };
+        L(&a); CHECK(cudaDeviceSynchronize());
+        float gpu0; CHECK(cudaMemcpy(&gpu0, d_y, sizeof(float), cudaMemcpyDeviceToHost));
+        double ref = 0.0;
+        for (int i = 0; i < K; i++)
+            ref += ((double)qref[i] * sref[i/16] - mref[i/16]) * (xi[i] * (double)sx);
+        double err = fabs(ref - gpu0) / (fabs(ref) + 1e-6);
+        double by = (double)na * A2_MAT_BYTES;
+        double g = bench(L, &a, 20, by);
+        printf("%-26s %12.1f %11.2f %10.2f   %6.2f GW/s  ( 3.125 bit, __dp4a)  rel.err %.1e %s\n",
+               "L1f Q2_A asym (dp4a)", g, g / spec, g / l0, g / 0.390625, err,
+               err < 1e-3 ? "OK" : "*** MISMATCH ***");
+        CHECK(cudaFree(d_a)); CHECK(cudaFree(d_s)); CHECK(cudaFree(d_xq));
+    }
+
     printf("\nllama.cpp, same card, measured through the runtime:\n");
+    printf("  Q2_K  7B all-in-VRAM   21.67 tok/s ->  65.4 GB/s, 165.1 GW/s  (2.625 bit)\n");
+    printf("  Q4_0  7B all-in-VRAM   26.87 tok/s -> 119.1 GB/s, 204.7 GW/s  (4.50  bit)\n");
     printf("  cuBLAS fp32 GEMV            161.3 GB/s\n");
     printf("  all-in-VRAM Q4_K (dense)     ~98   GB/s   (eta 0.51 of 192 spec)\n");
     printf("  split placement, GPU share    29.3 GB/s   (eta 0.15)\n");
