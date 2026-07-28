@@ -443,7 +443,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Magnitude:** -29% on arm (c), -11% under-prediction reversal on pure CPU (the CPU arm degrades least)
 
-`open` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1) · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
+`open` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1); DRIVER IDENTIFIED same session: clock polling under load caught SM at 1506 MHz (vs 1835 recorded during the original 21.58 measurement) at 38 C on a quiet box - a stuck lower boost state, not thermal, not OS load. nvidia-smi clock reset unsupported on consumer Pascal; reboot required. prereg #61 staked with the cold-boot A/B protocol (weights/coldboot_ab.cmd) including a pristine zero-patch binary for the fair-comparison arm. · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
 
 ## Untried levers
 
