@@ -128,6 +128,7 @@ def main():
 
     f = sub.add_parser("fetch", help="robust HF download (Range-resume, retry)")
     f.add_argument("repo", help="HF repo, or a preset: qwen3-30b, glm-air, deepseek-16b, qwen3-0.6b"); f.add_argument("dest"); f.add_argument("files", nargs="*")
+    f.add_argument("--force", action="store_true", help="re-download even if a same-named file exists (a stale local file with the same name once fed an incompatible draft model to llama-speculative - three crashed runs before the collision was spotted)")
 
     a = ap.parse_args()
     if a.cmd == "probe":

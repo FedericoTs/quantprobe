@@ -1369,6 +1369,58 @@ def t_dense_draft_note_three_cells():
     assert dense_draft_note(False, "pure CPU (GPU idle)") is None
 
 
+def t_fetch_force_and_collision():
+    # U-18: a same-named file of a DIFFERENT size must FAIL the skip (it once fed an incompatible
+    # draft model to llama-speculative), and --force must be a registered flag.
+    import os, tempfile
+    from quantprobe import fetch as fmod
+    class _R:
+        headers = {"Content-Length": "1000"}
+    real_head = fmod.requests.head
+    fmod.requests.head = lambda *a, **k: _R()
+    try:
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "model.gguf")
+            open(p, "wb").write(b"x" * 999)          # wrong size vs remote 1000
+            assert fmod.fetch("org/repo", d, "model.gguf", None) is False, "size-mismatch skip must fail"
+            open(p, "wb").write(b"x" * 1000)         # matching size: legitimate skip
+            assert fmod.fetch("org/repo", d, "model.gguf", None) is True
+    finally:
+        fmod.requests.head = real_head
+    rc, out = cli("fetch", "--help")
+    assert rc == 0 and "--force" in out
+
+
+def t_c11_depth_aware_dense_split():
+    # C-11 (prereg #66): the dense split must budget for the desktop reserve + compute buffer and
+    # shrink its GPU layer count as context deepens - the old flat vc*0.9 emitted a 16k config
+    # that measured -58% (driver memory fallback).
+    from quantprobe.plan import evaluate
+    def layers(ctx):
+        _, _, cfgs = evaluate(14.8, 14.8, 14.8, False, 4.85, 6, 154, 16, 26, 2.0, 0.55,
+                              gl=None, ctx=ctx, kvp=57344, n_layer=48, true_size_gb=8.37)
+        row = [c for c in cfgs if "layers->VRAM" in c[0]]
+        assert row, "dense split row missing"
+        return int(row[0][0].split(":")[1].split("/")[0])
+    shallow, deep = layers(0), layers(16384)
+    assert deep < shallow, f"layers must shrink with depth ({shallow} -> {deep})"
+    # and the emitted GPU share must fit inside VRAM minus reserve+buffer
+    assert shallow / 48 * 8.37 <= 6 * 0.9 - 1.0, "shallow emit overcommits the budget"
+
+
+def t_u17_iq_cpu_pricing():
+    # U-17 (prereg #66): iq_share must slow every RAM weight read by the calibrated per-byte
+    # penalty (pure-CPU arm 14.1 -> 11.44 at share 0.962); iq_share=0 (presets) must be untouched.
+    from quantprobe.plan import evaluate, IQ_CPU_TG_PENALTY
+    def cpu_tokps(share):
+        _, _, cfgs = evaluate(15.7, 2.4, 0.8, True, 2.9, 6, 154, 16, 26, 2.0, 0.55,
+                              gl=None, iq_share=share)
+        return [c for c in cfgs if c[0].startswith("pure CPU")][0][1]
+    base, iq = cpu_tokps(0.0), cpu_tokps(0.962)
+    want = 1.0 + 0.962 * IQ_CPU_TG_PENALTY
+    assert abs(base / iq - want) < 0.01, f"IQ penalty off: {base/iq:.4f} vs {want:.4f}"
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

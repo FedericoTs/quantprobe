@@ -536,8 +536,19 @@ def speculation_advice(moe, placement):
     return None                    # MoE fully resident: untested here, so we say nothing
 
 
+
+# U-17 (prereg #66): the per-IQ-byte CPU decode penalty. Both IQ2_XS arms of the #66 ladder
+# over-predicted while the tool's IQ warning stayed prose-only. Calibrated on the pure-CPU arm
+# (predicted 14.1 vs measured 11.44 tok/s at iq_share 0.962 -> k = 0.242), cross-validated on
+# the independent expert-split arm (see the retrodiction in tests/smoke.py). NOT V-11's 2.7x:
+# that number is a different regime (isolated prefill-heavy comparison) and would overshoot
+# this correction ~7x - the retrodiction gate rejected it. Scope: weight bytes read from RAM
+# during token generation; KV terms are format-independent and untouched.
+IQ_CPU_TG_PENALTY = 0.242
+
+
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
-             n_layer=None, true_size_gb=None):
+             n_layer=None, true_size_gb=None, iq_share=0.0):
     ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
     size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
     # CAPACITY uses the real file size when we have the file. The estimate above assumes the
@@ -573,6 +584,9 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     kv_gb = ctx * kvp / 1e9 if ctx > 0 else 0.0
     ra = max(rc - 4, 1)
     eta_r = 0.38 if moe else 0.62
+    # U-17: price the IQ share into every RAM weight read (pure CPU, hybrid experts, both split
+    # kinds, waterfall). iq_share is 0.0 unless a real GGUF was scanned, so presets are untouched.
+    eta_r /= (1.0 + iq_share * IQ_CPU_TG_PENALTY)
     if gl is None: gl = geta * 0.6
     # The sub-4-bit GPU DECODE collapse does not exist. It was gated on bit-width (`bits >= 4`),
     # which made 3.99 bits predict 8.75x slower than 4.00. Pre-registration #16 measured decode
@@ -646,7 +660,14 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                                  "auto-placement decide") if ram_left > ra * 0.45 else None)
                     out.append((f"split experts: {f:.0%}->VRAM, rest->RAM", 1 / t_split, pin_warn, fl))
     if (not moe) and vc > 0 and size + kv_gb > vc * 0.90 and size + kv_gb <= ra + vc * 0.9:
-        g = min(0.95, vc * 0.9 / (size + kv_gb))           # KV splits with its layers
+        # C-11 (prereg #66): the old budget handed the model vc*0.9 outright - no desktop
+        # reserve, no compute buffer - so at d16384 the emitted 26/28-layer config overcommitted
+        # VRAM and measured -58% (driver memory fallback, the silent Windows thrash). Budget =
+        # VRAM minus the reserve minus the default-ub compute buffer (measured slope, #23),
+        # counted once, same discipline as the MoE v_free path above.
+        cbuf = 512 * COMPUTE_BUFFER_MIB_PER_UB_TOKEN / 1024
+        v_budget = max(0.0, vc * 0.9 - DESKTOP_VRAM_RESERVE - cbuf)
+        g = min(0.95, v_budget / (size + kv_gb))           # KV splits with its layers
         # -ngl takes a LAYER COUNT. This emitted `int(g * 99)`, treating 99 - the all-layers
         # sentinel used elsewhere in this file - as if it were a layer count. Two failures, and
         # the second is severe:
@@ -924,6 +945,7 @@ def run(args):
     vb, geta = resolve_gpu_eta(hw, args, a, args.bits, vb, geta)
     rb = resolve_cpu_bw(hw, args, a, args.bits, rb)
     size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
+                               iq_share=getattr(args, "iq_share", 0.0),
                                kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
@@ -1015,11 +1037,11 @@ def run(args):
     # upgrade advisor
     alts = []
     if rb < 40:
-        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp)
+        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
         if c2[0][1] > best[1] * 1.08: alts.append(("enable XMP (free)", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp)
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("+16 GB RAM", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp)
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("NVMe SSD", c2[0][1]))
     if alts:
         print("  upgrade advisor: " + " | ".join(f"{n} -> ~{v:.1f} tok/s" for n, v in alts))
@@ -1036,7 +1058,7 @@ def run(args):
             continue                                   # not a "shave" - a different model class
         fit_scale = max(0.05, (cap - kvg) / size_now) * 0.995
         _, _, c9 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, fit_scale, gl,
-                            ctx=ctx, kvp=kvp)
+                            ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
         promoted = [x for x in c9 if x[0].startswith("all in VRAM")] if "VRAM" in tier_name else                    [x for x in c9 if x[0].startswith("pure CPU")]
         if promoted and promoted[0][1] > best[1] * 1.15:
             print(f"  tier-boundary advisor: this config is {gap:.1f} GB over the {tier_name} boundary - "

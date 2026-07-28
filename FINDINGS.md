@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 19 |
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
-| Untried levers | 9 |
+| Untried levers | 10 |
 | External work to study | 6 |
 
 ## Established laws
@@ -457,11 +457,11 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `closed` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1); DRIVER IDENTIFIED same session: clock polling under load caught SM at 1506 MHz (vs 1835 recorded during the original 21.58 measurement) at 38 C on a quiet box - a stuck lower boost state, not thermal, not OS load. nvidia-smi clock reset unsupported on consumer Pascal; reboot required. prereg #61 staked with the cold-boot A/B protocol (weights/coldboot_ab.cmd) including a pristine zero-patch binary for the fair-comparison arm.; RESOLVED by prereg #61 cold-boot A/B: after reboot SM sustains 1847-1898 MHz (vs 1506 stuck), memory full 4006, and the flagship measures 21.11-21.68 - the original 21.58 reproduced to 0.5%. Mechanism confirmed: stuck boost state, cleared by reboot. Pristine zero-patch binary agrees with the instrumented build within 1.4% (P-3), so the session corpus stands. · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
 
-### C-11 — The dense layer-split placement OVERCOMMITS VRAM at depth: at ctx 16384 the tool emitted -ngl 26 for the 7B Q4_K_M (26/28 layers + 2.1GB KV) and predicted 15.0 tok/s; measured 6.34 (-58%, far outside the printed band). The 4k arm on the same model measured -0.9%, so the KV TERM is right - the placement fit math at depth is wrong (the dense g-split does not account for the compute buffer + KV jointly). Prereg #66.
+### C-11 — The dense layer-split placement OVERCOMMITS VRAM at depth: at ctx 16384 the tool emitted -ngl 26 for the 7B Q4_K_M (26/28 layers + 2.1GB KV) and predicted 15.0 tok/s; measured 6.34 (-58%, far outside the printed band). The 4k arm on the same model measured -0.9%, so the KV TERM is right - the placement fit math at depth is wrong (the dense g-split does not account for the compute buffer + KV jointly). Prereg #66. [CLOSED v1.21: the dense-split budget now subtracts DESKTOP_VRAM_RESERVE and the measured default-ub compute buffer (#23 slope) before sizing layers - 14B emits 21/48 at ctx 0 and 16/48 at 16384 (was a flat 28/48). Cost disclosed: ~5 layers more conservative at shallow ctx than the config that measured healthy; gain: the -58% thrash config can no longer be emitted. t_c11_depth_aware_dense_split.]
 
 **Magnitude:** -58% on one arm; the only hard prediction failure of the 13-arm program
 
-`open` · `measured` · scope: dense models at deep context on VRAM-tight cards; the MoE split at 4k held (+22% under) · evidence: prereg #66 (ctx7b16k arm, clocks logged) · wired into: `MACHINE_LADDER.md footnote 2; fix queued for the next release`
+`closed` · `measured` · scope: dense models at deep context on VRAM-tight cards; the MoE split at 4k held (+22% under) · evidence: prereg #66 (ctx7b16k arm, clocks logged) · wired into: `quantprobe/plan.py evaluate() dense-split v_budget`
 
 ## Untried levers
 
@@ -535,21 +535,29 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `speculative` · wired into: `prereg #66 pp column; candidate next release`
 
-### U-17 — The IQ-on-CPU warning is prose but not priced: both IQ2_XS arms OVER-predicted (-15.7% split, -18.9% pure CPU) - the only over-predictions in the #66 program. The tool warns about the measured 2.7x IQ decode penalty (prereg #31) and then prices the bytes at full K-quant speed anyway.
+### U-17 — The IQ-on-CPU warning is prose but not priced: both IQ2_XS arms OVER-predicted (-15.7% split, -18.9% pure CPU) - the only over-predictions in the #66 program. The tool warns about the measured 2.7x IQ decode penalty (prereg #31) and then prices the bytes at full K-quant speed anyway. [CLOSED-SHIPPED v1.21, scope narrowed by the retrodiction gate: the hypothesized 2.7x penalty would have overshot ~7x - the e2e per-IQ-byte tg penalty calibrated on the #66 pure-CPU arm is k=0.242 (14.1 -> 11.44 exact at share 0.962). The split arm improves (28.0 -> 26.9 vs 23.60 measured) but stays over: its residual is the GPU share still priced at K-quant eta -> U-19.]
 
 **Hypothesis:** discount eta_r by the measured IQ penalty on the IQ byte share (args.iq_share already computed)
 
 **Predicted effect (staked):** both IQ arms move inside the band from the warned side (under-promise)
 
-`untested` · `speculative` · wired into: `prereg #66 IQ arms; candidate next release`
+`closed` · `speculative` · wired into: `quantprobe/plan.py IQ_CPU_TG_PENALTY + evaluate(iq_share=); t_u17_iq_cpu_pricing`
 
-### U-18 — quantprobe fetch silently skips the download when a same-named file exists ('already complete' checks size only), which handed prereg #69 a June-era 0.5B GGUF whose tokenizer metadata mismatched the bartowski 14B target and crashed llama-speculative at draft load ('invalid vector subscript'). Three runs lost before the collision was spotted.
+### U-18 — quantprobe fetch silently skips the download when a same-named file exists ('already complete' checks size only), which handed prereg #69 a June-era 0.5B GGUF whose tokenizer metadata mismatched the bartowski 14B target and crashed llama-speculative at draft load ('invalid vector subscript'). Three runs lost before the collision was spotted. [CLOSED-SHIPPED v1.21: fetch compares local size vs remote Content-Length on skip and FAILS loudly on mismatch naming the collision; --force replaces the file. t_fetch_force_and_collision.]
 
 **Hypothesis:** add --force and/or verify the remote SHA/etag instead of size-only; warn when the local file predates the repo revision
 
 **Predicted effect (staked):** fetch collisions become visible instead of silent; draft-pair mismatches caught before a crash
 
-`untested` · `observed` · wired into: `candidate next release (with C-11, U-17, U-06)`
+`closed` · `observed` · wired into: `quantprobe/fetch.py fetch() + cli.py --force`
+
+### U-19 — The GPU share of an IQ file is priced at K-quant eta: FORMAT_EBW has no IQ entries (fmt_bw None on IQ2_XS), so after U-17 closed the CPU side, the #66 split arm still over-predicts +14% (26.9 vs 23.60) while the pure-CPU arm is exact. V-11's matched pair measured IQ decode 1.55x slower on GPU - the number exists, it just is not in the ladder.
+
+**Hypothesis:** add measured IQ entries to spec.FORMAT_EBW (or scale geta by iq_share x the V-11 decode ratio) so the VRAM share of IQ files carries its own format cost
+
+**Predicted effect (staked):** the #66 split arm moves inside the band from the under-promise side
+
+`untested` · `speculative` · wired into: `candidate next release; evidence: #66 split arm residual after v1.21 U-17`
 
 ## External work to study
 

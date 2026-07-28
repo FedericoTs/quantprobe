@@ -79,7 +79,8 @@ def best_flags(a):
     rb = planmod.resolve_cpu_bw(hw, a, ac, a.bits, rb)
     _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
                                   ctx=ctx, kvp=kvp, true_size_gb=_true,
-                                  n_layer=planmod.effective_n_layer(a, m))
+                                  n_layer=planmod.effective_n_layer(a, m),
+                                  iq_share=getattr(a, "iq_share", 0.0))
     # run/bench/dashboard LAUNCH stock llama.cpp, so they may only pick placements stock
     # llama.cpp can actually execute. The three-tier expert-cache row's "flags" field is a
     # PROSE description ("+ runtime-managed expert cache"), not argv - exec'ing it hands

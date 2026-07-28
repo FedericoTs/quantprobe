@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.21.0 - 2026-07-29
+
+**The dense-split release: speculation's best cell shipped as advice, and three registered defects closed.**
+
+The headline is pre-registration #69: on a dense model split across GPU/CPU, a small same-family
+draft model is the BEST speculation cell this box has measured - **+33.5% decode at K=2**
+(5.54 -> 7.40 tok/s on a 14B, 76% acceptance, novel code) with the draft running on CPU
+(`-ngld 0`), so it costs zero VRAM. The mechanism is the mirror of the MoE union tax: a K+1-token
+verify batch reads each CPU-resident layer once, so the CPU share of every token amortizes. The
+staked K-shift MISSED and is published as such: every K>=3 lands at or below baseline (llama.cpp's
+default 3 is a measured LOSS here), because the CPU draft spends the same RAM bandwidth the
+amortization saves. plan now prints the whole recipe on dense-split placements
+(`dense_draft_note`), completing the speculation map: dense split 1.335x > dense all-in-VRAM
+1.11x > MoE split 0.74-0.81x (never pays).
+
+Three queued defects closed, each with its test:
+
+- **C-11** - the dense split budgeted `vc*0.9` with no desktop reserve and no compute buffer, so
+  at 16k depth it emitted a config that overcommitted VRAM and measured **-58%** (driver memory
+  fallback). The budget now subtracts both (the reserve, and the #23 measured 0.5874 MiB/ub-token
+  slope at the default -ub), counted once, same discipline as the MoE path: a 14B emits 21/48
+  layers at ctx 0 and 16/48 at 16384 instead of a flat 28/48. Disclosed cost: ~5 layers more
+  conservative at shallow ctx than a config that measured healthy; the cliff config is gone.
+- **U-17** - the IQ-on-CPU warning is now priced, not prose: every RAM weight read is discounted
+  by a per-IQ-byte penalty on the file's measured IQ share. The retrodiction gate rewrote the
+  plan: the hypothesized 2.7x would have overshot ~7x; the calibrated e2e value is **k = 0.242**
+  (pure-CPU IQ arm now exact: 11.4 vs 11.44 measured). The split IQ arm improves (28.0 -> 26.9 vs
+  23.60) but stays over - its GPU share is still priced at K-quant eta, registered as U-19 with
+  V-11's 1.55x pointing the way.
+- **U-18** - `fetch` no longer treats "a file with that name exists" as "the download is
+  complete": it compares local size against the remote and fails loudly on mismatch, naming the
+  collision; `--force` replaces the file. This is the exact failure that cost pre-registration
+  #69 three crashed runs (a June-era 0.5B under the target's filename fed llama-speculative an
+  incompatible tokenizer).
+
+Also in this release: the U-16 split-ub gate (split placements emit `-ub 1024`, recovering the
++29% prefill the flat cap left on the table), run/bench/plan flag unification for `--threads` and
+`-ub` (no command drops what another prints), and the residency buffer term measured rather than
+estimated (0.9 GB = #23 buffer + margin, emitting 15 residents where the sweep measured the
+optimum). Pre-registrations #67-#69 and their raw logs ship in-tree.
+
+
 ## 1.20.2 - 2026-07-28
 
 **The end-to-end consistency audit: six defects found, fixed, and now structurally prevented.**
