@@ -561,7 +561,14 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         out.append(("all in VRAM", 1 / (act / (geta_w * vb) + kv_gb / (ETA_KV * vb)), None,
                     "-ngl 99"))
     if moe and vc > 0:
-        v_need = ne * ab / 8 * 1.08 + 1.2 + kv_gb          # KV sits with attention in VRAM
+        # KV sits with attention in VRAM. The buffer term was a flat 1.2 GB estimate from before
+        # the compute buffer was MEASURED (#23: exactly 0.5874 MiB per ubatch token -> 0.60 GB at
+        # the ub-1024 the split now emits). 0.9 = measured buffer + 0.3 margin; the flat 1.2 was
+        # the same over-reserve class #62 removed once already, and it held the emitted split at
+        # 13 residents where the sweep measured 16 as optimal on both metrics (22.21 tg/393.7 pp)
+        # with the soft edge two notches away at 18 (-6.6%). This lands the emit at 15 - both
+        # sweep neighbors (14: 391/21.67, 16: 394/22.21) measured healthy.
+        v_need = ne * ab / 8 * 1.08 + 0.9 + kv_gb
         r_need = size - ne * ab / 8 * 1.08
         if v_need <= vc * 0.95 and r_need <= ra:
             warn = "RAM boundary - needs --no-mmap; can be unstable" if r_need > ra * 0.85 else None
