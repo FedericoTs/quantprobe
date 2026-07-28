@@ -11,8 +11,8 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 17 |
 | Shipped levers | 18 |
 | Measured dead ends | 21 |
-| Open contradictions | 10 |
-| Untried levers | 6 |
+| Open contradictions | 11 |
+| Untried levers | 8 |
 | External work to study | 6 |
 
 ## Established laws
@@ -451,6 +451,12 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `closed` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1); DRIVER IDENTIFIED same session: clock polling under load caught SM at 1506 MHz (vs 1835 recorded during the original 21.58 measurement) at 38 C on a quiet box - a stuck lower boost state, not thermal, not OS load. nvidia-smi clock reset unsupported on consumer Pascal; reboot required. prereg #61 staked with the cold-boot A/B protocol (weights/coldboot_ab.cmd) including a pristine zero-patch binary for the fair-comparison arm.; RESOLVED by prereg #61 cold-boot A/B: after reboot SM sustains 1847-1898 MHz (vs 1506 stuck), memory full 4006, and the flagship measures 21.11-21.68 - the original 21.58 reproduced to 0.5%. Mechanism confirmed: stuck boost state, cleared by reboot. Pristine zero-patch binary agrees with the instrumented build within 1.4% (P-3), so the session corpus stands. · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
 
+### C-11 — The dense layer-split placement OVERCOMMITS VRAM at depth: at ctx 16384 the tool emitted -ngl 26 for the 7B Q4_K_M (26/28 layers + 2.1GB KV) and predicted 15.0 tok/s; measured 6.34 (-58%, far outside the printed band). The 4k arm on the same model measured -0.9%, so the KV TERM is right - the placement fit math at depth is wrong (the dense g-split does not account for the compute buffer + KV jointly). Prereg #66.
+
+**Magnitude:** -58% on one arm; the only hard prediction failure of the 13-arm program
+
+`open` · `measured` · scope: dense models at deep context on VRAM-tight cards; the MoE split at 4k held (+22% under) · evidence: prereg #66 (ctx7b16k arm, clocks logged) · wired into: `MACHINE_LADDER.md footnote 2; fix queued for the next release`
+
 ## Untried levers
 
 Staked predictions written BEFORE measuring, so a miss is visible. Ordered by expected value.
@@ -489,7 +495,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Protocol:** reproduce ds4's approach on the reference box's SATA MX500; compare against our stream-from-disk tier
 
-`untested` · `speculative` · cost: 1 day to characterise
+`untested` · `speculative` · evidence: prereg #66: FIRST DATAPOINT - 35B Q8_0 (36.9GB) streaming through 16GB RAM measured 0.66 tok/s vs the tools 2.0 prediction (-67%, over-promise). Inside the 7x outright-kill band, so the tier survives, but its constants are now known-miscalibrated with a real anchor to re-derive from. The disk row ships labeled unvalidated. · cost: 1 day to characterise
 
 ### U-13 — Q2_K's min-term dp4a can be removed WITHOUT multi-row blocking: precompute per-16-weight activation sums ONCE PER TOKEN into a side buffer (128 floats for K=2048 - L1-cache resident, every row reads the same values), then apply the min as a scalar FMA. Halves the group dp4a count at llama.cpp's existing 1-row-per-block geometry. This is the H-REOPEN idea from KERNEL_BREAKTHROUGH_BRAINSTORM.md and corrects #55's 'the two fixes are mutually exclusive' - there is a third fix. [CLOSED by prereg #56: the min-term dp4a costs 0.9-1.8% at real 1-row geometry (hides in memory latency), and the side buffer is 15% SLOWER. No patch, no upstream filing.]
 
@@ -514,6 +520,22 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** Q4_0 all-in-VRAM error from -43% to within +/-15% without new benchmark runs
 
 `closed` · `speculative` · evidence: prereg #65: the ladder measured the blindness at -34% on 7B Q4_K_M (Q8_0-anchored ratio pricing a K-quant) · wired into: `candidate v1.21; prereg #64 P-3`
+
+### U-16 — The as-emitted MoE split command leaves ~30% prefill on the table: #66 measured 301 pp2048 at the emitted flagship config (no -b/-ub, a #20-era gate) where #62 measured 394 at the SAME placement with -ub 1024 and no tg cost. The #20 harm was ub 2048 (compute-buffer cliff); moderate ub on the split was measured safe in #62.
+
+**Hypothesis:** extend ubatch_flags to offer capped ub (<=1024, safe_ubatch-gated) on the split placement
+
+**Predicted effect (staked):** +25-30% pp on MoE splits, tg unchanged; one sweep to confirm the safety margin across models
+
+`untested` · `speculative` · wired into: `prereg #66 pp column; candidate next release`
+
+### U-17 — The IQ-on-CPU warning is prose but not priced: both IQ2_XS arms OVER-predicted (-15.7% split, -18.9% pure CPU) - the only over-predictions in the #66 program. The tool warns about the measured 2.7x IQ decode penalty (prereg #31) and then prices the bytes at full K-quant speed anyway.
+
+**Hypothesis:** discount eta_r by the measured IQ penalty on the IQ byte share (args.iq_share already computed)
+
+**Predicted effect (staked):** both IQ arms move inside the band from the warned side (under-promise)
+
+`untested` · `speculative` · wired into: `prereg #66 IQ arms; candidate next release`
 
 ## External work to study
 

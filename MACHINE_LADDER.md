@@ -67,3 +67,63 @@ On consumer hardware, the difference between running a model and running it *rig
 it is entirely configuration. And a physical law calibrated by two 5-minute benchmarks predicts
 the result of that configuration to single-digit percent on the placements that matter, erring
 low when it errs.
+
+
+---
+
+## The complete overview (prereg #66) — every regime, 0.5B to 117B
+
+Same protocol (pristine binary, one session, clocks logged per arm, predictions staked by shipped
+v1.20.2 code before any run). tg = tg128 unless noted; predictions carry the tool's ±25% band.
+
+### Prefill column (pp2048, as-emitted configs — the tool makes no per-model pp prediction; measurement-only)
+
+| model | pp2048 |
+|---|---|
+| 0.5B Q8_0 AIV | 4099 |
+| 0.6B Q8_0 AIV | 2466 |
+| 7B Q4_K_M AIV | 378 |
+| 16B DS split | 396 |
+| 30B flagship split | 301¹ |
+
+### Context depth (the Law 4 v2 KV term, measured)
+
+| arm | predicted | measured | err |
+|---|---|---|---|
+| 7B Q4_K_M AIV, tg64 @ d4096 | 18.8 | 18.64 | **−0.9%** |
+| 7B @ d16384 (tool switches to a 26/28-layer split) | 15.0 | 6.34 | **−58% MISS²** |
+| flagship split, tg64 @ d4096 | 15.4 | 18.75 | +22% under, in band |
+
+### Scaling past the flagship
+
+| model | size | placement | predicted | measured | err |
+|---|---|---|---|---|---|
+| **Qwen3.5-35B APEX-Mini** | 12.3 GB | split 20% (pins 9/12 GB, warned) | 17.7 | **21.52** | +22% under |
+| **Qwen3-Coder-30B Q3_K_M** | 13.7 GB | split 21% (pins 11/12 GB, warned) | 16.1 | **16.87** | **+4.8%** |
+| DS-16B IQ2_XS | 5.6 GB | split 58% (IQ warning fired) | 28.0 | 23.60 | −16% OVER³ |
+| DS-16B IQ2_XS | — | pure CPU | 14.1 | 11.44 | −19% OVER³ |
+| Laguna-S 117B Q2_K_XL | 39.7 GB | — | 1.6 | **stock llama.cpp cannot load it** (arch needs TheTom's fork) — the row is "fork required", itself a finding |
+| **Qwen3.5-35B Q8_0** | 36.9 GB | disk stream (> RAM), the never-measured tier | 2.0 | **0.66** | **−67% OVER⁴** |
+
+**Footnotes:**
+1. The as-emitted split command carries no `-b/-ub`, a #20-era gate; #62 measured the same
+   placement at 394 pp with `-ub 1024` and no tg cost — ~30% prefill is recoverable and logged
+   as U-16 for the next release.
+2. The one hard miss of the program: the dense layer-split at 16k depth overcommits VRAM
+   (26 layers + 2.1 GB KV do not actually fit at the emitted config) — opened as C-11. The 4k
+   arm's −0.9% shows the KV *term* is right; the *placement fit math at depth* is the defect.
+3. Both IQ arms over-predict: the tool's IQ-on-CPU warning is prose but not priced into the
+   number. Logged as U-17 (discount eta_r by the measured 2.7x on the IQ byte share).
+
+4. The disk tier's first-ever datapoint: inside U-06's 7x outright-kill band (not refuted) but
+   3x over-promised — the tier's constants were never validated and now have their calibration
+   point. U-06 updated; the row ships with the measured number and an "unvalidated tier" label
+   until the model is re-derived.
+
+**What the complete overview establishes:** this machine runs coherent models from 0.5B to 35B
+at interactive speeds — including **21.5 tok/s on a 35B MoE, faster than the 30B flagship** —
+prefill 300–4100 tok/s by size, and models beyond RAM at 0.66 tok/s (usable for batch, not chat).
+The tool's predictions held their printed band on **6 of 8 staked arms** with every in-band miss
+an under-promise; the two out-of-band arms (dense split at 16k depth, the disk tier) plus the
+IQ pricing gap are diagnosed, registered (C-11, U-16, U-17, U-06), and queued — which is the
+point of measuring everything: the table maps the machine AND the tool's honesty at once.

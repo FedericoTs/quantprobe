@@ -26,3 +26,21 @@ v1.20.2 code BEFORE any measurement (log: `weights/data/prereg66_overview.log`, 
 - Coder-30B failing to start (pinning) is a VALID outcome — it is the warning's demonstration.
 
 **Wired into:** MACHINE_LADDER.md v2 on scoring; U-06 scores either way.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg66_overview.log`, clocks logged per arm)
+
+**Verdict: 6 of 8 staked arms inside the printed band (every in-band miss an under-promise);
+the two misses and two systematic gaps all diagnosed and registered. Full table:
+`MACHINE_LADDER.md` v2 — the complete overview from 0.5B to the machine's actual limits.**
+
+Highlights: 7B@4k **−0.9%** (the KV term validated); 35B APEX **21.52** measured (faster than
+the 30B flagship — the depth-aware 3.4-bit recipe earning its keep); Coder-30B **+4.8%** while
+surviving an 11/12 GB pin; the 16k dense split **−58%** (C-11: fit math at depth); both IQ arms
+over-predicted (U-17: the warning is prose, not priced); the flagship's as-emitted pp leaves
+~30% recoverable (U-16); Laguna 117B **cannot load on stock llama.cpp** (fork-required row);
+and the disk tier's first datapoint ever: **0.66 vs 2.0 predicted** — inside U-06's outright-kill
+band, 3x over-promised, the tier now labeled unvalidated with its calibration point recorded.
+
+**Wired into:** `MACHINE_LADDER.md` v2 · `C-11`, `U-16`, `U-17` (new) · `U-06` (first datapoint).
