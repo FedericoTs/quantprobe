@@ -993,8 +993,7 @@ def run(args):
     adv = speculation_advice(moe, best[0])
     dn = dense_draft_note(moe, best[0])
     if dn:
-        print("
-  " + dn)
+        print("\n  " + dn)
     if adv:
         print(f"\n  speculation: {adv}")
     # upgrade advisor
