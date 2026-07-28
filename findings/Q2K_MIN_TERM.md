@@ -79,3 +79,49 @@ GPUs maintainers benchmark on and a great deal on the GPUs users are stuck with.
 Patch `vec_dot_q2_K_q8_1_impl_mmvq` and its `mul_mat_vec_q` caller to hoist the row-invariant
 activation sums, A/B on the 7B and the MoE flagship, verify output, and file upstream alongside
 [#26200](https://github.com/ggml-org/llama.cpp/issues/26200).
+
+---
+
+## CORRECTION, same session, before this went anywhere (2026-07-28)
+
+**The proposed fix does not apply as written, and I found that by checking my own premise.**
+
+`mmvq.cu:455 calc_rows_per_block` returns **1 when `ncols_dst == 1`** — i.e. at decode, each CUDA
+block computes a **single output row**. There is therefore **no row loop inside the block to hoist
+the activation sums out of**. "Precompute the sums once per block instead of once per row" is a
+no-op in llama.cpp's current blocking, because those are the same thing.
+
+### What survives unchanged
+
+1. **The instruction asymmetry is real and is read from source, not inferred.** Q2_K issues
+   **8 dp4a per 16 weights**; Q4_0 issues 4. Plus 4 lane-splat ops per group. That ALU is paid
+   whatever the blocking.
+2. **The measured gap is real.** Q4_0 reaches 88.5% of its kernel ceiling end-to-end, Q2_K 46.8%,
+   and Q4_0 calibrates the dilution from attention/KV/norms/sampling at ~11%.
+3. **352.7 GW/s is achievable on Q2_K's exact cost model** — measured, correctness-checked.
+
+### What changes
+
+The gap is **not** attributable to the min term alone. Our probe kernel also uses a fundamentally
+different decode blocking: **768 output rows per CUDA block**, with the activations *and* their
+per-lane sums loaded into shared memory once and reused across every row. llama.cpp's decode path
+reuses nothing across rows because it has one row per block.
+
+So the honest statement of the opportunity is:
+
+> llama.cpp's decode matvec assigns one output row per CUDA block, which forfeits all reuse of
+> row-invariant per-activation work. For **symmetric** formats there is almost nothing to reuse and
+> the cost is invisible — Q4_0 sits at 88.5% of ceiling. For **asymmetric** formats the min term is
+> row-invariant work, so the forfeited reuse costs a full extra dp4a per group per row, and Q2_K
+> sits at 46.8%.
+
+That reframes the fix from "hoist a sum" to "**give asymmetric K-quants more rows per block at
+decode**" — which is a tuning change in machinery that already exists (`small_k ? nwarps : 1`
+shows the blocking is already varied for some cases), not a rewrite.
+
+### Status
+
+**Hypothesis, not a diagnosis.** The instruction count and the measured gap are facts; the causal
+attribution now rests on an untested claim about blocking. It must be tested by varying
+`rows_per_cuda_block` for Q2_K in-tree and measuring, **before** any of this is offered upstream.
+This is the tenth mechanism this project has named and the tenth time a control moved it.
