@@ -474,6 +474,19 @@
       "wired_into": "no code change - the shipped ngram-simple flags already carry the winner",
       "why_the_smarter_drafter_loses": "Mod's 4.2M-slot table stores ONE successor per hash slot, no key, overwrite-on-write - so every chaining step can silently be a collision, and the chain is autoregressive, so one wrong step corrupts everything after it. Simple's contiguous copy is verified-correct BY CONSTRUCTION: it reproduces text that actually occurred. On output that is a near-copy of the context, freedom is not the constraint and the smarter drafter's error compounds.",
       "and_it_explains_D_10": "This is the source-level explanation of the #30 replay artifact, now measured in the OPPOSITE direction: there, mod's accumulated table made a repeated identical request look fast; here, on a real edit task, the same accumulation makes it slower. Either way the number is not reproducible on fresh input - which is why request 1 of a fresh server is the only figure this project quotes for mod."
+    },
+    {
+      "id": "D-14",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "inferred",
+      "claim": "Dual-bus expert streaming (run some experts on CPU out of DDR4 while streaming others to the GPU over PCIe, concurrently) cannot add bandwidth for HOST-RESIDENT weights - the two paths are in series, not parallel.",
+      "magnitude": "The proposal's arithmetic assumed effective host bandwidth 23.1 + 12.2 = 35.3 GB/s (+53%), moving the wall from 41.1 to ~55.6 tok/s. The addition double-counts: a PCIe transfer of expert bytes from host memory is a DMA READ OUT OF HOST DRAM, so the bytes cross the DRAM bus either way. Streaming an expert to the GPU adds a hop and moves the arithmetic; it does not spare the bottleneck.",
+      "evidence": "prereg #45 (the empirical arm was VOID on protocol - baseline drifted +25% across the session - so the refutation rests on the physical argument, not the measurement)",
+      "scope": "host-resident MoE weights. Data already in VRAM is a different placement, swept in #43 and #21.",
+      "wired_into": "nothing - Law 4's SUM survives unchanged for this workload",
+      "what_survives_from_it": "Two things: (1) the GPU really does idle ~22 ms per token during the CPU expert phase, which is genuine headroom for COMPUTE that does not re-read host weights - speculative verification is exactly that, and is one reason speculation pays so well here; (2) the idea arrived with a zero-code falsification test, which is why it cost an hour rather than a week.",
+      "protocol_lesson": "The empirical arm was invalidated by its own position control: baseline 14.66 (1st, cold) vs 18.29 (4th, warm). Reading the middle arms against the cold baseline would have repeated the thermal-ordering error #31 caught. Any future contention test must INTERLEAVE arms (A,B,A,C,A,B...) to cancel drift."
     }
   ],
   "contradictions": [

@@ -10,7 +10,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 |---|---|
 | Established laws | 14 |
 | Shipped levers | 13 |
-| Measured dead ends | 12 |
+| Measured dead ends | 13 |
 | Open contradictions | 9 |
 | Untried levers | 3 |
 | External work to study | 5 |
@@ -260,6 +260,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 **Magnitude:** Request 1 of a fresh server, edit task, split placement: ngram-simple m384/n4 109.52 tok/s vs ngram-mod tuned 86.42-86.63 (-21%) and ngram-mod at defaults 57.41 (-48%). Raising n_max 512->1024 changes nothing (556 drafted in both): the chain dies on a hash miss long before either cap. Request 2 is 17-25% SLOWER than request 1 (86.42->71.75, 86.63->64.65) while drafting 75% MORE (556->976) at collapsed acceptance (65.6%->39.3%).
 
 `refuted` · `measured` · scope: copy-regime output (edits/refactors/quoting) on Qwen3-30B-A3B, reference box. A workload whose output is NOT near-copy of context was not tested and mod may differ there. · evidence: prereg #38; source study of llama.cpp@f113e02 (speculative.cpp:1860-1872 chaining, 1811-1813 no-clear accumulation, ngram-map.cpp:96 the single-span copy) · wired into: `no code change - the shipped ngram-simple flags already carry the winner`
+
+### D-14 — Dual-bus expert streaming (run some experts on CPU out of DDR4 while streaming others to the GPU over PCIe, concurrently) cannot add bandwidth for HOST-RESIDENT weights - the two paths are in series, not parallel.
+
+**Magnitude:** The proposal's arithmetic assumed effective host bandwidth 23.1 + 12.2 = 35.3 GB/s (+53%), moving the wall from 41.1 to ~55.6 tok/s. The addition double-counts: a PCIe transfer of expert bytes from host memory is a DMA READ OUT OF HOST DRAM, so the bytes cross the DRAM bus either way. Streaming an expert to the GPU adds a hop and moves the arithmetic; it does not spare the bottleneck.
+
+`refuted` · `inferred` · scope: host-resident MoE weights. Data already in VRAM is a different placement, swept in #43 and #21. · evidence: prereg #45 (the empirical arm was VOID on protocol - baseline drifted +25% across the session - so the refutation rests on the physical argument, not the measurement) · wired into: `nothing - Law 4's SUM survives unchanged for this workload`
 
 ## Open contradictions
 

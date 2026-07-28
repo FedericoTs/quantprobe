@@ -59,3 +59,58 @@ Honest expectation, recorded before measuring: even if this passes, the compound
 ~1.6x on novel content (21 -> ~35 tok/s), which does NOT reach 100. The project's "100 tok/s on
 novel content is a hardware statement" survives; what would not survive is the claim that novel
 decode has **no** software lever left, and the 41.1 wall underneath it.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg45_dual_bus.log`)
+
+**Verdict: the EXPERIMENT is void on protocol — but the IDEA is refuted by physics that the
+experiment did not need to establish. Kill rule fires on the second ground, not the first.**
+
+### The experiment failed, and the position control is what caught it
+
+| arm | order | tg128 |
+|---|---|---|
+| A baseline | 1st (cold) | 14.66 ± 0.31 |
+| B + PCIe saturator (7.4 GB/s H2D) | 2nd | 12.21 ± 0.17 |
+| C + DRAM hog | 3rd | 16.02 ± 0.32 |
+| **A2 baseline re-run** | **4th (warm)** | **18.29 ± 0.26** |
+
+**The baseline drifted +25% across the session** (14.66 → 18.29) — larger than any effect under
+test. Arms measured at different positions cannot be compared, so P-1 and P-2 are both
+**unscoreable**. Reported rather than salvaged: reading B as "−16.7% vs A" would have been the
+same thermal-ordering error #31 already caught once, and the position control existed precisely to
+catch it a second time. A valid version interleaves arms (A,B,A,C,A,B…) to cancel drift.
+
+### The idea is refuted anyway, and by an argument the measurement could not have improved on
+
+The red-team's arithmetic assumes effective host bandwidth becomes `23.1 + 12.2 = 35.3 GB/s` by
+running DDR4 and PCIe concurrently. **That addition is not available for host-resident weights.**
+
+A PCIe transfer of expert bytes from host memory is a DMA read **out of host DRAM**. The bytes
+cross the DRAM bus whether the CPU computes on them locally or the GPU receives them over PCIe —
+the DMA engine has to fetch them first. So streaming an expert to the GPU does not spare the DRAM
+bus; it adds a hop and moves the arithmetic, while the *same* bytes still occupy the *same*
+bottleneck. The two "buses" are in series for this workload, not in parallel, and
+`BW_dram + BW_pcie` double-counts a single read.
+
+The only way PCIe traffic avoids DRAM is if the data already sits in VRAM — at which point it is
+not host-resident and the configuration is just a different placement split, which pre-registration
+#43 already swept (K = 32…48) and #21 before it.
+
+So Law 4's `SUM` survives on this hardware for this workload — not because tiers *cannot* overlap
+in general, but because **for host-resident MoE weights both paths are gated by one DRAM read.**
+
+### What survives from the red-team's proposal
+
+Two things worth keeping, neither of which needs the dual-bus claim:
+
+1. **The GPU genuinely idles ~22 ms per token** while the CPU expert phase runs. That is real
+   headroom for *compute* — anything the GPU could do that does not require re-reading host
+   weights. Speculative verification is exactly such a workload, which is one reason speculation
+   works so well here.
+2. **The falsification-first instinct was correct** and is the reason this cost an hour instead of
+   a week: the idea came with a zero-code test, and the test's own control killed the test.
+
+**Wired into:** `findings/REGISTER.json:D-14` (dual-bus expert streaming, refuted on physics) ·
+the protocol note on interleaving arms.

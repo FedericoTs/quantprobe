@@ -1,0 +1,10 @@
+=== Pre-reg #45: is PCIe idle during split decode? (saturator = 7.4 GB/s H2D sustained) ===
+--- arm A: baseline, nothing alongside ---
+  A baseline      tg128 = 14.66 ± 0.31
+--- arm B: + PCIe saturator ---
+  B +PCIe hog     tg128 = 12.21 ± 0.17
+  warnings.warn(
+--- arm C: + DRAM hog (positive control, ~1 thread of pure host reads) ---
+  C +DRAM hog     tg128 = 16.02 ± 0.32
+--- arm A2: baseline re-run LAST (position control) ---
+  A2 baseline     tg128 = 18.29 ± 0.26
