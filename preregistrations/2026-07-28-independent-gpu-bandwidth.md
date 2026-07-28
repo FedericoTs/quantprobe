@@ -55,3 +55,53 @@ All timed with CUDA events / explicit sync, warm-up discarded, GPU state logged.
 The first independently-grounded VRAM number in this project, and whichever of the three
 conclusions above the data supports. If P-2 hits, a follow-up pre-registration targets the CUDA
 decode path directly.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg44_independent_gpu.log`)
+
+**Verdict: P-1 HIT, P-2 HIT DECISIVELY, P-3 HIT. The GTX 1060 delivers η 0.84 on a decode-shaped
+operation. llama.cpp achieves 0.32–0.56. "No software lever left" is REFUTED for the GPU half.**
+
+| measurement (CuPy — no ggml anywhere in the path) | GB/s | η vs 192 spec |
+|---|---|---|
+| pure read, 256 MB sum | **165.6** | 0.86 |
+| copy (read+write) | 150.1 | 0.78 |
+| **GEMV fp32 (1×4096)@(4096×14336) — decode-shaped** | **161.3** | **0.84** |
+| GEMV fp16, same shape | 108.9 | 0.57 |
+
+- **P-1 (read ≥150 GB/s): HIT** at 165.6. The 192 GB/s spec is *not* fiction, unlike DDR4-3000's
+  48 which measured 26.1. The VRAM controller is real.
+- **P-2 (GEMV ≥120 GB/s, above llama.cpp's band): HIT** at 161.3 — **1.5× to 2.6× what llama.cpp
+  extracts** from the same card.
+- **P-3 (GEMV within ±25% of read): HIT** at 2.6% apart. GEMV is bandwidth-bound, so the
+  comparison to η is valid — the operation is not launch- or compute-limited at fp32.
+
+### What this establishes, and what it does NOT
+
+**Establishes:** the hardware is not the constraint on the GPU side. A well-written kernel reaches
+0.84 where llama.cpp reaches 0.32–0.56. C-02 — open since the start of this project, six
+explanations refuted — is a **software** gap of roughly **1.5–2.6×**, and it was invisible because
+every GPU number we ever took came out of llama.cpp. The epistemic critique that prompted this was
+correct.
+
+**Does NOT establish that the gap is trivially recoverable.** cuBLAS fp32 GEMV and llama.cpp's
+quantized decode are not the same operation: llama.cpp streams Q2_K/Q4_K blocks and dequantises
+them in-kernel, which is work cuBLAS never does. The fp16 row is the warning — 108.9 GB/s, well
+below fp32's 161.3, because Pascal's fp16 ALU throughput is 1/64 rate. **On this architecture the
+arithmetic format can bind before bandwidth does**, and quantized dequant may do the same.
+
+So the honest statement is: **the ceiling is 0.84, not 0.35–0.56; how much of that 1.5–2.6× a
+quantized kernel can actually reach is the next measurement, not this one.**
+
+### The discriminating follow-up, specified now
+
+Measure llama.cpp's all-in-VRAM η against **format**, holding model and size fixed, on a model
+large enough that fixed overheads do not dominate — Q8_0 (near-trivial dequant) vs Q4_K_M vs Q2_K.
+If η rises toward 0.84 as dequant gets cheaper, the gap is **arithmetic** and Pascal owns it. If η
+stays ~0.4 at Q8_0, the gap is the **kernel** and it is addressable. C-02's existing data hints at
+the awkward answer — Q8_0 measured the LOWEST η (0.354) — but those were 0.5–0.6B models where
+per-token overhead dominates, so the test must be re-run at 7B+.
+
+**Wired into:** `findings/REGISTER.json:C-02` (promoted from "unexplained" to "software gap, size
+bounded, mechanism open") · `findings/REGISTER.json:L-14` (the independent VRAM ceiling).

@@ -8,7 +8,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 13 |
+| Established laws | 14 |
 | Shipped levers | 13 |
 | Measured dead ends | 12 |
 | Open contradictions | 9 |
@@ -96,6 +96,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** n-gram (copy): 66-68% acceptance at 384-token drafts, and raising the budget 48->384 gave +81% throughput (#36). Draft model (0.6B guessing): 75.2% -> 56.8% -> 34.9% on code and 35.9% -> 17.6% -> 8.7% on prose as the budget goes 3 -> 8 -> 16, and throughput falls monotonically (#42). An n-gram draft is verified-correct BY CONSTRUCTION - it reproduces text that occurred - so extending it is nearly free; a model draft compounds its own divergence AND pays a full draft forward per token.
 
 `established` · `measured` · scope: Qwen3-30B-A3B target with a Qwen3-0.6B draft, reference box. The mechanism is general; the crossover point is not measured elsewhere. · evidence: prereg #36 (n-gram budget), prereg #42 (draft-model budget), prereg #28 (the original net-negative) · wired into: `quantprobe/plan.py:speculation_advice (why the two speculation flags behave oppositely)`
+
+### L-14 — The VRAM tier's achievable ceiling is eta ~0.84, measured independently of any inference runtime - so llama.cpp's 0.32-0.56 on the same card is a SOFTWARE gap of 1.5-2.6x, not a hardware limit.
+
+**Magnitude:** CuPy on GTX 1060 6GB: pure read 165.6 GB/s (eta 0.86), copy 150.1 (0.78), decode-shaped fp32 GEMV (1x4096)@(4096x14336) 161.3 GB/s (eta 0.84), GEMV within 2.6% of pure read so it is bandwidth-bound and the comparison is valid. llama.cpp all-in-VRAM implies eta 0.32-0.56 (C-02).
+
+`established` · `measured` · scope: GTX 1060 6GB (Pascal sm_61), fp32. NOT established for quantized kernels - see the caveat below. · evidence: prereg #44 · wired into: `findings/REGISTER.json:C-02 (reclassified) - deliberately NOT wired into plan.py: the tool's eta constants describe what llama.cpp achieves, which is what users get, and must not be raised to a ceiling no shipped runtime reaches.`
 
 ## Shipped levers
 
@@ -259,7 +265,7 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
 
-### C-02 — The all-in-VRAM efficiency eta is not a constant, not a per-format constant, and not a bytes-weighted mix of per-type constants. It varies 0.319-0.561 (76%) across seven measured models on ONE GPU, and no parameter the tool currently has access to predicts it.
+### C-02 — RECLASSIFIED 2026-07-28: the all-in-VRAM shortfall is a SOFTWARE gap of 1.5-2.6x, not an unexplained property of the hardware. Independent measurement (prereg #44) puts the card's decode-shaped ceiling at eta 0.84; llama.cpp reaches 0.32-0.56.
 
 **Magnitude:** Implied eta from the 7 ratchet points, same box, plan --gguf: gemma4-12b custom mix 0.319 (the only OVER-prediction, +9.8%) | Qwen3-0.6B Q8_0 0.357 | Qwen2.5-7B Q2_K 0.377 | Qwen2.5-7B IQ3_XS 0.384 | Bonsai-27B Q1_0 0.445 | Qwen3.5-4B Q4_K_M 0.464 | Qwen2.5-7B Q4_K_M 0.561. The law assumes 0.35 for all of them.
 
@@ -271,9 +277,9 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Also establishes:** Between-session drift is 10-13% on decode against sub-1% within-session error bars, now measured three times on the same 4B model: 27.30 (07-26), 30.89 (07-27 early), 30.03 (07-27 late). C-04 recorded this for prefill; it holds for decode too, and it bounds what any single session can conclude.
 
-**Next action:** STOP FITTING. Six candidate corrections have now been refuted, four of them mine. The remaining honest moves are about DISCLOSURE, not calibration, and one of them is a published-number decision that is the maintainer's to make rather than mine: verify.py layer 3 applies a single +/-25% band to regimes whose measured accuracy differs enormously, and for all-in-VRAM that band is simply false - 13 measurements put the regime at +12% to +85%, always in the same direction. Either the band becomes regime-aware and one-sided (honest, but it changes the tool's headline accuracy claim and must be published as a correction), or layer 3 stops selecting an all-in-VRAM model to test a law that regime is known to break. Widening a band to make a test pass would be goalpost-moving; stating a measured per-regime accuracy is not - but the distinction depends on it being published loudly, which is a call to make deliberately.
+**Next action:** DISCRIMINATING TEST: measure llama.cpp all-in-VRAM eta against FORMAT at fixed model and size, on a 7B+ model so per-token overhead does not dominate: Q8_0 (trivial dequant) vs Q4_K_M vs Q2_K. If eta rises toward 0.84 as dequant cheapens, the gap is ARITHMETIC and Pascal owns it. If eta stays ~0.4 at Q8_0, the gap is the KERNEL and it is addressable. Existing C-02 data hints at the awkward answer - Q8_0 measured the LOWEST eta (0.354) - but those were 0.5-0.6B models where overhead dominates, so it must be re-run at 7B+.
 
-`disclosed` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
+`reclassified` · `measured` · scope: dense models fully resident, GTX 1060 6GB · evidence: prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this · wired into: `disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow`
 
 ### C-05 — A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.
 
