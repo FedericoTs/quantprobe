@@ -55,12 +55,21 @@ def resolve(a):
                   db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"),
                   hint="THIS machine [auto-detected]")
         print("[quantprobe] hardware auto-detected (pass --machine/flags to optimize another box)")
+        # the SAME calibration path plan/bench use - without it optimize searched over
+        # uncalibrated constants and disagreed with plan about the same machine (the v1.10.5
+        # cross-command bug class; found by audit before any user hit it)
+        planmod.apply_calibration_overrides(hw, a)
     vc = planmod.agg_cap(a.vram) if a.vram is not None else hw.get("vc", 0)
     vb = planmod.agg_bw(a.vram_bw, 0.85) if a.vram_bw is not None else hw.get("vb", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
     rb = a.ram_bw if a.ram_bw is not None else hw.get("rb", 40)
     db = planmod.agg_bw(a.disk_bw, 0.75) if a.disk_bw is not None else hw.get("db", 0.5)
     geta = hw.get("geta", 0.45); gl = hw.get("gl")
+    # size-classed anchor dispatch, same function as plan/bench. Bits are being SEARCHED here,
+    # so the size class is evaluated at a representative 4.5 bits - the class boundary is a 4x
+    # band, which no bits choice inside the search range crosses for a given model.
+    vb, geta = planmod.resolve_gpu_eta(hw, a, ac, getattr(a, "bits", None) or 4.5, vb or 0, geta)
+    rb = planmod.resolve_cpu_bw(hw, a, ac, getattr(a, "bits", None) or 4.5, rb or 40)
     ctx = getattr(a, "ctx", 0) or 0
     kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None) else m.get("kvp", planmod.DEFAULT_KVP))
     return m, t, ac, ne, moe, (vc or 0, vb or 0, rc or 16, rb or 40, db or 0.5, geta, gl), ctx, kvp

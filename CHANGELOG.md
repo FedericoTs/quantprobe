@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.20.2 - 2026-07-28
+
+**The end-to-end consistency audit: six defects found, fixed, and now structurally prevented.**
+
+Asked "are we sure the tool works end to end without misconfigurations or miscalibrations?",
+the audit answered no six times, then yes: optimize and auto bypassed calibration entirely;
+`run` dropped the `--threads` that plan printed; bench could not forward it; the anchor
+size-class band (4x) let a 0.5B anchor mis-price the 30B flagship (+27% over); the GPU anchor
+ratio was priced against a different eta than the prediction rows use; and small targets mixed
+the two references (halving their predictions in one intermediate). All five commands now
+resolve constants through the same three shared functions (apply_calibration_overrides,
+resolve_gpu_eta, resolve_cpu_bw), and the guardrails that caught the intermediates - the
+plan/bench parity layer and the all-in-VRAM ratchet - remain armed.
+
+Accuracy claims corrected accordingly: v1.20.1's briefly-published 8.6% median leaned on the
+inconsistent boost; the principled column is ~12% median with every big-model miss an
+under-promise and anchor-class predictions exact by construction. MACHINE_LADDER.md carries the
+correction. Known remaining gap, stated: a live llama-server launch test (run --dry and the
+bench real-binary loop are verified; the server binary build is environment-dependent).
+
 ## 1.20.1 - 2026-07-28
 
 **The machine ladder found the anchors' two blind spots; both fixed, gated, and disclosed.**
