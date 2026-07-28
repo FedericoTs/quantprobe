@@ -38,10 +38,15 @@ Law 2 never bounded it and does not now. Two systems-side measurements from the 
 error-barred: (1) the Pascal low-bit decode collapse (gl = 0.04) is **dequant-format-dependent, not
 bit-width-dependent** — Q1_0's trivial dequant runs the 27B all-in-VRAM at 11.94 ± 0.04 tok/s on the
 GTX 1060 where the gl model predicted ~1.8 — **superseded 2026-07-26 by pre-registration #16, which
-went further: there is no low-bit decode collapse of any kind.** A matched triple (same 7B, same
-card, all in VRAM) decodes 20.03 / 19.17 / 18.11 at Q4_K_M / Q2_K / IQ3_XS — a 10% band across
-2.8–4.5 bits and across formats. The collapse is real but lives entirely in **prefill**, where the
-same IQ3_XS pays **6.8×**. Dequantization is compute; prefill is compute-bound and decode is not.
+went further: no low-bit decode collapse for the three formats it measured.** A matched triple
+(same 7B, same card, all in VRAM) decodes 20.03 / 19.17 / 18.11 at Q4_K_M / Q2_K / IQ3_XS — a 10%
+band across 2.8–4.5 bits and across those formats. The collapse is real but lives entirely in
+**prefill**, where the same IQ3_XS pays **6.8×**. Dequantization is compute; prefill is
+compute-bound and decode is not. Re-scoped 2026-07-28: wider format ladders then found decode
+collapse that is format-dependent, not bit-dependent — Q2_K all-in-VRAM measures 45% below the
+byte model and slower in absolute tok/s than Q4_0 while 32% smaller (V-17, prereg #53), and IQ
+formats decode 2.7× slower than K-quants on CPU tiers (V-11, prereg #31). Decode still ignores
+bit-width; it does not ignore format — the unpack cost sets the tax (L-15).
 The gate has been removed from the planner and `gl` no longer touches decode; (2) linear-attention hybrids (48 gated-delta layers)
 carry a CPU compute tax — measured η ≈ 0.30 vs the dense-GQA 0.62 class, and my same-day staked
 CPU estimate missed by 2×, published here per house rules. Raw logs:
@@ -92,24 +97,34 @@ so treat printed quality costs as recipe-conditional. The curve is not re-fitted
 
 ## Law 4 — The tiered decode law
 **Decode speed is a placement identity: `tok/s = η(tier) × bandwidth ÷ active-bytes-per-token`, with
-the utilization constant η collapsing per memory tier.**
+the utilization constant η collapsing per memory tier — amended 2026-07-28 (L-15): within a tier,
+η is a function of the format's unpack instruction cost, not the tier alone.**
 
-- *The measurement:* η = 0.56 (VRAM) · 0.29–0.68 (RAM: dense ≈0.65, MoE ≈0.35 — the scatter penalty)
+- *The measurement:* η = 0.56 (VRAM, format-averaged — the per-format band is ~0.31–0.62, see the
+  amendment below) · 0.29–0.68 (RAM: dense ≈0.65, MoE ≈0.35 — the scatter penalty)
   · 0.88–1.0 (disk), across 7B→744B **including colibri's independently published tiers** (his 0.48 and
   0.88 sit inside our bands). Pre-registered hits: a 110B model streamed from SATA at **0.19 tok/s**
   (predicted 0.2–0.3); a RAM overclock (2133→3000) delivered **×1.52** on dense (predicted ×1.41+);
   and when bandwidth rose, the 30B's bottleneck *migrated* to RAM capacity — exactly as a law-governed
   system should behave.
 - *Corollaries, each measured:* on poor-decode GPUs, experts belong on the CPU (+54%, one flag);
-  batch-union returns scaling on the CPU tier (4.5× at batch 8); **speculative decoding is antagonistic
+  batch-union returns scaling, but less than first quoted — the early 4.5× at batch 8 was superseded
+  by pre-registration #26: aggregate decode saturates at roughly 2× by about 4 slots, near-identically
+  across placements and architectures (C-06/V-09); **speculative decoding is antagonistic
   to MoE sparsity** on bandwidth-bound tiers (verify-batches union ~40 experts vs 8 — measured 2.3×
-  *slower* with a draft); and the MoE scatter penalty is a memory-system property (slab-hopping defeats
-  prefetch), not scheduling or sync — both eliminated experimentally.
+  *slower* with a draft); and the MoE scatter penalty is NOT a memory-system property — corrected
+  2026-07-27 (D-05, preregs #32/#33): shuffled 2MB expert-slab reads measure 24.56 GB/s vs 23.88
+  sequential (+2.9%, noise — the memory system is indifferent to the scatter), and the profiled
+  deficit is ~32 ms/token of fixed per-op machinery in the CPU graph executor.
   **Strengthened 2026-07-26 (Law 6 arms S-a/S-b/S-e):** THREE independent speculation mechanisms
   now collapse on offloaded MoE — draft-model (2.3x slower), MTP (0.76x), and ngram prompt-lookup
   (+3% where the same mode gives a dense model **+110%**). The expert-union tax is a property of
-  speculative decoding on offloaded MoE, not a quirk of any one mechanism. Corollary for users:
-  if your experts live in RAM, no speculation mode will pay.
+  speculative decoding on offloaded MoE, not a quirk of any one mechanism. Corollary for users,
+  re-scoped 2026-07-28: with experts in RAM, draft-model and MTP speculation will not pay, and
+  nothing accelerates novel output (D-09/D-10). The measured exception: free n-gram drafting pays
+  2.4–5× on copy-regime output — edits, refactors, quoting — on the same experts-in-RAM split
+  (preregs #28/#36/#37, V-12); the +3% above was the untuned default on novel text, not the
+  mechanism's ceiling.
 - *The prediction:* measure any machine's tier bandwidths and any model's active bytes, and this
   equation prices its decode speed before you download a single weight.
 - *Scope limit (2026-07-26), stated before it was measured:* the law prices **one token per
@@ -133,6 +148,22 @@ the utilization constant η collapsing per memory tier.**
   prefill **unchanged** (44.80 vs 43.67 tok/s, inside run-to-run noise — staked at ±5% and hit).
   Law 4 is a function of bytes and bandwidth, not of weight *content*. Confirmed, not assumed.
 
+### Law 4 amendment (2026-07-28) — η is a function of format, not tier alone (L-15/L-16)
+
+The per-tier η values above are format-averaged. Measured same tier, same card, same model, same
+session (preregs #52/#53): Q4_0 η **0.619** · Q4_K_M **0.553** · Q2_K **0.340** — the all-in-VRAM
+band runs ~0.31–0.62 by format. The mechanism was isolated at the metal with a standalone CUDA
+harness (zero llama.cpp): a matvec with no unpacking runs at 95% of the streaming ceiling, the same
+bytes with a naive unpack at 42%, and dp4a recovers ~80% — on an ALU-weak GPU the format's unpack
+instruction cost sets decode speed as much as the byte count does (L-15). The K-quant deficit has a
+named cause: **metadata application density** (L-16) — Q2_K's definition forces a scale+min chain
+every 4 bytes at 2 bits, 4× Q4_K's density per byte; a confirmation arm with identical loads and
+identical dp4a count gained +23% (preregs #56/#57), and the full decomposition lands within 9–12%
+of measurement. Shipped consequence: prefer Q4_0 over Q4_K_M for all-in-VRAM decode on pre-Ampere
+(+19% end-to-end measured, 26.87 vs 22.72 tok/s — speed-only, Q4_K_M is higher quality per byte),
+and the planner prices decode per-format (`spec.FORMAT_EBW`). Scope: one Pascal card (cc 6.1); on
+Ampere+ the ALU-to-bandwidth ratio flips and the ranking may invert — unverified, replication asked.
+
 ### Law 4, general form (v1.3–v1.4, 2026-07-24) — a restatement, not a revision
 
 Every formulation below NESTS: the v1.0 statement is the single-dominant-tier special case, v2 adds
@@ -153,10 +184,13 @@ counted. The v1.0 form is recovered when one tier dominates the sum.
 gigabyte is ~zero mid-tier and enormous at a boundary (measured: a one-quant-step shave across our
 RAM boundary is worth x4-6). All size levers should be priced by boundary distance.
 
-**Corollary (lever gates).** Lever validity is hardware-conditional — Law 1's shape recurring at the
-systems level. Measured example: quantized K-cache costs -83% at 16k depth on Pascal-class GPUs
-(no flash attention -> per-token dequant tax) while being a plausible win on FA-capable hardware
-[est]. Optimizers over the law must carry measured gates, not assume levers are universal.
+**Corollary (lever gates).** Lever validity is configuration-conditional — Law 1's shape recurring
+at the systems level. Measured example, corrected 2026-07-27 (V-08, prereg #25): quantized K-cache
+costs -83% at 16k depth with flash attention OFF (per-token dequant tax); with -fa 1 the SAME
+Pascal card measures q8_0 KV as a depth win — +37% vs f16 at d16384, 3.04x vs KV-eviction, at a
+~6% cost at short context. The gate is a property of the FA configuration, not the hardware class —
+we had conditioned it on the wrong variable. Optimizers over the law must carry measured gates,
+not assume levers are universal.
 
 **Corollary (levers share one budget, and the budget is fungible).** Measured 2026-07-27 on
 Qwen3-30B-A3B, one session. Weights, KV cache and the compute buffer draw on the same VRAM, so the
@@ -172,9 +206,14 @@ placement dimensions cannot be optimised one at a time:
   all-experts-to-CPU (345 → 336) — fungibility is placement-specific: only a starved
   configuration can spend the refund (#21).
 
-Consequence: **there is no single best placement, there is a Pareto frontier**, selected by the
-prompt-to-generation ratio. Choosing the wrong point costs up to **2.25×** on a long-prompt
-workload.
+Consequence — **refuted 2026-07-27 (L-07, pre-registration #25).** This section originally
+concluded there is no single best placement, only a Pareto frontier selected by the
+prompt-to-generation ratio, with the wrong point costing up to 2.25×. Re-measured with every cell
+in ONE session, ONE configuration (split + `-ub 1024` + KV-in-VRAM) wins at every ratio. The 2.25×
+shrank to nothing as three of our own measurement errors were corrected — the headline cell had
+been measured past the compute-buffer cliff — so the frontier was an artefact of the sweep, not a
+property of the machine. The lever measurements above stand; the frontier conclusion drawn from
+them does not.
 
 **Dead end (measured, 2026-07-27): expert-count reduction.** Halving MoE top-k (8 → 4) behaves
 exactly as the byte model predicts — active parameters 3.3B → 2.25B, decode **20.32 → 27.13

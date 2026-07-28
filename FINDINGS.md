@@ -9,10 +9,10 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 17 |
-| Shipped levers | 18 |
+| Shipped levers | 19 |
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
-| Untried levers | 8 |
+| Untried levers | 9 |
 | External work to study | 6 |
 
 ## Established laws
@@ -233,6 +233,12 @@ Things the tool actually recommends, with the number attached.
 
 `shipped` · `measured` · scope: one box; the ratios are per-machine BY DESIGN (that is the point); format blindness of the single GPU ratio documented (Q4_0 -43% under-promise), fix logged as U-15 · evidence: prereg #64 (gate staked before any number; anchor arms excluded from targets); prereg #64 gate log weights/data/prereg64_gate.log · wired into: `quantprobe/plan.py anchor composition; quantprobe/calibrate.py gpu_anchor; tests t_anchored_predictions_wiring`
 
+### V-20 — Dense-SPLIT draft speculation is the best model-draft cell on this box: a same-family 0.5B draft at K=2 buys +33.5% decode on a split dense 14B (5.54 -> 7.40 tok/s, 76% acceptance, novel code) with the draft on CPU (-ngld 0) so it costs ZERO VRAM. Mechanism (prereg #69 P-2): the K+1-token verify batch reads each CPU-resident layer once - the same host-transfer amortization as -ub, applied to decode. The staked K-shift (P-3) MISSED: the optimum stays at K=2 and every K>=3 lands at or below baseline, because the CPU-resident draft pays serial 0.5B passes from the same DDR4 pocket the amortization saves. Open anomaly: K>=3 arms are deterministically non-monotonic (3.54 / 4.43 / 3.92 / 5.57 at K=3/4/6/8).
+
+**Magnitude:** +33.5% decode at K=2; llama.cpp default K=3 measures 0.64x (a LOSS) on the same pair
+
+`confirmed` · `measured` · scope: dense split GPU/CPU, novel output, same-family draft; this box (Pascal + DDR4) · evidence: prereg #69 (preregistrations/2026-07-28-dense-split-draft.md), raw log weights/data/prereg69_dense_split.log, 3 runs at K=2 · wired into: `quantprobe plan.py dense_draft_note split branch`
+
 ## Measured dead ends
 
 Negative results. These are load-bearing: each one is a direction nobody has to spend a day on again.
@@ -285,11 +291,11 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `documented` · scope: CUDA builds, -ot=CPU placements, with --no-mmap set · evidence: U-03 source study: -ot=CPU re-runs buffer selection over the CPU buft list (ACCEL -> GPU-host -> CPU-extra -> CPU); on a CUDA build the GPU-host entry is CUDA_Host, allocated by cudaMallocHost. llama-model-loader.cpp:1197-1205 demotes it back to pageable IF use_mmap is true. · wired into: `U-03 withdrawn; the --no-mmap smoke invariant is now known to be load-bearing for a second reason`
 
-### D-09 — An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not. [SCOPE AMENDED by prereg #67: the 0.72x was the SPLIT FLAGSHIP cell. The dense all-in-VRAM cell measures POSITIVE: +11% on novel code at K=2/79% acceptance (0.5B drafting the 7B), negative on prose, negative at K>=4. Shipped as scoped advice; the larger prize needs a ~20x-faster drafter class that does not exist locally.] [RECONFIRMED at optimal draft lengths (prereg #68 inline, weights/data/prereg68_moe_draft.log): K=1 gives 77% acceptance and still 0.81x; K=2 0.74x. The expert-union tax makes verify batches cost more than sequential decode on the CPU-expert path - MoE draft speculation is closed at EVERY draft length, and the dense(+11%)-vs-MoE(-19%) asymmetry is fully explained.]
+### D-09 — An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not. [SCOPE AMENDED by prereg #67: the 0.72x was the SPLIT FLAGSHIP cell. The dense all-in-VRAM cell measures POSITIVE: +11% on novel code at K=2/79% acceptance (0.5B drafting the 7B), negative on prose, negative at K>=4. Shipped as scoped advice; the larger prize needs a ~20x-faster drafter class that does not exist locally.] [RECONFIRMED at optimal draft lengths (prereg #68 inline, weights/data/prereg68_moe_draft.log): K=1 gives 77% acceptance and still 0.81x; K=2 0.74x. The expert-union tax makes verify batches cost more than sequential decode on the CPU-expert path - MoE draft speculation is closed at EVERY draft length, and the dense(+11%)-vs-MoE(-19%) asymmetry is fully explained.] [MAP COMPLETED by prereg #69 (weights/data/prereg69_dense_split.log): the third and last regime, DENSE SPLIT, is the BEST cell: +33.5% at K=2 (5.54 -> 7.40 tok/s, 76% acceptance, novel code, 0.5B drafting the 14B) with the DRAFT ON CPU (-ngld 0, zero VRAM cost) - the K+1 verify batch reads each CPU-resident layer once, so the CPU share amortizes. Model-draft speculation map, final: dense split 1.335x > dense AIV 1.11x > MoE split 0.74-0.81x. The K-cliff is HARDER on split (every K>=3 at or below baseline; K=3 measured 0.64x, deterministic) because the CPU draft spends the same DDR4 bandwidth the amortization saves - the staked K-shift (P-3) MISSED and the mechanism story was revised accordingly in the prereg.]
 
 **Magnitude:** 0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here. BUDGET SWEEP (prereg #42, novel content, req1 fresh server): base 19.39 (code) / 21.61 (prose); n-max 3 -> 15.95 / 9.52; n-max 8 -> 14.67 / 6.48; n-max 16 -> 10.58 / 3.91. MONOTONE DOWN, with acceptance collapsing 75->57->35% (code) and 36->18->9% (prose).
 
-`refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED); prereg #67 (the dense-target cell, full K-curve) · wired into: `quantprobe/plan.py:speculation_advice`
+`refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED); prereg #67 (the dense-target cell, full K-curve) · wired into: `quantprobe plan.py dense_draft_note (both cells: AIV +11% K=2, split +33% K=2 -ngld 0) + speculation_advice`
 
 ### D-10 — Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself. [INDEPENDENTLY REPLICATED (E-06): 0 drafts on a novel prompt, different model (117B), different hardware (3090), different fork. Also now a TOP-LINE note in plan output - the buried version cost the replicator a debugging session.]
 
@@ -513,7 +519,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `speculative` · evidence: prereg #62 (the sweep + the shipped fix) · wired into: `prereg #61 scoring; candidate next single-session sweep`
 
-### U-15 — Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it. [CLOSED-SHIPPED v1.20.1: FORMAT_EBW ladder in spec.py prices GPU eta per format on the calibrated path; plus the size-class guard (a 0.5B anchor never prices a 7B). Ladder median error 14.8% -> 8.6%, worst 34% -> 14.3%, DS-Lite quasi-OOS at -2.5%. Gated off presets by the ratchet test.]
+### U-15 — Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it. [CLOSED-SHIPPED v1.20.1: FORMAT_EBW ladder in spec.py prices GPU eta per format on the calibrated path; plus the size-class guard (a 0.5B anchor never prices a 7B). Ladder median error 14.8% -> 8.6%, worst 34% -> 14.3%, DS-Lite quasi-OOS at -2.5%. Gated off presets by the ratchet test.] [CORRECTED v1.20.2: the 8.6% median quoted here leaned on the inconsistent anchor boost the consistency audit removed; the principled self-consistent column is ~12% median with every big-model miss an under-promise. MACHINE_LADDER.md carries the correction. The 14.8%->8.6% sentence stands only as the history of what v1.20.1 briefly published.]
 
 **Hypothesis:** eta_format(target) = eta_format(anchor) x ladder_ratio from kernelprobe measurements
 
@@ -536,6 +542,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** both IQ arms move inside the band from the warned side (under-promise)
 
 `untested` · `speculative` · wired into: `prereg #66 IQ arms; candidate next release`
+
+### U-18 — quantprobe fetch silently skips the download when a same-named file exists ('already complete' checks size only), which handed prereg #69 a June-era 0.5B GGUF whose tokenizer metadata mismatched the bartowski 14B target and crashed llama-speculative at draft load ('invalid vector subscript'). Three runs lost before the collision was spotted.
+
+**Hypothesis:** add --force and/or verify the remote SHA/etag instead of size-only; warn when the local file predates the repo revision
+
+**Predicted effect (staked):** fetch collisions become visible instead of silent; draft-pair mismatches caught before a crash
+
+`untested` · `observed` · wired into: `candidate next release (with C-11, U-17, U-06)`
 
 ## External work to study
 

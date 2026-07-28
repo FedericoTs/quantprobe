@@ -68,9 +68,12 @@ pip install quantprobe
 ```bash
 quantprobe auto qwen3-coder --tps 15 --run     # ONE command: bits chosen, quant fetched, chat running
 quantprobe hw                                  # what the tool sees (override anything with flags)
+quantprobe calibrate                           # measure this machine once: RAM stream, disk, GPU clocks
 quantprobe plan --gguf your-model.gguf         # THIS machine + THAT file: nothing else to type
 quantprobe bench --gguf your-model.gguf        # predicted vs measured, zero configuration
 ```
+
+**Measure, don't assume.** `calibrate` reads your machine's real constants — RAM stream bandwidth, disk, GPU sustained clocks, plus (with `--model your.gguf` and llama.cpp installed) two short anchor benchmark runs on your own file — and saves them to `~/.quantprobe/calibration.json`. Every later `plan`/`bench`/`optimize`/`auto` uses them automatically, tagged `[calibrated]`. Once the anchor runs exist, predictions are **anchored** by default — on the pre-registered gate (prereg #64) that cut leave-one-out median error from **19% to 5.8%** across 5 arms — and `plan` says so with an `anchored: CPU x…, GPU x…` provenance line. `--no-anchors` restores the plain law.
 
 Presets and explicit flags still work exactly as before — use them to estimate a machine you're NOT running on.
 
@@ -262,13 +265,14 @@ quantprobe drives **stock llama.cpp** and emits its flags. llama.cpp occasionall
 | `probe` | **measures your model** — which layers break under low-bit quantization (quality, not speed) | measured (minutes to hours by model size; estimated up front) |
 | `bench` | **measures your machine** — real tok/s vs the law's prediction, side by side | measured (llama-bench) |
 
-`--machine` is never learned from `probe` and nothing is cached between them. The only dynamic input: passing `--gguf` calibrates bytes-per-token to your actual file size on disk.
+`--machine` is never learned from `probe`. One thing *is* persisted: `quantprobe calibrate` saves measured constants (RAM stream, disk, GPU boost health, optional anchor runs) to `~/.quantprobe/calibration.json`, and `plan`/`bench`/`optimize`/`auto` use them automatically, tagged `[calibrated]`. Passing `--gguf` additionally calibrates bytes-per-token to your actual file size on disk.
 
 ## What each command does
 
 | command | needs llama.cpp? | what it does |
 |---|---|---|
 | `hw` | no | detect THIS machine (RAM/GPU/disk, source-tagged); used automatically when you pass no flags |
+| `calibrate` | only for anchor runs | measure THIS machine (RAM stream, disk, GPU sustained clocks; optional anchor runs on your own GGUF) — saved, used automatically, tagged `[calibrated]` |
 | `plan` | no | predict decode speed + best placement for a model on your machine |
 | `target` | no | inverse: give a tok/s target, get the smartest model + a speed↔intelligence ladder |
 | `optimize` | no | cheapest path to a target speed: bits × placement × KV × hardware searched over the law, measured lever gates |

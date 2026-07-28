@@ -3,21 +3,6 @@
 Live debt, ordered by what it would cost a user. Every item names its evidence; nothing here is a
 hunch. Items are removed when closed by measurement, not when they stop feeling urgent.
 
-## A. Contradicted by external evidence — fix before the next release
-
-**A1. GLM-family `kvp` is 30–60× too large.** `MODELS["glm-744b"]["kvp"]=188416` is `[est]` and
-contradicted by an external 4×-cluster run whose decode is *flat* across 32× of context. At our
-value the KV read at 262K would be 3× the weight bytes and decode would collapse; it doesn't. We
-therefore predict a configuration that demonstrably runs **cannot fit**, and fall to disk-streaming
-at 12.6 tok/s against a measured 103. Close it by reading GLM-5.2's attention config, **not** by
-back-solving from the datapoint. → `weights/data/external_glm52_4x6000.md`
-
-**A2. "Evict KV" advice sits on a VRAM cliff.** Same command, 193–195 tok/s with ~713 MiB of
-desktop VRAM held, 437–438 with ~465 MiB. Four runs each side, error bars <0.5%. We ship this as
-the long-prompt recommendation quoting 391.72 — a user with a browser open may get a value *worse
-than every other frontier point*. Find the cliff edge by occupying VRAM in steps, then gate or
-withdraw. → `weights/data/prereg22_asymmetric_topk.log`
-
 ## B. Unvalidated foundations
 
 **B1. 82% of shipped presets have never been run.** 2 of 17 machines are `[measured]`, 1 is
@@ -31,17 +16,24 @@ regardless of interconnect. ds4 publishes a 5× spread from the link alone on id
 constant is wrong — one is +12%, the other unscoreable — so this is untested, not broken.
 → `weights/data/external_glm52_three_clusters.md`
 
-**B3. All-in-VRAM decode has no point prediction — only a measured floor.** Efficiency varies
-0.32–0.56 across 8 models; six candidate explanations refuted (fixed overhead, clock state,
-bytes-per-token, monotone-in-bits, per-format constant, bytes-weighted tensor mix — the last
-forces a negative efficiency for Q5_K when solved). Shipped as a one-sided bound: real ≥ 0.90×
-predicted, 13/13, falsifiable by any single measurement below it. Within one architecture the
-pattern is monotone in the dominant tensor type; across architectures it does not transfer.
-Needs a second card.
+**B3. All-in-VRAM point predictions exist only on the calibrated path.** The mechanism behind the
+0.32–0.56 efficiency spread is no longer open: format unpack instruction cost plus metadata
+application density (L-15/L-16, preregs #52/#53/#56/#57). v1.20.1 prices GPU decode per format on
+the calibrated path (`spec.FORMAT_EBW` scaled by the anchor ratio), and the ladder's
+self-consistent column lands at ~12% median with every big-model miss an under-promise
+(v1.20.2 correction, `MACHINE_LADDER.md`). What remains: the uncalibrated preset path still ships
+only the one-sided floor (real ≥ 0.90× predicted, 13/13 — the all-in-VRAM ratchet gates format
+efficiency off presets deliberately), and every efficiency number in the ladder comes from one
+Pascal card. Needs a second card for that half.
 
-**B4. In-VRAM anchors were measured at inconsistent GPU temperatures.** The same file measured
-17.53 → 17.03 → 16.89 as the card warmed to 72 °C, error bars ±0.02. Re-measure the `VRAM_GAPS`
-set thermally settled before any of them justifies a constant.
+**B4. The boost-state check has been exercised on exactly one card.** The anchor drift that used
+to sit here (17.53 → 17.03 → 16.89 on the same file) closed by measurement, and not the way the
+item predicted: the driver was a stuck GPU boost state — SM at 1506 MHz on a cool, quiet box
+against 1835+ healthy — not temperature, cleared by reboot, with the original calibration
+reproducing to 0.5% afterwards (preregs #60/#61, C-10). `calibrate` now measures sustained clocks
+(tg128, 1 s sampling, 3-sample minimum) and flags the stuck state. What remains: one consumer
+Pascal card is the entire evidence base — whether other cards drift this way, or in ways the
+check misses, is unmeasured.
 
 ## C. Open experiments
 
@@ -51,8 +43,13 @@ perplexity cost attaches to ingestion or only to generation**, via slot save/res
 and a k=8 server. Kill if within 5 points of the all-k=4 arm. If it survives it ships as an
 **upstream PR against a pinned SHA**, never a fork. → `preregistrations/2026-07-27-asymmetric-topk-prefill.md`
 
-**C2. Dense partial offload has never been measured.** Declared in `audit.py:UNMEASURED_PLACEMENTS`.
-Needs a dense model that overflows 6 GB.
+**C2. Dense partial offload: measured in #66, and the fit math at depth is wrong.** The tool's
+emitted 26/28-layer split on the 7B predicted 15.0 tok/s at 16k depth and measured 6.34 — −58%,
+the one hard miss of that program. The 4k arm on the same model measured −0.9%, so the KV *term*
+is right; the placement fit math over-commits VRAM at depth (compute buffer and KV not counted
+jointly). Opened as C-11, fix queued; the rows live in `MACHINE_LADDER.md`. The
+`audit.py:UNMEASURED_PLACEMENTS` reason string still says never-measured and needs the same
+update.
 
 **C3. Streaming-tier prefetch gap, now quantified.** Our disk tier models naive LRU and is ~7×
 pessimistic against ds4's prefetching engine (0.7 vs ~4.8 tok/s). Belongs in the README

@@ -65,7 +65,7 @@
   <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Interactive calculator predicting LLM decode speed and memory fit from the tiered decode law, with charts placing your machine among the validated measurements and showing the speed-memory trade-off.</h2>
   <div class="hd">
     <h1>Will it run — and how fast?</h1>
-    <p>Pick a model, a bit-width, and a machine. This calculator applies the <strong>tiered decode law</strong> — fitted and validated on measurements from 7B to 744B, including two pre-registered hardware tests — to predict decode speed, memory fit, and quality cost <em>before you download a single weight</em>.</p>
+    <p>Pick a model, a bit-width, and a machine. This calculator applies the <strong>tiered decode law</strong> — fitted and validated on measurements from 7B to 753B, including two pre-registered hardware tests — to predict decode speed, memory fit, and quality cost <em>before you download a single weight</em>.</p>
     <div class="law">tok/s = η(tier) × bandwidth ÷ active-bytes-per-token</div>
   </div>
   <div class="cols">
@@ -109,7 +109,8 @@
       <div class="sect">Speed ⇄ memory trade-off (bit-width sweep, capacity cliffs marked)</div>
       <div class="chartbox"><canvas id="tradeC" height="260" role="img" aria-label="Chart of predicted speed versus model memory across bit widths, showing the cliff where the model stops fitting in RAM.">Lower bits: less memory and more speed, until quality cost; past RAM capacity, speed falls off a cliff.</canvas></div>
       <div class="foot">
-        Quality cost = perplexity gap-ratio vs fp16 with the <strong>depth-aware recipe</strong> (probe the fragile band, protect it). η bands are measured: VRAM/GPU per class · RAM ≈0.62 dense / ≈0.38 MoE · disk ≈0.95. Validation: 16B MoE 15.6 tok/s, 30B hybrid <strong>predicted 19 → measured 19.30 ± 0.88</strong>, 110B-from-SATA 0.19 (pre-registered 0.2–0.3), RAM overclock ×1.52 (pre-registered ×1.41+), colibri's published 744B tiers inside the same bands. Hybrid figures assume partitioned residency (<code>--no-mmap</code> + <code>-ot exps=CPU</code>). Estimates ±25%. <strong>v1.1 context term:</strong> each generated token re-reads the whole KV cache from the tier KV lives on (η<sub>kv</sub>≈0.7, single-point calibration: measured 20.02→16.12 tok/s at depth 16384; term prompted by u/RogerAI--fyi). MLA models cache ~10× less; SWA long-context slopes use global layers only [est].
+        Quality cost = perplexity gap-ratio vs fp16 with the <strong>depth-aware recipe</strong> (probe the fragile band, protect it). η bands are measured: VRAM/GPU per class · RAM ≈0.62 dense / ≈0.38 MoE · disk ≈0.95. Validation: 16B MoE 15.6 tok/s, 30B hybrid <strong>predicted 19 → measured 19.30 ± 0.88</strong>, 110B-from-SATA 0.19 (pre-registered 0.2–0.3), RAM overclock ×1.52 (pre-registered ×1.41+), colibri's published 744B tiers inside the same bands. Hybrid figures assume partitioned residency (<code>--no-mmap</code> + <code>-ot exps=CPU</code>). Estimates ±25% off-VRAM; all-in-VRAM is one-sided — measured ≥0.90× the prediction every time, typically 1.1–1.8× faster. <strong>v1.1 context term:</strong> each generated token re-reads the whole KV cache from the tier KV lives on (η<sub>kv</sub>≈0.7, single-point calibration: measured 20.02→16.12 tok/s at depth 16384; term prompted by u/RogerAI--fyi). MLA models cache ~10× less; SWA long-context slopes use global layers only [est].
+        <br>Preset bandwidths are estimates — <code>pip install quantprobe &amp;&amp; quantprobe calibrate</code> measures your machine (RAM stream, disk, GPU sustained clocks) and anchors predictions by default (pre-registered leave-one-out gate #64: median error 19% → 5.8% across 5 arms; <code>--no-anchors</code> disables).
         <br>By <a href="https://x.com/federico_sciuca">@federico_sciuca</a> — laws, probes, recipes and every raw log in the repo.
       </div>
     </div>
@@ -191,7 +192,8 @@
     if (moe && H.vc>0){ const vN=ne*AB/8*1.08+1.2+kvGb, rN=size-ne*AB/8*1.08;
       if (vN<=H.vc*0.95 && rN<=ra) cfgs.push({n:"hybrid: attention→VRAM, experts→RAM",
         tps:1/(actNe/(H.geta*H.vb)+actEx/(etaR*H.rb)+kvGb/(ETA_KV*H.vb)), warn:rN>ra*0.85?"RAM boundary":null}); }
-    // MoE partial expert offload — measured +34.7% decode / ~2-3x prefill (pre-registration #13).
+    // MoE partial expert offload — measured +12.4% decode (v1.10.2 correction; the original
+    // +34.7% control lacked --no-mmap) / ~2-3x prefill (pre-registration #13).
     // Mirrors plan.py: 1 GB desktop reserve because overcommitting VRAM is a -29% cliff, not a taper.
     if (moe && H.vc>0){ const vNeed=ne*AB/8*1.08+1.2+kvGb, DESK=1.0;
       const vFreeS=H.vc*0.90-vNeed-DESK, expertsGb=size-ne*AB/8*1.08;
@@ -322,7 +324,7 @@
     $("chips").innerHTML = '<span class="chip ok">'+best.n+'</span>'+(e.moe?'<span class="chip ok">MoE</span>':'<span class="chip warn">dense</span>')+(best.warn?'<span class="chip warn">'+best.warn+'</span>':'');
     $("verdict").textContent =
       best.n.indexOf("hybrid")>=0 ? "Always-active weights served at VRAM speed, experts at RAM speed — the placement the law recommends (needs --no-mmap)." :
-      best.n==="all in VRAM" ? ("Fully GPU-resident — fastest tier." + (bits<4.5 ? " But it ALREADY fits: measured on a Pascal card, the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. Once a model fits in VRAM, decode stops being bandwidth-bound and a lower quant buys almost nothing — take the highest bits that still fit (pre-registration #16)." : "")) :
+      best.n==="all in VRAM" ? ("Fully GPU-resident — fastest tier." + (bits<4.5 ? " But it ALREADY fits: measured on a Pascal card, the same 7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. Once a model fits in VRAM, decode stops being bandwidth-bound and a lower quant buys almost nothing — take the highest bits that still fit (pre-registration #16). One lever survives the fit: on pre-Ampere GPUs prefer Q4_0 over Q4_K_M — +19% decode measured, speed-only (Q4_K_M is higher quality per byte), unverified on Ampere+ — and never Q2_K when a 4-bit file fits (pre-registrations #52/#53)." : "")) :
       best.n.indexOf("split")>=0 ? "Dense partial offload: each tier serves its share of layers." :
       best.n.indexOf("CPU")>=0 ? (e.moe?"CPU-served MoE: only the active experts move per token.":"CPU-served dense: every weight moves every token.") :
       "Bigger than RAM: cold experts re-stream from disk each token.";

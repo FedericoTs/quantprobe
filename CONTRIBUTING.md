@@ -3,7 +3,11 @@
 The most valuable contribution is a **measurement**. This project runs on falsifiable numbers.
 
 ## Contribute an η data point (10 minutes)
-Easiest path: `quantprobe bench ... --contribute` prints a pre-filled, opt-in issue (you review before submitting; nothing auto-sent). Or manually: run `quantprobe bench --gguf <model> --model <preset> [--vram N --vram-bw N --ram N --ram-bw N --disk-bw N]`
+Run `quantprobe calibrate` first: it measures your RAM stream, disk, and GPU sustained clocks
+(plus optional CPU/GPU anchor runs on your own GGUF), and `bench` picks the results up
+automatically — so your point carries measured bandwidths, not spec-sheet numbers. Hand-typed
+spec values are exactly the input class behind the first external replication's 9× miss (E-06).
+Then the easiest path: `quantprobe bench ... --contribute` prints a pre-filled, opt-in issue (you review before submitting; nothing auto-sent). Or manually: run `quantprobe bench --gguf <model> --model <preset> [--vram N --vram-bw N --ram N --ram-bw N --disk-bw N]`
 and open an issue with the "η data point" template: your hardware, the model/bits, predicted vs measured.
 Points that land outside the bands are MORE valuable than ones that confirm them.
 
@@ -13,7 +17,7 @@ Run `quantprobe probe --gguf <model-f16.gguf> --eval wiki.test.raw` on a model f
 A model whose fragile end breaks the current pattern is a finding, not a failure.
 
 ## Code
-PRs welcome for the `quantprobe` package (plan/target/fetch/quantize/probe/run/bench/dashboard) (keep `python tests/smoke.py` green). For claims/laws,
+PRs welcome for the `quantprobe` package (plan/calibrate/optimize/auto/target/fetch/quantize/probe/run/bench/dashboard) (keep `python tests/smoke.py` green). For claims/laws,
 open an issue with data first — the bar for prose is measurements.
 
 ## The method: measure, stake, wire, audit

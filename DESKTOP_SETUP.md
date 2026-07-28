@@ -1,12 +1,14 @@
 # Desktop setup — restore the full project + continue the conversation
 
 This repo contains **everything except the 67 GB of model weights** (deleted; re-downloadable
-per `weights/DATA_MANIFEST.md`) and includes a backup of the **Claude conversation + memory**
-(`_session_archive.zip`). Follow these steps on the desktop to pick up exactly where we left off.
+per `weights/DATA_MANIFEST.md`). The **Claude conversation + memory** backup
+(`_session_archive.zip`) was moved out-of-band during the original transfer and was never
+committed — steps 3 and 6 below are the historical record of that one-time move and cannot be
+run from a fresh clone. Follow the remaining steps on the desktop to pick up where we left off.
 
 ## 1. Clone the repo (code + full git history + test results)
 ```powershell
-gh repo clone FedericoTs/<REPO_NAME> "lossless compression/evo-compress"
+gh repo clone FedericoTs/quantprobe "lossless compression/evo-compress"
 cd "lossless compression/evo-compress"
 ```
 > Put it under a folder named `lossless compression` (the parent), because Claude Code keys its
@@ -15,12 +17,16 @@ cd "lossless compression/evo-compress"
 ## 2. Recreate the Python environment (do NOT copy the old `.venv`)
 ```powershell
 python -m venv .venv
-.venv\Scripts\pip install -U pip
-.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python -m pip install -U pip
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python -m pip install -e .
 ```
-(Needs Python 3.13. Key deps: torch, transformers, safetensors, numpy, zstandard.)
+(Needs Python 3.13. Key deps: torch, transformers, safetensors, numpy, zstandard.) The last line
+installs the `quantprobe` CLI itself — requirements.txt alone does not: it pulls `gguf` and
+`requests` per pyproject.toml and exposes the `quantprobe` entry point.
 
-## 3. Restore the Claude conversation + memory  ← this is what lets you CONTINUE the chat
+## 3. (historical — one-time transfer) Restore the Claude conversation + memory
+The zip this step restores was transferred out-of-band and is not in the repo; kept for the record.
 The conversation/memory lives **outside** the project, in `~/.claude/projects/<path-hash>/`.
 The folder name encodes the project's absolute path, with every `:`, `\`, and space replaced by `-`.
 
@@ -57,8 +63,9 @@ Launch Claude Code with the working directory at `…/lossless compression/evo-c
 parent). With step 3 done, the prior conversation + memory are available — say "continue" and
 we pick up from the codec discovery loop and the GPU scale plan.
 
-## 6. (optional) Clean up
-After confirming everything works you can remove the one-time transfer artifact:
+## 6. (historical — nothing to do) Clean up
+The transfer artifact was never committed to the public repo; from a fresh clone there is
+nothing to remove. The original one-time cleanup was:
 ```powershell
 git rm _session_archive.zip && git commit -m "remove transfer artifact"
 ```
