@@ -125,3 +125,35 @@ shows the blocking is already varied for some cases), not a rewrite.
 attribution now rests on an untested claim about blocking. It must be tested by varying
 `rows_per_cuda_block` for Q2_K in-tree and measuring, **before** any of this is offered upstream.
 This is the tenth mechanism this project has named and the tenth time a control moved it.
+
+---
+
+## FINAL: the blocking hypothesis is refuted too (#55). This document's conclusion is now closed.
+
+Tested in-tree by forcing `small_k` on for Q2_K (`GGML_MMVQ_SMALL_K=1`), validity-gated on the
+blocking actually changing (`rows/block 1->4`, `nwarps=4`):
+
+| Qwen2.5-7B Q2_K, all-in-VRAM | tg128 |
+|---|---|
+| stock (multi-row disabled) | 22.25, 22.06 (position control) |
+| forced multi-row ON | **17.33 — 22% SLOWER** |
+
+And decisively: **Q4_0, at 88.5% of its kernel ceiling, also runs at 1 row per block.** Blocking
+never distinguished the two formats. The framing in the CORRECTION section above — "llama.cpp
+forfeits row reuse, which costs asymmetric formats an extra dp4a per row" — is **wrong in its
+causal half** and is withdrawn.
+
+### The account that survives, and it is complete
+
+**Q2_K issues 8 dp4a per 16 weights; Q4_0 issues 4.** On a card where ALU is the binding constraint
+that is the entire explanation for 46.8% vs 88.5% of ceiling. No blocking story is needed and none
+is correct.
+
+The two possible fixes are **mutually exclusive**: removing Q2_K's extra dp4a requires amortising a
+row-invariant term across rows, which requires multi-row blocking, which is 22% worse on this
+hardware. **Upstream's `slow_pascal` carve-out chose the better of the two, and this project
+validated that choice independently rather than overturning it.**
+
+**Status: the ~1.9x is a real ceiling and an unclaimable one.** Not a bug, not a missed
+optimization — a structural property of Q2_K's asymmetry under a kernel structure that is already
+locally optimal. Nothing here should be filed upstream.
