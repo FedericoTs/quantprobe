@@ -1,0 +1,38 @@
+=== #66 predictions, ALL captured before any measurement (idle 139MHz/29C at capture) ===
+--- ctx-depth: 7B Q4_K_M AIV at d4096 and d16384 ---
+  *   18.8 tok/s  all in VRAM
+--- ctx-depth: flagship split at d4096 ---
+  *   15.4 tok/s  split experts: 24%->VRAM, rest->RAM   [pins 8GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+--- 35B APEX-Mini 13.3GB (RAM boundary) ---
+  *   17.7 tok/s  split experts: 20%->VRAM, rest->RAM   [pins 9GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      17.0 tok/s  hybrid: attention->VRAM, experts->RAM   [RAM boundary - needs --no-mmap; can be unstable; pins 12GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      16.8 tok/s  stream from disk (VRAM+RAM expert cache)   [needs an expert-caching runtime (ktransformers/colibri-class) - stock llama.cpp gets the RAM-cache row]
+--- Coder-30B Q3_K_M 14.7GB (RAM edge) ---
+  *   16.1 tok/s  split experts: 21%->VRAM, rest->RAM   [pins 11GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      13.0 tok/s  stream from disk (VRAM+RAM expert cache)   [needs an expert-caching runtime (ktransformers/colibri-class) - stock llama.cpp gets the RAM-cache row]
+       5.1 tok/s  stream from disk (cold experts)   [exceeds RAM - capacity demo]
+--- DeepSeek IQ2_XS 5.97GB (IQ warning arm) ---
+  *   28.0 tok/s  split experts: 58%->VRAM, rest->RAM
+      21.8 tok/s  hybrid: attention->VRAM, experts->RAM
+      14.1 tok/s  pure CPU (GPU idle)
+  WARNING: this file is 96% I-quant (IQ*) tensors and this placement puts weights
+--- Laguna 117B Q2_K_XL 39.7GB (DISK tier - never measured; U-06 warns predictions may be 7x off) ---
+  *    2.1 tok/s  stream from disk (VRAM+RAM expert cache)   [needs an expert-caching runtime (ktransformers/colibri-class) - stock llama.cpp gets the RAM-cache row]
+       1.6 tok/s  stream from disk (cold experts)   [exceeds RAM - capacity demo]
+  run it:  llama-server -m model.gguf -ngl 99 + runtime-managed expert cache -b 2048 -ub 2048 --threads 4
+--- 7B Q4_K_M at ctx 16384 (full rows) ---
+  *   15.0 tok/s  split: 26/28 layers->VRAM, rest->RAM
+       4.5 tok/s  pure CPU (GPU idle)
+--- emitted flags for the new arms ---
+[Qwen3.5-35B-A3B-APEX-Mini.gguf]
+[quantprobe] placement: split experts: 20%->VRAM, rest->RAM  (predicted 17.7 tok/s, pins 9GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide)
+[quantprobe] exec: llama-server -m D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-APEX-Mini.gguf -ngl 99 -ot blk\.(7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39)\.ffn_.*_exps\.=CPU --no-mmap --threads 4 
+[Qwen3-Coder-30B-A3B-Instruct-Q3_K_M.gguf]
+[quantprobe] placement: split experts: 21%->VRAM, rest->RAM  (predicted 16.1 tok/s, pins 11GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide)
+[quantprobe] exec: llama-server -m D:/evo-compress-data/gguf/Qwen3-Coder-30B-A3B-Instruct-Q3_K_M.gguf -ngl 99 -ot blk\.(9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU --no-mmap --threads 4 
+[DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf]
+[quantprobe] placement: split experts: 58%->VRAM, rest->RAM  (predicted 28.0 tok/s)
+[quantprobe] exec: llama-server -m D:/evo-compress-data/gguf/DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf -ngl 99 -ot blk\.(15|16|17|18|19|20|21|22|23|24|25|26)\.ffn_.*_exps\.=CPU --no-mmap --threads 4 
+[Laguna-S-2.1-UD-Q2_K_XL.gguf]
+[quantprobe] placement: stream from disk (cold experts)  (predicted 1.6 tok/s, exceeds RAM - capacity demo)
+[quantprobe] exec: llama-server -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 --threads 4 
