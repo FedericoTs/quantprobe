@@ -58,3 +58,54 @@ Only if BOTH hold does an in-tree `vec_dot_q4_K` patch get written and A/B'd on 
 Q4_K_M — target: 22.72 toward Q4_0's 26.87 tok/s. e2e claims wait for that measurement.
 
 **Wired into:** pending; `findings/REGISTER.json:U-13` cites this either way.
+
+---
+
+## Scored (2026-07-28, kernelprobe run in session log)
+
+**Verdict: P-2 FAILS, P-1 fails with it, P-3 passes, P-4 fails informatively. THE KILL RULE
+FIRES on its first gate: the min tax does not bind at real geometry. U-13 closed as
+refuted-by-oracle. Twelfth mechanism this project has named; twelfth moved by a control.**
+
+| arm (mmvq geometry: 1 row/block, 128 threads, global cached x) | GB/s | GW/s |
+|---|---|---|
+| (i) sum-via-dp4a (llama.cpp K-quant pattern) | 130.7-132.6 | 232-236 |
+| (ii) sum-via-side-buffer (the proposed fix) | 111.5 | 198 |
+| (iii) symmetric control (no min term) | 131.4-133.1 | 234-237 |
+| (iv) packed nibble scale+min decode | 125.4 | 223 |
+
+- **P-2 MISS: the min-term dp4a costs 0.9-1.8% at real geometry** — it hides completely in
+  memory latency at 1 row/block. The "8 dp4a where 4 suffice" instruction count is real in the
+  source and IRRELEVANT to throughput. Counting instructions is not measuring them.
+- **P-1 MISS (moot but recorded): the side buffer is 15-16% SLOWER.** Adding cached loads to a
+  latency-bound loop hurts; recomputing on the ALU port is free. The "LD/ST dual-issue" story
+  was wrong in the direction that matters.
+- **P-3 PASS:** arms i and ii bitwise identical, so the null is a real null.
+- **P-4 MISS, informatively:** mmvq geometry (132.6) BEAT the 768-row smem-staged L1d (128.7).
+  llama.cpp's 1-row structure was never a penalty either; block-level activation reuse is worth
+  nothing here. Global cached reads of a shared activation vector are as good as smem.
+- **Extension (iv): packed metadata decode costs 4.1%** at real geometry — not the 12-19% the
+  e2e format gaps need.
+
+### What this refutes beyond the stake — including a mechanism shipped earlier TODAY
+
+Every simplified cost model of the K-quant family is HEALTHY at real geometry (125-133 GB/s vs
+real Q4_K_M 106.4, real Q2_K 65.4). Therefore:
+
+1. **#52's mechanism sentence is overclaimed.** "K-quants decode a 6-bit scale AND min before
+   any dot product" is true of the source and now measured to cost ~4-6%, not the 12-19% (Q4_K)
+   or ~2x (Q2_K) observed e2e. The MEASURED FACTS of #52/#53 stand untouched (+19% Q4_0, Q2_K
+   dominated); their attributed cause does not. `plan.py format_advice` text corrected in the
+   same commit as this score.
+2. **The brainstorm's H-REOPEN/N1 program is closed**, kill honoured: no in-tree patch, no
+   upstream filing, on either the blocking route (#55) or the side-buffer route (this).
+3. **What remains as suspects for the real K-quant deficit**, none yet tested: (a) register
+   pressure/occupancy of the real vec_dot implementations (complex array indexing, more live
+   state); (b) the real interleaved superblock LAYOUT WALK - partial coalescing across the
+   144-byte blocks - versus these oracles' clean planar layouts; (c) something in mmvq's
+   blocks_per_iter row walk. The next oracle is an arm that reproduces Q4_K's actual byte
+   arrangement and load indexing at matched arithmetic.
+
+**Wired into:** `findings/REGISTER.json:U-13` (closed, refuted-by-oracle) · `D-21` (min-term
+and metadata-decode taxes acquitted at real geometry) · `L-15` (mechanism narrowed: the format
+effect is real, its instruction-count explanation is dead; access pattern/occupancy now lead).

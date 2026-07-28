@@ -428,6 +428,66 @@ __global__ __launch_bounds__(128) void k_matvec_q4_dp4a_warp(
     }
 }
 
+// ==================== L1m: prereg #56 — the K-quant min tax at llama.cpp's REAL decode geometry
+// One output row per CUDA block (mmvq's rows_per_cuda_block=1 at decode, #55), 128 threads,
+// activations read from GLOBAL memory (L1/L2-cached) — no smem staging, because at 1 row/block
+// there is nothing to amortize it over. Three arms on the same 4.5-bit buffer:
+//   (i)   sums recomputed via dp4a per group per row   <- llama.cpp's asymmetric K-quant pattern
+//   (ii)  sums loaded from a per-token side buffer     <- the proposed fix (2 KB, L2-hot)
+//   (iii) no offset work at all                        <- symmetric control (Q4_0-like)
+// Arms i and ii are mathematically identical (checked); iii is a throughput control only.
+template <int ARM>
+__global__ __launch_bounds__(128) void k_mmvq_geom(
+        const uint8_t * __restrict__ base, const int * __restrict__ xq,
+        const int * __restrict__ sums4, float sx, float * __restrict__ y, int nmat)
+{
+    const int mat = blockIdx.x / ROWS;
+    const int r   = blockIdx.x % ROWS;
+    const uint8_t  * row = base + (size_t)mat * MAT_BYTES + (size_t)r * ROW_BYTES;
+    const uint32_t * q   = (const uint32_t *)row;
+    const __half   * sc  = (const __half   *)(row + QB_PER_ROW);
+
+    float acc = 0.0f;
+    #pragma unroll
+    for (int p = 0; p < 2; p++) {
+        const int i  = threadIdx.x + p * 128;
+        const int sb = i >> 5, l = i & 31;
+        const uint32_t v = q[i];
+        const int xlo = xq[sb*64 + l];
+        const int xhi = xq[sb*64 + l + 32];
+        const int dlo = __dp4a((int)( v       & 0x0F0F0F0Fu), xlo, 0);
+        const int dhi = __dp4a((int)((v >> 4) & 0x0F0F0F0Fu), xhi, 0);
+        int slo, shi;
+        if (ARM == 0) {                       // (i) recompute sums on the ALU port, per row
+            slo = __dp4a(0x01010101, xlo, 0);
+            shi = __dp4a(0x01010101, xhi, 0);
+        } else if (ARM == 1) {                // (ii) cached loads from the per-token side buffer
+            slo = sums4[sb*64 + l];
+            shi = sums4[sb*64 + l + 32];
+        } else {                              // (iii) symmetric control: no offset work
+            slo = 0; shi = 0;
+        }
+        if (ARM == 3) {                       // (iv) K-quant-style PACKED metadata decode:
+            // same math as (i) but the scale arrives nibble-packed with a min and must be
+            // shift/masked out and rescaled by superblock halves - the Q2_K/Q4_K metadata cost.
+            const uint8_t p1 = (uint8_t)sc[sb*8 + (l >> 3)];         // reuse buffer as packed bytes
+            const uint8_t p2 = (uint8_t)sc[sb*8 + (l >> 3) + 4];
+            const float d1 = (float)(p1 & 0xF) * 0.05f, m1 = (float)(p1 >> 4) * 0.01f;
+            const float d2 = (float)(p2 & 0xF) * 0.05f, m2 = (float)(p2 >> 4) * 0.01f;
+            acc += (float)dlo * d1 - m1 * (float)slo;
+            acc += (float)dhi * d2 - m2 * (float)shi;
+        } else {
+            acc += (float)(dlo - 8*slo) * __half2float(sc[sb*8 + (l >> 3)]);
+            acc += (float)(dhi - 8*shi) * __half2float(sc[sb*8 + (l >> 3) + 4]);
+        }
+    }
+    for (int off = 16; off > 0; off >>= 1) acc += __shfl_down_sync(0xffffffff, acc, off);
+    __shared__ float warp[4];
+    if ((threadIdx.x & 31) == 0) warp[threadIdx.x >> 5] = acc;
+    __syncthreads();
+    if (threadIdx.x == 0) y[blockIdx.x] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
+}
+
 static double bench(void (*launch)(void*), void* arg, int iters, double bytes) {
     cudaEvent_t a, b; CHECK(cudaEventCreate(&a)); CHECK(cudaEventCreate(&b));
     launch(arg); CHECK(cudaDeviceSynchronize());              // warm
@@ -776,6 +836,49 @@ int main(int argc, char** argv) {
         printf("%-26s %12.1f %11.2f %10.2f   %6.2f GW/s  ( 4.5 bit, GATHERED 1-in-%d)\n",
                "L2d q4 dp4a GATHER (MoE)", gg, gg / spec, gg / l0, gg / 0.5625, gather_g);
         CHECK(cudaFree(d_xq));
+    }
+
+    // ---- L1m: prereg #56, the min-tax arms at 1-row-per-block geometry.
+    {
+        float mx = 0; for (int i = 0; i < K; i++) mx = fmaxf(mx, fabsf(hx[i]));
+        const float sxx = mx / 127.0f;
+        std::vector<int8_t> xi(K); for (int i = 0; i < K; i++) xi[i] = (int8_t)lrintf(hx[i] / sxx);
+        int* d_xq; CHECK(cudaMalloc(&d_xq, K)); CHECK(cudaMemcpy(d_xq, xi.data(), K, cudaMemcpyHostToDevice));
+        // per-token side buffer: sum of each aligned 4-activation group (the "once per token" work)
+        std::vector<int> s4(K / 4);
+        for (int i = 0; i < K / 4; i++)
+            s4[i] = xi[4*i] + xi[4*i+1] + xi[4*i+2] + xi[4*i+3];
+        int* d_s4; CHECK(cudaMalloc(&d_s4, (K/4) * sizeof(int)));
+        CHECK(cudaMemcpy(d_s4, s4.data(), (K/4) * sizeof(int), cudaMemcpyHostToDevice));
+
+        struct A { const uint8_t* b; const int* xq; const int* s4; float sx; float* y; int n; };
+        A a{d_base, d_xq, d_s4, sxx, d_y, NMAT};
+        auto L0a = [](void* v) { A* a = (A*)v; k_mmvq_geom<0><<<a->n * ROWS, 128>>>(a->b, a->xq, a->s4, a->sx, a->y, a->n); };
+        auto L1a = [](void* v) { A* a = (A*)v; k_mmvq_geom<1><<<a->n * ROWS, 128>>>(a->b, a->xq, a->s4, a->sx, a->y, a->n); };
+        auto L2a = [](void* v) { A* a = (A*)v; k_mmvq_geom<2><<<a->n * ROWS, 128>>>(a->b, a->xq, a->s4, a->sx, a->y, a->n); };
+
+        // P-3: arms i and ii must agree bit-for-bit on the first 8 outputs
+        L0a(&a); CHECK(cudaDeviceSynchronize());
+        std::vector<float> yi(8); CHECK(cudaMemcpy(yi.data(), d_y, 8*sizeof(float), cudaMemcpyDeviceToHost));
+        L1a(&a); CHECK(cudaDeviceSynchronize());
+        std::vector<float> yii(8); CHECK(cudaMemcpy(yii.data(), d_y, 8*sizeof(float), cudaMemcpyDeviceToHost));
+        int same = 1; for (int i = 0; i < 8; i++) same &= (yi[i] == yii[i]);
+
+        auto L3a = [](void* v) { A* a = (A*)v; k_mmvq_geom<3><<<a->n * ROWS, 128>>>(a->b, a->xq, a->s4, a->sx, a->y, a->n); };
+        double g0 = bench(L0a, &a, 20, (double)total);
+        double g1 = bench(L1a, &a, 20, (double)total);
+        double g2 = bench(L2a, &a, 20, (double)total);
+        double g3 = bench(L3a, &a, 20, (double)total);
+        printf("\n--- prereg #56: K-quant min tax at mmvq geometry (1 row/block, global x) ---\n");
+        printf("%-38s %8.1f GB/s  %7.2f GW/s\n", "(i)   sum-via-dp4a  (llama.cpp K-quant)", g0, g0 / 0.5625);
+        printf("%-38s %8.1f GB/s  %7.2f GW/s   arms i==ii bitwise: %s\n",
+               "(ii)  sum-via-side-buffer (the fix)", g1, g1 / 0.5625, same ? "YES" : "*** NO — VOID ***");
+        printf("%-38s %8.1f GB/s  %7.2f GW/s\n", "(iii) symmetric control (no min term)", g2, g2 / 0.5625);
+        printf("%-38s %8.1f GB/s  %7.2f GW/s\n", "(iv)  packed nibble scale+min decode", g3, g3 / 0.5625);
+        printf("      min tax (iii vs i): %.1f%%   recovered by (ii): %.0f%%   metadata tax (i vs iv): %.1f%%\n",
+               100.0 * (g2 - g0) / g0, (g2 > g0) ? 100.0 * (g1 - g0) / (g2 - g0) : 0.0,
+               100.0 * (g0 - g3) / g0);
+        CHECK(cudaFree(d_xq)); CHECK(cudaFree(d_s4));
     }
 
     printf("\nllama.cpp, same card, measured through the runtime:\n");

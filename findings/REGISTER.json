@@ -193,7 +193,7 @@
    "confidence": "measured",
    "claim": "Law 4 AMENDED: eta is a function of the FORMAT's unpack instruction cost, not the tier alone. A matvec with no unpacking runs at 95% of the streaming ceiling; the same bytes with a naive unpack run at 42%; dp4a recovers 80%. On an ALU-weak GPU the format sets decode speed as much as the byte count.",
    "magnitude": "Same tier, same card, same model, same session: Q4_0 eta 0.619 vs Q4_K_M 0.553 vs Q2_K 0.340. Bare-metal ladder (own CUDA, zero llama.cpp): no-unpack 152.5 GB/s (0.79 spec), naive 4.5-bit 67.8 (0.35), dp4a 4.5-bit 128.7-132.1 (0.67-0.69), stream 161.0 (0.84).",
-   "evidence": "prereg #52, prereg #53, tools/kernelprobe/bench.cu (every kernel correctness-checked vs double host reference)",
+   "evidence": "prereg #52, prereg #53, tools/kernelprobe/bench.cu (every kernel correctness-checked vs double host reference); prereg #56 NARROWS the mechanism: at real 1-row geometry with dp4a, marginal instruction differences (min term, packed scales) cost <=5% - the naive-float->dp4a 1.9x remains the proven instruction effect, and the residual K-quant e2e deficit is attributed to layout/occupancy, OPEN",
    "scope": "measured on ONE Pascal card (cc 6.1); on Ampere+ the ALU/BW ratio flips and the ranking may invert - unverified, replication asked",
    "wired_into": "quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; explains C-05 (6 prior sightings, mechanism now named)"
   }
@@ -603,6 +603,17 @@
    "evidence": "kernelprobe gather-ratio sweep (commit 102f518), GROK_KERNEL_BRIEF.md retraction #5",
    "scope": "VRAM-resident experts; says nothing about PCIe/DRAM expert traffic",
    "wired_into": "GROK_KERNEL_BRIEF.md retraction #5"
+  },
+  {
+   "id": "D-21",
+   "kind": "dead_end",
+   "status": "refuted",
+   "confidence": "measured",
+   "claim": "The K-quant ARITHMETIC is acquitted at real mmvq geometry: min-term dp4a costs 0.9-1.8%, packed nibble scale+min decode costs 4.1%, and the per-token sum side buffer fix is 15% SLOWER. Every simplified cost model runs 125-133 GB/s where real Q4_K_M runs 106.4 and real Q2_K 65.4 - so the real K-quant deficit lives in layout walk (partial coalescing across interleaved superblocks) and/or register pressure/occupancy of the real vec_dot, both untested. Instruction counting predicted the wrong mechanism twice in one day (#55, #56).",
+   "magnitude": "kill rule of #56 honoured: no in-tree patch, H-REOPEN/N1 program closed",
+   "evidence": "prereg #56 (arms i-iv, bitwise-identity check between i and ii)",
+   "scope": "Pascal, 4.5-bit cost models; the real-layout oracle is the named next experiment",
+   "wired_into": "quantprobe/plan.py format_advice (mechanism text corrected); KERNEL_BREAKTHROUGH_BRAINSTORM.md N1 closed"
   }
  ],
  "contradictions": [
@@ -781,9 +792,9 @@
   {
    "id": "U-13",
    "kind": "untried",
-   "status": "untested",
+   "status": "refuted",
    "confidence": "speculative",
-   "claim": "Q2_K's min-term dp4a can be removed WITHOUT multi-row blocking: precompute per-16-weight activation sums ONCE PER TOKEN into a side buffer (128 floats for K=2048 - L1-cache resident, every row reads the same values), then apply the min as a scalar FMA. Halves the group dp4a count at llama.cpp's existing 1-row-per-block geometry. This is the H-REOPEN idea from KERNEL_BREAKTHROUGH_BRAINSTORM.md and corrects #55's 'the two fixes are mutually exclusive' - there is a third fix.",
+   "claim": "Q2_K's min-term dp4a can be removed WITHOUT multi-row blocking: precompute per-16-weight activation sums ONCE PER TOKEN into a side buffer (128 floats for K=2048 - L1-cache resident, every row reads the same values), then apply the min as a scalar FMA. Halves the group dp4a count at llama.cpp's existing 1-row-per-block geometry. This is the H-REOPEN idea from KERNEL_BREAKTHROUGH_BRAINSTORM.md and corrects #55's 'the two fixes are mutually exclusive' - there is a third fix. [CLOSED by prereg #56: the min-term dp4a costs 0.9-1.8% at real 1-row geometry (hides in memory latency), and the side buffer is 15% SLOWER. No patch, no upstream filing.]",
    "hypothesis": "the extra dp4a + 3 broadcast ops per group are ~half of Q2_K's group ALU; removing them should recover a large part of the 165 -> 356 GW/s gap without touching block_q8_1 (side buffer is CUDA-backend-local; precedent: quantize_mmq_q8_1 already uses a path-specific activation layout)",
    "predicted_effect": "kernelprobe A/B at 1-row-per-block geometry first; if the isolated min-term cost is >= 1.3x, an in-tree patch targets Q2_K e2e from 21.7 toward 26 tok/s",
    "wired_into": "next kernelprobe experiment (prereg #56)"

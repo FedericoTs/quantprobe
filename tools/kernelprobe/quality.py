@@ -134,6 +134,27 @@ def sym2_i8scale(w, group=16, sup=256):
     return rec.reshape(-1)[:n], n
 
 
+def sym2_odd_i8scale(w, group=16, sup=256):
+    """N6: odd-level symmetric 2-bit, levels {-3,-1,+1,+3} (q in 0..3 -> 2q-3). No zero level,
+    but double the top level's reach vs {-2,-1,0,+1}, and still dp4a-native (odd int lanes).
+    Symmetric => no min term => the N1 side-buffer fix becomes unnecessary for this format.
+    Same byte-scale metadata as sym2_i8scale: 2 + 8/group + 16/sup bits/weight.
+    """
+    n = (w.size // sup) * sup
+    x = w[:n].reshape(-1, sup)
+    per = sup // group
+    g = x.reshape(-1, per, group)
+    amax = np.abs(g).max(axis=2)
+    scale = amax / 3.0
+    d = np.where(scale.max(axis=1) == 0, 1e-30, scale.max(axis=1) / 255.0)
+    ls = np.clip(np.rint(scale / d[:, None]), 0, 255)
+    rs = ls * d[:, None]
+    rs_s = np.where(rs == 0, 1e-30, rs)
+    q = np.clip(np.rint((g / rs_s[:, :, None] + 3.0) / 2.0), 0, 3)
+    rec = (2.0 * q - 3.0) * rs[:, :, None]
+    return rec.reshape(-1)[:n], n
+
+
 def rmse(a, b):
     d = a.astype(np.float64) - b.astype(np.float64)
     return float(np.sqrt((d * d).mean()))
@@ -158,6 +179,8 @@ def main(path, max_tensors=12):
         ("sym2  g16 i8sc   (2.562 bit)", lambda w: sym2_i8scale(w, 16)),
         ("sym2  g8  i8sc   (3.062 bit)", lambda w: sym2_i8scale(w, 8)),
         ("asym2 g16 i8sc   (3.125 bit)", lambda w: asym2_i8scale(w, 16)),
+        ("sym2odd g16 i8sc (2.562 bit)", lambda w: sym2_odd_i8scale(w, 16)),
+        ("sym2odd g32 i8sc (2.312 bit)", lambda w: sym2_odd_i8scale(w, 32)),
     ]
 
     tot = {name: [0.0, 0.0] for name, _ in schemes}   # [sum sq err, count]
