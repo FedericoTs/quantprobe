@@ -6,7 +6,7 @@ records (which are preserved). Newest thread last.
 
 ---
 
-## Lineage (one project, four threads)
+## Lineage (one project, five threads)
 
 ```
 lossless compression spike  ─►  context-mixing codec  ─►  lossless LLM-weight delta codec
@@ -15,7 +15,8 @@ lossless compression spike  ─►  context-mixing codec  ─►  lossless LLM-w
                                                                           ▼
                                           lossy LLM quantization (signed-Hadamard + AWQ + trellis/ECVQ)
                                               ├─ ~3-bit PTQ, evolved + audited   (PAPER_DRAFT.md)
-                                              └─ 2-bit MoE carve-out, KV-latent  (PAPER_MOE.*) ◄ CURRENT
+                                              ├─ 2-bit MoE carve-out, KV-latent  (PAPER_MOE.*)
+                                              └─ quantprobe: GGUF placement & speed law (quantprobe/) ◄ CURRENT
 ```
 
 The evolvable-search philosophy (un-gameable verifier, held-out metric, honest accounting,
@@ -61,7 +62,7 @@ Frontier for ~3-Bit LLM Weight Quantization."*
   `TRELLIS_RUNTIME_RESULTS.md`, `VALUE.md`. Codec: `qtip_trellis.py`, `wcodec.py`, `trellis_*.py`,
   `noise_shaping.py`, `quant_dataaware.py`. Artifact: `data/qwen05b.evoq` (+ `.json`).
 
-## Thread 4b — 2-bit MoE carve-out (CURRENT, publication-ready) — `PAPER_MOE.{md,tex}`
+## Thread 4b — 2-bit MoE carve-out (publication-ready) — `PAPER_MOE.{md,tex}`
 **Paper:** *"The KV-Latent is the Bottleneck: Data-Free 2-Bit Mixture-of-Experts Quantization on a
 6 GB GPU."* Reuses the validated trellis codec from 4a, applied to MoE.
 - **Headline (full WikiText-2 test set):** DeepSeek-V2-Lite carve-out **6.96 ppl, gap-ratio 1.104×**
@@ -83,6 +84,26 @@ Frontier for ~3-Bit LLM Weight Quantization."*
   `forced_output{,_qwen}.py`, `route_locality.py`, `m1_kvlatent.py`, `make_*.py`. Master results:
   `data/moe_results.txt`; figures `data/fig_*.png`; run logs `data/{full,fulldecomp,verify}_*.log`.
 
+## Thread 5 — quantprobe: GGUF placement & decode-speed law (CURRENT) — `quantprobe/`
+**Goal:** predict decode tok/s for any GGUF on any machine *before downloading* — across
+placements (all-VRAM, hybrid, expert-split, pure CPU, disk-stream) — and emit the llama.cpp
+command that achieves it. Shipped on PyPI (`pip install quantprobe`, v1.20.2).
+- **Method:** a measured decode law (Law 4: tok/s = η × bandwidth ÷ active-bytes-per-token, with
+  η set by tier *and* format — L-15/L-16), every constant staked in `preregistrations/` before
+  measurement, a public findings register (laws / levers / dead ends / contradictions), and
+  `quantprobe calibrate`: measure the box instead of trusting spec sheets, with two optional
+  anchor runs anchoring predictions by default (pre-registered gate #64: leave-one-out median
+  error 19% → 5.8% across 5 arms).
+- **Headline:** the machine ladder (`MACHINE_LADDER.md`) measures every model four ways — naive
+  llama.cpp / informed llama.cpp / quantprobe / staked prediction: 2.3–3.3× vs naive on every
+  model, ~12% median prediction error with every big-model miss an under-promise (v1.20.2
+  correction); the 2016-desktop flagship split measures 20.4–22.2 tok/s at healthy clocks
+  (preregs #60/#61/#65); format lever: Q4_0 +19% end-to-end over Q4_K_M on pre-Ampere
+  (preregs #52/#53). First external replication (RTX 3090, 117.6B MoE) exposed five input
+  defects, all fixed in v1.19 (register E-06).
+- **Docs:** `README.md`, `LAWS.md`, `CHANGELOG.md`, `MACHINE_LADDER.md`, `FINDINGS.md`,
+  `preregistrations/` (every staked prediction with its verdict), `findings/REGISTER.json`.
+
 ---
 
 ## Standing methodology (applied throughout)
@@ -98,4 +119,7 @@ Frontier for ~3-Bit LLM Weight Quantization."*
 - Codec KPIs: `EVOLUTION_LOG.md`, `EVOLUTION_R13-21.md` (every variant, timestamped).
 - Quant frontier: `QUANT_EVOLVE_RESULTS.md`, `data/sens_db.json`, `data/alloc_*.json`.
 - MoE: `data/moe_results.txt` (master), `data/{full_*,fulldecomp_*,verify_*}.log` (per-run).
+- quantprobe: `MACHINE_LADDER.md` (predicted vs measured, four ways), `preregistrations/`
+  (staked predictions with verdicts), `findings/REGISTER.json` (the register), `weights/data/`
+  (raw logs).
 - Persistent agent memory: `~/.claude/.../memory/evo-compress-project.md` (full chronological log).

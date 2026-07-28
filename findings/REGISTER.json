@@ -98,7 +98,7 @@
    "magnitude": "The claimed spread shrank three times, each time from correcting one of our own measurement errors: 2.25x (contained a cell measured past the compute-buffer cliff) -> 1.33x (corrected to ub 512) -> 1.23x (all cells in one session) -> gone (the surviving alternative wins by 0.44 tok/s against combined error bars of 0.456, i.e. 0.96 sigma). Same-session table: split+ub1024+KV-in-VRAM 386.04/21.58 dominates all-experts-CPU 381.82/19.79 and evict-KV 381.60/17.95.",
    "evidence": "prereg #21 (original), prereg #25 (refutation); weights/data/prereg25_frontier_rematch.log",
    "scope": "MoE whose experts exceed VRAM",
-   "wired_into": "quantprobe/plan.py:MOE_FRONTIER (one row) \u00b7 tests/smoke.py:t_workload_frontier_is_pareto (rewritten to assert the collapse)",
+   "wired_into": "quantprobe/plan.py:MOE_FRONTIER (one row) · tests/smoke.py:t_workload_frontier_is_pareto (rewritten to assert the collapse)",
    "why_it_was_wrong": "The frontier was an ARTEFACT of never measuring split + KV-in-VRAM at ub 1024. That cell had been benchmarked only at ub 2048 (past the cliff, 161.59 pp) and ub 512 (307.13 pp), and was recorded as 'dominated' - a claim that silently inherited the scope of the sweep that produced it. It really meant 'dominated AT ub 2048'. Excluding a configuration is also a claim, and it needs a scope like any other."
   },
   {
@@ -893,7 +893,7 @@
    "kind": "untried",
    "status": "closed",
    "confidence": "speculative",
-   "claim": "Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it. [CLOSED-SHIPPED v1.20.1: FORMAT_EBW ladder in spec.py prices GPU eta per format on the calibrated path; plus the size-class guard (a 0.5B anchor never prices a 7B). Ladder median error 14.8% -> 8.6%, worst 34% -> 14.3%, DS-Lite quasi-OOS at -2.5%. Gated off presets by the ratchet test.]",
+   "claim": "Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it. [CLOSED-SHIPPED v1.20.1: FORMAT_EBW ladder in spec.py prices GPU eta per format on the calibrated path; plus the size-class guard (a 0.5B anchor never prices a 7B). Ladder median error 14.8% -> 8.6%, worst 34% -> 14.3%, DS-Lite quasi-OOS at -2.5%. Gated off presets by the ratchet test.] [CORRECTED v1.20.2: the 8.6% median quoted here leaned on the inconsistent anchor boost the consistency audit removed; the principled self-consistent column is ~12% median with every big-model miss an under-promise. MACHINE_LADDER.md carries the correction. The 14.8%->8.6% sentence stands only as the history of what v1.20.1 briefly published.]",
    "hypothesis": "eta_format(target) = eta_format(anchor) x ladder_ratio from kernelprobe measurements",
    "predicted_effect": "Q4_0 all-in-VRAM error from -43% to within +/-15% without new benchmark runs",
    "wired_into": "candidate v1.21; prereg #64 P-3",

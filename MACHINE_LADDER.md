@@ -18,8 +18,8 @@ fitted. Log: `weights/data/prereg65_ladder.log`.
 | Qwen2.5-0.5B Q8_0 | 56.57 | 154.44 | = informed¹ | 131.6 (−15%)² | 141.9 (−8.1%) |
 | Qwen3-0.6B Q8_0 | 45.80 | 106.89 | = informed¹ | 109.3 (**+2.3%**) | 117.9 (+10.3%) |
 | Qwen2.5-7B Q4_K_M | 6.87 | 22.63 | = informed¹ | 14.9 (−34%)³ | 19.4 (−14.3%) |
-| DeepSeek-Lite 16B MoE Q4_K_M | 6.84 ± 5.13⁴ | 18.21 | **22.87** | 18.4 (−20%) | 22.3 (**−2.5%**) |
-| Qwen3-30B-A3B MoE Q2_K | 7.45 ± 3.16⁴ | 19.29 | **20.78** | 22.3 (+7.3%) | 19.0 (−8.6%) |
+| DeepSeek-Lite 16B MoE Q4_K_M | 6.84 ± 5.13⁴ | 18.21 | **22.87** | 18.4 (−20%) | 22.3 (−2.5%) — superseded⁵ (−18.3%) |
+| Qwen3-30B-A3B MoE Q2_K | 7.45 ± 3.16⁴ | 19.29 | **20.78** | 22.3 (+7.3%) | 19.0 (−8.6%) — superseded⁵ (+3.3% preset / −18.8% gguf) |
 
 **What the ladder says:**
 
@@ -49,8 +49,9 @@ fitted. Log: `weights/data/prereg65_ladder.log`.
    comes from the measured per-format ladder (a 0.5B anchor cannot price a 7B — small models pay
    a size floor big models don't, #59/#65). **Disclosure: the v1.20.1 column is recomputed after
    the measurements existed** — in-sample for the 7B-family formats (the ladder's η constants
-   come from those measurements), quasi-out-of-sample for the two MoE mixes (DS at −2.5% is the
-   strongest point). The staked column remains the honest pre-registered record; the true
+   come from those measurements), quasi-out-of-sample for the two MoE mixes (after the v1.20.2
+   correction below, DS sits at −18.3%; the strongest quasi-out-of-sample point is the preset
+   flagship at +3.3%). The staked column remains the honest pre-registered record; the true
    out-of-sample test is the next machine (E-06's rerun ask). CORRECTED in v1.20.2: the 8.6%
    median briefly published for v1.20.1 leaned on an internally inconsistent anchor boost (the
    ratio was priced against a different eta than the rows used). The principled, self-consistent
