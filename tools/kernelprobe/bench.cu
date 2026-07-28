@@ -607,6 +607,78 @@ __global__ __launch_bounds__(128) void k_q4k_layout(
     if (t == 0) y[blockIdx.x] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
 }
 
+// ==================== K3d / K2c: is the last tax LOAD WIDTH? (staked: K3d recovers >= half of
+// the fp16 151->160 gap; K2c gains >=10% if the dp4a kernel is load-width-bound, <3% if not)
+// K3d: fp16 matvec with uint4 (16 B) loads instead of 4 B half2 loads. Same math, same layout.
+__global__ __launch_bounds__(128) void k_matvec_f16_v4(
+        const uint8_t * __restrict__ base, const int * __restrict__ sel,
+        const float * __restrict__ x, float * __restrict__ y)
+{
+    __shared__ float xs[K];
+    for (int i = threadIdx.x; i < K; i += 128) xs[i] = x[i];
+    __syncthreads();
+    const uint8_t * m = base + (size_t)sel[blockIdx.x] * F16_MAT_BYTES;
+    for (int r = 0; r < ROWS; r++) {
+        const uint4 * w = (const uint4 *)(m + (size_t)r * F16_ROW_BYTES);
+        float acc = 0.0f;
+        #pragma unroll
+        for (int p = 0; p < 2; p++) {                   // 256 uint4 per row / 128 threads
+            const int i = threadIdx.x + p * 128;        // one uint4 = 8 halves = 8 weights
+            const uint4 v = w[i];
+            const __half2 * h = (const __half2 *)&v;
+            #pragma unroll
+            for (int j = 0; j < 4; j++) {
+                const float2 f = __half22float2(h[j]);
+                acc += f.x * xs[8*i + 2*j] + f.y * xs[8*i + 2*j + 1];
+            }
+        }
+        for (int off = 16; off > 0; off >>= 1) acc += __shfl_down_sync(0xffffffff, acc, off);
+        __shared__ float warp[4];
+        if ((threadIdx.x & 31) == 0) warp[threadIdx.x >> 5] = acc;
+        __syncthreads();
+        if (threadIdx.x == 0) y[blockIdx.x * ROWS + r] = warp[0] + warp[1] + warp[2] + warp[3];
+        __syncthreads();
+    }
+}
+
+// K2c: the 4.5-bit dp4a matvec at mmvq geometry with uint4 loads — one 16 B load supplies 4 u32
+// of nibbles (32 weights). Identical arithmetic to k_mmvq_geom<0>; only the load width changes.
+__global__ __launch_bounds__(128) void k_mmvq_geom_v4(
+        const uint8_t * __restrict__ base, const int * __restrict__ xq,
+        float sx, float * __restrict__ y, int nmat)
+{
+    const int mat = blockIdx.x / ROWS;
+    const int r   = blockIdx.x % ROWS;
+    const uint8_t  * row = base + (size_t)mat * MAT_BYTES + (size_t)r * ROW_BYTES;
+    const uint4    * q4v = (const uint4 *)row;
+    const __half   * sc  = (const __half *)(row + QB_PER_ROW);
+
+    // 64 uint4 per row (256 u32); 128 threads -> threads 0..63 active on the wide loads
+    float acc = 0.0f;
+    if (threadIdx.x < 64) {
+        const uint4 v = q4v[threadIdx.x];
+        const uint32_t vv[4] = {v.x, v.y, v.z, v.w};
+        #pragma unroll
+        for (int j = 0; j < 4; j++) {
+            const int i  = threadIdx.x * 4 + j;         // original u32 index
+            const int sb = i >> 5, l = i & 31;
+            const int xlo = xq[sb*64 + l];
+            const int xhi = xq[sb*64 + l + 32];
+            const int slo = __dp4a(0x01010101, xlo, 0);
+            const int shi = __dp4a(0x01010101, xhi, 0);
+            acc += (float)(__dp4a((int)( vv[j]       & 0x0F0F0F0Fu), xlo, 0) - 8*slo)
+                   * __half2float(sc[sb*8 + (l >> 3)]);
+            acc += (float)(__dp4a((int)((vv[j] >> 4) & 0x0F0F0F0Fu), xhi, 0) - 8*shi)
+                   * __half2float(sc[sb*8 + (l >> 3) + 4]);
+        }
+    }
+    for (int off = 16; off > 0; off >>= 1) acc += __shfl_down_sync(0xffffffff, acc, off);
+    __shared__ float warp[4];
+    if ((threadIdx.x & 31) == 0) warp[threadIdx.x >> 5] = acc;
+    __syncthreads();
+    if (threadIdx.x == 0) y[blockIdx.x] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
+}
+
 static double bench(void (*launch)(void*), void* arg, int iters, double bytes) {
     cudaEvent_t a, b; CHECK(cudaEventCreate(&a)); CHECK(cudaEventCreate(&b));
     launch(arg); CHECK(cudaDeviceSynchronize());              // warm
@@ -1096,6 +1168,45 @@ int main(int argc, char** argv) {
         }
         printf("P-2 ordering (q4k ratio > q2k ratio): %s\n",
                (rq4[1]/rq4[0] > rq2[1]/rq2[0]) ? "HOLDS" : "FAILS");
+        CHECK(cudaFree(d_xq));
+    }
+
+    // ---- K3d/K2c: load-width arms.
+    {
+        printf("\n--- K3d/K2c: is the last tax LOAD WIDTH? ---\n");
+        // K3d: fp16 with uint4 loads, vs L1b's half2 loads
+        const int nf = (int)(((size_t)target_mb << 20) / F16_MAT_BYTES);
+        uint8_t* d_f;
+        if (cudaMalloc(&d_f, (size_t)nf * F16_MAT_BYTES) == cudaSuccess) {
+            std::vector<__half> hf((size_t)nf * F16_MAT_BYTES / 2, __float2half(0.05f));
+            CHECK(cudaMemcpy(d_f, hf.data(), (size_t)nf * F16_MAT_BYTES, cudaMemcpyHostToDevice));
+            std::vector<int> s(nf); for (int i = 0; i < nf; i++) s[i] = i;
+            int* d_s; CHECK(cudaMalloc(&d_s, nf * sizeof(int)));
+            CHECK(cudaMemcpy(d_s, s.data(), nf * sizeof(int), cudaMemcpyHostToDevice));
+            struct A { const uint8_t* b; const int* s; const float* x; float* y; int n; } a{d_f, d_s, d_x, d_y, nf};
+            auto L = [](void* v) { A* a = (A*)v; k_matvec_f16_v4<<<a->n, 128>>>(a->b, a->s, a->x, a->y); };
+            double g = bench(L, &a, 20, (double)nf * F16_MAT_BYTES);
+            printf("K3d fp16 matvec, uint4 loads   %7.1f GB/s   (L1b half2 loads was ~151; stream 160)\n", g);
+            CHECK(cudaFree(d_f)); CHECK(cudaFree(d_s));
+        }
+        // K2c: 4.5-bit dp4a at mmvq geometry, uint4 loads, vs arm (i)'s ~131
+        float mx = 0; for (int i = 0; i < K; i++) mx = fmaxf(mx, fabsf(hx[i]));
+        const float sxx = mx / 127.0f;
+        std::vector<int8_t> xi(K); for (int i = 0; i < K; i++) xi[i] = (int8_t)lrintf(hx[i] / sxx);
+        int* d_xq; CHECK(cudaMalloc(&d_xq, K)); CHECK(cudaMemcpy(d_xq, xi.data(), K, cudaMemcpyHostToDevice));
+        struct B { const uint8_t* b; const int* xq; float sx; float* y; int n; } b{d_base, d_xq, sxx, d_y, NMAT};
+        auto LB = [](void* v) { B* a = (B*)v; k_mmvq_geom_v4<<<a->n * ROWS, 128>>>(a->b, a->xq, a->sx, a->y, a->n); };
+        // correctness vs the verified narrow-load arm
+        k_mmvq_geom<0><<<NMAT * ROWS, 128>>>(d_base, d_xq, nullptr, sxx, d_y, NMAT);
+        CHECK(cudaDeviceSynchronize());
+        std::vector<float> yn(8); CHECK(cudaMemcpy(yn.data(), d_y, 32, cudaMemcpyDeviceToHost));
+        LB(&b); CHECK(cudaDeviceSynchronize());
+        std::vector<float> yw(8); CHECK(cudaMemcpy(yw.data(), d_y, 32, cudaMemcpyDeviceToHost));
+        double werr = 0; for (int i = 0; i < 8; i++)
+            werr = fmax(werr, fabs(yn[i]-yw[i]) / (fabs(yn[i]) + 1e-6));
+        double g = bench(LB, &b, 20, (double)total);
+        printf("K2c q4 dp4a mmvq, uint4 loads  %7.1f GB/s   (narrow-load arm was ~131)  rel.err %.1e %s\n",
+               g, werr, werr < 1e-4 ? "OK" : "*** MISMATCH ***");
         CHECK(cudaFree(d_xq));
     }
 

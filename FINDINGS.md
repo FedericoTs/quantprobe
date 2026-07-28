@@ -10,7 +10,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 |---|---|
 | Established laws | 16 |
 | Shipped levers | 17 |
-| Measured dead ends | 20 |
+| Measured dead ends | 21 |
 | Open contradictions | 9 |
 | Untried levers | 4 |
 | External work to study | 5 |
@@ -315,7 +315,7 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `measured` · scope: MoE flagship split placement, this box · evidence: prereg #51 · wired into: `GROK_KERNEL_BRIEF.md retraction #1`
 
-### D-17 — Q2_A (own dp4a-native asymmetric 2-bit format, byte-aligned scale+min, measured 0.995x Q2_K reconstruction RMSE) is REFUTED by its own fairness control: Q2_K's exact cost model in the same harness is 25% FASTER (352.7 vs 282.0 GW/s). The nibble unpack costs ~2 ALU ops per 16 weights; Q2_A's extra 0.5 bits/weight costs real bytes on every access. New-format project dropped.
+### D-17 — Q2_A (own dp4a-native asymmetric 2-bit format, byte-aligned scale+min, measured 0.995x Q2_K reconstruction RMSE) is REFUTED by its own fairness control: Q2_K's exact cost model in the same harness is 25% FASTER (352.7 vs 282.0 GW/s). The nibble unpack costs ~2 ALU ops per 16 weights; Q2_A's extra 0.5 bits/weight costs real bytes on every access. New-format project dropped. [AMENDED 2026-07-28 after #57: L1g under-modeled Q2_K metadata density (one scale per u32 vs the real per-plane scales), so the stated 25% margin was wrong. The faithful Q2_K cost model measures ~262 GW/s vs Q2_A 282 - Q2_A is actually ~8% FASTER at parity quality. The kill verdict STANDS on its real economics: +8% kernel-level for 19% more bytes and a new-format ecosystem cost is still far below the bar. Recorded because the number was wrong even though the verdict was not.]
 
 **Magnitude:** Design fact retained: at the ALU-bound end, GB/s is flat across formats (108-117), so buy quality with BITS, never with instructions
 
@@ -344,6 +344,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 **Magnitude:** Q2_K-shaped 0.99-1.00, Q4_K-shaped 1.02
 
 `refuted` · `measured` · scope: Pascal, mmvq 1-row geometry · evidence: prereg #57 · wired into: `preregistrations/2026-07-28-layout-walk.md`
+
+### D-23 — LOAD WIDTH is not a remaining tax: fp16 matvec with uint4 (16B) loads = 152.3 vs 151 GB/s with half2 loads (recovers none of the 151->160 stream gap), and the 4.5-bit dp4a kernel with uint4 loads is 14% SLOWER (112.6 vs 131, bit-exact) - halving active threads loses more latency hiding than wide loads buy. Staked before running: K3d >= half the gap, K2c >=10% if load-bound. Both MISS.
+
+**Magnitude:** closes K2c and the load-width half of K3; the fp16 0.95-vs-1.00 residual (~5%) remains unnamed (convert or reduction) and is a curiosity, not a lever
+
+`refuted` · `measured` · scope: Pascal, batch-1 matvec · evidence: kernelprobe K3d/K2c arms (predictions staked in the source comment before the run) · wired into: `tools/kernelprobe/bench.cu`
 
 ## Open contradictions
 
