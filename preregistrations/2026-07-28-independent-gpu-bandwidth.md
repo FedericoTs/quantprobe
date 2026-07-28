@@ -105,3 +105,44 @@ per-token overhead dominates, so the test must be re-run at 7B+.
 
 **Wired into:** `findings/REGISTER.json:C-02` (promoted from "unexplained" to "software gap, size
 bounded, mechanism open") · `findings/REGISTER.json:L-14` (the independent VRAM ceiling).
+
+### Addendum, same session: the discriminator ran, and it NARROWS the claim above
+
+The format ladder (same model, all-in-VRAM, one session, r=3) that the "next measurement" section
+specified — it needed no CUDA toolkit, only the shipped binary:
+
+| format | bits | tg32 | GB/s effective | η |
+|---|---|---|---|---|
+| Q2_K | 2.8 | 21.26 | 59.7 | 0.311 |
+| IQ3_XS | 3.4 | 20.44 | 63.7 | 0.332 |
+| IQ3_M | 3.6 | 19.76 | 65.8 | 0.343 |
+| **Q4_K_M** | 4.8 | 22.60 | **98.6** | **0.513** |
+
+**η climbs monotonically with bit-width** — 0.311 → 0.513 — exactly as the dequantisation
+hypothesis predicts: fewer bits means more unpacking work per delivered byte, so the byte saving
+is partly cancelled. This is **C-05's sixth instance** ("a quantized byte is not a byte"), now on
+the VRAM tier. Note the practical inversion it produces: Q4_K_M carries **55% more bytes** than
+Q2_K and is nonetheless **faster** (22.60 vs 21.26) — which the tool already tells users, from #16.
+
+**And it forces me to narrow the headline I wrote above.** I compared llama.cpp against the
+**fp32** GEMV ceiling (161.3 GB/s) and called the gap 1.5–2.6×. But the independent **fp16** GEMV
+measured **108.9 GB/s** on this card, because Pascal's fp16 ALU runs at 1/64 rate — and
+llama.cpp's Q4_K_M reaches **98.6 GB/s, which is 91% of that fp16 ceiling.**
+
+So the size of the software gap depends entirely on which ceiling is the right comparand, and that
+depends on the arithmetic llama.cpp's quantized CUDA kernels actually use — which I have not
+determined:
+
+| if the kernel's binding arithmetic is… | llama.cpp Q4_K_M sits at | remaining software headroom |
+|---|---|---|
+| fp32 (161.3 GB/s) | 61% | up to 1.64× |
+| **fp16 (108.9 GB/s)** | **91%** | **~1.1×, i.e. nearly none** |
+
+**Corrected conclusion.** The card is definitively not limited to η 0.32–0.56 — that part stands,
+and it is why C-02 is reclassified. But "1.5–2.6× of software headroom" was an overclaim resting
+on an unexamined choice of comparand. The honest range is **1.1× to 1.64× at Q4_K_M**, and closing
+it requires reading which arithmetic path ggml's `dequantize_mul_mat_vec` / MMQ kernels take on
+sm_61 — a source question, answerable without hardware.
+
+**Wired into:** `findings/REGISTER.json:L-14` (ceiling qualified by arithmetic) · `C-02`
+(headroom range corrected) · `C-05` (sixth instance).

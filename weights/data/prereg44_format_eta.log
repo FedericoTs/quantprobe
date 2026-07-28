@@ -1,0 +1,7 @@
+=== C-02 discriminator: does llama.cpp's VRAM eta climb toward the independent 0.84 ceiling as dequant cheapens? ===
+Same model (Qwen2.5-7B-Instruct), all-in-VRAM, format ladder, one session, r=3
+  Qwen2.5-7B-Instruct-Q2_K          2.809 GB  tg32 21.26 ± 0.54     ->   59.7 GB/s effective  eta 0.311
+  Qwen2.5-7B-Instruct-IQ3_XS        3.116 GB  tg32 20.44 ± 0.02     ->   63.7 GB/s effective  eta 0.332
+  Qwen2.5-7B-Instruct-IQ3_M         3.329 GB  tg32 19.76 ± 0.04     ->   65.8 GB/s effective  eta 0.343
+  Qwen2.5-7B-Instruct-Q4_K_M        4.361 GB  tg32 22.60 ± 0.03     ->   98.6 GB/s effective  eta 0.513
+  [independent ceiling measured in #44: 161.3 GB/s decode-shaped GEMV = eta 0.84]
