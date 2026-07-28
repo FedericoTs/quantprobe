@@ -52,7 +52,8 @@ If EITHER arm lands outside both its primary and named-alternative interpretatio
 < 85, DS < 16), L-17 is not a law but a two-point fit, it does NOT go into plan.py, and the
 register entry is downgraded from established to open.
 
-**Wired into:** pending; a P-3 hit wires L-17 into `plan.py` as the mechanistic split model.
+**Wired into:** `findings/REGISTER.json:L-17` only — the kill rule fired, so nothing ships;
+plan.py keeps its fitted constants (see scoring below).
 
 ---
 
