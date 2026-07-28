@@ -67,3 +67,55 @@ intuition about going *smaller*: below 4 bits the unpack gets more expensive whi
 shrink, so Q2_K should be **worse per weight** than Q4_0 — the opposite of what bytes predict.
 
 **Wired into:** pending P-1.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg52_format_unpack.log`)
+
+**Verdict: P-1 HIT, P-2 HIT. Unpack cost survives contact with a real model, and it is a
+first-class term — not a rounding correction on the byte model.**
+
+Qwen2.5-7B, all-in-VRAM (`-ngl 99`), tg128, r=2, arms interleaved for position control:
+
+| format | file | tg128 run 1 | run 2 | mean | bytes/token | effective GB/s | eta |
+|---|---|---|---|---|---|---|---|
+| Q4_K_M | 4.36 GiB | 22.78 ± 0.01 | 22.66 ± 0.03 | 22.72 | 4.681 GB | 106.4 | 0.553 |
+| **Q4_0** | 4.12 GiB | 26.97 ± 0.18 | 27.09 ± 0.00 | **27.03** | 4.424 GB | **119.6** | **0.622** |
+
+- **P-1 HIT.** +19.0%, against a 15% stake.
+- **P-2 HIT.** Bytes alone predict +5.7% (the file-size ratio). Measured is **3.3x that**, and the
+  decisive form of the statement is that **effective bandwidth rises 106.4 -> 119.6 GB/s (+12.5%)**.
+  A pure byte model requires effective bandwidth to stay flat. It does not.
+- **P-3 honoured.** Scoped to this ALU-weak pre-Ampere card. Not generalized to Ampere+, where the
+  unpack has more headroom to hide, and explicitly flagged as needing a second card.
+
+### The amendment this forces on Law 4
+
+Law 4 is `tok/s = eta(tier) x BW / active-bytes-per-token`. The measurement says **eta is not a
+function of the tier alone — it is a function of the FORMAT's unpack cost.** Same tier
+(all-in-VRAM), same card, same model, same session: eta 0.553 vs 0.622 purely from how the weights
+are packed. This is the mechanism behind C-05 ("a quantized byte is not a byte"), which this project
+has logged six times as a pattern without ever being able to name the cause. The cause is that
+K-quants decode a 6-bit scale **and** a 6-bit min per block before any dot product runs, while Q4_0
+decodes one fp16 scale.
+
+The bare-metal probe predicted exactly this and bounds it: with unpacking removed entirely, the same
+kernel reaches 0.79 of spec; naive nibble-to-float unpacking drops it to 0.35; `__dp4a` recovers it
+to 0.67. The real-model gap (0.553 -> 0.622) sits inside that band.
+
+### The honest limits of this result
+
+- **This is a SPEED measurement, not a quality one.** Q4_0 is worse per bit than Q4_K_M, and the
+  test file was requantized *from* the Q4_K_M rather than from the original weights, so its quality
+  is worse still. Nothing here says Q4_0 is a better model — only that it decodes faster. A quality
+  comparison needs a Q4_0 built from source weights and is a separate measurement.
+- **One card.** The whole effect is that this GPU's ALU is weak relative to its bandwidth. On a card
+  with more ALU headroom the unpack can hide behind the memory transfer and the gap should shrink.
+- It does **not** rescue the MoE flagship directly: that model is Q2_K, whose unpack is *more*
+  complex still, but there is no simple-format equivalent at 2 bits to swap to. The prediction that
+  falls out — Q2_K should be worse per weight than Q4_0 — is untested and logged as such.
+
+**Wired into:** `findings/REGISTER.json:L-14` (Law 4 amended: eta is format-dependent, mechanism =
+unpack instruction cost, measured) · `C-05` (pattern explained, cause named) ·
+`V-16` (format lever: +19% on pre-Ampere at 5.7% fewer bytes, speed-only claim) ·
+`U-11` (untested: does the effect shrink on Ampere+? needs a second card).

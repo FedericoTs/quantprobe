@@ -1,0 +1,5 @@
+=== #52: Q4_0 vs Q4_K_M, Qwen2.5-7B, all-in-VRAM, interleaved ===
+Qwen2.5-7B-Instruct-Q4_K_M.gguf | qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         22.78 ± 0.01 |
+_q40_speedtest.gguf | qwen2 7B Q4_0                  |   4.12 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         26.97 ± 0.18 |
+Qwen2.5-7B-Instruct-Q4_K_M.gguf | qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         22.66 ± 0.03 |
+_q40_speedtest.gguf | qwen2 7B Q4_0                  |   4.12 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         27.09 ± 0.00 |
