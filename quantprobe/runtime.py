@@ -74,6 +74,8 @@ def best_flags(a):
     kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None)
            else m.get("kvp", planmod.DEFAULT_KVP))
     _true = os.path.getsize(gguf) / 1e9 if gguf and os.path.isfile(gguf) else None
+    # same size-classed GPU-eta dispatch as plan (ONE shared function; layer 3 enforces parity)
+    vb, geta = planmod.resolve_gpu_eta(hw, a, ac, a.bits, vb, geta)
     _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
                                   ctx=ctx, kvp=kvp, true_size_gb=_true,
                                   n_layer=planmod.effective_n_layer(a, m))

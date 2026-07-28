@@ -698,6 +698,7 @@ def apply_calibration_overrides(hw, args):
     cal, age = calmod.load()
     if not cal:
         return hw
+    hw["_cal_active"] = True
     applied = []
     if cal.get("ram_bw_measured"):
         hw["rb"] = round(cal["ram_bw_measured"] / 0.544)
@@ -711,30 +712,86 @@ def apply_calibration_overrides(hw, args):
     if cal.get("boost_verdict") and "healthy" not in cal["boost_verdict"]:
         print(f"[quantprobe] GPU health at last calibration: {cal['boost_verdict']}")
     if not getattr(args, "no_anchors", False):
-        ratios = {}
+        ratios, notes = {}, []
         for an in (cal.get("anchors") or []):
             try:
-                gb_a, ts = float(an["model_gb"]), float(an["tok_s"])
-                if gb_a <= 0 or ts <= 0:
+                ts = float(an["tok_s"])
+                # act_gb prices the anchor with the SAME active-byte convention every row uses
+                # (params x bits/8 x 1.08). Old calibrations without it fall back to file size -
+                # a known ~8% low bias, which the clamp bounds and a re-calibrate removes.
+                act_a = float(an.get("act_gb") or an["model_gb"])
+                if act_a <= 0 or ts <= 0:
                     continue
                 if "pure CPU" in an.get("placement", ""):
-                    pred = 0.62 * hw["rb"] / gb_a            # dense CPU eta
+                    pred = 0.62 * hw["rb"] / act_a           # dense CPU eta, same as evaluate()
                     ratios["cpu"] = max(0.70, min(1.40, ts / pred))
                 elif "all-in-VRAM" in an.get("placement", "") and hw.get("vb"):
-                    pred = hw.get("geta", 0.45) * hw["vb"] / gb_a
+                    pred = hw.get("geta", 0.45) * hw["vb"] / act_a
                     ratios["gpu"] = max(0.70, min(1.40, ts / pred))
+                    hw["_anchor_gpu_act"] = act_a       # for the size-class dispatcher below
+                    # FORMAT RESCALING (L-16): the anchor measured ONE format's eta; the target
+                    # may decode another. Both sides priced from the measured per-format ladder
+                    # (spec.FORMAT_EBW); missing data -> no rescale.
+                    tgt_bw = getattr(args, "fmt_bw", None)
+                    anc_bw = an.get("fmt_bw")
+                    if tgt_bw and anc_bw:
+                        f = tgt_bw / anc_bw
+                        ratios["gpu"] = max(0.60, min(1.50, ratios["gpu"] * f))
+                        if abs(f - 1.0) > 0.03:
+                            notes.append(f"format x{f:.2f}")
             except (KeyError, TypeError, ValueError, ZeroDivisionError):
                 continue
         if ratios:
             if "cpu" in ratios:
                 hw["rb"] = hw["rb"] * ratios["cpu"]
             if "gpu" in ratios:
-                hw["vb"] = hw["vb"] * ratios["gpu"]
+                # NOT applied to vb here: whether the GPU ratio is valid depends on the TARGET's
+                # size class (resolve_gpu_eta below), which is not known yet. Stored instead.
+                hw["_gpu_ratio"] = ratios["gpu"]
+            extra = ("; " + ", ".join(notes)) if notes else ""
             print("[quantprobe] anchored: "
                   + ", ".join(f"{k.upper()} x{v:.2f}" for k, v in sorted(ratios.items()))
-                  + " from your calibrate anchor runs [tier ratios, clamped 0.70-1.40;"
-                    " --no-anchors disables]")
+                  + f" from your calibrate anchor runs [tier ratios{extra}; --no-anchors disables]")
     return hw
+
+
+def resolve_gpu_eta(hw, args, active_b, bits, vb, geta):
+    """The size-classed GPU dispatcher - ONE function, used by plan AND runtime.best_flags.
+
+    The #65 ladder measured the failure this prevents the same day anchors shipped: a 0.5B
+    anchor priced a 7B GPU arm 34% low, because small models pay a size floor (#59) that big
+    models do not - the anchor conflates format eta with that floor. Rules, each measured:
+      - target active >= 1.5 GB and format known: eta comes from the per-format ladder
+        (spec.FORMAT_EBW / 192.2 ref) - the reference box's own big-model GPU calibration,
+        format-resolved (L-16). The anchor's machine ratio applies ONLY if the anchor sits
+        within 4x of the target's active bytes (same size class).
+      - smaller targets, or unknown format: the anchor ratio applies as before (a same-class
+        small anchor measured -8%/+10%).
+    Returns (vb, geta) with the choice printed.
+    """
+    ratio = hw.get("_gpu_ratio")
+    # the format-ladder eta is a CALIBRATION-class refinement: it applies only on the
+    # calibrated auto-detect path. Preset machines keep their fitted geta and the one-sided
+    # floor semantics - the ratchet test caught exactly this scope creep (+47% on gemma's
+    # custom mixed-quant file when the ladder eta overrode a preset).
+    fmt_bw = getattr(args, "fmt_bw", None) if hw.get("_cal_active") else None
+    act_est = (active_b or 0) * (bits or 4.5) / 8 * 1.08
+    anchor_act = hw.get("_anchor_gpu_act")
+    same_class = bool(anchor_act and act_est and act_est / 4 <= anchor_act <= act_est * 4)
+    big = act_est >= 1.5
+    # The size-class guard holds with OR without format knowledge: an out-of-class anchor ratio
+    # never touches a big target (that misapplication is what the ratchet test caught).
+    use_ratio = bool(ratio) and (same_class or not big)
+    if fmt_bw and big:
+        eta_fmt = fmt_bw / 192.2
+        if not use_ratio and ratio:
+            print(f"[quantprobe] GPU eta from the measured format ladder: {eta_fmt:.2f} "
+                  f"(fmt {fmt_bw:.0f} GB/s ref; anchor outside this size class, machine ratio not applied)")
+        return (vb * ratio, eta_fmt) if use_ratio else (vb, eta_fmt)
+    if ratio and not use_ratio:
+        print("[quantprobe] GPU anchor is outside this model's size class - machine ratio not "
+              "applied (small anchors under-price big models; #65). CPU anchor still applies.")
+    return (vb * ratio, geta) if use_ratio else (vb, geta)
 
 
 def run(args):
@@ -778,6 +835,7 @@ def run(args):
     import os as _os
     _g = getattr(args, 'gguf', None)
     true_size = _os.path.getsize(_g) / 1e9 if _g and _os.path.isfile(_g) else None
+    vb, geta = resolve_gpu_eta(hw, args, a, args.bits, vb, geta)
     size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
                                kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)

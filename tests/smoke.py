@@ -1338,7 +1338,7 @@ def t_anchored_predictions_wiring():
     rc, out = cli("plan", "--model", "qwen3-30b")
     assert rc == 0
     if has_anchors:
-        assert "anchored:" in out and "clamped 0.70-1.40" in out, "anchors present but not applied/labeled"
+        assert "anchored:" in out and "tier ratios" in out, "anchors present but not applied/labeled"
     rc2, out2 = cli("plan", "--model", "qwen3-30b", "--no-anchors")
     assert rc2 == 0 and "anchored:" not in out2, "--no-anchors did not suppress anchoring"
 
