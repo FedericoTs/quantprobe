@@ -1,5 +1,48 @@
 # Changelog
 
+## 1.19.0 - 2026-07-28
+
+**The first external replication found five real defects. All five are fixed, plus the two the
+reconciliation found underneath them.**
+
+u/MoneroApe ran the tool on an RTX 3090 + Ryzen 8600G + 64GB DDR5 with a 117.6B MoE (register
+E-06). The tool nailed the placement (32%-expert split from --gguf) and missed the speed 9x. The
+reconciliation put the miss in OUR detector, not the law - corrected inputs predict 9.3 tok/s
+against 9.26-11.36 measured on same-class tuned hardware. Law 4 survived its first external
+contact; the inputs did not.
+
+### Fixed, each with a test named after the report
+
+- **Channel count is not stick count.** detect.py treated his 4 DIMMs as 4 memory channels on
+  dual-channel AM5 and quoted 173 GB/s where the platform peaks at ~86 - a 2x input error.
+  Consumer platforms now default to dual-channel regardless of stick count (HEDT/server CPUs
+  recognized by name go wider), and the RAM note says what was assumed.
+- **`quantprobe calibrate` (new command): measure, don't assume.** RAM stream (a real read, not
+  the spec sheet - the reference box delivers 26.1 of its 48 GB/s "peak"), disk on your own
+  file, GPU boost-state health (catches the stuck-clock failure mode that costs 25-30% silently;
+  preregs #60/#61), and an optional pure-CPU anchor on your own GGUF. plan consumes it
+  automatically, tagged [calibrated].
+- **The ubatch cap no longer assumes a 6 GB card.** safe_ubatch's cap rises to 4096 where the
+  buffer math allows it - on his 24 GB card the old 2048 cap was the limiter (external datapoint:
+  prefill 90 -> 470 tok/s at -b/-ub 4096 on a same-class card; buffer-fit still gates, so tight
+  cards never see it).
+- **Pinned-memory warning.** `-ot ...=CPU` host buffers are CUDA-pinned; the advice tried to pin
+  36.5 GB of his 64 GB, which fails under memory pressure. Any -ot row pinning >45% of system RAM
+  now says so and names the fallback (drop -ot, let auto-placement decide).
+- **`--threads` in emitted commands.** His fork auto-detected 6 of 12 threads ("decode struggled
+  at 2 t/s ... this flag alone helped it jump past 9"; our C-07 measured the same class of swing).
+  CPU-resident placements now carry --threads <logical cores> with the caveat spelled out.
+- **Speculation reality is TOP-LINE.** The "novel generation drafts 0 tokens" fact he
+  independently replicated (D-10) was buried ten paragraphs down and cost him a debugging
+  session. It now prints directly under the placement list.
+- **pp numbers carry their measurement conditions.** He compared a 22-token prompt against our
+  pp2048 figure - partly our fault for publishing the number bare. It now says pp2048, and that
+  a 22-token prompt measures startup, not prefill.
+
+Also in this release: the resident-expert sweep fix (prereg #62: the pattern generator's double
+VRAM discount cost +15.3% prompt processing and +6.3% generation against its own measured
+frontier - now one reserve, counted once).
+
 ## 1.18.0 - 2026-07-28
 
 **The format lever: on old GPUs the quantization FORMAT sets decode speed, not just the bytes.**
