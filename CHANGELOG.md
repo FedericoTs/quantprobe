@@ -26,8 +26,32 @@ of C-05 ("a quantized byte is not a byte"), sighted six times before without a m
 
 Fragmentation (#51, +6.5% at a 30x contrast), our own Q2_A format (#54, killed by its own
 fairness control), multi-row mmvq blocking (#55, -22%; upstream's Pascal carve-out validated),
-and the "MoE gather penalty" (an occupancy artifact of our benchmark - scattered expert reads
-are free at real block counts). Register: 68 entries, 5 verification layers green.
+the "MoE gather penalty" (an occupancy artifact of our benchmark - scattered expert reads are
+free at real block counts), the K-quant min-term tax at real geometry (#56, 0.9-1.8% - counting
+instructions is not measuring them), the layout walk (#57, bitwise-matched pairs at 0.99-1.02),
+and TWO of our own laws killed by their own out-of-sample kill rules (#56, #59).
+
+### The mechanism that survived every control: metadata application density (L-16)
+
+Q2_K's definition forces a scale+min chain every 4 bytes at 2 bits - 4x Q4_K's density per byte.
+Confirmation arm with identical loads and identical dp4a count: +23%. The full decomposition of
+real Q2_K decode lands within 9-12% of measurement, closing a contradiction open for weeks.
+
+### Two shipped-copy corrections from a fresh original-case retest (#60/#61)
+
+The plan output now states plainly that a fixed -ngl split measures EQUAL generation speed to the
+-ot placement (three measurements, degraded and full clocks) - the -ot advice is earned on prompt
+processing (2.2x), KV-in-VRAM safety, and speculation, not raw tg. And a new machine-state
+diagnostic: a 25-30% sag after hours of GPU churn was diagnosed (clock polling) and confirmed
+(cold-boot A/B) as a STUCK BOOST STATE - SM 1506 vs 1835+ MHz at cool temps. The tool now tells
+users to check clocks and reboot; consumer cards cannot reset it in place. After reboot the
+original calibration reproduced to 0.5%, and a pristine zero-patch llama.cpp build agreed with
+our instrumented build within 1.4% - the whole measurement corpus stands on clean footing.
+
+Register: 75 entries, 11 pre-registrations this cycle (#51-#61), 8 kill rules fired and honoured,
+5 verification layers green. New: tools/kernelprobe (the standalone CUDA measurement harness,
+zero llama.cpp) and GROK_KERNEL_BRIEF.md (the full kernel ladder with the retraction log, for
+external red-teaming).
 
 ## 1.17.0 - 2026-07-27
 
