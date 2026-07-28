@@ -526,7 +526,7 @@
    "confidence": "measured",
    "claim": "An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not. [SCOPE AMENDED by prereg #67: the 0.72x was the SPLIT FLAGSHIP cell. The dense all-in-VRAM cell measures POSITIVE: +11% on novel code at K=2/79% acceptance (0.5B drafting the 7B), negative on prose, negative at K>=4. Shipped as scoped advice; the larger prize needs a ~20x-faster drafter class that does not exist locally.]",
    "magnitude": "0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here. BUDGET SWEEP (prereg #42, novel content, req1 fresh server): base 19.39 (code) / 21.61 (prose); n-max 3 -> 15.95 / 9.52; n-max 8 -> 14.67 / 6.48; n-max 16 -> 10.58 / 3.91. MONOTONE DOWN, with acceptance collapsing 75->57->35% (code) and 36->18->9% (prose).",
-   "evidence": "prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED)",
+   "evidence": "prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED); prereg #67 (the dense-target cell, full K-curve)",
    "scope": "reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument",
    "wired_into": "quantprobe/plan.py:speculation_advice"
   },
