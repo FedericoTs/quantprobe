@@ -668,6 +668,30 @@ def run(args):
         print("[quantprobe] no hardware flags: auto-detected this machine "
               f"(vram {hw['vc']:g}GB@{hw['vb']:g} | ram {hw['rc']:g}GB@{hw['rb']:g} | disk {hw['db']:g} GB/s). "
               "Pass --machine/flags to estimate a different box.")
+        # calibration overrides detection: MEASURED beats spec-sheet, on this machine only.
+        # Constants scoped deliberately (prereg #59: fitted constants do not transfer; measured
+        # local ones are exactly what does). Delete ~/.quantprobe/calibration.json to disable.
+        from . import calibrate as calmod
+        cal, age = calmod.load()
+        if cal:
+            applied = []
+            if cal.get("ram_bw_measured"):
+                # calibrate measures the DELIVERED stream; the law's constants were fitted
+                # against theoretical-peak inputs on the reference box, whose measured stream
+                # was 26.1 of a 48 GB/s peak (0.544). Expressing the user's measurement in the
+                # same peak-units keeps every fitted eta valid: peak_equiv = measured / 0.544.
+                # Assumption stated: stream-realism fraction is machine-similar. Anchoring on a
+                # measurement with one stated assumption beats assuming the peak outright.
+                hw["rb"] = round(cal["ram_bw_measured"] / 0.544)
+                applied.append(f"ram {cal['ram_bw_measured']:g} GB/s measured")
+            if cal.get("disk_bw_measured"):
+                hw["db"] = cal["disk_bw_measured"]
+                applied.append(f"disk {cal['disk_bw_measured']:g} GB/s measured")
+            if applied:
+                stale = f"; {age:.0f} days old - re-run `quantprobe calibrate`" if age and age > calmod.STALE_DAYS else ""
+                print(f"[quantprobe] calibration applied [{'; '.join(applied)}] ({cal.get('date','?')}{stale})")
+            if cal.get("boost_verdict") and "healthy" not in cal["boost_verdict"]:
+                print(f"[quantprobe] GPU health at last calibration: {cal['boost_verdict']}")
     vc = hw.get("vc", args.vram); vb = hw.get("vb", args.vram_bw)
     rc = hw.get("rc", args.ram);  rb = hw.get("rb", args.ram_bw)
     db = hw.get("db", args.disk_bw); geta = hw.get("geta", 0.45); gl = hw.get("gl", None)

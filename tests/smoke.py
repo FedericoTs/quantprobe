@@ -1242,6 +1242,41 @@ def t_format_advice_honesty():
             assert ("unverified" in a and "invert" in a), f"missing scope honesty at {bits}: {a}"
 
 
+def t_calibrate_boost_verdict():
+    # the #60/#61 diagnostic must classify all three states and never crash on missing data
+    from quantprobe.calibrate import boost_verdict
+    assert "healthy" in boost_verdict(1873, 1911, 45)
+    stuck = boost_verdict(1506, 1911, 38)
+    assert "STUCK BOOST" in stuck and "REBOOT" in stuck
+    assert "THROTTLED" in boost_verdict(1400, 1911, 85)
+    assert boost_verdict(None, 1911, 40) is None
+    assert boost_verdict(1500, 0, 40) is None
+
+
+def t_calibrate_roundtrip():
+    # calibration persists and loads with an age; a corrupt file degrades to (None, None)
+    import json, tempfile, time, os
+    from quantprobe import calibrate as c
+    old = c.CAL_PATH
+    try:
+        with tempfile.TemporaryDirectory() as d:
+            c.CAL_PATH = os.path.join(d, "calibration.json")
+            with open(c.CAL_PATH, "w") as f:
+                json.dump({"ts": time.time() - 86400, "ram_bw_measured": 24.8}, f)
+            cal, age = c.load()
+            assert cal["ram_bw_measured"] == 24.8 and 0.9 < age < 1.1
+            with open(c.CAL_PATH, "w") as f:
+                f.write("{corrupt")
+            assert c.load() == (None, None)
+    finally:
+        c.CAL_PATH = old
+
+
+def t_calibrate_cli_registered():
+    rc, out = cli("calibrate", "--help")
+    assert rc == 0 and "--model" in out and "--skip-bench" in out
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

@@ -117,6 +117,11 @@ def main():
     hwp = sub.add_parser("hw", help="detect THIS machine's memory tiers (no flags needed); every value tagged with its source")
     hwp.add_argument("--measure", default=None, metavar="FILE", help="also MEASURE sequential disk read on a real file (e.g. a GGUF)")
 
+    cal = sub.add_parser("calibrate", help="MEASURE this machine's constants (RAM stream, disk, GPU boost health, decode anchor) - plan uses them automatically")
+    cal.add_argument("--model", default=None, metavar="FILE", help="a GGUF on this machine: unlocks disk measurement + a real pure-CPU decode anchor")
+    cal.add_argument("--skip-bench", action="store_true", help="measure RAM/disk/GPU only; skip the llama-bench anchor")
+    cal.add_argument("--llama-dir", default=None, help="folder containing llama-bench, if not on PATH")
+
     f = sub.add_parser("fetch", help="robust HF download (Range-resume, retry)")
     f.add_argument("repo", help="HF repo, or a preset: qwen3-30b, glm-air, deepseek-16b, qwen3-0.6b"); f.add_argument("dest"); f.add_argument("files", nargs="*")
 
@@ -148,6 +153,9 @@ def main():
     elif a.cmd == "hw":
         from . import detect
         detect.run(a)
+    elif a.cmd == "calibrate":
+        from . import calibrate
+        calibrate.run(a)
     elif a.cmd == "recipes":
         from . import recipes
         recipes.run(a)
