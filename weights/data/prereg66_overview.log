@@ -75,3 +75,20 @@
        2.0 tok/s  stream from disk (cold experts)   [exceeds RAM - capacity demo]
 [quantprobe] exec: llama-server -m D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf -ngl 0 --threads 4 
 --- 35B Q8_0 disk-stream: tg32 = 0.66 (predicted 2.0, -67%: U-06 confirmed, over direction) ---
+=== filling the four-column matrix: naive + informed arms for the new models ===
+--- apex_A ---
+| qwen35moe 35B.A3B Q3_K - Medium |  12.33 GiB |    34.66 B | CUDA       |   0 |           tg128 |          4.78 ± 2.23 |
+139 MHz, 31
+--- apex_B ---
+| qwen35moe 35B.A3B Q3_K - Medium |  12.33 GiB |    34.66 B | CUDA       |  14 |           tg128 |         14.09 ± 0.84 |
+1506 MHz, 36
+--- coder_A ---
+| qwen3moe 30B.A3B Q3_K - Medium |  13.70 GiB |    30.53 B | CUDA       |   0 |           tg128 |          2.34 ± 0.00 |
+139 MHz, 35
+--- coder_B ---
+| qwen3moe 30B.A3B Q3_K - Medium |  13.70 GiB |    30.53 B | CUDA       |  15 |           tg128 |         10.92 ± 3.42 |
+936 MHz, 37
+--- iq_B ---
+| deepseek2 16B IQ2_XS - 2.3125 bpw |   5.55 GiB |    15.71 B | CUDA       |  22 |           tg128 |         18.65 ± 8.47 |
+1885 MHz, 43
+--- 35B Q8_0 informed (-ngl 7): tg32 = 0.61 (SLOWER than -ngl 0 at 0.66 - GPU layers add paging churn at the disk tier) ---
