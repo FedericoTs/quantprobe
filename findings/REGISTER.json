@@ -487,6 +487,20 @@
       "wired_into": "nothing - Law 4's SUM survives unchanged for this workload",
       "what_survives_from_it": "Two things: (1) the GPU really does idle ~22 ms per token during the CPU expert phase, which is genuine headroom for COMPUTE that does not re-read host weights - speculative verification is exactly that, and is one reason speculation pays so well here; (2) the idea arrived with a zero-code falsification test, which is why it cost an hour rather than a week.",
       "protocol_lesson": "The empirical arm was invalidated by its own position control: baseline 14.66 (1st, cold) vs 18.29 (4th, warm). Reading the middle arms against the cold baseline would have repeated the thermal-ordering error #31 caught. Any future contention test must INTERLEAVE arms (A,B,A,C,A,B...) to cancel drift."
+    },
+    {
+      "id": "D-15",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Kernel-launch overhead is NOT the fixed per-token cost: CUDA graphs engage on Pascal (capture proven) and change decode by 0.0%.",
+      "magnitude": "7B Q4_K_M all-in-VRAM, CUDA 12.9 sm_61 build, position-controlled: graphs disabled 22.81 +/- 0.11, graphs FORCED ON 22.81 +/- 0.02, default re-run last 22.66. Capture verified by instrumenting cudaStreamBeginCapture.",
+      "evidence": "prereg #47 P-3",
+      "scope": "dense 7B all-in-VRAM on GTX 1060. The MoE flagship was NOT tested and hits a different code path (see below).",
+      "wired_into": "nothing - the >=25% prize is withdrawn",
+      "two_false_negatives_caught_first": "(1) The first A/B measured nothing: ggml/CMakeLists.txt:117 defaults GGML_CUDA_GRAPHS_DEFAULT to OFF, so USE_CUDA_GRAPH was undefined and the whole path - including the arch check being patched - was compiled out. (2) 'Graphs enabled' is not 'graphs captured': the first instrumented build failed with exit 1 and silently ran the previous binary. Only after cudaStreamBeginCapture printed does the null mean anything.",
+      "what_it_does_not_kill": "The two-parameter fit stands: marginal bandwidth 155.5 GB/s vs the independently measured 161.3 ceiling (3.6% apart). Law 4 having no intercept still forces a real constant to appear as size-dependent eta. The constant's EXISTENCE is intact; only the launch-overhead IDENTITY is refuted.",
+      "the_next_suspect": "ggml-cuda.cu:3280 [TAG_MUL_MAT_ID_CUDA_GRAPHS]: MUL_MAT_ID forces a stream synchronisation and disables graphs when the type is unquantized or the batch exceeds mmvq_mmid_max. The dense test model has no MUL_MAT_ID, but the MoE flagship hits it EVERY layer. A forced per-layer stream sync is a better candidate for a large fixed cost than launch overhead, and the CUDA build now exists to test it."
     }
   ],
   "contradictions": [
@@ -521,7 +535,8 @@
       "also_establishes": "Between-session drift is 10-13% on decode against sub-1% within-session error bars, now measured three times on the same 4B model: 27.30 (07-26), 30.89 (07-27 early), 30.03 (07-27 late). C-04 recorded this for prefill; it holds for decode too, and it bounds what any single session can conclude.",
       "direction_of_the_error": "A floor with an exception is not a floor, and two earlier versions of this entry were incoherent in exactly that way ('faster every time' beside a listed over-prediction; then 'floor with one measured exception'). The coherent form is a ONE-SIDED BOUND placed BELOW the worst measurement: real >= 0.90x predicted, 13 of 13 benchmarks (worst point gemma4-12b at 0.910x), falsified by any single measurement below it. Same logical form as the law's +/-25% claim - a bound stated with its evidence that a future measurement can kill - just asymmetric, because the measured error is asymmetric.",
       "what_shipped": "verify.py:e2e_band - layer 3's accuracy band is now PER REGIME. All-in-VRAM is -15/+90, the other regimes keep +/-25% because that is where the layer-4 anchors validate it. The lower bound is the load-bearing half: it is what fails if the tool ever becomes OPTIMISTIC, which is the direction that costs a user something. Published as a correction in README and CHANGELOG rather than edited quietly - a measured per-regime accuracy is honest, but only if it is stated at least as loudly as the number it replaces.",
-      "why_it_stayed_open_so_long": "Every GPU number in this project came out of llama.cpp, so 'the hardware is the wall' and 'llama.cpp is the wall' were indistinguishable on that side - while on the CPU side they were NOT, because the numpy stream benchmark (26.1 GB/s) independently corroborated llama.cpp's dense kernel (28.4-29.7). The asymmetry was invisible until it was pointed out. Six candidate explanations were refuted over the project's life without anyone measuring the card directly."
+      "why_it_stayed_open_so_long": "Every GPU number in this project came out of llama.cpp, so 'the hardware is the wall' and 'llama.cpp is the wall' were indistinguishable on that side - while on the CPU side they were NOT, because the numpy stream benchmark (26.1 GB/s) independently corroborated llama.cpp's dense kernel (28.4-29.7). The asymmetry was invisible until it was pointed out. Six candidate explanations were refuted over the project's life without anyone measuring the card directly.",
+      "two_parameter_reframe": "prereg #47: fitting t = fixed + bytes/BW (instead of Law 4's intercept-free t = bytes/(eta*BW)) on two same-format models gives marginal bandwidth 155.5 GB/s - within 3.6% of the independently measured 161.3 ceiling - and a fixed cost of 15.40 ms/token. That reframes C-02 from an efficiency deficit to a missing intercept. The launch-overhead explanation for the constant is REFUTED (D-15); its identity is open, with MUL_MAT_ID stream sync the live suspect."
     },
     {
       "id": "C-03",

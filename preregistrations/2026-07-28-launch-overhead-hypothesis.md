@@ -78,3 +78,57 @@ are describing an artifact of a disabled optimisation rather than a property of 
 older driver and exits 46 rather than downgrade). P-1 and P-2 need no build and can run first.
 
 **Wired into:** pending — nothing ships until P-1 is measured.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg47_cuda_graphs.log`)
+
+**Verdict: P-3 MISS — proven, not assumed. CUDA graphs engage on Pascal and buy exactly nothing.
+The 15.4 ms constant is real but is NOT kernel-launch overhead.**
+
+Built llama.cpp with CUDA 12.9 for `sm_61` (`-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=61`),
+patched the arch check behind `GGML_CUDA_FORCE_GRAPHS`, and A/B'd on the 7B all-in-VRAM:
+
+| arm | tg32 |
+|---|---|
+| graphs default (disabled by arch check) | 22.81 ± 0.11 |
+| **graphs FORCED ON** | **22.81 ± 0.02** |
+| default re-run LAST (position control) | 22.66 ± 0.00 |
+| forced ON, instrumented build | 22.80 ± 0.06 |
+
+**Two false negatives were caught before this could be scored, and both are worth recording:**
+
+1. **The first A/B measured nothing.** `ggml/CMakeLists.txt:117` sets `GGML_CUDA_GRAPHS_DEFAULT`
+   to **OFF**, so `USE_CUDA_GRAPH` was undefined and the entire graph path — *including the arch
+   check I had patched* — was compiled out. Rebuilt with `-DGGML_CUDA_GRAPHS=ON`.
+2. **"Graphs on" is not the same as "graphs captured."** After enabling them I still could not
+   see capture, so I instrumented `cudaStreamBeginCapture` directly. First attempt broke the
+   build (exit 1) and silently ran the *previous* binary — the same class of error as #36's
+   replay artifact. Fixed, rebuilt, and capture printed: **`[e5] cudaStreamBeginCapture fired #1`**.
+
+Only with capture proven does the null mean anything. It does now: **graphs run, and decode does
+not move.**
+
+### What survives, and what dies
+
+**Dies:** the launch-overhead explanation, and with it the ≥25% prize. Whatever the 15.4 ms is, it
+is not per-kernel launch cost that graph replay removes.
+
+**Survives, and is the important half:** the *two-parameter fit itself*. Marginal bandwidth
+**155.5 GB/s** against an independently measured **161.3 GB/s** ceiling (#44) — 3.6% apart — is not
+explained away by this null. Law 4 having no intercept is still forcing a real constant to
+masquerade as size-dependent η, which is still the best account of C-02 anyone has produced in
+this project. The constant's *identity* is now open again; its *existence* is not.
+
+### The mechanism candidate this measurement leaves standing
+
+`ggml-cuda.cu:3280` `[TAG_MUL_MAT_ID_CUDA_GRAPHS]`: `MUL_MAT_ID` **forces a stream
+synchronisation** and disables graphs whenever `!ggml_is_quantized(src0)` or the batch exceeds
+`mmvq_mmid_max`. Our test model is dense (no `MUL_MAT_ID`), so this did not affect the A/B — but
+**the flagship is MoE and hits `MUL_MAT_ID` in every layer**. A forced stream sync per layer is a
+far better candidate for a large fixed cost than launch overhead, and it is measurable with the
+build that now exists.
+
+**Wired into:** `findings/REGISTER.json:C-02` (constant confirmed, cause reopened) ·
+`findings/REGISTER.json:D-15` (launch overhead refuted) · next: profile the MoE flagship on this
+CUDA build, where `MUL_MAT_ID` sync is the live suspect.
