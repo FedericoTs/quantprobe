@@ -45,6 +45,9 @@ def best_flags(a):
                   db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"))
         print("[quantprobe] hardware auto-detected (run `quantprobe hw` for details; "
               "pass --machine/flags to estimate a different box)")
+        # the SAME calibration+anchor path plan uses - one function, so the commands can
+        # never disagree about the same input (v1.10.5 bug class; layer 3 enforces this)
+        planmod.apply_calibration_overrides(hw, a)
     vc = planmod.agg_cap(a.vram) if a.vram is not None else hw.get("vc", 0)
     vb = planmod.agg_bw(a.vram_bw, 0.85) if a.vram_bw is not None else hw.get("vb", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
@@ -188,6 +191,9 @@ def tier_view(a, best):
                   db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"))
         print("[quantprobe] hardware auto-detected (run `quantprobe hw` for details; "
               "pass --machine/flags to estimate a different box)")
+        # the SAME calibration+anchor path plan uses - one function, so the commands can
+        # never disagree about the same input (v1.10.5 bug class; layer 3 enforces this)
+        planmod.apply_calibration_overrides(hw, a)
     vc = planmod.agg_cap(a.vram) if a.vram is not None else hw.get("vc", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
     size = os.path.getsize(a.gguf) / 1e9 if a.gguf and os.path.isfile(a.gguf) else 0

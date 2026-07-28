@@ -1328,6 +1328,34 @@ def t_moneroape_threads_and_topline():
     assert "pp2048" in out, "pp published without its measurement conditions"
 
 
+def t_anchored_predictions_wiring():
+    # anchors must be applied by default WITH provenance, and --no-anchors must remove them.
+    # Runs against this box's real calibration when present; the suppression half always runs.
+    import os
+    from quantprobe.calibrate import CAL_PATH, load
+    cal, _ = load()
+    has_anchors = bool(cal and cal.get("anchors"))
+    rc, out = cli("plan", "--model", "qwen3-30b")
+    assert rc == 0
+    if has_anchors:
+        assert "anchored:" in out and "clamped 0.70-1.40" in out, "anchors present but not applied/labeled"
+    rc2, out2 = cli("plan", "--model", "qwen3-30b", "--no-anchors")
+    assert rc2 == 0 and "anchored:" not in out2, "--no-anchors did not suppress anchoring"
+
+
+def t_clock_sampler_min_samples():
+    # the false-positive guard: fewer than 3 loaded samples must yield None (no verdict),
+    # because 1-2 samples can be the model-load ramp, measured as a wrong REBOOT alarm.
+    from quantprobe.calibrate import ClockSampler
+    s = ClockSampler.__new__(ClockSampler)
+    s.samples = [(1506, 35)]
+    assert s.sustained() is None
+    s.samples = [(1506, 35), (1873, 40)]
+    assert s.sustained() is None
+    s.samples = [(1860, 40), (1873, 41), (1885, 42)]
+    assert s.sustained() == 1873
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

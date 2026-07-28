@@ -215,7 +215,7 @@
    "confidence": "refuted-out-of-sample",
    "claim": "THE SPLIT PLACEMENT LAW: GPU device time = format tax (L-16) + a per-call floor (~16 us/call on this WDDM Pascal box, in-kernel not submission - CUDA graphs +3.2% independently confirm). One model reconciles both measured arms: all-in-VRAM 7B predicted 48.3 vs 45.8 measured (+5%); flagship split predicted 23.7 vs 23.9 (-1%). The split eta 0.15 vs 0.34 is CALL GRANULARITY - 2.5x the calls on 4.2x fewer GPU bytes explodes the floor share from ~12% to ~58%. Fix direction is fewer/bigger calls (speculation verify batches, more resident expert layers, shared activation quantization), not kernel code. [DOWNGRADED 2026-07-28 by prereg #59, own kill rule: out-of-sample test on two unseen models FAILED. 0.5B measured 153.96 vs predicted ~100 (floor is size-dependent, ~4us on tiny kernels vs the fitted 16); DeepSeek-Lite MLA split measured 16.26 vs predicted ~21.1 (a missing term). The DIRECTION survives - byte-only over-predicts both, by +23% and +73% - but the single-constant form is a two-point fit, not a law. NOT wired into plan.py.]",
    "magnitude": "853 vs 341 GPU nodes/token; matmuls 80% of split device time running 5-15x their byte cost per call; known floor contributor: q8_1 activation re-quantization inside every quantized matmul (~1.5-3 ms/token)",
-   "evidence": "prereg #58 (E9 per-op attribution, reconciled 96.9%/99.1% against E6), prereg #48 (graphs null), prereg #50 (E6 baseline); prereg #59 (out-of-sample test: FAILED, kill rule honoured)",
+   "evidence": "prereg #58 (E9 per-op attribution, reconciled 96.9%/99.1% against E6), prereg #48 (graphs null), prereg #50 (E6 baseline); prereg #59 (out-of-sample test: FAILED, kill rule honoured); prereg #64 REVISES the #59 DS-Lite attribution: at healthy clocks DS measures 23.08, inside its staked band - that miss was substantially the stuck-boost state. The L-17 kill stands on the 0.5B arm alone.",
    "scope": "one Pascal/WDDM box, batch 1; the floor constant is machine-specific, the LAW (floor x calls + format tax) should transfer",
    "wired_into": "quantprobe plan.py eta constants gain mechanistic justification; preregistrations/2026-07-28-split-eta-attribution.md"
   }
@@ -413,6 +413,17 @@
    "evidence": "prereg #51 (part 2)",
    "scope": "only benefits fixed -ngl layer splits, which our advice already avoids in favor of -ot; not upstreamed",
    "wired_into": "documented here; deliberately NOT in plan.py (does not affect the shipped placement)"
+  },
+  {
+   "id": "V-19",
+   "kind": "lever",
+   "status": "shipped",
+   "confidence": "measured",
+   "claim": "ANCHORED PREDICTIONS (v1.20, default-on by its pre-registered gate): calibrate anchor runs become tier-local ratios (measured/law-predicted for the anchor arm, clamped 0.70-1.40) that scale that tier bandwidth for every OTHER prediction. The target arm is never consulted. LOO gate on 5 same-state targets: anchored median |error| 5.8% vs plain law 19.0%, every arm improved, floor semantics preserved (all misses under-promise).",
+   "magnitude": "median error 19.0% -> 5.8%; flagship split predicted +1.6%, 0.6B +1.8%",
+   "evidence": "prereg #64 (gate staked before any number; anchor arms excluded from targets); prereg #64 gate log weights/data/prereg64_gate.log",
+   "scope": "one box; the ratios are per-machine BY DESIGN (that is the point); format blindness of the single GPU ratio documented (Q4_0 -43% under-promise), fix logged as U-15",
+   "wired_into": "quantprobe/plan.py anchor composition; quantprobe/calibrate.py gpu_anchor; tests t_anchored_predictions_wiring"
   }
  ],
  "dead_ends": [
@@ -864,6 +875,16 @@
    "predicted_effect": "~+15% pp at 16 resident expert layers if VRAM headroom allows at ub 1024; tg unchanged within noise",
    "wired_into": "prereg #61 scoring; candidate next single-session sweep",
    "evidence": "prereg #62 (the sweep + the shipped fix)"
+  },
+  {
+   "id": "U-15",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "speculative",
+   "claim": "Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it.",
+   "hypothesis": "eta_format(target) = eta_format(anchor) x ladder_ratio from kernelprobe measurements",
+   "predicted_effect": "Q4_0 all-in-VRAM error from -43% to within +/-15% without new benchmark runs",
+   "wired_into": "candidate v1.21; prereg #64 P-3"
   }
  ],
  "external": [
@@ -919,7 +940,7 @@
    "confidence": "measured",
    "claim": "FIRST EXTERNAL REPLICATION (u/MoneroApe: RTX 3090 24GB + Ryzen 8600G + 64GB DDR5, 117.6B MoE at 3.75bpw). The tool nailed the fit (32%-expert split emitted correctly from --gguf) and missed the speed 9x - reconciled to OUR detector, not the law: (1) channel-count bug - detect.py treated 4 DIMMs as 4 channels on dual-channel AM5, quoting 173 GB/s where the platform peaks at ~86; (2) the spec-vs-measured stream gap (#27s own 54% lesson, never applied to the detector). Corrected inputs predict 9.3 tok/s; analogaloks tuned same-class 4090 measured 9.26-11.36. His report also independently replicated D-10 (ngram: 0 drafts on novel generation, different model/hardware/fork), confirmed C-07 as first-order (fork auto-detected 6 of 12 threads: decode struggled at 2 t/s ... this flag alone helped it jump past 9), and exposed the pinned-memory capacity risk (D-08 extension: the advice pinned 36.5GB of his 64GB). His five tool suggestions are ALL shipped in v1.19: dual-channel default + HEDT detection, calibrate-measures-stream, SAFE_UBATCH_CAP 4096 for big-VRAM cards (external datapoint, buffer-math gated), pinned-memory warning with auto-placement fallback, --threads emission with logical-core note, top-line speculation reality, and pp numbers carry their measurement conditions (pp2048).",
    "magnitude": "prediction error 9x -> reconciled to ~1x with corrected inputs; Law 4 survived its first external contact",
-   "evidence": "his Reddit report (raw timings quoted), analogalok 4090 benchmarks (external), our reconciliation arithmetic",
+   "evidence": "his Reddit report (raw timings quoted), analogalok 4090 benchmarks (external), our reconciliation arithmetic; prereg #63: the full v1.19 chain closed end-to-end on the reference box - the tool PRINTED 19.4 tok/s from calibrated inputs, the emitted command measured 21.21 on the pristine binary (-8.5%, under-promise), and the 3090-sim through the shipped code lands at 10.6 vs 9.26-11.36 measured externally",
    "scope": "his numbers are his; ours become validated only when he re-runs with v1.19 - the ask is in drafts/reddit_reply_moneroape.md",
    "wired_into": "quantprobe/detect.py (channel fix), plan.py (cap/pinning/threads/topline/pp2048), calibrate.py, tests t_moneroape_*",
    "repo": "reddit.com (u/MoneroApe replication report) + TheTom/llama-cpp-turboquant laguna/port + thecodacus/llama.cpp fable5/prefetch-experts (his fork chain)",
