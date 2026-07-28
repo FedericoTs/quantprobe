@@ -1,0 +1,33 @@
+=== #51 part 2: suppress the tiny GPU fragments (GGML_SCHED_MIN_GPU_RUN=8) ===
+--- arm B ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |     1024 |    0 |           tg128 |         15.07 ± 0.00 |
+[e6] CUDA backend: 3870 graph_compute calls
+[e6]   device busy (CUDA events) :   2621.4 ms total
+[e6]   submission/wait (wall-dev):    183.4 ms total  (7%)
+--- arm B8 ---
+[e8] min_gpu_run=8: moved 58 tiny-fragment nodes back to CPU
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |     1024 |    0 |           tg128 |         15.80 ± 0.00 |
+[e6] CUDA backend: 129 graph_compute calls
+[e6]   device busy (CUDA events) :   2582.8 ms total
+[e6]   submission/wait (wall-dev):     25.9 ms total  (1%)
+--- arm A ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         16.82 ± 0.00 |
+[e6] CUDA backend: 4257 graph_compute calls
+[e6]   device busy (CUDA events) :   3204.5 ms total
+[e6]   submission/wait (wall-dev):    373.7 ms total  (10%)
+--- arm A8 ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         16.85 ± 0.00 |
+[e6] CUDA backend: 4257 graph_compute calls
+[e6]   device busy (CUDA events) :   2913.2 ms total
+[e6]   submission/wait (wall-dev):    370.9 ms total  (11%)
+--- arm B ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |     1024 |    0 |           tg128 |         14.93 ± 0.00 |
+[e6] CUDA backend: 3870 graph_compute calls
+[e6]   device busy (CUDA events) :   2646.8 ms total
+[e6]   submission/wait (wall-dev):    187.0 ms total  (7%)
+--- arm B8 ---
+[e8] min_gpu_run=8: moved 58 tiny-fragment nodes back to CPU
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |     1024 |    0 |           tg128 |         16.16 ± 0.00 |
+[e6] CUDA backend: 129 graph_compute calls
+[e6]   device busy (CUDA events) :   2355.9 ms total
+[e6]   submission/wait (wall-dev):     29.0 ms total  (1%)
