@@ -1,0 +1,7 @@
+=== #55: forcing mmvq multi-row blocking on Pascal ===
+--- Q4_0 stock: does the healthy format use multi-row? ---
+[qp] mmvq type=2 ncols_dst=1 nwarps=4 small_k 0->0 rows/block 1->1
+[qp] mmvq type=14 ncols_dst=1 nwarps=4 small_k 0->0 rows/block 1->1
+| qwen2 7B Q4_0                  |   4.12 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         27.47 ± 0.00 |
+--- Q2_K stock, LAST position (control) ---
+| qwen2 7B Q2_K - Medium         |   2.80 GiB |     7.62 B | CUDA       |  99 |    0 |           tg128 |         22.06 ± 0.03 |
