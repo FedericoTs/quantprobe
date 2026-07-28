@@ -1,0 +1,56 @@
+=== #65 machine ladder: predictions captured BEFORE any run (anchored v1.20) ===
+--- Qwen2.5-0.5B-Instruct-Q8_0.gguf ---
+  *  131.6 tok/s  all in VRAM
+      49.8 tok/s  pure CPU (GPU idle)
+--- Qwen3-0.6B-Q8_0.gguf ---
+  *  109.3 tok/s  all in VRAM
+      41.4 tok/s  pure CPU (GPU idle)
+--- Qwen2.5-7B-Instruct-Q4_K_M.gguf ---
+  *   14.9 tok/s  all in VRAM
+       5.6 tok/s  pure CPU (GPU idle)
+--- DeepSeek-Coder-V2-Lite-Base-Q4_K_M.gguf ---
+  *   18.4 tok/s  split experts: 30%->VRAM, rest->RAM   [pins 7GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      14.9 tok/s  hybrid: attention->VRAM, experts->RAM   [pins 9GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+       9.2 tok/s  pure CPU (GPU idle)   [RAM boundary - expect bimodal speed]
+--- _k_sweep_scratch.gguf ---
+  *   22.3 tok/s  split experts: 28%->VRAM, rest->RAM   [pins 7GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      18.7 tok/s  hybrid: attention->VRAM, experts->RAM   [RAM boundary - needs --no-mmap; can be unstable; pins 10GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      10.6 tok/s  pure CPU (GPU idle)   [RAM boundary - expect bimodal speed]
+139 MHz, 30
+=== measurements, one session, pristine binary ===
+--- 05b_A ---
+| qwen2 1B Q8_0                  | 500.79 MiB |   494.03 M | CUDA       |   0 |           tg128 |         56.57 ± 1.14 |
+1506 MHz, 32
+--- 05b_B ---
+| qwen2 1B Q8_0                  | 500.79 MiB |   494.03 M | CUDA       |  99 |           tg128 |        154.44 ± 3.85 |
+1898 MHz, 36
+--- 06b_A ---
+| qwen3 0.6B Q8_0                | 604.15 MiB |   596.05 M | CUDA       |   0 |           tg128 |         45.80 ± 0.39 |
+1898 MHz, 35
+--- 06b_B ---
+| qwen3 0.6B Q8_0                | 604.15 MiB |   596.05 M | CUDA       |  99 |           tg128 |        106.89 ± 0.06 |
+1898 MHz, 39
+--- 7b_A ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |           tg128 |          6.87 ± 0.02 |
+139 MHz, 36
+--- 7b_B ---
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |           tg128 |         22.63 ± 0.00 |
+1873 MHz, 46
+--- ds_A ---
+| deepseek2 16B Q4_K - Medium    |   9.65 GiB |    15.71 B | CUDA       |   0 |           tg128 |          6.84 ± 5.13 |
+139 MHz, 38
+--- ds_B ---
+| deepseek2 16B Q4_K - Medium    |   9.65 GiB |    15.71 B | CUDA       |  13 |           tg128 |         18.21 ± 0.46 |
+1265 MHz, 41
+--- ds_C ---
+| deepseek2 16B Q4_K - Medium    |   9.65 GiB |    15.71 B | CUDA       |  99 | blk\.([8-9]|1[0-9]|2[0-6])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         22.87 ± 0.27 |
+1885 MHz, 44
+--- flag_A ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |   0 |           tg128 |          7.45 ± 3.16 |
+139 MHz, 41
+--- flag_B ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  20 |           tg128 |         19.29 ± 0.95 |
+1835 MHz, 46
+--- flag_C ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(1[3-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.78 ± 0.20 |
+1873 MHz, 49

@@ -231,7 +231,7 @@ Things the tool actually recommends, with the number attached.
 
 **Magnitude:** median error 19.0% -> 5.8%; flagship split predicted +1.6%, 0.6B +1.8%
 
-`shipped` · `measured` · scope: one box; the ratios are per-machine BY DESIGN (that is the point); format blindness of the single GPU ratio documented (Q4_0 -43% under-promise), fix logged as U-15 · evidence: prereg #64 (gate staked before any number; anchor arms excluded from targets) · wired into: `quantprobe/plan.py anchor composition; quantprobe/calibrate.py gpu_anchor; tests t_anchored_predictions_wiring`
+`shipped` · `measured` · scope: one box; the ratios are per-machine BY DESIGN (that is the point); format blindness of the single GPU ratio documented (Q4_0 -43% under-promise), fix logged as U-15 · evidence: prereg #64 (gate staked before any number; anchor arms excluded from targets); prereg #64 gate log weights/data/prereg64_gate.log · wired into: `quantprobe/plan.py anchor composition; quantprobe/calibrate.py gpu_anchor; tests t_anchored_predictions_wiring`
 
 ## Measured dead ends
 
@@ -513,7 +513,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Predicted effect (staked):** Q4_0 all-in-VRAM error from -43% to within +/-15% without new benchmark runs
 
-`untested` · `speculative` · wired into: `candidate v1.21; prereg #64 P-3`
+`untested` · `speculative` · evidence: prereg #65: the ladder measured the blindness at -34% on 7B Q4_K_M (Q8_0-anchored ratio pricing a K-quant) · wired into: `candidate v1.21; prereg #64 P-3`
 
 ## External work to study
 
