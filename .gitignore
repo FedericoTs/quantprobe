@@ -61,3 +61,4 @@ tools/*
 !tools/kernelprobe/
 tools/kernelprobe/*
 !tools/kernelprobe/*.cu
+!tools/kernelprobe/*.py

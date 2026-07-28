@@ -213,6 +213,58 @@ __global__ __launch_bounds__(128) void k_matvec_q4_dp4a(
     }
 }
 
+// ------------------------------------------------- L1e: 2-bit, dp4a-native, PRE-PERMUTED layout
+// 2.5 bits/weight: 32 weights (8 B) + one fp16 scale = 10 B per block.
+//
+// The trick that makes this cheap: a uint32 holds 16 two-bit weights, and (v >> 2j) & 0x03030303
+// extracts four of them into the four int8 lanes dp4a wants. Naively those four are STRIDED in
+// weight order (0,4,8,12), which would force a strided activation gather. So the weights are
+// stored PRE-PERMUTED at quantization time -- byte j carries weights j, j+4, j+8, j+12 -- and the
+// extraction then yields CONTIGUOUS weights, so each dp4a pairs with one aligned int32 of x.
+//
+// Symmetric values are 0..3 with an implicit -2 offset, and sum((q-2)*x) = dp4a(q,x) - 2*sum(x).
+// sum(x) does not depend on the row, so it is hoisted: computed once per block into shared memory
+// instead of once per row. That removes a dp4a per group per row.
+static const int B2_ROW_BYTES = (K / 16) * 4 + (K / 32) * 2;   // 512 + 128 = 640 B
+static const int B2_MAT_BYTES = ROWS * B2_ROW_BYTES;
+
+__global__ __launch_bounds__(128) void k_matvec_q2_dp4a(
+        const uint8_t * __restrict__ base, const int * __restrict__ sel,
+        const int * __restrict__ xq, float sx, float * __restrict__ y)
+{
+    __shared__ int xs[K / 4];
+    __shared__ int sumx[K / 4];
+    for (int i = threadIdx.x; i < K / 4; i += 128) {
+        const int v = xq[i];
+        xs[i]   = v;
+        sumx[i] = __dp4a(0x01010101, v, 0);      // hoisted out of the row loop
+    }
+    __syncthreads();
+
+    const uint8_t * m = base + (size_t)sel[blockIdx.x] * B2_MAT_BYTES;
+    for (int r = 0; r < ROWS; r++) {
+        const uint8_t  * row = m + (size_t)r * B2_ROW_BYTES;
+        const uint32_t * q   = (const uint32_t *)row;
+        const __half   * sc  = (const __half   *)(row + (K / 16) * 4);
+
+        const int t = threadIdx.x;                // one uint32 per thread == 16 weights
+        const uint32_t v = q[t];
+        int acc = 0;
+        #pragma unroll
+        for (int j = 0; j < 4; j++) {
+            const int qj = (int)((v >> (2 * j)) & 0x03030303u);
+            acc += __dp4a(qj, xs[4 * t + j], 0) - 2 * sumx[4 * t + j];
+        }
+        float f = (float)acc * __half2float(sc[t >> 1]);
+        for (int off = 16; off > 0; off >>= 1) f += __shfl_down_sync(0xffffffff, f, off);
+        __shared__ float warp[4];
+        if ((t & 31) == 0) warp[t >> 5] = f;
+        __syncthreads();
+        if (t == 0) y[blockIdx.x * ROWS + r] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
+        __syncthreads();
+    }
+}
+
 static double bench(void (*launch)(void*), void* arg, int iters, double bytes) {
     cudaEvent_t a, b; CHECK(cudaEventCreate(&a)); CHECK(cudaEventCreate(&b));
     launch(arg); CHECK(cudaDeviceSynchronize());              // warm
@@ -265,7 +317,10 @@ int main(int argc, char** argv) {
     CHECK(cudaMemcpy(d_base, h.data(), total, cudaMemcpyHostToDevice));
     float* d_x; CHECK(cudaMalloc(&d_x, K * sizeof(float)));
     CHECK(cudaMemcpy(d_x, hx.data(), K * sizeof(float), cudaMemcpyHostToDevice));
-    float* d_y; CHECK(cudaMalloc(&d_y, (size_t)NMAT * ROWS * sizeof(float)));
+    // y must hold one entry per (block, row) for the DENSEST format in the ladder: a format with
+    // fewer bits/weight fits more matrices in the same byte budget, so it launches more blocks.
+    const size_t max_blocks = (((size_t)target_mb << 20) / B2_MAT_BYTES) + 1;
+    float* d_y; CHECK(cudaMalloc(&d_y, max_blocks * ROWS * sizeof(float)));
     unsigned long long* d_acc; CHECK(cudaMalloc(&d_acc, 8)); CHECK(cudaMemset(d_acc, 0, 8));
 
     // selection arrays
@@ -391,6 +446,58 @@ int main(int argc, char** argv) {
                "L1d q4 matvec (dp4a)", g, g / spec, g / l0, g / 0.5625, err,
                err < 1e-3 ? "OK" : "*** MISMATCH ***");
         CHECK(cudaFree(d_xq));
+    }
+
+    // ---- L1e: 2-bit dp4a-native. Built with a real host-side packer so the permutation is
+    // exercised, and checked against a double reference that reads the ORIGINAL weight order.
+    {
+        const int n2 = (int)(((size_t)target_mb << 20) / B2_MAT_BYTES);
+        std::vector<uint8_t> hb((size_t)n2 * B2_MAT_BYTES);
+        std::vector<uint8_t> wref(ROWS * K);              // logical weights of matrix 0, in order
+        for (int m = 0; m < n2; m++) for (int r = 0; r < ROWS; r++) {
+            uint8_t * row = hb.data() + (size_t)m * B2_MAT_BYTES + (size_t)r * B2_ROW_BYTES;
+            uint32_t * q = (uint32_t *)row;
+            __half   * sc = (__half *)(row + (K / 16) * 4);
+            for (int g = 0; g < K / 16; g++) {            // one uint32 per 16 weights
+                uint8_t w[16];
+                for (int i = 0; i < 16; i++) {
+                    w[i] = (uint8_t)(rand() & 3);
+                    if (m == 0) wref[(size_t)r * K + g * 16 + i] = w[i];
+                }
+                uint32_t v = 0;                            // byte j <- weights j, j+4, j+8, j+12
+                for (int j = 0; j < 4; j++) {
+                    uint32_t byte = w[j] | (w[j + 4] << 2) | (w[j + 8] << 4) | (w[j + 12] << 6);
+                    v |= byte << (8 * j);
+                }
+                q[g] = v;
+            }
+            for (int s = 0; s < K / 32; s++) sc[s] = __float2half(0.25f);
+        }
+        uint8_t* d_b; CHECK(cudaMalloc(&d_b, hb.size()));
+        CHECK(cudaMemcpy(d_b, hb.data(), hb.size(), cudaMemcpyHostToDevice));
+        std::vector<int> s(n2); for (int i = 0; i < n2; i++) s[i] = i;
+        int* d_s; CHECK(cudaMalloc(&d_s, n2 * sizeof(int)));
+        CHECK(cudaMemcpy(d_s, s.data(), n2 * sizeof(int), cudaMemcpyHostToDevice));
+
+        float mx = 0; for (int i = 0; i < K; i++) mx = fmaxf(mx, fabsf(hx[i]));
+        const float sx = mx / 127.0f;
+        std::vector<int8_t> xi(K); for (int i = 0; i < K; i++) xi[i] = (int8_t)lrintf(hx[i] / sx);
+        int* d_xq; CHECK(cudaMalloc(&d_xq, K)); CHECK(cudaMemcpy(d_xq, xi.data(), K, cudaMemcpyHostToDevice));
+
+        struct A { const uint8_t* b; const int* s; const int* xq; float sx; float* y; int n; } a{d_b, d_s, d_xq, sx, d_y, n2};
+        auto L = [](void* v) { A* a = (A*)v; k_matvec_q2_dp4a<<<a->n, 128>>>(a->b, a->s, a->xq, a->sx, a->y); };
+        L(&a); CHECK(cudaDeviceSynchronize());
+        float gpu0; CHECK(cudaMemcpy(&gpu0, d_y, sizeof(float), cudaMemcpyDeviceToHost));
+        double ref = 0.0;                                   // reference in LOGICAL weight order
+        for (int i = 0; i < K; i++)
+            ref += ((double)wref[i] - 2.0) * 0.25 * (xi[i] * (double)sx);
+        double err = fabs(ref - gpu0) / (fabs(ref) + 1e-6);
+        double by = (double)n2 * B2_MAT_BYTES;
+        double g = bench(L, &a, 20, by);
+        printf("%-26s %12.1f %11.2f %10.2f   %6.2f GW/s  ( 2.5 bit, __dp4a)  rel.err %.1e %s\n",
+               "L1e q2 matvec (dp4a)", g, g / spec, g / l0, g / 0.3125, err,
+               err < 1e-3 ? "OK" : "*** MISMATCH ***");
+        CHECK(cudaFree(d_b)); CHECK(cudaFree(d_s)); CHECK(cudaFree(d_xq));
     }
 
     printf("\nllama.cpp, same card, measured through the runtime:\n");
