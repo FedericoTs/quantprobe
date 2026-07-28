@@ -330,6 +330,61 @@ __global__ __launch_bounds__(128) void k_matvec_q2a_dp4a(
     }
 }
 
+// ================================================== L1g: Q2_K-EQUIVALENT, the fairness control
+// Q2_A's 1.70x was measured against llama.cpp's Q2_K running END-TO-END on a real model, which is
+// not a like-for-like kernel comparison. This is: Q2_K's exact cost model - 2 bits/weight, and a
+// 4-bit scale AND 4-bit min PACKED INTO ONE BYTE per 16-weight sub-block, plus superblock fp16
+// d/dmin - in the same harness, same access pattern, same reduction. 2.625 bits/weight.
+//
+// The ONLY difference from Q2_A is that the scale and min arrive nibble-packed in one byte instead
+// of from two separate byte planes: two extra ALU ops per 16 weights, and 0.5 fewer bits/weight.
+// If this lands ABOVE Q2_A, then the format is not what makes llama.cpp's Q2_K slow.
+static const int KQ_ROW_BYTES = (K / 16) * 4 + (K / 16) + (K / 256) * 4;   // 512 + 128 + 32 = 672
+static const int KQ_MAT_BYTES = ROWS * KQ_ROW_BYTES;
+
+__global__ __launch_bounds__(128) void k_matvec_q2k_equiv(
+        const uint8_t * __restrict__ base, const int * __restrict__ sel,
+        const int * __restrict__ xq, float sx, float * __restrict__ y)
+{
+    __shared__ int xs[K / 4];
+    __shared__ int sumx[K / 4];
+    for (int i = threadIdx.x; i < K / 4; i += 128) {
+        const int v = xq[i];
+        xs[i] = v; sumx[i] = __dp4a(0x01010101, v, 0);
+    }
+    __syncthreads();
+
+    const int t = threadIdx.x, sb = t >> 4;
+    const uint8_t * m = base + (size_t)sel[blockIdx.x] * KQ_MAT_BYTES;
+    const int sg = sumx[4*t] + sumx[4*t+1] + sumx[4*t+2] + sumx[4*t+3];
+
+    for (int r = 0; r < ROWS; r++) {
+        const uint8_t  * row  = m + (size_t)r * KQ_ROW_BYTES;
+        const uint32_t * q    = (const uint32_t *)row;
+        const uint8_t  * sm   = row + (K/16)*4;                 // packed: low nibble scale, high min
+        const __half   * d    = (const __half *)(sm + (K/16));
+        const __half   * dmin = d + (K/256);
+
+        const uint32_t v = q[t];
+        int acc = 0;
+        #pragma unroll
+        for (int j = 0; j < 4; j++)
+            acc += __dp4a((int)((v >> (2*j)) & 0x03030303u), xs[4*t + j], 0);
+
+        const uint8_t p = sm[t];
+        const float s  = (float)(p & 0xF)  * __half2float(d[sb]);      // <- the extra unpack
+        const float mn = (float)(p >>  4)  * __half2float(dmin[sb]);
+        float f = s * (float)acc - mn * (float)sg;
+
+        for (int off = 16; off > 0; off >>= 1) f += __shfl_down_sync(0xffffffff, f, off);
+        __shared__ float warp[4];
+        if ((t & 31) == 0) warp[t >> 5] = f;
+        __syncthreads();
+        if (t == 0) y[blockIdx.x * ROWS + r] = (warp[0] + warp[1] + warp[2] + warp[3]) * sx;
+        __syncthreads();
+    }
+}
+
 static double bench(void (*launch)(void*), void* arg, int iters, double bytes) {
     cudaEvent_t a, b; CHECK(cudaEventCreate(&a)); CHECK(cudaEventCreate(&b));
     launch(arg); CHECK(cudaDeviceSynchronize());              // warm
@@ -616,6 +671,33 @@ int main(int argc, char** argv) {
                "L1f Q2_A asym (dp4a)", g, g / spec, g / l0, g / 0.390625, err,
                err < 1e-3 ? "OK" : "*** MISMATCH ***");
         CHECK(cudaFree(d_a)); CHECK(cudaFree(d_s)); CHECK(cudaFree(d_xq));
+    }
+
+    // ---- L1g: the fairness control. Same harness, Q2_K's cost model.
+    {
+        const int nk = (int)(((size_t)target_mb << 20) / KQ_MAT_BYTES);
+        std::vector<uint8_t> hk((size_t)nk * KQ_MAT_BYTES);
+        for (size_t i = 0; i < hk.size(); i++) hk[i] = (uint8_t)(rand() & 0xFF);
+        for (int mm = 0; mm < nk; mm++) for (int r = 0; r < ROWS; r++) {
+            uint8_t * row = hk.data() + (size_t)mm * KQ_MAT_BYTES + (size_t)r * KQ_ROW_BYTES;
+            __half * d = (__half *)(row + (K/16)*4 + (K/16));
+            for (int s = 0; s < (K/256)*2; s++) d[s] = __float2half(0.002f);
+        }
+        uint8_t* d_k; CHECK(cudaMalloc(&d_k, hk.size()));
+        CHECK(cudaMemcpy(d_k, hk.data(), hk.size(), cudaMemcpyHostToDevice));
+        std::vector<int> s(nk); for (int i = 0; i < nk; i++) s[i] = i;
+        int* d_s; CHECK(cudaMalloc(&d_s, nk * sizeof(int)));
+        CHECK(cudaMemcpy(d_s, s.data(), nk * sizeof(int), cudaMemcpyHostToDevice));
+        float mx = 0; for (int i = 0; i < K; i++) mx = fmaxf(mx, fabsf(hx[i]));
+        const float sxx = mx / 127.0f;
+        std::vector<int8_t> xi(K); for (int i = 0; i < K; i++) xi[i] = (int8_t)lrintf(hx[i] / sxx);
+        int* d_xq; CHECK(cudaMalloc(&d_xq, K)); CHECK(cudaMemcpy(d_xq, xi.data(), K, cudaMemcpyHostToDevice));
+        struct A { const uint8_t* b; const int* s; const int* xq; float sx; float* y; int n; } a{d_k, d_s, d_xq, sxx, d_y, nk};
+        auto L = [](void* v) { A* a = (A*)v; k_matvec_q2k_equiv<<<a->n, 128>>>(a->b, a->s, a->xq, a->sx, a->y); };
+        double g = bench(L, &a, 20, (double)nk * KQ_MAT_BYTES);
+        printf("%-26s %12.1f %11.2f %10.2f   %6.2f GW/s  ( 2.625 bit, __dp4a)  <- FAIRNESS CONTROL\n",
+               "L1g Q2_K-equivalent", g, g / spec, g / l0, g / 0.328125);
+        CHECK(cudaFree(d_k)); CHECK(cudaFree(d_s)); CHECK(cudaFree(d_xq));
     }
 
     printf("\nllama.cpp, same card, measured through the runtime:\n");
