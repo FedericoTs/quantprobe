@@ -62,3 +62,77 @@ directly to the existing Law 6 speculation machinery), and the tool's split-plac
 gains a mechanistic justification instead of being a fitted number.
 
 **Wired into:** pending; the N5 entry in `KERNEL_BREAKTHROUGH_BRAINSTORM.md` scores either way.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg58_e9_attribution.log`)
+
+**Verdict: P-0 PASS (reconciliation 96.9% / 99.1%). P-1 MISS — the KILL RULE fires: the time
+concentrates in MATMULS (80%), not in small glue ops. But the per-call arithmetic then hands over
+the real mechanism, and it reconciles BOTH arms quantitatively.**
+
+### Instrument disclosure, before any number
+
+E9 costs: arm A ran 12.52 tok/s profiled vs 16.87 unprofiled (853 nodes/token x event pairs on
+WDDM inflate device-busy 23.9 -> 40.6 ms). Arm B: 21.42 vs 21.67 (-1.2%) — trustworthy absolutes.
+SHARES are used from arm A; absolutes only from arm B and from the earlier uninstrumented E6 run.
+
+### The attribution (per token)
+
+| | arm A: flagship split | arm B: 7B Q2_K all-in-VRAM |
+|---|---|---|
+| GPU nodes/token | **853** | **341** |
+| GPU weight bytes/token | 0.700 GB | 2.95 GB |
+| matmul share of device time | **80.2%** | **92.7%** |
+| non-matmul share | 19.8% | 7.3% |
+| biggest single op | q3_K attn matmuls 36% | q2_K FFN matmuls |
+| lm_head (q6_K, 1 call) | 4.8 ms | 4.3 ms |
+
+- **P-1 MISS:** non-matmul ops are 19.8%, not >=50%. H1-as-an-op-class is dead.
+- **P-2 HIT but moot** (glue ops 6-13 us/call).
+- **P-3 MISS:** arm A matmul time alone implies **36.5 GB/s** on GPU weight bytes — the split's
+  matmuls are NOT healthy.
+- **P-4 MISS** (12.5 points vs 15 staked).
+
+### The mechanism the per-call numbers hand over
+
+Arm A's matmuls run **5-15x their byte cost per call** (q2_K attn: 96 us measured vs ~9 us of
+bytes; MUL_MAT_ID: 358 us vs ~51). Arm B's matmuls run near their format-taxed byte cost
+(matmul-only effective bandwidth **69.4 GB/s — exactly the L-16 prediction** for Q2_K-class).
+
+The two arms reconcile under ONE model:
+
+```
+device time = format tax (L-16, ~69 GB/s effective for K-quants)  +  per-call floor (~16 us)
+
+arm B: 2.95 GB / 69 GB/s = 42.8 ms  + 341 x 16 us =  5.5 ms  -> 48.3 vs 45.8 measured  (+5%)
+arm A: 0.700 GB / 69 GB/s = 10.1 ms + 853 x 16 us = 13.6 ms  -> 23.7 vs 23.9 measured  (-1%)
+```
+
+**The split's eta 0.15 vs all-in-VRAM's 0.34 is CALL GRANULARITY: the split runs 2.5x the calls
+on 4.2x fewer GPU bytes, so the same ~16 us per-call floor explodes from ~12% of device time to
+~58%.** The flagship's 2048-hidden attention and 768-wide experts are simply too small per call
+to amortize it; the 7B's 3584-hidden matmuls are not.
+
+**The floor is in-kernel, not submission:** #48 measured CUDA graphs (which remove submission
+gaps) at +3.2% on this exact placement — independently confirming the floor survives graph replay.
+Known contributor: llama.cpp quantizes the activation vector to q8_1 INSIDE every quantized
+matmul call (~5-10 us x ~290 calls/token ≈ 1.5-3 ms of the 13.6) — the same activations are
+re-quantized for q/k/v. The remainder is latency-bound small-matvec execution (a 672-byte-per-row
+matvec cannot hide DRAM latency). Micro-attribution below 16 us is NOT claimed.
+
+### What this closes and what it opens
+
+- **N5 CLOSED. The last big number on this box is explained.** The full physics map: CPU tier at
+  physics (L-11), all-in-VRAM eta = format metadata density (L-16), split GPU eta = L-16 + the
+  per-call floor at call granularity (this, L-17).
+- **The fix direction is NOT kernels** (pre-registered as the kill-rule consequence): it is
+  fewer/bigger calls — (1) speculative verify rounds amortize the floor across draft tokens with
+  machinery Law 6 already measured; (2) more GPU-resident expert layers = bigger MMID calls;
+  (3) upstream: share the q8_1 activation quantization across q/k/v (real, bounded ~1.5-3 ms).
+- The tool's split-placement eta constant now has a mechanistic decomposition instead of being a
+  fitted number.
+
+**Wired into:** `findings/REGISTER.json:L-17` (the per-call floor law + two-arm reconciliation) ·
+`C-09` note (the 87%-accounted token now has its GPU share decomposed) · N5 in
+`KERNEL_BREAKTHROUGH_BRAINSTORM.md` scored.

@@ -8,7 +8,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 16 |
+| Established laws | 17 |
 | Shipped levers | 17 |
 | Measured dead ends | 21 |
 | Open contradictions | 9 |
@@ -114,6 +114,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** +23% density arm; residuals 9-12% unattributed (occupancy / q8_1-struct walk)
 
 `established` · `measured` · scope: one Pascal card; the density cost shrinks wherever ALU/BW ratio is higher · evidence: prereg #57 (incl. exploratory density arm, labeled post-hoc), prereg #56, quality.py ladder · wired into: `quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; C-02 closure`
+
+### L-17 — THE SPLIT PLACEMENT LAW: GPU device time = format tax (L-16) + a per-call floor (~16 us/call on this WDDM Pascal box, in-kernel not submission - CUDA graphs +3.2% independently confirm). One model reconciles both measured arms: all-in-VRAM 7B predicted 48.3 vs 45.8 measured (+5%); flagship split predicted 23.7 vs 23.9 (-1%). The split eta 0.15 vs 0.34 is CALL GRANULARITY - 2.5x the calls on 4.2x fewer GPU bytes explodes the floor share from ~12% to ~58%. Fix direction is fewer/bigger calls (speculation verify batches, more resident expert layers, shared activation quantization), not kernel code.
+
+**Magnitude:** 853 vs 341 GPU nodes/token; matmuls 80% of split device time running 5-15x their byte cost per call; known floor contributor: q8_1 activation re-quantization inside every quantized matmul (~1.5-3 ms/token)
+
+`established` · `measured` · scope: one Pascal/WDDM box, batch 1; the floor constant is machine-specific, the LAW (floor x calls + format tax) should transfer · evidence: prereg #58 (E9 per-op attribution, reconciled 96.9%/99.1% against E6), prereg #48 (graphs null), prereg #50 (E6 baseline) · wired into: `quantprobe plan.py eta constants gain mechanistic justification; preregistrations/2026-07-28-split-eta-attribution.md`
 
 ## Shipped levers
 
@@ -391,7 +397,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Magnitude:** prereg #50, E6 profiler: 33 graph_compute calls/token; device busy 23.88 ms against a byte model of 4.34 ms (0.700 GB at the card's measured 161.3 GB/s) = 5.5x, effective 29.3 GB/s, eta 0.15.
 
-`closed` · `measured` · scope: Qwen3-30B-A3B Q2_K split placement, reference box, decode · evidence: prereg #46 (the staking that split into #49/#50), prereg #50 (E6 GPU events), prereg #49 (E3 on CUDA), prereg #44 (independent card ceiling) · wired into: `nothing - an open measurement, deliberately unexplained`
+`closed` · `measured` · scope: Qwen3-30B-A3B Q2_K split placement, reference box, decode · evidence: prereg #46 (the staking that split into #49/#50), prereg #50 (E6 GPU events), prereg #49 (E3 on CUDA), prereg #44 (independent card ceiling); 2026-07-28 prereg #58: the GPU share of the split token is now decomposed per-op (matmuls 80% at 5-15x byte cost per call) and reconciled under L-17 to within 5%. The token ledger is closed at every level this box can measure. · wired into: `nothing - an open measurement, deliberately unexplained`
 
 ### C-06 — Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.
 
