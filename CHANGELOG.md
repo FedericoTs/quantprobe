@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.20.1 - 2026-07-28
+
+**The machine ladder found the anchors' two blind spots; both fixed, gated, and disclosed.**
+
+The 0.5B-30B ladder (MACHINE_LADDER.md) measured the v1.20 anchored predictions at median error
+14.8% with one -34% miss. Both causes were mechanical: anchors were priced without the same
+active-byte convention every row uses, and a 0.5B GPU anchor was pricing 7B+ targets - small
+models pay a size floor big models do not (#59), so the anchor conflated format eta with it.
+
+Fixed: anchors carry their own spec (active bytes + format mix) and big-model GPU eta now comes
+from the measured per-format ladder (spec.FORMAT_EBW, L-16 made actionable), with the anchor's
+machine ratio applied only within the anchor's size class. Post-fix: median 8.6%, worst 14.3%,
+DS-Lite (quasi-out-of-sample mix) at -2.5%. U-15 closed.
+
+Two guards earned their keep in the same hour: the plan/bench parity check (layer 3) and the
+all-in-VRAM ratchet test both BLOCKED intermediate versions of this change - the format eta is
+calibration-class and is now gated off preset estimation entirely.
+
 ## 1.20.0 - 2026-07-28
 
 **Anchored predictions: your own two benchmark runs cut the tool's median error from 19% to 6%.**

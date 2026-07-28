@@ -13,13 +13,13 @@ fitted. Log: `weights/data/prereg65_ladder.log`.
   fit (`-ngl 13` / `-ngl 20` for the two big models).
 - **quantprobe** — the command `plan` emits, verbatim.
 
-| model | naive default | informed llama.cpp | **quantprobe** | law predicted (staked) | pred. error |
+| model | naive default | informed llama.cpp | **quantprobe** | law (staked, v1.20) | law (v1.20.1)⁵ |
 |---|---|---|---|---|---|
-| Qwen2.5-0.5B Q8_0 | 56.57 | 154.44 | = informed¹ | 131.6² | −14.8% (under) |
-| Qwen3-0.6B Q8_0 | 45.80 | 106.89 | = informed¹ | 109.3 | **+2.3%** |
-| Qwen2.5-7B Q4_K_M | 6.87 | 22.63 | = informed¹ | 14.9³ | −34% (under) |
-| DeepSeek-Lite 16B MoE Q4_K_M | 6.84 ± 5.13⁴ | 18.21 | **22.87** | 18.4 | −20% (under) |
-| Qwen3-30B-A3B MoE Q2_K | 7.45 ± 3.16⁴ | 19.29 | **20.78** | 22.3 | **+7.3%** (in band) |
+| Qwen2.5-0.5B Q8_0 | 56.57 | 154.44 | = informed¹ | 131.6 (−15%)² | 141.9 (−8.1%) |
+| Qwen3-0.6B Q8_0 | 45.80 | 106.89 | = informed¹ | 109.3 (**+2.3%**) | 117.9 (+10.3%) |
+| Qwen2.5-7B Q4_K_M | 6.87 | 22.63 | = informed¹ | 14.9 (−34%)³ | 19.4 (−14.3%) |
+| DeepSeek-Lite 16B MoE Q4_K_M | 6.84 ± 5.13⁴ | 18.21 | **22.87** | 18.4 (−20%) | 22.3 (**−2.5%**) |
+| Qwen3-30B-A3B MoE Q2_K | 7.45 ± 3.16⁴ | 19.29 | **20.78** | 22.3 (+7.3%) | 19.0 (−8.6%) |
 
 **What the ladder says:**
 
@@ -44,6 +44,16 @@ fitted. Log: `weights/data/prereg65_ladder.log`.
 4. Naive big-model CPU runs are BIMODAL (±44–75%!): mmap pages the file from disk on the first
    pass. The tool's pure-CPU row predicts the placement done right (`--no-mmap`, warm) and warns
    about exactly this; the naive arm demonstrates it.
+5. v1.20.1 fixed the two causes behind the staked column's big misses, both found BY this table:
+   anchors are now priced with the same active-byte formula as every row, and big-model GPU η
+   comes from the measured per-format ladder (a 0.5B anchor cannot price a 7B — small models pay
+   a size floor big models don't, #59/#65). **Disclosure: the v1.20.1 column is recomputed after
+   the measurements existed** — in-sample for the 7B-family formats (the ladder's η constants
+   come from those measurements), quasi-out-of-sample for the two MoE mixes (DS at −2.5% is the
+   strongest point). The staked column remains the honest pre-registered record; the true
+   out-of-sample test of v1.20.1 is the next machine (E-06's rerun ask). Median |error|:
+   staked 14.8% → v1.20.1 8.6%, worst 34% → 14.3%, and the calibrated-path improvement is gated
+   off preset estimation (the ratchet test caught and blocked that scope creep before release).
 
 **The two headline sentences this table earns:**
 On consumer hardware, the difference between running a model and running it *right* is 2–3×, and

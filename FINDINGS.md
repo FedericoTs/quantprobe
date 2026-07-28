@@ -507,13 +507,13 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `speculative` · evidence: prereg #62 (the sweep + the shipped fix) · wired into: `prereg #61 scoring; candidate next single-session sweep`
 
-### U-15 — Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it.
+### U-15 — Per-FORMAT GPU anchoring: the v1.20 single GPU ratio prices every format with one number, so Q4_0 (measured 1.8x healthier than Q2_K-class per L-15/L-16) is under-predicted by 43%. A format-classed anchor set (or scaling the anchor ratio by the L-16 format ladder) should close most of it. [CLOSED-SHIPPED v1.20.1: FORMAT_EBW ladder in spec.py prices GPU eta per format on the calibrated path; plus the size-class guard (a 0.5B anchor never prices a 7B). Ladder median error 14.8% -> 8.6%, worst 34% -> 14.3%, DS-Lite quasi-OOS at -2.5%. Gated off presets by the ratchet test.]
 
 **Hypothesis:** eta_format(target) = eta_format(anchor) x ladder_ratio from kernelprobe measurements
 
 **Predicted effect (staked):** Q4_0 all-in-VRAM error from -43% to within +/-15% without new benchmark runs
 
-`untested` · `speculative` · evidence: prereg #65: the ladder measured the blindness at -34% on 7B Q4_K_M (Q8_0-anchored ratio pricing a K-quant) · wired into: `candidate v1.21; prereg #64 P-3`
+`closed` · `speculative` · evidence: prereg #65: the ladder measured the blindness at -34% on 7B Q4_K_M (Q8_0-anchored ratio pricing a K-quant) · wired into: `candidate v1.21; prereg #64 P-3`
 
 ## External work to study
 

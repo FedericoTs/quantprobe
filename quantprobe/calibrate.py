@@ -146,11 +146,22 @@ def _bench_anchor(model_path, ngl, metric_tokens, llama_dir=None):
         if tag in line and "|" in line:
             try:
                 toks = float(line.split("|")[-2].strip().split()[0])
-                return dict(placement=("pure CPU (-ngl 0)" if ngl == 0 else "all-in-VRAM (-ngl 99)"),
-                            metric=tag, tok_s=toks,
-                            model=os.path.basename(model_path),
-                            model_gb=round(os.path.getsize(model_path) / 1e9, 3),
-                            sustained_sm=clk.sustained()), None
+                anchor = dict(placement=("pure CPU (-ngl 0)" if ngl == 0 else "all-in-VRAM (-ngl 99)"),
+                              metric=tag, tok_s=toks,
+                              model=os.path.basename(model_path),
+                              model_gb=round(os.path.getsize(model_path) / 1e9, 3),
+                              sustained_sm=clk.sustained())
+                # the anchor's own spec, so plan can price this arm with the SAME formula it uses
+                # for every row (active bytes with the 1.08 overhead), and rescale the ratio by
+                # format (L-16) when the target's format mix differs from the anchor's
+                try:
+                    from . import spec as specmod
+                    s = specmod.from_gguf(model_path)
+                    anchor["act_gb"] = round(s["a"] * s["bits"] / 8 * 1.08, 4)
+                    anchor["fmt_bw"] = s.get("fmt_bw")
+                except Exception:
+                    pass
+                return anchor, None
             except (ValueError, IndexError):
                 break
     return None, "could not parse llama-bench output - anchor skipped"

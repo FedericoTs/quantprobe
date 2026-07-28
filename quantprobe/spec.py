@@ -22,6 +22,20 @@ def _field(r, *names):
     return None
 
 
+# Effective decode bandwidth BY FORMAT on the reference box, e2e (GB/s). This is L-16 made
+# actionable: eta is a property of the format, so an anchor measured on one format must be
+# rescaled before it prices another (prereg #65 measured the cost of NOT doing this: -34% on
+# Q4_K_M from a Q8_0 anchor). 'measured' = e2e on a real 7B (#52/#53) or in-situ per-op (#58);
+# 'derived' = scaled from the kernelprobe ladder. Formats not listed (IQ*, exotic) are excluded
+# from the weighting; if coverage falls below 60% of bytes the factor is withheld entirely -
+# no number beats a wrong number.
+FORMAT_EBW = {
+    "Q4_0": 119.1, "Q4_K": 106.4, "Q2_K": 65.4, "Q3_K": 57.3, "Q6_K": 100.0,   # measured
+    "Q8_0": 115.0, "Q5_K": 103.0, "Q5_0": 117.0, "Q5_1": 115.0,                # derived
+    "F16": 150.0, "F32": 150.0, "BF16": 150.0,                                  # derived
+}
+
+
 def from_gguf(path):
     from gguf import GGUFReader
     r = GGUFReader(path)
@@ -29,6 +43,7 @@ def from_gguf(path):
     total = 0
     routed = 0
     iq_bytes = all_bytes = 0
+    fmt_wsum = fmt_bytes = 0.0
     for t in r.tensors:
         n = 1
         for d in t.shape:
@@ -45,6 +60,10 @@ def from_gguf(path):
         all_bytes += nb
         if t.tensor_type.name.startswith("IQ"):
             iq_bytes += nb
+        tn = t.tensor_type.name
+        if tn in FORMAT_EBW:
+            fmt_wsum += nb * FORMAT_EBW[tn]
+            fmt_bytes += nb
     ne_params = total - routed
 
     n_exp = _field(r, ".expert_count")
@@ -79,9 +98,11 @@ def from_gguf(path):
             except Exception:
                 arch = None
             break
+    fmt_bw = (fmt_wsum / fmt_bytes) if (all_bytes and fmt_bytes / all_bytes >= 0.6) else None
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
                 bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
-                iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0)
+                iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
+                fmt_bw=round(fmt_bw, 1) if fmt_bw else None)
 
 
 def apply(a, quiet=False):
@@ -106,6 +127,7 @@ def apply(a, quiet=False):
     if getattr(a, "n_layer", None) is None:
         a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
     a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
+    a.fmt_bw = s.get("fmt_bw")           # read-only: lets anchored predictions rescale by format (L-16)
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))
     return True
