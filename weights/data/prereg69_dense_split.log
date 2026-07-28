@@ -1,0 +1,23 @@
+=== #69: tool prediction + emitted placement, captured before any run ===
+  *    4.8 tok/s  split: 28/48 layers->VRAM, rest->RAM
+       2.7 tok/s  pure CPU (GPU idle)
+  run it:  llama-server -m model.gguf -ngl 28 -b 4096 -ub 4096 --threads 4
+[quantprobe] exec: llama-server -m D:/evo-compress-data/gguf/Qwen2.5-14B-Instruct-Q4_K_M.gguf -ngl 28 -b 4096 -ub 4096 --threads 4 
+--- baseline, emitted config ---
+| qwen2 14B Q4_K - Medium        |   8.37 GiB |    14.77 B | CUDA       |  28 |           tg128 |          5.54 ± 0.03 |
+--- 14B+0.5B K=2:  |  ---
+--- 14B+0.5B K=4:  |  ---
+--- 14B+0.5B K=6:  |  ---
+1898 MHz, 39
+--- NOTE: first spec attempts crashed on tokenizer-metadata mismatch (bartowski 14B vs June-era 0.5B); fixed with same-lineage draft. Draft runs -ngld 0 (CPU, zero VRAM cost). ---
+--- K=2: accept 76.3%, 7.314 t/s vs baseline 5.54 = 1.32x ---
+--- 14B+0.5B(CPU) K=4: accept    = 64.352% | decoded  194 tokens in   43.844 seconds, speed:    4.425 t/s ---
+--- 14B+0.5B(CPU) K=6: accept    = 56.296% | decoded  198 tokens in   50.512 seconds, speed:    3.920 t/s ---
+--- 14B+0.5B(CPU) K=8: accept    = 46.429% | decoded  199 tokens in   35.729 seconds, speed:    5.570 t/s ---
+1873 MHz, 54
+--- 14B+0.5B(CPU) K=1: accept    = 85.577% | decoded  194 tokens in   26.970 seconds, speed:    7.193 t/s ---
+--- 14B+0.5B(CPU) K=3: accept    = 69.841% | decoded  196 tokens in   55.411 seconds, speed:    3.537 t/s ---
+--- K=2 repeat a: accept    = 76.316% | speed:    7.463 t/s ---
+--- K=2 repeat b: accept    = 76.316% | speed:    7.430 t/s ---
+--- K=3 repeat b: accept    = 69.841% | speed:    3.540 t/s ---
+1873 MHz, 53

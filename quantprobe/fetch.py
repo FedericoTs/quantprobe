@@ -23,14 +23,33 @@ def token():
     return open(p).read().strip() if os.path.exists(p) else None
 
 
-def fetch(repo, dest, fname, tok, tries=100):
+def fetch(repo, dest, fname, tok, tries=100, force=False):
     url = f"https://huggingface.co/{repo}/resolve/main/{fname}"
     out = os.path.join(dest, fname)
     part = out + ".part"
-    if os.path.exists(out):
-        print(f"  {fname}: already complete", flush=True)
-        return True
     hdr0 = {"Authorization": f"Bearer {tok}"} if tok else {}
+    if os.path.exists(out) and not force:
+        # name-only skip once handed an incompatible file to llama-speculative (a June-era GGUF
+        # under the target name): compare against the remote before declaring completeness.
+        have = os.path.getsize(out)
+        try:
+            r = requests.head(url, headers=hdr0, allow_redirects=True, timeout=60)
+            remote = int(r.headers.get("Content-Length", 0))
+        except requests.exceptions.RequestException:
+            remote = 0
+        if remote and have != remote:
+            print(f"  {fname}: EXISTING FILE IS NOT THIS FILE - local {have:,} B vs remote "
+                  f"{remote:,} B. A same-named file from another source is on disk; it may be an "
+                  f"incompatible model. Re-run with --force to replace it, or fetch to a "
+                  f"different dest.", flush=True)
+            return False
+        note = "size matches remote" if remote else "remote size unavailable, name+presence only"
+        print(f"  {fname}: already complete ({note}; --force re-downloads)", flush=True)
+        return True
+    if os.path.exists(out) and force:
+        os.remove(out)
+        if os.path.exists(part):
+            os.remove(part)
     r = requests.head(url, headers=hdr0, allow_redirects=True, timeout=60)
     total = int(r.headers.get("Content-Length", 0))
     print(f"  {fname}: {total/1e9:.2f} GB", flush=True)
@@ -77,7 +96,7 @@ def run(a):
         print(f"[quantprobe] preset '{a.repo}' -> {repo}/{f}")
     if not files:
         _s.exit("no files given (or use a preset: " + ", ".join(PRESETS) + ")")
-    ok = all(fetch(repo, a.dest, fn, token()) for fn in files)
+    ok = all(fetch(repo, a.dest, fn, token(), force=getattr(a, "force", False)) for fn in files)
     _s.exit(0 if ok else 1)
 
 

@@ -1,0 +1,20 @@
+=== residency micro-sweep, TODAY's state, ub1024, tg128 r=2 ===
+--- 14 residents ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[4-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.48 ± 0.02 |
+--- 15 residents ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[5-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.25 ± 0.52 |
+--- 16 residents ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[6-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.97 ± 0.02 |
+--- 14 residents ---
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(1[4-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         20.46 ± 0.12 |
+1885 MHz, 45
+=== the Big Thing: 0.5B drafts 7B dense AIV, novel prompts. Baseline (same state, bench): 22.63 tg ===
+--- code K=8 ---
+--- code K=8: accept 39.1%, decoded 20.90 t/s vs baseline 22.63 = 0.92x ---
+--- code K=4: accept    = 67.857% | decoded  261 tokens in   11.390 seconds, speed:   22.916 t/s ---
+--- code K=2: accept    = 79.000% | decoded  259 tokens in   10.294 seconds, speed:   25.161 t/s ---
+--- prose K=4: accept    = 45.109% | decoded  259 tokens in   14.806 seconds, speed:   17.493 t/s ---
+--- code K=1  : accept    = 85.507% | decoded  257 tokens in   10.588 seconds, speed:   24.272 t/s ---
+--- code K=3  : accept    = 75.527% | decoded  259 tokens in   10.735 seconds, speed:   24.126 t/s ---
+--- code K=4 --spec-draft-p-min 0.75: accept    = 67.857% | decoded  261 tokens in   11.412 seconds, speed:   22.871 t/s ---
+--- prose K=2  : accept    = 60.256% | decoded  259 tokens in   12.000 seconds, speed:   21.584 t/s ---

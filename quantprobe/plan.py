@@ -125,8 +125,17 @@ def ubatch_flags(placement, vram_resident_gb, vc):
     # Note this also INVERTS which placement is fastest at prefill: at the default ub the split
     # wins (279 vs 200), at ub 2048 the all-CPU placement wins (350 vs 162). Placement and batch
     # are not independent dimensions - they compete for the same VRAM.
-    if "split experts" in placement or vc <= 0:
+    if vc <= 0:
         return None
+    if "split experts" in placement:
+        # U-16, closed by measurement: the #20-era total exclusion of the split was over-broad.
+        # #20's harm was ub 2048 (the compute-buffer cliff: 279 -> 162); #62 measured the SAME
+        # split placement at ub 1024 with pp 393.7 AND tg 22.21 - no cliff, both metrics at
+        # their best - while the excluded emitted config measured pp 301 (#66). The split gets
+        # ub capped at 1024 HARD (never 2048, where the measured cliff lives), still sized by
+        # the buffer math against the residual headroom.
+        ub = safe_ubatch(vc * 0.90 - vram_resident_gb, cap=1024)
+        return "-b %d -ub %d" % (ub, ub) if ub else None
     if not any(k in placement for k in ("->RAM", "CPU", "disk")):
         return None                       # nothing host-resident: no transfer to amortise
     if vc * 0.90 - vram_resident_gb < UBATCH_HEADROOM_GB:
@@ -444,6 +453,36 @@ def format_advice(placement, bits):
     return None
 
 
+def dense_draft_note(moe, placement):
+    """The dense-target draft cells, measured (preregs #67/#69). All-in-VRAM: 0.5B drafting the
+    dense 7B, NOVEL prompts: +11% on code at --spec-draft-n-max 2 (79% acceptance), net NEGATIVE
+    on prose at every draft length, and llama.cpp's default K=3 is past the optimum. SPLIT: the
+    best speculation cell on this box - the K+1 verify batch reads each CPU-resident layer once,
+    so the CPU share of the token amortizes: +33% on the 14B at K=2 (76% acceptance) with the
+    draft itself on CPU (-ngld 0, zero VRAM cost). The K-cliff is HARDER on split (K=3+ lands at
+    or below baseline) because the CPU draft pays from the same bandwidth pocket the
+    amortization saves."""
+    if moe:
+        return None
+    if "layers->VRAM" in (placement or ""):
+        return ("dense-SPLIT speculation (measured, prereg #69): a small same-family draft is "
+                "the best speculation cell on this box - `-md draft.gguf -ngld 0 "
+                "--spec-draft-n-max 2` bought **+33%** decode on a 14B split target (5.5 -> 7.4 "
+                "tok/s, 76%% acceptance, novel code), and the draft costs ZERO VRAM because it "
+                "runs on CPU. Mechanism: the K+1-token verify batch reads each CPU-resident "
+                "layer once, so the CPU share of every token amortizes. Keep K=2: every "
+                "measured K>=3 landed AT OR BELOW no-draft baseline (the CPU draft spends the "
+                "same RAM bandwidth the amortization saves), so llama.cpp's default 3 already "
+                "loses here.")
+    if "all in VRAM" not in placement:
+        return None
+    return ("dense-model speculation (measured, prereg #67): pairing this model with a small "
+            "same-family draft (-md draft.gguf -ngld 99 --spec-draft-n-max 2) buys ~+11% on "
+            "CODE-style novel output at 79%% acceptance - and LOSES speed on prose and at "
+            "draft lengths >=4 (llama.cpp's default 3 is past the optimum here). Copy-regime "
+            "ngram speculation remains the big multiplier where output copies context.")
+
+
 def speculation_advice(moe, placement):
     """What speculative decoding is worth for THIS model and placement.
 
@@ -497,8 +536,19 @@ def speculation_advice(moe, placement):
     return None                    # MoE fully resident: untested here, so we say nothing
 
 
+
+# U-17 (prereg #66): the per-IQ-byte CPU decode penalty. Both IQ2_XS arms of the #66 ladder
+# over-predicted while the tool's IQ warning stayed prose-only. Calibrated on the pure-CPU arm
+# (predicted 14.1 vs measured 11.44 tok/s at iq_share 0.962 -> k = 0.242), cross-validated on
+# the independent expert-split arm (see the retrodiction in tests/smoke.py). NOT V-11's 2.7x:
+# that number is a different regime (isolated prefill-heavy comparison) and would overshoot
+# this correction ~7x - the retrodiction gate rejected it. Scope: weight bytes read from RAM
+# during token generation; KV terms are format-independent and untouched.
+IQ_CPU_TG_PENALTY = 0.242
+
+
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
-             n_layer=None, true_size_gb=None):
+             n_layer=None, true_size_gb=None, iq_share=0.0):
     ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
     size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
     # CAPACITY uses the real file size when we have the file. The estimate above assumes the
@@ -534,6 +584,9 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     kv_gb = ctx * kvp / 1e9 if ctx > 0 else 0.0
     ra = max(rc - 4, 1)
     eta_r = 0.38 if moe else 0.62
+    # U-17: price the IQ share into every RAM weight read (pure CPU, hybrid experts, both split
+    # kinds, waterfall). iq_share is 0.0 unless a real GGUF was scanned, so presets are untouched.
+    eta_r /= (1.0 + iq_share * IQ_CPU_TG_PENALTY)
     if gl is None: gl = geta * 0.6
     # The sub-4-bit GPU DECODE collapse does not exist. It was gated on bit-width (`bits >= 4`),
     # which made 3.99 bits predict 8.75x slower than 4.00. Pre-registration #16 measured decode
@@ -552,7 +605,14 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         out.append(("all in VRAM", 1 / (act / (geta_w * vb) + kv_gb / (ETA_KV * vb)), None,
                     "-ngl 99"))
     if moe and vc > 0:
-        v_need = ne * ab / 8 * 1.08 + 1.2 + kv_gb          # KV sits with attention in VRAM
+        # KV sits with attention in VRAM. The buffer term was a flat 1.2 GB estimate from before
+        # the compute buffer was MEASURED (#23: exactly 0.5874 MiB per ubatch token -> 0.60 GB at
+        # the ub-1024 the split now emits). 0.9 = measured buffer + 0.3 margin; the flat 1.2 was
+        # the same over-reserve class #62 removed once already, and it held the emitted split at
+        # 13 residents where the sweep measured 16 as optimal on both metrics (22.21 tg/393.7 pp)
+        # with the soft edge two notches away at 18 (-6.6%). This lands the emit at 15 - both
+        # sweep neighbors (14: 391/21.67, 16: 394/22.21) measured healthy.
+        v_need = ne * ab / 8 * 1.08 + 0.9 + kv_gb
         r_need = size - ne * ab / 8 * 1.08
         if v_need <= vc * 0.95 and r_need <= ra:
             warn = "RAM boundary - needs --no-mmap; can be unstable" if r_need > ra * 0.85 else None
@@ -600,7 +660,14 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                                  "auto-placement decide") if ram_left > ra * 0.45 else None)
                     out.append((f"split experts: {f:.0%}->VRAM, rest->RAM", 1 / t_split, pin_warn, fl))
     if (not moe) and vc > 0 and size + kv_gb > vc * 0.90 and size + kv_gb <= ra + vc * 0.9:
-        g = min(0.95, vc * 0.9 / (size + kv_gb))           # KV splits with its layers
+        # C-11 (prereg #66): the old budget handed the model vc*0.9 outright - no desktop
+        # reserve, no compute buffer - so at d16384 the emitted 26/28-layer config overcommitted
+        # VRAM and measured -58% (driver memory fallback, the silent Windows thrash). Budget =
+        # VRAM minus the reserve minus the default-ub compute buffer (measured slope, #23),
+        # counted once, same discipline as the MoE v_free path above.
+        cbuf = 512 * COMPUTE_BUFFER_MIB_PER_UB_TOKEN / 1024
+        v_budget = max(0.0, vc * 0.9 - DESKTOP_VRAM_RESERVE - cbuf)
+        g = min(0.95, v_budget / (size + kv_gb))           # KV splits with its layers
         # -ngl takes a LAYER COUNT. This emitted `int(g * 99)`, treating 99 - the all-layers
         # sentinel used elsewhere in this file - as if it were a layer count. Two failures, and
         # the second is severe:
@@ -878,6 +945,7 @@ def run(args):
     vb, geta = resolve_gpu_eta(hw, args, a, args.bits, vb, geta)
     rb = resolve_cpu_bw(hw, args, a, args.bits, rb)
     size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
+                               iq_share=getattr(args, "iq_share", 0.0),
                                kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
@@ -961,16 +1029,19 @@ def run(args):
     if fit_adv:
         print(f"\n  note: {fit_adv}")
     adv = speculation_advice(moe, best[0])
+    dn = dense_draft_note(moe, best[0])
+    if dn:
+        print("\n  " + dn)
     if adv:
         print(f"\n  speculation: {adv}")
     # upgrade advisor
     alts = []
     if rb < 40:
-        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp)
+        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
         if c2[0][1] > best[1] * 1.08: alts.append(("enable XMP (free)", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp)
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("+16 GB RAM", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp)
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("NVMe SSD", c2[0][1]))
     if alts:
         print("  upgrade advisor: " + " | ".join(f"{n} -> ~{v:.1f} tok/s" for n, v in alts))
@@ -987,7 +1058,7 @@ def run(args):
             continue                                   # not a "shave" - a different model class
         fit_scale = max(0.05, (cap - kvg) / size_now) * 0.995
         _, _, c9 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, fit_scale, gl,
-                            ctx=ctx, kvp=kvp)
+                            ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
         promoted = [x for x in c9 if x[0].startswith("all in VRAM")] if "VRAM" in tier_name else                    [x for x in c9 if x[0].startswith("pure CPU")]
         if promoted and promoted[0][1] > best[1] * 1.15:
             print(f"  tier-boundary advisor: this config is {gap:.1f} GB over the {tier_name} boundary - "

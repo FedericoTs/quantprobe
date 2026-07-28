@@ -1,0 +1,13 @@
+=== prereg #68 (inline): Qwen3-0.6B drafting the 30B flagship split, K=1/2, novel code ===
+STAKED BEFORE RUNNING: the expert-union tax (a K+1 verify batch activates ~union of experts,
+~3x CPU bytes/round at K=2) predicts 0.85-1.00x vs the 20.5 same-state baseline, despite
+70-85% expected acceptance. D-09 measured 0.72x at default K. KILL: >=1.05x refutes the
+union-tax economics and reopens MoE draft speculation; <=1.0x closes it at optimal K too.
+Also at stake: VRAM contention - the 0.6B draft (0.63GB) competes with resident experts.
+--- flagship+0.6B K=2: accept    = 64.881% | decoded  194 tokens in   12.788 seconds, speed:   15.170 t/s  ---
+--- flagship+0.6B K=1: accept    = 77.064% | decoded  194 tokens in   11.736 seconds, speed:   16.531 t/s  ---
+1898 MHz, 41
+SCORED: 0.74x (K=2) / 0.81x (K=1) - WORSE even than the staked 0.85-1.00 band, D-09's 0.72x
+reproduced at optimal K. Even 77% acceptance loses 19%: the verify batch's expert-union makes
+drafted tokens COST MORE than sequential ones on the CPU-expert path. MoE draft speculation is
+closed at every draft length; the dense-vs-MoE asymmetry (+11% vs -19%) is fully explained.

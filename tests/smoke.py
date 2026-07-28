@@ -524,12 +524,13 @@ def t_ubatch_only_when_host_resident():
                       "pure CPU (GPU idle)",
                       "stream from disk (cold experts)"):
         assert ubatch_flags(placement, 0.7, 6), f"ubatch not offered for host-resident: {placement}"
-    # The SPLIT is host-resident in part, but it EXISTS to fill spare VRAM with experts, so it
-    # consumes the headroom the bigger compute buffer needs. Measured (pre-registration #20):
-    # the same flag is worth +75% on all-experts-to-CPU and -42% on the split. v1.13.0 shipped
-    # this gate wrong - it tested only "is anything host-resident", which the split satisfies.
-    assert ubatch_flags("split experts: 21%->VRAM, rest->RAM", 0.7, 6) is None, \
-        "ubatch offered on the split placement - measured there it costs 42% prefill"
+    # The SPLIT: #20 measured ub 2048 at -42% there (the compute-buffer cliff), so v1.13-v1.20
+    # excluded it entirely. #62 then measured the SAME placement at ub 1024 with pp 393.7 AND
+    # tg 22.21 - both at their best - while the excluded config left ~30% prefill on the table
+    # (#66: pp 301). The gate is now a HARD 1024 CAP, never the measured-cliff 2048.
+    sp = ubatch_flags("split experts: 21%->VRAM, rest->RAM", 0.7, 6)
+    assert sp and "-ub 1024" in sp and "2048" not in sp, \
+        f"split must get ub capped at 1024 (measured best, #62) and never 2048 (measured cliff, #20): {sp}"
     # fully VRAM-resident -> never, this is the measured -39% case
     assert ubatch_flags("all in VRAM", 4.7, 6) is None, \
         "ubatch offered for an all-in-VRAM placement - measured there it LOSES 39%"
@@ -1354,6 +1355,70 @@ def t_clock_sampler_min_samples():
     assert s.sustained() is None
     s.samples = [(1860, 40), (1873, 41), (1885, 42)]
     assert s.sustained() == 1873
+
+
+def t_dense_draft_note_three_cells():
+    # prereg #67/#69: the draft-model advice must match the measured cell — split gets the +33%
+    # CPU-draft note (K=2, -ngld 0), AIV keeps the +11% note, MoE never gets either.
+    from quantprobe.plan import dense_draft_note
+    split = dense_draft_note(False, "split: 28/48 layers->VRAM, rest->RAM")
+    assert split and "+33%" in split and "-ngld 0" in split and "prereg #69" in split
+    aiv = dense_draft_note(False, "all in VRAM")
+    assert aiv and "+11%" in aiv and "prereg #67" in aiv
+    assert dense_draft_note(True, "split: 10/48 layers->VRAM, rest->RAM") is None
+    assert dense_draft_note(False, "pure CPU (GPU idle)") is None
+
+
+def t_fetch_force_and_collision():
+    # U-18: a same-named file of a DIFFERENT size must FAIL the skip (it once fed an incompatible
+    # draft model to llama-speculative), and --force must be a registered flag.
+    import os, tempfile
+    from quantprobe import fetch as fmod
+    class _R:
+        headers = {"Content-Length": "1000"}
+    real_head = fmod.requests.head
+    fmod.requests.head = lambda *a, **k: _R()
+    try:
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "model.gguf")
+            open(p, "wb").write(b"x" * 999)          # wrong size vs remote 1000
+            assert fmod.fetch("org/repo", d, "model.gguf", None) is False, "size-mismatch skip must fail"
+            open(p, "wb").write(b"x" * 1000)         # matching size: legitimate skip
+            assert fmod.fetch("org/repo", d, "model.gguf", None) is True
+    finally:
+        fmod.requests.head = real_head
+    rc, out = cli("fetch", "--help")
+    assert rc == 0 and "--force" in out
+
+
+def t_c11_depth_aware_dense_split():
+    # C-11 (prereg #66): the dense split must budget for the desktop reserve + compute buffer and
+    # shrink its GPU layer count as context deepens - the old flat vc*0.9 emitted a 16k config
+    # that measured -58% (driver memory fallback).
+    from quantprobe.plan import evaluate
+    def layers(ctx):
+        _, _, cfgs = evaluate(14.8, 14.8, 14.8, False, 4.85, 6, 154, 16, 26, 2.0, 0.55,
+                              gl=None, ctx=ctx, kvp=57344, n_layer=48, true_size_gb=8.37)
+        row = [c for c in cfgs if "layers->VRAM" in c[0]]
+        assert row, "dense split row missing"
+        return int(row[0][0].split(":")[1].split("/")[0])
+    shallow, deep = layers(0), layers(16384)
+    assert deep < shallow, f"layers must shrink with depth ({shallow} -> {deep})"
+    # and the emitted GPU share must fit inside VRAM minus reserve+buffer
+    assert shallow / 48 * 8.37 <= 6 * 0.9 - 1.0, "shallow emit overcommits the budget"
+
+
+def t_u17_iq_cpu_pricing():
+    # U-17 (prereg #66): iq_share must slow every RAM weight read by the calibrated per-byte
+    # penalty (pure-CPU arm 14.1 -> 11.44 at share 0.962); iq_share=0 (presets) must be untouched.
+    from quantprobe.plan import evaluate, IQ_CPU_TG_PENALTY
+    def cpu_tokps(share):
+        _, _, cfgs = evaluate(15.7, 2.4, 0.8, True, 2.9, 6, 154, 16, 26, 2.0, 0.55,
+                              gl=None, iq_share=share)
+        return [c for c in cfgs if c[0].startswith("pure CPU")][0][1]
+    base, iq = cpu_tokps(0.0), cpu_tokps(0.962)
+    want = 1.0 + 0.962 * IQ_CPU_TG_PENALTY
+    assert abs(base / iq - want) < 0.01, f"IQ penalty off: {base/iq:.4f} vs {want:.4f}"
 
 
 def t_version():

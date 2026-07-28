@@ -9,10 +9,10 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 17 |
-| Shipped levers | 18 |
+| Shipped levers | 19 |
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
-| Untried levers | 8 |
+| Untried levers | 10 |
 | External work to study | 6 |
 
 ## Established laws
@@ -233,6 +233,12 @@ Things the tool actually recommends, with the number attached.
 
 `shipped` · `measured` · scope: one box; the ratios are per-machine BY DESIGN (that is the point); format blindness of the single GPU ratio documented (Q4_0 -43% under-promise), fix logged as U-15 · evidence: prereg #64 (gate staked before any number; anchor arms excluded from targets); prereg #64 gate log weights/data/prereg64_gate.log · wired into: `quantprobe/plan.py anchor composition; quantprobe/calibrate.py gpu_anchor; tests t_anchored_predictions_wiring`
 
+### V-20 — Dense-SPLIT draft speculation is the best model-draft cell on this box: a same-family 0.5B draft at K=2 buys +33.5% decode on a split dense 14B (5.54 -> 7.40 tok/s, 76% acceptance, novel code) with the draft on CPU (-ngld 0) so it costs ZERO VRAM. Mechanism (prereg #69 P-2): the K+1-token verify batch reads each CPU-resident layer once - the same host-transfer amortization as -ub, applied to decode. The staked K-shift (P-3) MISSED: the optimum stays at K=2 and every K>=3 lands at or below baseline, because the CPU-resident draft pays serial 0.5B passes from the same DDR4 pocket the amortization saves. Open anomaly: K>=3 arms are deterministically non-monotonic (3.54 / 4.43 / 3.92 / 5.57 at K=3/4/6/8).
+
+**Magnitude:** +33.5% decode at K=2; llama.cpp default K=3 measures 0.64x (a LOSS) on the same pair
+
+`confirmed` · `measured` · scope: dense split GPU/CPU, novel output, same-family draft; this box (Pascal + DDR4) · evidence: prereg #69 (preregistrations/2026-07-28-dense-split-draft.md), raw log weights/data/prereg69_dense_split.log, 3 runs at K=2 · wired into: `quantprobe plan.py dense_draft_note split branch`
+
 ## Measured dead ends
 
 Negative results. These are load-bearing: each one is a direction nobody has to spend a day on again.
@@ -285,11 +291,11 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `documented` · scope: CUDA builds, -ot=CPU placements, with --no-mmap set · evidence: U-03 source study: -ot=CPU re-runs buffer selection over the CPU buft list (ACCEL -> GPU-host -> CPU-extra -> CPU); on a CUDA build the GPU-host entry is CUDA_Host, allocated by cudaMallocHost. llama-model-loader.cpp:1197-1205 demotes it back to pageable IF use_mmap is true. · wired into: `U-03 withdrawn; the --no-mmap smoke invariant is now known to be load-bearing for a second reason`
 
-### D-09 — An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not.
+### D-09 — An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not. [SCOPE AMENDED by prereg #67: the 0.72x was the SPLIT FLAGSHIP cell. The dense all-in-VRAM cell measures POSITIVE: +11% on novel code at K=2/79% acceptance (0.5B drafting the 7B), negative on prose, negative at K>=4. Shipped as scoped advice; the larger prize needs a ~20x-faster drafter class that does not exist locally.] [RECONFIRMED at optimal draft lengths (prereg #68 inline, weights/data/prereg68_moe_draft.log): K=1 gives 77% acceptance and still 0.81x; K=2 0.74x. The expert-union tax makes verify batches cost more than sequential decode on the CPU-expert path - MoE draft speculation is closed at EVERY draft length, and the dense(+11%)-vs-MoE(-19%) asymmetry is fully explained.] [MAP COMPLETED by prereg #69 (weights/data/prereg69_dense_split.log): the third and last regime, DENSE SPLIT, is the BEST cell: +33.5% at K=2 (5.54 -> 7.40 tok/s, 76% acceptance, novel code, 0.5B drafting the 14B) with the DRAFT ON CPU (-ngld 0, zero VRAM cost) - the K+1 verify batch reads each CPU-resident layer once, so the CPU share amortizes. Model-draft speculation map, final: dense split 1.335x > dense AIV 1.11x > MoE split 0.74-0.81x. The K-cliff is HARDER on split (every K>=3 at or below baseline; K=3 measured 0.64x, deterministic) because the CPU draft spends the same DDR4 bandwidth the amortization saves - the staked K-shift (P-3) MISSED and the mechanism story was revised accordingly in the prereg.]
 
 **Magnitude:** 0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here. BUDGET SWEEP (prereg #42, novel content, req1 fresh server): base 19.39 (code) / 21.61 (prose); n-max 3 -> 15.95 / 9.52; n-max 8 -> 14.67 / 6.48; n-max 16 -> 10.58 / 3.91. MONOTONE DOWN, with acceptance collapsing 75->57->35% (code) and 36->18->9% (prose).
 
-`refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED) · wired into: `quantprobe/plan.py:speculation_advice`
+`refuted` · `measured` · scope: reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument · evidence: prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED); prereg #67 (the dense-target cell, full K-curve) · wired into: `quantprobe plan.py dense_draft_note (both cells: AIV +11% K=2, split +33% K=2 -ngld 0) + speculation_advice`
 
 ### D-10 — Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself. [INDEPENDENTLY REPLICATED (E-06): 0 drafts on a novel prompt, different model (117B), different hardware (3090), different fork. Also now a TOP-LINE note in plan output - the buried version cost the replicator a debugging session.]
 
@@ -451,11 +457,11 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `closed` · `measured` · scope: this box; the lesson (bands must name their thermal state) is general · evidence: prereg #60 (clean block after killing a runaway find orphan at 16285 CPU-s that invalidated block 1); DRIVER IDENTIFIED same session: clock polling under load caught SM at 1506 MHz (vs 1835 recorded during the original 21.58 measurement) at 38 C on a quiet box - a stuck lower boost state, not thermal, not OS load. nvidia-smi clock reset unsupported on consumer Pascal; reboot required. prereg #61 staked with the cold-boot A/B protocol (weights/coldboot_ab.cmd) including a pristine zero-patch binary for the fair-comparison arm.; RESOLVED by prereg #61 cold-boot A/B: after reboot SM sustains 1847-1898 MHz (vs 1506 stuck), memory full 4006, and the flagship measures 21.11-21.68 - the original 21.58 reproduced to 0.5%. Mechanism confirmed: stuck boost state, cleared by reboot. Pristine zero-patch binary agrees with the instrumented build within 1.4% (P-3), so the session corpus stands. · wired into: `quantprobe/plan.py workload copy (cold-box labeling shipped)`
 
-### C-11 — The dense layer-split placement OVERCOMMITS VRAM at depth: at ctx 16384 the tool emitted -ngl 26 for the 7B Q4_K_M (26/28 layers + 2.1GB KV) and predicted 15.0 tok/s; measured 6.34 (-58%, far outside the printed band). The 4k arm on the same model measured -0.9%, so the KV TERM is right - the placement fit math at depth is wrong (the dense g-split does not account for the compute buffer + KV jointly). Prereg #66.
+### C-11 — The dense layer-split placement OVERCOMMITS VRAM at depth: at ctx 16384 the tool emitted -ngl 26 for the 7B Q4_K_M (26/28 layers + 2.1GB KV) and predicted 15.0 tok/s; measured 6.34 (-58%, far outside the printed band). The 4k arm on the same model measured -0.9%, so the KV TERM is right - the placement fit math at depth is wrong (the dense g-split does not account for the compute buffer + KV jointly). Prereg #66. [CLOSED v1.21: the dense-split budget now subtracts DESKTOP_VRAM_RESERVE and the measured default-ub compute buffer (#23 slope) before sizing layers - 14B emits 21/48 at ctx 0 and 16/48 at 16384 (was a flat 28/48). Cost disclosed: ~5 layers more conservative at shallow ctx than the config that measured healthy; gain: the -58% thrash config can no longer be emitted. t_c11_depth_aware_dense_split.]
 
 **Magnitude:** -58% on one arm; the only hard prediction failure of the 13-arm program
 
-`open` · `measured` · scope: dense models at deep context on VRAM-tight cards; the MoE split at 4k held (+22% under) · evidence: prereg #66 (ctx7b16k arm, clocks logged) · wired into: `MACHINE_LADDER.md footnote 2; fix queued for the next release`
+`closed` · `measured` · scope: dense models at deep context on VRAM-tight cards; the MoE split at 4k held (+22% under) · evidence: prereg #66 (ctx7b16k arm, clocks logged) · wired into: `quantprobe/plan.py evaluate() dense-split v_budget`
 
 ## Untried levers
 
@@ -521,21 +527,37 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `speculative` · evidence: prereg #65: the ladder measured the blindness at -34% on 7B Q4_K_M (Q8_0-anchored ratio pricing a K-quant) · wired into: `candidate v1.21; prereg #64 P-3`
 
-### U-16 — The as-emitted MoE split command leaves ~30% prefill on the table: #66 measured 301 pp2048 at the emitted flagship config (no -b/-ub, a #20-era gate) where #62 measured 394 at the SAME placement with -ub 1024 and no tg cost. The #20 harm was ub 2048 (compute-buffer cliff); moderate ub on the split was measured safe in #62.
+### U-16 — The as-emitted MoE split command leaves ~30% prefill on the table: #66 measured 301 pp2048 at the emitted flagship config (no -b/-ub, a #20-era gate) where #62 measured 394 at the SAME placement with -ub 1024 and no tg cost. The #20 harm was ub 2048 (compute-buffer cliff); moderate ub on the split was measured safe in #62. [CLOSED-SHIPPED: split placements now get ub capped at a HARD 1024 (never the measured-cliff 2048), emitted identically by plan AND run/bench (the audit caught run dropping it, same class as --threads). Measured fresh at the emitted flagship config: pp 301 -> 389.5 (+29%), tg 21.2 -> 20.4 (-3.6%, the compute-buffer share at 13 residents) - the balanced default the #25 frontier always claimed, with the plan phase note covering pure-generation users who can drop -b/-ub.]
 
 **Hypothesis:** extend ubatch_flags to offer capped ub (<=1024, safe_ubatch-gated) on the split placement
 
 **Predicted effect (staked):** +25-30% pp on MoE splits, tg unchanged; one sweep to confirm the safety margin across models
 
-`untested` · `speculative` · wired into: `prereg #66 pp column; candidate next release`
+`closed` · `speculative` · wired into: `prereg #66 pp column; candidate next release`
 
-### U-17 — The IQ-on-CPU warning is prose but not priced: both IQ2_XS arms OVER-predicted (-15.7% split, -18.9% pure CPU) - the only over-predictions in the #66 program. The tool warns about the measured 2.7x IQ decode penalty (prereg #31) and then prices the bytes at full K-quant speed anyway.
+### U-17 — The IQ-on-CPU warning is prose but not priced: both IQ2_XS arms OVER-predicted (-15.7% split, -18.9% pure CPU) - the only over-predictions in the #66 program. The tool warns about the measured 2.7x IQ decode penalty (prereg #31) and then prices the bytes at full K-quant speed anyway. [CLOSED-SHIPPED v1.21, scope narrowed by the retrodiction gate: the hypothesized 2.7x penalty would have overshot ~7x - the e2e per-IQ-byte tg penalty calibrated on the #66 pure-CPU arm is k=0.242 (14.1 -> 11.44 exact at share 0.962). The split arm improves (28.0 -> 26.9 vs 23.60 measured) but stays over: its residual is the GPU share still priced at K-quant eta -> U-19.]
 
 **Hypothesis:** discount eta_r by the measured IQ penalty on the IQ byte share (args.iq_share already computed)
 
 **Predicted effect (staked):** both IQ arms move inside the band from the warned side (under-promise)
 
-`untested` · `speculative` · wired into: `prereg #66 IQ arms; candidate next release`
+`closed` · `speculative` · wired into: `quantprobe/plan.py IQ_CPU_TG_PENALTY + evaluate(iq_share=); t_u17_iq_cpu_pricing`
+
+### U-18 — quantprobe fetch silently skips the download when a same-named file exists ('already complete' checks size only), which handed prereg #69 a June-era 0.5B GGUF whose tokenizer metadata mismatched the bartowski 14B target and crashed llama-speculative at draft load ('invalid vector subscript'). Three runs lost before the collision was spotted. [CLOSED-SHIPPED v1.21: fetch compares local size vs remote Content-Length on skip and FAILS loudly on mismatch naming the collision; --force replaces the file. t_fetch_force_and_collision.]
+
+**Hypothesis:** add --force and/or verify the remote SHA/etag instead of size-only; warn when the local file predates the repo revision
+
+**Predicted effect (staked):** fetch collisions become visible instead of silent; draft-pair mismatches caught before a crash
+
+`closed` · `observed` · wired into: `quantprobe/fetch.py fetch() + cli.py --force`
+
+### U-19 — The GPU share of an IQ file is priced at K-quant eta: FORMAT_EBW has no IQ entries (fmt_bw None on IQ2_XS), so after U-17 closed the CPU side, the #66 split arm still over-predicts +14% (26.9 vs 23.60) while the pure-CPU arm is exact. V-11's matched pair measured IQ decode 1.55x slower on GPU - the number exists, it just is not in the ladder.
+
+**Hypothesis:** add measured IQ entries to spec.FORMAT_EBW (or scale geta by iq_share x the V-11 decode ratio) so the VRAM share of IQ files carries its own format cost
+
+**Predicted effect (staked):** the #66 split arm moves inside the band from the under-promise side
+
+`untested` · `speculative` · wired into: `candidate next release; evidence: #66 split arm residual after v1.21 U-17`
 
 ## External work to study
 
