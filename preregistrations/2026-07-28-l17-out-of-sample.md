@@ -53,3 +53,41 @@ If EITHER arm lands outside both its primary and named-alternative interpretatio
 register entry is downgraded from established to open.
 
 **Wired into:** pending; a P-3 hit wires L-17 into `plan.py` as the mechanistic split model.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg59_oos.log`)
+
+**Verdict: THE KILL RULE FIRES ON MY OWN LAW. L-17's single-constant form fails out-of-sample
+and is downgraded from established to open. It does NOT go into plan.py.**
+
+| model | predicted (L-17) | byte-only | **measured tg128** | outcome |
+|---|---|---|---|---|
+| 0.5B Q8_0 all-in-VRAM | ~100 [85-130] | 189 | **153.96 ± 5.10** | named alternative [130-160]: floor real, constant size-dependent (~4 µs/call back-solved, not 16) |
+| DS-Lite Q4_K_M split | ~21.1 [17.5-25.5] | 28.2 | **16.26 ± 0.14** | outside primary AND outside both named zones → **kill condition met** |
+
+### What survives, precisely
+
+- **The direction survives on both arms:** the byte-only model over-predicts both models (by
+  +23% and +73%), and both deviations are in the direction L-17 predicts. Call granularity is a
+  real, first-order effect. The 0.5B — 293 tiny calls — runs at 154 where bytes say 189.
+- **The constants do not transfer.** The per-call floor is not 16 µs; it scales with kernel size
+  (~4 µs on 896-hidden kernels, ~16 µs on the flagship mix). And DS-Lite is under-predicted by
+  30% even with the floor — its MLA graph (81 CONT + 54 CONCAT/REPEAT calls/token in the count
+  probe) and/or its 2048-hidden matmul rate carry costs the two-parameter model lacks.
+
+### The honest generalization statement (the question this prereg existed to answer)
+
+1. **On its two training configurations:** yes, ±5%. That is now demonstrated to be what it was —
+   an in-sample fit.
+2. **Across models on this box:** NO with fixed constants. The FORM (bytes/format-rate +
+   size-dependent per-call cost) remains the best available description and beats byte-only on
+   every configuration measured, but it is a modeling direction, not a predictive law.
+3. **Across machines:** untested, one box, claimed by nothing.
+
+Per the kill rule: L-17 is downgraded in the register, it is NOT wired into plan.py, and the
+tool's split-placement advice keeps its measured, fitted eta constants — which never claimed
+mechanism and therefore survive this unharmed.
+
+**Wired into:** `findings/REGISTER.json:L-17` (downgraded established -> open, out-of-sample
+failure recorded in the entry itself).
