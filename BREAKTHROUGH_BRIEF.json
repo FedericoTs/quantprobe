@@ -1,0 +1,1099 @@
+{
+  "_meta": {
+    "title": "quantprobe — complete measured state, for external red-teaming",
+    "generated_by": "report.py from findings/REGISTER.json + preregistrations/ (never hand-written)",
+    "git_head": "cedf0d2",
+    "date": "2026-07-28",
+    "public_repo": "https://github.com/FedericoTs/quantprobe",
+    "upstream_issue_filed": "https://github.com/ggml-org/llama.cpp/issues/26200"
+  },
+  "the_ask": {
+    "goal": "Maximise tok/s for NOVEL generation (fresh reasoning/prose) for a single user running a big MoE model on cheap consumer hardware. Copy-regime is solved at 108 tok/s; novel generation is stuck at 21 against a 41.1 wall.",
+    "explicitly_out_of_scope": [
+      "model selection (choosing a model with fewer active params) - the owner rejected this lever",
+      "buying different hardware - the point is to make THIS class of machine capable",
+      "anything that changes output distribution without measuring the quality cost"
+    ],
+    "explicitly_in_scope": [
+      "leaving llama.cpp entirely - a custom runtime, kernels in CUDA/PTX/SASS, assembly",
+      "leaving Windows - Linux, WSL2, bare metal, a different driver model",
+      "OS/driver/BIOS/firmware levers - hugepages, WDDM vs TCC, MMIO, BAR sizing, power/clock policy",
+      "anything at or below the hardware abstraction the current stack imposes"
+    ],
+    "what_would_count_as_a_breakthrough": "any measured, reproducible lever that raises NOVEL-content decode above ~25 tok/s on this exact box without degrading output quality, OR a demonstration that the 41.1 wall itself is wrong (as the 48 GB/s DDR4 spec turned out to be).",
+    "instructions_for_the_reader": [
+      "Do NOT re-propose anything in refuted_do_not_repropose - each was measured, with a control, and the control is cited.",
+      "Every proposal must come with ARITHMETIC using the measured constants in hardware.measured_not_spec, not spec sheets.",
+      "Every proposal must name a FALSIFICATION TEST runnable on this box, ideally with no code.",
+      "State explicitly whether your idea changes NOVEL decode or only copy-regime. Copy-regime is already solved and is not interesting.",
+      "'Nothing found in my area' is a valuable answer. Do not invent a lever to have something to say.",
+      "Note the methodology below before proposing: this project has killed 6 of its own mechanism hypotheses with controls. Assume your first explanation is wrong and design the control that would kill it."
+    ]
+  },
+  "hardware": {
+    "label": "reference box, 2016 desktop",
+    "cpu": "Intel i5-7600K, 4 cores / 4 threads, AVX2, no AVX-512, no AMX",
+    "gpu": "NVIDIA GTX 1060 6GB, Pascal sm_61, 4.4 TFLOPS fp32, native __dp4a INT8, fp16 at 1/64 rate",
+    "ram": "16 GB DDR4-3000 (XMP on)",
+    "storage": "SATA SSD (Crucial MX500)",
+    "link": "PCIe 3.0 x16",
+    "os": "Windows 10 Home 19045",
+    "measured_not_spec": {
+      "dram_read_stream_GBps": 26.1,
+      "dram_copy_stream_GBps": 30.4,
+      "dram_spec_sheet_GBps": 48.0,
+      "dram_spec_is_fiction": true,
+      "vram_read_independent_GBps": 165.6,
+      "vram_gemv_fp32_independent_GBps": 161.3,
+      "vram_gemv_fp16_independent_GBps": 108.9,
+      "vram_spec_sheet_GBps": 192.0,
+      "vram_spec_is_real": true,
+      "pcie_h2d_measured_GBps": 12.2,
+      "note": "VRAM figures measured with CuPy, NO llama.cpp in the path (prereg #44). DRAM figures with numpy (#27). This distinction is the single most important methodological fact in the record: for most of the project every GPU number came through llama.cpp, which made 'hardware limit' and 'llama.cpp limit' indistinguishable on that side."
+    }
+  },
+  "workload": {
+    "model": "Qwen3-30B-A3B, MoE, 48 layers, 128 experts, 8 active per token",
+    "quantization_primary": "Q2_K (2.95 effective bits), 10.49 GB file",
+    "active_params_B": 3.3,
+    "active_bytes_per_token_GB": 1.217,
+    "shipped_placement": "-ngl 99 -ot 'blk\\.(16..47)\\.ffn_.*_exps\\.=CPU' --no-mmap -b 1024 -ub 1024",
+    "placement_meaning": "attention + 16 layers of experts in VRAM; 32 layers of experts in host DRAM, computed on CPU"
+  },
+  "state_of_play": {
+    "copy_regime_decode_tok_s": 108.4,
+    "copy_regime_recipe": "llama-server --spec-type ngram-simple --spec-ngram-simple-size-m 384 --spec-ngram-simple-size-n 4",
+    "copy_regime_notes": "output that reuses its context: edits, refactors, RAG quoting. 4.7x over the 21.3 no-speculation baseline at ~3-bit. Multiplier SHRINKS with bit-width (3.4x at Q3_K_M).",
+    "novel_generation_decode_tok_s": 21.0,
+    "novel_generation_notes": "fresh reasoning/prose with nothing in context to copy. EVERY drafting mechanism measured and closed.",
+    "raw_decode_wall_tok_s": 41.1,
+    "raw_decode_wall_basis": "1 / sum(bytes_i / measured_BW_i) using MEASURED 26.1 GB/s DRAM, not the 48 spec",
+    "unattributed_split_token_ms": 20,
+    "prefill_tok_s": 386,
+    "prefill_ceiling_tok_s": "405-445, converged across three placements = a compute ceiling on this GPU",
+    "the_one_live_lead": "GPU kernel gap: card does 161.3 GB/s on decode-shaped GEMV (eta 0.84); llama.cpp Q4_K_M does 98.6 (eta 0.513). 1.64x, NOT hardware and NOT arithmetic (sm_61 has native __dp4a at ~4x fp32 rate). Remaining explanation is the kernel's block-unpacking/scale work. Reducibility UNMEASURED."
+  },
+  "methodology": {
+    "protocol": "Every claim is pre-registered BEFORE measurement with numbered falsifiable predictions and an explicit kill rule; scored publicly with hits and misses given equal prominence; wired into code or explicitly recorded as not-shipped. A 5-layer release gate enforces that the register and the code cannot drift apart.",
+    "hard_won_measurement_rules": [
+      "Position-control every A/B: this box drifts up to +25% cold-to-warm within one session, which is larger than most effects under test. Baseline must be re-run LAST.",
+      "Same-session only: 10-13% drift BETWEEN sessions against sub-1% error bars within one.",
+      "Read what the model actually wrote: three spectacular results were harness artifacts (a repetition loop, an n-gram store replaying a repeated request, ANSI codes in a diff).",
+      "Check the neighbourhood: a value flat next to its neighbours is a result; a value with a 45% step next to it is a coincidence (a shipped figure sat one -ub step from a cliff).",
+      "Never attribute without a control: 6 mechanism hypotheses have been killed by their own controls (fixed overhead, GPU clock state, bytes-per-token, memory scatter, per-layer round trips, dual-bus).",
+      "Compare like with like: request 1 vs request 2 of the same server differ (prompt-cache reuse), with and without speculation."
+    ],
+    "counterintuitive_findings_that_generalise": [
+      "A quantized byte is not a byte: 6 measured instances where a constant assumed uniform across formats turned out to be a property OF the format (weight decode collapse, VRAM eta, KV eta, CPU I-quants, speculation multiplier, VRAM format ladder).",
+      "The cost unit in speculative decoding is the VERIFY ROUND (one full weight read), not the token. Acceptance rate is the WRONG optimisation target: it falls 89%->68% while throughput doubles.",
+      "Acceptance decay separates drafters: a copy drafter's acceptance is flat in draft length (extend it freely); a model drafter's collapses geometrically (extending it destroys throughput). Same flag shape, opposite behaviour.",
+      "Excluding a configuration is also a claim and inherits the scope of the sweep that produced it - a cell recorded as 'dominated' was later found to be the outright winner, because it had only been measured past a cliff."
+    ]
+  },
+  "established_laws": [
+    {
+      "id": "L-01",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Decode speed is bandwidth-bound: tok/s = eta(tier) x BW / active-bytes-per-token.",
+      "magnitude": "+/-25% across 4 measured anchors",
+      "evidence": "LAWS.md Law 4",
+      "scope": "VRAM/RAM/disk tiers, dense and MoE, one GPU",
+      "wired_into": "quantprobe/plan.py:evaluate",
+      "independent_vram_ceiling": "MEASURED INDEPENDENTLY 2026-07-28 (prereg #44, CuPy - no ggml in the path): the GTX 1060 delivers 165.6 GB/s pure read and 161.3 GB/s on a decode-shaped fp32 GEMV = eta 0.84-0.86 of its 192 GB/s spec. Unlike DDR4-3000's 48 GB/s spec (which measured 26.1), the VRAM spec is REAL. This is the first GPU number in the project not derived from llama.cpp."
+    },
+    {
+      "id": "L-02",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "KV cache is a first-class bandwidth consumer priced at its own efficiency, ETA_KV = 0.70.",
+      "magnitude": "tg32 20.35 -> 6.30 tok/s from d0 to d16384",
+      "evidence": "prereg #21, LAWS.md Law 4 v2",
+      "scope": "Qwen3-30B-A3B-Q2_K, reference box",
+      "wired_into": "quantprobe/plan.py ETA_KV"
+    },
+    {
+      "id": "L-03",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Quantization fragility is measurable but NOT predictable from architecture; attention and SSM tensors are fragile, embeddings and FFN are not.",
+      "magnitude": "depth-aware recipe protects attn_.*/ssm_.* (+shexp/nextn on MoE)",
+      "evidence": "LAWS.md Law 3",
+      "scope": "measured per-model, does not transfer",
+      "wired_into": "quantprobe recipe"
+    },
+    {
+      "id": "L-04",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Effective rank, not bit-count, is the state variable of quantization; incoherence is rank-conditional.",
+      "magnitude": "gauge hypothesis refuted; cache phase-transition observed",
+      "evidence": "PAPER_MOE round-2",
+      "scope": "MoE weight matrices",
+      "wired_into": null
+    },
+    {
+      "id": "L-05",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "Prefill is compute-bound, so the bit ladder runs BACKWARDS there - fewer bits is SLOWER.",
+      "magnitude": "CPU-pure pp2048: Q4_K_M 27.49 > Q4_0 23.73 > Q2_K 17.71 (-36%)",
+      "evidence": "prereg #9 (Law 5 prefill pilot); LAW5_PROTOCOL.md:292 (H12)",
+      "scope": "dense 7B, CPU-pure",
+      "wired_into": "documented; planner does not yet model prefill bits"
+    },
+    {
+      "id": "L-06",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "The VRAM claimants - weights, KV cache, compute buffer - are FUNGIBLE, and fungibility is placement-specific: only a configuration that is actually starved can spend the refund.",
+      "magnitude": "evicting KV recovers 2.42x prefill on the split, and nothing (-3%) on all-experts-to-CPU",
+      "evidence": "prereg #21 P-3",
+      "scope": "reference box, 6 GB VRAM",
+      "wired_into": "quantprobe/plan.py:workload_frontier"
+    },
+    {
+      "id": "L-07",
+      "kind": "law",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "REFUTED (2026-07-27). Was: 'there is no single best placement - there is a Pareto frontier selected by the prompt:generation ratio.' Re-measured with every cell in ONE session, ONE configuration wins at every ratio.",
+      "magnitude": "The claimed spread shrank three times, each time from correcting one of our own measurement errors: 2.25x (contained a cell measured past the compute-buffer cliff) -> 1.33x (corrected to ub 512) -> 1.23x (all cells in one session) -> gone (the surviving alternative wins by 0.44 tok/s against combined error bars of 0.456, i.e. 0.96 sigma). Same-session table: split+ub1024+KV-in-VRAM 386.04/21.58 dominates all-experts-CPU 381.82/19.79 and evict-KV 381.60/17.95.",
+      "evidence": "prereg #21 (original), prereg #25 (refutation); weights/data/prereg25_frontier_rematch.log",
+      "scope": "MoE whose experts exceed VRAM",
+      "wired_into": "quantprobe/plan.py:MOE_FRONTIER (one row) · tests/smoke.py:t_workload_frontier_is_pareto (rewritten to assert the collapse)",
+      "why_it_was_wrong": "The frontier was an ARTEFACT of never measuring split + KV-in-VRAM at ub 1024. That cell had been benchmarked only at ub 2048 (past the cliff, 161.59 pp) and ub 512 (307.13 pp), and was recorded as 'dominated' - a claim that silently inherited the scope of the sweep that produced it. It really meant 'dominated AT ub 2048'. Excluding a configuration is also a claim, and it needs a scope like any other."
+    },
+    {
+      "id": "L-08",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "llama.cpp's CUDA compute buffer is exactly linear in the ubatch, so demand grows smoothly while VRAM supply ends abruptly - producing a cliff, not a taper.",
+      "magnitude": "0.5874 MiB per ubatch token, to four figures; -45% prefill in one -ub step",
+      "evidence": "prereg #23",
+      "scope": "Qwen3-30B-A3B-Q2_K, CUDA backend",
+      "wired_into": "quantprobe/plan.py:safe_ubatch + COMPUTE_BUFFER_MIB_PER_UB_TOKEN"
+    },
+    {
+      "id": "L-09",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "ggml offers host-resident weights to CUDA once the ubatch clears 32 tokens, so host weights cross PCIe once per UBATCH rather than once per token.",
+      "magnitude": "+73% prefill at ub 512 -> 2048 with experts on CPU",
+      "evidence": "prereg #19; ggml-cuda.cu:5565 get_op_batch_size, MUL_MAT_ID -> op->ne[2]",
+      "scope": "CUDA backend, -ot host placements",
+      "wired_into": "quantprobe/plan.py:ubatch_flags"
+    },
+    {
+      "id": "L-10",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "The Gemma MLP weight element stream is white - there is no intra-tensor redundancy for VQ to exploit.",
+      "magnitude": "0 dB coding gain",
+      "evidence": "gemma vq-lens work",
+      "scope": "Gemma-4-12B MLP",
+      "wired_into": "documented dead end"
+    },
+    {
+      "id": "L-11",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "THE DECODE WALL, measured basis: every active byte on a tier transits its bus once per token, so tok/s <= 1/sum(bytes_i/BW_i). On MEASURED bandwidth (26.1 GB/s pure-read stream, not the 48 spec) the flagship's raw-decode wall is 41.1 tok/s; we measure 22.25 (54%). The wall is EXCEEDABLE only by breaking the axiom: speculation verified 50.04 tok/s - 22% above it - in the copy regime.",
+      "magnitude": "Decomposition (prereg #27): stream measured 26.1 GB/s pure read / 30.4 copy, one thread already saturating; pure-CPU decode 14.06 tok/s = 17.1 GB/s effective = 66% of stream (kernel+MLP share); GPU<->CPU sync excess 7.4-11.1 ms/token = 17-25% of the token. The spec-sheet walls (69.5 / 52.9) were fiction: DDR4-3000 promises 48 GB/s this controller cannot deliver.",
+      "evidence": "prereg #27 (decomposition + measured stream), prereg #28 (the exceedance), prereg #25 (the 22.25)",
+      "scope": "reference box, flagship model. The axiom underneath is tier-agnostic: every active byte on a tier must transit that tier's bus once per token, so tok/s <= 1 / sum(bytes_i / BW_i). No runtime can beat that without reducing bytes or amortising them across tokens.",
+      "wired_into": "the research agenda: U-09 is the decomposition",
+      "what_this_rules_in_and_out": "RULED OUT: any raw-decode runtime gain past 1.85x on this box (41.1 ceiling), and in practice far less - the CPU path already runs at 66% of real stream, and sync is worth at most ~29%. D-05's no-fork verdict survives with that measured asterisk. RULED IN and MEASURED: exceeding the wall via speculation (50.04, prereg #28) and skipping prefill via prefix caching (29x TTFT, prereg #29). The remaining breakthroughs are not in moving bytes better - they are in not moving bytes at all.",
+      "gap_attribution_final": "The 22.25->41.1 gap is now FULLY attributed (prereg #31): ~40% is the MoE EXPERT-PATH CODE in ggml's CPU MUL_MAT_ID (prereg #32 REFUTED the prefetch story: shuffled 2MB slab reads lose nothing, and the MoE path saturates at 16 GB/s where dense reaches 28.4 identically threaded); 17-25% is GPU<->CPU sync (needs async transfer code, scheduling measured dead); 0% scheduling; 0% K-format choice (Q2_K and Q4_K_M tie at the wall on CPU). On stock llama.cpp this box's raw decode is FINISHED - every remaining percent costs upstream engineering bounded at 1.85x combined, while speculation already delivers 2.3-2.5x by not reading bytes at all.",
+      "exceedance_record": "The wall (41.1 tok/s raw decode on measured bandwidth) is now exceeded by 2.2x: 90.33 tok/s with ngram speculation at size-m 384 (prereg #36), byte-identical output. The remaining ceiling is the batched verify forward, measured at ~405-445 tok/s (#26) - so speculation itself still runs at ~1/4.5 of ITS ceiling, and the binding constraint there is draft availability from the n-gram store, not hardware."
+    },
+    {
+      "id": "L-12",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "THE PREFILL WALL. Batched prefill converges to ~405-445 t/s on this GPU regardless of placement - 65-67% of the card's theoretical FLOP ceiling, which is as close as real kernels get on Pascal. Prefill on this box is CLOSED except for levers that cut FLOPs themselves.",
+      "magnitude": "GTX 1060 6GB ~4.4 TFLOPS FP32; MoE k=8 active 3.3B -> ~6.6 GFLOP/token -> 667 t/s at 100%. Measured convergence: 443.82 (split), 425.31 (all-CPU), 405.22 (dense control) at npl=8 - three different placements, one ceiling. The only measured lever that moves it is top-k reduction, which cuts the FLOPs: +21% to +63% at k=4 (prereg #22).",
+      "evidence": "prereg #26 (the convergence), prereg #22 (the FLOP lever)",
+      "scope": "GTX 1060. A modern GPU has 10-100x the FLOPs; this wall is a property of the card, not of llama.cpp.",
+      "wired_into": "the research agenda: asymmetric top-k Stage 2 (U-07) is the one open prefill lever"
+    },
+    {
+      "id": "L-13",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "ACCEPTANCE DECAY SEPARATES DRAFTERS. A copy drafter's acceptance is ~flat in draft length; a model drafter's collapses geometrically - so the same 'raise the budget' fix that multiplies one destroys the other.",
+      "magnitude": "n-gram (copy): 66-68% acceptance at 384-token drafts, and raising the budget 48->384 gave +81% throughput (#36). Draft model (0.6B guessing): 75.2% -> 56.8% -> 34.9% on code and 35.9% -> 17.6% -> 8.7% on prose as the budget goes 3 -> 8 -> 16, and throughput falls monotonically (#42). An n-gram draft is verified-correct BY CONSTRUCTION - it reproduces text that occurred - so extending it is nearly free; a model draft compounds its own divergence AND pays a full draft forward per token.",
+      "evidence": "prereg #36 (n-gram budget), prereg #42 (draft-model budget), prereg #28 (the original net-negative)",
+      "scope": "Qwen3-30B-A3B target with a Qwen3-0.6B draft, reference box. The mechanism is general; the crossover point is not measured elsewhere.",
+      "wired_into": "quantprobe/plan.py:speculation_advice (why the two speculation flags behave oppositely)"
+    },
+    {
+      "id": "L-14",
+      "kind": "law",
+      "status": "established",
+      "confidence": "measured",
+      "claim": "The VRAM tier's bandwidth ceiling is eta 0.84 measured independently; llama.cpp's quantized decode reaches 0.513 at Q4_K_M. The 1.64x gap is NOT hardware and NOT arithmetic - sm_61 uses native __dp4a INT8 at ~4x the fp32 rate, and the fp32 GEMV was already bandwidth-bound.",
+      "magnitude": "CuPy on GTX 1060 6GB: pure read 165.6 GB/s (eta 0.86), copy 150.1 (0.78), decode-shaped fp32 GEMV (1x4096)@(4096x14336) 161.3 GB/s (eta 0.84), GEMV within 2.6% of pure read so it is bandwidth-bound and the comparison is valid. llama.cpp all-in-VRAM implies eta 0.32-0.56 (C-02). FORMAT LADDER (same session): llama.cpp all-in-VRAM eta climbs monotonically with bits - Q2_K 0.311, IQ3_XS 0.332, IQ3_M 0.343, Q4_K_M 0.513 - consistent with dequantisation cost, and Q4_K_M's 98.6 GB/s is 91% of the independent fp16 ceiling (108.9) but only 61% of the fp32 one (161.3).",
+      "evidence": "prereg #44",
+      "scope": "GTX 1060 6GB (Pascal sm_61), fp32. NOT established for quantized kernels - see the caveat below.",
+      "wired_into": "findings/REGISTER.json:C-02 (reclassified) - deliberately NOT wired into plan.py: the tool's eta constants describe what llama.cpp achieves, which is what users get, and must not be raised to a ceiling no shipped runtime reaches.",
+      "the_caveat_that_bounds_it": "cuBLAS fp32 GEMV and llama.cpp's quantized decode are NOT the same operation - llama.cpp streams Q2_K/Q4_K blocks and dequantises in-kernel, work cuBLAS never does. The fp16 row is the warning: 108.9 GB/s vs fp32's 161.3, because Pascal's fp16 ALU runs at 1/64 rate. On this architecture the arithmetic format can bind before bandwidth does. So 0.84 is the CEILING; how much a quantized kernel can reach is unmeasured.",
+      "the_open_question": "Which ceiling applies depends on the arithmetic ggml's quantized CUDA kernels use on sm_61 (dequantize_mul_mat_vec vs MMQ paths). That is a SOURCE question, answerable with no hardware, and it decides whether the GPU-side prize is 1.1x (not worth pursuing) or 1.64x (worth an upstream PR).",
+      "arithmetic_question_closed": "Answered from source: common.cuh:51 defines GGML_CUDA_CC_DP4A=610 and :722 selects __dp4a when __CUDA_ARCH__ >= 610. The GTX 1060 is sm_61 = 610 exactly, so the quantized path uses native INT8 DP4A. The fp16 comparand (108.9 GB/s) does NOT apply and the 1.1x floor it implied is withdrawn. The remaining explanation is the kernel's unpacking/scale work - real work cuBLAS never does - and whether it is reducible is unmeasured.",
+      "revision_history": "This figure moved three times in one session: 1.5-2.6x (fp32 comparand, unexamined) -> 1.1-1.64x (fp16 comparand raised) -> 1.64x (arithmetic determined from source). Each move came from checking a comparand rather than defending the previous number."
+    }
+  ],
+  "shipped_levers": [
+    {
+      "id": "V-01",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Partial MoE expert offload (-ot blk.(K..N).ffn_.*_exps.=CPU --no-mmap) beats both all-VRAM and all-CPU.",
+      "magnitude": "frontier row at 280.64 pp / 20.25 tg",
+      "evidence": "prereg #13, #20, #21",
+      "scope": "MoE whose experts exceed VRAM",
+      "wired_into": "quantprobe/plan.py placement search"
+    },
+    {
+      "id": "V-02",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Sizing -ub from measured VRAM headroom (never pinning it) is worth up to 73% of prefill and avoids a 45% cliff.",
+      "magnitude": "199.90 -> 345.89 where it applies; -45% where it does not",
+      "evidence": "prereg #19, #20, #23",
+      "scope": "host-resident placements only",
+      "wired_into": "quantprobe/plan.py:safe_ubatch"
+    },
+    {
+      "id": "V-03",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Evicting KV to host RAM (-nkvo 1) buys prefill on a VRAM-starved placement and costs decode.",
+      "magnitude": "3.84x prefill on the split; -47% decode at 16k depth",
+      "evidence": "prereg #21",
+      "scope": "split placement, reference box",
+      "wired_into": "quantprobe/plan.py:MOE_FRONTIER row 3"
+    },
+    {
+      "id": "V-04",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "N-gram speculation is worth ~4.7x on copy-regime output AT ~3-BIT QUANTIZATION - and the multiplier SHRINKS with bits (3.39x at Q3_K_M), because speculation converts a bandwidth-bound problem into a compute-bound one.",
+      "magnitude": "Flagship, split placement, chat template, coherent output (prereg #28): edit task 2.41x (20.73 -> 50.04 tok/s, 89% acceptance) - ABOVE the 41.1 raw-decode wall; novel code 0.98x at 0% acceptance; novel prose 1.00x. Dense 7B (original): 2.10x on code. The original 'code vs prose' framing was a proxy: code tasks are usually copy-heavy and prose tasks usually novel, but the edit IS the variable. Also measured: the staked temp-0 raw-continuation harness produced a repetition loop whose 100% acceptance inflated ngram to 1.82-1.96x on garbage output - caught by reading the completion, re-measured under the chat template. COMPOSITION (prereg #35): speculation and q8_0 KV are independent multipliers - stack measured 49.42 vs 47.61 predicted from the product (ratio 1.038, no destructive interference), and output is byte-identical at both KV precisions. DRAFT-LENGTH SWEEP (prereg #36, position-controlled): --spec-ngram-simple-size-m 24/48/96/192/384/768 -> 46.10 / 49.80 / 65.00 / 78.01 / 90.33 / 89.82 tok/s, ALL byte-identical output. Best is m=384 at 90.33 = +81% over the default and 2.2x this box's raw-decode wall. Mechanism: m is a per-round draft BUDGET, so raising it delivers the SAME accepted tokens in FEWER verify rounds (drafted/accepted freeze at 1100/735 from m=192 on while throughput still climbs) - each round costs a full weight read. m=768 returns byte-identical counts to m=384 because the n-gram store has no longer matching spans: the plateau is the DRAFTER's ceiling, not the hardware's. LOOKUP-LENGTH SWEEP (prereg #37, position-controlled, all at size-m 384): size-n 20/12/6/4/2 -> 77.61 / 90.67 / 105.52 / 108.41 / 81.98 tok/s, all byte-identical. Best is n=4 at 108.41 = 5.0x the 21.6 no-speculation baseline and 2.6x the 41.1 raw-decode wall. Stacking ngram-cache is a 10% REGRESSION (97.16).",
+      "evidence": "prereg #10 (Law 6 arm S-e, dense), prereg #28 (flagship, re-scoped); prereg #36 (draft-length sweep); prereg #37 (lookup length + stacking); prereg #40 (quality scoping, with same-model confound control)",
+      "scope": "llama-server only - llama-cli silently ignores --spec-type (measured as a 1.00x that was the flag not existing) QUANTIZATION SCOPE (prereg #40): the multiplier is NOT invariant in bits. Same model (Qwen3-Coder-30B): Q2_K_L 4.63x, Q3_K_M 3.39x = 0.73 of it. Two different models at ~10.5 GB both give 4.6-4.8x, so bits is the variable, not the model.",
+      "wired_into": "quantprobe/plan.py:speculation_advice (flag pair + the measured 4.15x)",
+      "counterintuitive_note": "Acceptance rate is the WRONG optimisation target. It FALLS from 100% (m=24) to 66.8% (m=384) while throughput rises from 46 to 90 tok/s. Rejected drafts are nearly free; skipped weight reads are not. Anyone tuning speculation by maximising acceptance will tune it backwards.",
+      "the_hidden_variable": "Across n=20->4 drafted tokens move only +5% (1068->1121) while throughput moves +40%. Tokens drafted is not the variable; VERIFY ROUNDS are - the same drafted tokens delivered in fewer, longer runs, each round costing one full weight read. Confirmed independently in #36 (throughput rose while drafted/accepted froze). Neither draft_n nor acceptance measures it. n=2 is the proof: it drafts the MOST (1486) and accepts the most (775) and is 25% SLOWER than n=4, because a 2-token lookup matches noise and produces many short quickly-rejected runs.",
+      "identity_scope_note": "Temp-0 identity claims in this project compare MATCHED REQUEST INDEX. Measured in prereg #38: request 1 and request 2 of the same server produce different output (sha 65985276565a vs 28a5c1e1c014) with AND without speculation - that is prompt-cache reuse (cache_prompt defaults true; reused KV is not bit-identical to freshly computed KV), not a speculation effect. Across arms at the same request index, every speculation configuration is byte-identical. Earlier harnesses reported only the last request's sha, so they were comparing req2 to req2 - valid, but blind to this.",
+      "context_floor_trap": "ngram-simple cannot draft until cur_len > size_m + size_n + 1 (ngram-map.cpp:65). Our shipped m=384/n=4 therefore has a 389-TOKEN CONTEXT FLOOR: on short prompts it does nothing at all, strictly worse than llama.cpp's default (61-token floor). Found in prereg #41 only because a short-prompt novel test forced it; every copy-regime measurement used a ~950-token prompt and cleared the bar invisibly.",
+      "identity_claim_corrected": "CORRECTION (prereg #41): 'byte-identical by construction' is FALSE and this project asserted it repeatedly. Speculation is output-preserving in EXACT arithmetic; in floating point a verify pass evaluates several positions in one batched forward, and batched reductions are not bit-identical to single-token decode, so at temp 0 an argmax can flip. Measured: the default drafter on a novel-code task drafted 38 tokens, accepted ZERO, and still produced different output - reproducibly (sha 1c2a7a785d on both runs). Every copy-regime comparison we ran WAS byte-identical, which is real evidence but not a guarantee."
+    },
+    {
+      "id": "V-05",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Depth-aware protection of fragile tensors buys quality at near-zero size.",
+      "magnitude": "see Law 3",
+      "evidence": "prereg #12 (recipe-upgrade shexp+imatrix)",
+      "scope": "per-model",
+      "wired_into": "quantprobe recipe"
+    },
+    {
+      "id": "V-06",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "The probe's band search beats APEX's symmetric prior: real fragility is strictly monotonic and LATE-weighted, not symmetric across depth.",
+      "magnitude": "S-1 HIT sharper than staked (reference PPL 5.4298, WikiText, 40-layer source); out-of-domain rematch confirms calibration generalises - 25.6% on KL against the Q8_0 parent, on a corpus the imatrix never saw",
+      "evidence": "prereg #11 (apex-vs-probe-depthaware), prereg #14 (apex-rematch-ood-kl)",
+      "scope": "depth-aware recipe search, measured per-model",
+      "wired_into": "quantprobe recipe band search"
+    },
+    {
+      "id": "V-07",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Dense models have a measurable PROTECTED share of activated bytes - the attention tensors that stay high-precision - so dense speed responds to bit-width instead of being flat in it.",
+      "magnitude": "DENSE_PROTECTED_SHARE = 0.214, the mean attention share read from GGUF tensor shapes: 10.8% Qwen2.5-7B, 20.2% gemma4-12B, 25.1% Qwen3.5-4B, 29.6% Qwen3-0.6B",
+      "evidence": "prereg #17 (dense-activation-model) - P-1 HIT, P-2 HIT decisively, P-3 MISS",
+      "scope": "dense models, four architectures measured",
+      "wired_into": "quantprobe/plan.py:DENSE_PROTECTED_SHARE"
+    },
+    {
+      "id": "V-08",
+      "kind": "lever",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "Quantizing the KV cache to q8_0 pays AT DEPTH ONLY - it dominates the shipped 'evict KV' row at 16k, and it is a ~6% net COST at chat-length context, where the dequant work is paid every token for a negligible byte saving.",
+      "magnitude": "split placement, -fa 1, r=3, one session. tg32 @ d16384: q8_0-in-VRAM 10.59 vs -nkvo-1 3.48 (3.04x); tg32 @ d0: 20.18 vs 17.06 (+18%); pp2048: 382.17 vs 386.14 (-1.0%, inside the error bar). Against f16 KV in VRAM, q8_0 is +37.0% at depth and -3.3% at d0. DEPTH CONDITION (prereg #35): at ~1k context on the same split placement, q8_0 KV measures 20.38 vs f16 21.64 = 0.942x - a 5.8% loss. The +37% is a 16k-depth result and must not be quoted at short context.",
+      "evidence": "prereg #25 (kv-cache-quantization); prereg #35 (the depth condition and the composition test)",
+      "scope": "Qwen3-30B-A3B-Q2_K, split placement, GTX 1060 6GB - one architecture, one flag varied",
+      "wired_into": "NOT SHIPPED. Blocked on the perplexity cost, a condition written into the stake before any number existed: D-01 killed a 1.335x lever for costing 1.206x perplexity, and 3.04x is exactly when skipping that step is most tempting."
+    },
+    {
+      "id": "V-09",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "quantprobe's numbers are SINGLE-STREAM and understate aggregate server throughput by roughly 2x.",
+      "magnitude": "~2.0x at 8 slots, saturating by about 4 (see C-06 for the full table)",
+      "evidence": "prereg #26",
+      "scope": "GTX 1060 6GB; the ratio is unmeasured on modern hardware",
+      "wired_into": "quantprobe/plan.py concurrency disclosure in the plan output"
+    },
+    {
+      "id": "V-10",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "Prefix caching (cache_prompt) collapses TTFT on repeated-document workloads - the asymptote moves, and it dwarfs every placement decision for RAG/document-QA.",
+      "magnitude": "29.3x on the second question against a 2k-token document (5380.8 -> 183.4 ms prompt time; only the 8-token suffix is processed); 109.6x on an identical repeat; decode untouched (21.73-21.89 across all cells)",
+      "evidence": "prereg #29",
+      "scope": "llama-server, one process - a restart is cold; serves many-questions-one-document, not fresh documents",
+      "wired_into": "quantprobe/plan.py long-prompt advice"
+    },
+    {
+      "id": "V-11",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "I-quant (IQ*) files are catastrophic on CPU tiers - 2.7x slower than K-quants at the same size - and the planner now warns before a user pays that silently.",
+      "magnitude": "Pure-CPU decode, same dense 7B, r=3: IQ3_XS 10.6 GB/s effective vs Q2_K 28.4 / Q4_K_M 29.7. K-format dequant is bandwidth-shaped on AVX2; the IQ codebook lookup is compute-shaped and 4 cores cannot hide it. In VRAM the IQ formats measured mid-pack (the eta study), so the warning fires ONLY on host-resident placements.",
+      "evidence": "prereg #31 arm F; C-05 fourth instance",
+      "scope": "host-resident placements, AVX2-class CPUs; VRAM placements explicitly excluded from the warning",
+      "wired_into": "quantprobe/spec.py:from_gguf (iq_share) - quantprobe/plan.py (the warning) - tests/smoke.py:t_iq_quants_warned_on_cpu_tiers"
+    },
+    {
+      "id": "V-12",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "The quality-vs-speed frontier UNDER SPECULATION - the table a person needs to pick a model for their machine, which no published benchmark provides because everyone quotes raw decode.",
+      "magnitude": "2016 desktop (GTX 1060 6GB + DDR4-3000), 30B-A3B MoE, single user, copy-regime output, split placement + ngram-simple m384 n4, request 1 of a fresh server: ~3-bit (Q2_K / Q2_K_L) = 99 tok/s at x1.05-1.07 planner quality cost; ~3.9-bit (Q3_K_M) = 59 tok/s at x1.02-1.05. Raw decode for the same rows is 21 and 17. So the published raw numbers understate achievable speed by 3.4-4.8x on work whose output reuses its context.",
+      "evidence": "prereg #40 (with same-model confound control); #36/#37 for the tuning",
+      "scope": "copy-regime output only - novel generation gains nothing (D-10). One box, one model family.",
+      "wired_into": "quantprobe/plan.py:speculation_advice carries the multiplier and its quantization scope"
+    },
+    {
+      "id": "V-13",
+      "kind": "lever",
+      "status": "shipped",
+      "confidence": "measured",
+      "claim": "A PURE layer split (-ngl N) is equivalent to the -ot expert-offload regex at matched work division - the simpler configuration is not slower.",
+      "magnitude": "-ngl 20 gives 19.70 tok/s / 50.76 ms; -ngl 99 with 32 layers of experts on CPU via -ot gives 19.76 / 50.61. Within noise. (-ngl 16: 15.96; -ngl 12: 12.88 - the equivalence is at MATCHED division, not at any N.)",
+      "evidence": "prereg #43",
+      "scope": "Qwen3-30B-A3B Q2_K, reference box, DECODE only. Prefill was not compared, and the ubatch findings (#19/#20/#23) were all measured on the -ot form.",
+      "wired_into": "documented in prereg #43; the planner still emits -ot because every other measurement used it"
+    }
+  ],
+  "refuted_do_not_repropose": [
+    {
+      "id": "D-01",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Reducing expert count (top-k 8->4) for DECODE is strictly dominated by simply quantizing further.",
+      "magnitude": "k=4: 1.335x speed for 1.206x perplexity. Bit ladder: 1.424x for 1.048x - faster AND 4x cheaper.",
+      "evidence": "prereg #18",
+      "scope": "Qwen3-30B-A3B decode",
+      "wired_into": "not shipped, deliberately"
+    },
+    {
+      "id": "D-02",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Intra-tensor VQ on Gemma MLP weights cannot pay - the stream is white.",
+      "magnitude": "0 dB coding gain",
+      "evidence": "gemma vq-lens",
+      "scope": "Gemma-4-12B MLP",
+      "wired_into": null
+    },
+    {
+      "id": "D-03",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "k-means matched-rate VQ is a runtime trap - decode cost swamps the compression win.",
+      "magnitude": "n/a",
+      "evidence": "gemma vq-lens",
+      "scope": "general",
+      "wired_into": null
+    },
+    {
+      "id": "D-04",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Two frontier cells are dominated on BOTH axes and must never be recommended.",
+      "magnitude": "all-experts-CPU + KV evicted 336.31/15.82; split + KV VRAM + ub2048 163.39/20.13",
+      "evidence": "prereg #21",
+      "scope": "reference box",
+      "wired_into": "quantprobe/plan.py MOE_FRONTIER exclusion comment"
+    },
+    {
+      "id": "D-05",
+      "kind": "dead_end",
+      "status": "open",
+      "confidence": "inferred",
+      "claim": "REOPENED 2026-07-27 (prereg #32), scoped. Was: 'forking llama.cpp is not worth it (1-6%)'. The fork is still refuted - but the CPU MUL_MAT_ID expert path is measured to leave ~40% of DRAM bandwidth uncaptured, the memory-system excuse is refuted by microbenchmark, and an UPSTREAM PR against that one path has a real, bounded prize.",
+      "magnitude": "Shuffled 2MB expert-slab reads: 24.56 GB/s vs 23.88 sequential (+2.9%, noise) - the memory system is indifferent to the scatter. MoE CPU path: 16.0 GB/s at 4 threads where dense reaches 28.4 identically threaded; thread scaling 1x/1.64x/2.17x. Prize: host share at dense efficiency = +65%, raw decode 22.25 -> ~30 realistic, 41 perfect. Still below free speculation (50-59), so the prize matters for NOVEL generation specifically, where speculation is closed (D-10). PROFILED (prereg #33): the marginal expert GEMV runs AT the wall (23.1 GB/s, k-sweep slope 4.19 ms/expert), expert-major dispatch is a measured null, and the deficit is ~32 ms/token of FIXED per-op machinery - leading suspect the CPU graph executor's per-op thread barrier on a small-op-heavy MoE graph. The upstream target is the executor, not MUL_MAT_ID.",
+      "evidence": "prereg #32 (fork gate); prereg #27 (the decomposition); prereg #31 (dense kernel at the wall); prereg #20 (the original phase-split ceiling analysis this verdict was first built on); prereg #33 (the profile)",
+      "scope": "EXPLICITLY NOT the disk-streaming tier - ds4 shows ~7x there",
+      "wired_into": "FUTURE.md upstream-PR target; the fork and the from-scratch runtime remain refuted on measured grounds"
+    },
+    {
+      "id": "D-06",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "The sub-4-bit decode collapse is a FORMAT property, not a bit-width property - gating on bits was wrong.",
+      "magnitude": "gl=0.04 gate removed",
+      "evidence": "prereg #16",
+      "scope": "all",
+      "wired_into": "quantprobe/plan.py geta_w = geta"
+    },
+    {
+      "id": "D-07",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "documented",
+      "claim": "Frequency-ranked MoE expert residency is NOT reachable from stock llama.cpp, and at our VRAM ratio it would buy single digits anyway.",
+      "magnitude": "ktransformers' own matched-VRAM table (Qwen3-Next-80B-A3B-FP8, 4x RTX 4090, ShareGPT): frequency vs front-loading is +2.5% to +5.3% in the 10-30% GPU-residency band we actually live in - against U-02's staked +15% to +40%. The staked band is reached only by DYNAMIC runtime re-placement (+18% to +27%), which needs a fork, at which point D-05 applies.",
+      "evidence": "E-01 study of kvcache-ai/ktransformers (doc/en/kt-kernel/experts-sched-Tutorial.md; SOSP'25 paper); E-02 study of PowerInfer",
+      "scope": "MoE expert placement via stock llama.cpp -ot, low VRAM-residency ratio",
+      "wired_into": "U-02 withdrawn from the register",
+      "why_the_protocol_was_impossible": "U-02's protocol said 'build an -ot regex from the top-N experts'. It cannot work: llama.cpp fuses ALL experts of a layer into one 3D tensor (blk.N.ffn_gate_exps.weight, {n_embd, n_ff, n_expert}) consumed by MUL_MAT_ID, and -ot matches tensor NAMES - so its finest MoE unit is 'all experts of layer N', which IS the contiguous split V-01 already ships. The ktransformers authors say so directly: they had to patch llama.cpp to get expert-level offloading for their own comparison.",
+      "and_it_corroborates_v01": "Their 'front-loading' strategy is the exact semantic twin of our contiguous split, and it BEATS 'uniform' at most ratios (73.65 vs 65.25 at 50%, +12.9%). Our index-based choice was made because it is what -ot can express; it turns out to be the better of the two statistics-free strategies.",
+      "and_powerinfer_does_not_support_the_premise": "PowerInfer's skew is DENSE ReLU FFN neurons (17-26% of neurons carry 80% of activations), never MoE expert selection - 'Mixture-of-Experts' appears once in the paper, in a citation. It also never ran the matched-memory frequency-vs-index comparison U-02 assumed it had, and it assigns individual NEURONS to GPU or CPU, which -ot cannot express either."
+    },
+    {
+      "id": "D-08",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "documented",
+      "claim": "Pinned host memory is ALREADY in use for every host-resident row quantprobe recommends - there is no PCIe headroom to reclaim.",
+      "magnitude": "U-03's predicted '+30% on host-resident prefill if currently pageable' resolves to 0%.",
+      "evidence": "U-03 source study: -ot=CPU re-runs buffer selection over the CPU buft list (ACCEL -> GPU-host -> CPU-extra -> CPU); on a CUDA build the GPU-host entry is CUDA_Host, allocated by cudaMallocHost. llama-model-loader.cpp:1197-1205 demotes it back to pageable IF use_mmap is true.",
+      "scope": "CUDA builds, -ot=CPU placements, with --no-mmap set",
+      "wired_into": "U-03 withdrawn; the --no-mmap smoke invariant is now known to be load-bearing for a second reason",
+      "the_conditional_that_matters": "The pinning is CONDITIONAL on --no-mmap, which quantprobe always emits on -ot=CPU rows. llama-bench defaults use_mmap=true, so a run without it is pageable - and that is the identified mechanism behind the ~21 percentage points prereg #13 attributed to --no-mmap alone. We had the right flag for an incompletely understood reason."
+    },
+    {
+      "id": "D-09",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not.",
+      "magnitude": "0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here. BUDGET SWEEP (prereg #42, novel content, req1 fresh server): base 19.39 (code) / 21.61 (prose); n-max 3 -> 15.95 / 9.52; n-max 8 -> 14.67 / 6.48; n-max 16 -> 10.58 / 3.91. MONOTONE DOWN, with acceptance collapsing 75->57->35% (code) and 36->18->9% (prose).",
+      "evidence": "prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED)",
+      "scope": "reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument",
+      "wired_into": "quantprobe/plan.py:speculation_advice"
+    },
+    {
+      "id": "D-10",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Novel-generation speculation is CLOSED on this box: no mechanism accelerates fresh output, and the one spectacular counter-number was the harness replaying itself.",
+      "magnitude": "Single-shot, fresh server, temp 0: ngram-mod 1.03x (zero drafts), ngram-cache 0.93x, ngram-map-k4v 1.00x, draft-mtp unmeasurable (three attempts, <0.2 tok/s or hung on the split where its own baseline runs 18.19), external 0.6B draft 0.72x (D-09). The 50.38-at-100%-acceptance first reading was ngram-mod's PERSISTENT cross-request store replaying an identical second request - the third harness artifact this project has caught by reading the output. CONFIRMED AT TUNED SETTINGS (prereg #41): the m384/n4 drafter drafts ZERO tokens on novel code and novel prose (21.13 vs 21.02 base; 20.95 vs 21.16) - fewer than the defaults' 38 - because of the 389-token context floor. D-10 was closed on defaults-scoped evidence and now holds at tuned settings too.",
+      "evidence": "prereg #30 (kill rule fired), prereg #28 arm D, Law 6 arm S-e; prereg #41 (tuned-drafter retest)",
+      "scope": "reference box, Qwen3 MoE family, llama.cpp b10098. Novel decode is bounded by the 41.1 tok/s raw wall (L-11); the remaining novel-workload levers are q8_0 KV at depth, prefix caching for ingest, batching for aggregate, and DRAM bandwidth itself.",
+      "wired_into": "quantprobe/plan.py:speculation_advice already scopes the claim to copy-regime output; prereg #30 closes the complement"
+    },
+    {
+      "id": "D-11",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "Scheduling-level kernel/sync tuning is DEAD on this box: threads, poll policy, priority and pinning are all flat or negative, so llama.cpp's defaults are already right here.",
+      "magnitude": "tg128, r=3, one session: baseline 21.42; -t 3 20.92 (-2.3%); --poll 0 21.40; --poll 100 21.03; --prio 2 21.13; --cpu-strict 1 21.42. Nothing clears +5%.",
+      "evidence": "prereg #31 arms K0-K4",
+      "scope": "reference box (4-core i5-7600K), split placement, llama.cpp b10098 defaults",
+      "wired_into": "nothing to ship - the absence of a flag IS the result"
+    },
+    {
+      "id": "D-12",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "measured",
+      "claim": "The CHAINING drafter (ngram-mod) loses to the dumb contiguous-copy drafter (ngram-simple) on copy-regime output, and its cross-request table POISONS rather than helps.",
+      "magnitude": "Request 1 of a fresh server, edit task, split placement: ngram-simple m384/n4 109.52 tok/s vs ngram-mod tuned 86.42-86.63 (-21%) and ngram-mod at defaults 57.41 (-48%). Raising n_max 512->1024 changes nothing (556 drafted in both): the chain dies on a hash miss long before either cap. Request 2 is 17-25% SLOWER than request 1 (86.42->71.75, 86.63->64.65) while drafting 75% MORE (556->976) at collapsed acceptance (65.6%->39.3%).",
+      "evidence": "prereg #38; source study of llama.cpp@f113e02 (speculative.cpp:1860-1872 chaining, 1811-1813 no-clear accumulation, ngram-map.cpp:96 the single-span copy)",
+      "scope": "copy-regime output (edits/refactors/quoting) on Qwen3-30B-A3B, reference box. A workload whose output is NOT near-copy of context was not tested and mod may differ there.",
+      "wired_into": "no code change - the shipped ngram-simple flags already carry the winner",
+      "why_the_smarter_drafter_loses": "Mod's 4.2M-slot table stores ONE successor per hash slot, no key, overwrite-on-write - so every chaining step can silently be a collision, and the chain is autoregressive, so one wrong step corrupts everything after it. Simple's contiguous copy is verified-correct BY CONSTRUCTION: it reproduces text that actually occurred. On output that is a near-copy of the context, freedom is not the constraint and the smarter drafter's error compounds.",
+      "and_it_explains_D_10": "This is the source-level explanation of the #30 replay artifact, now measured in the OPPOSITE direction: there, mod's accumulated table made a repeated identical request look fast; here, on a real edit task, the same accumulation makes it slower. Either way the number is not reproducible on fresh input - which is why request 1 of a fresh server is the only figure this project quotes for mod."
+    },
+    {
+      "id": "D-14",
+      "kind": "dead_end",
+      "status": "refuted",
+      "confidence": "inferred",
+      "claim": "Dual-bus expert streaming (run some experts on CPU out of DDR4 while streaming others to the GPU over PCIe, concurrently) cannot add bandwidth for HOST-RESIDENT weights - the two paths are in series, not parallel.",
+      "magnitude": "The proposal's arithmetic assumed effective host bandwidth 23.1 + 12.2 = 35.3 GB/s (+53%), moving the wall from 41.1 to ~55.6 tok/s. The addition double-counts: a PCIe transfer of expert bytes from host memory is a DMA READ OUT OF HOST DRAM, so the bytes cross the DRAM bus either way. Streaming an expert to the GPU adds a hop and moves the arithmetic; it does not spare the bottleneck.",
+      "evidence": "prereg #45 (the empirical arm was VOID on protocol - baseline drifted +25% across the session - so the refutation rests on the physical argument, not the measurement)",
+      "scope": "host-resident MoE weights. Data already in VRAM is a different placement, swept in #43 and #21.",
+      "wired_into": "nothing - Law 4's SUM survives unchanged for this workload",
+      "what_survives_from_it": "Two things: (1) the GPU really does idle ~22 ms per token during the CPU expert phase, which is genuine headroom for COMPUTE that does not re-read host weights - speculative verification is exactly that, and is one reason speculation pays so well here; (2) the idea arrived with a zero-code falsification test, which is why it cost an hour rather than a week.",
+      "protocol_lesson": "The empirical arm was invalidated by its own position control: baseline 14.66 (1st, cold) vs 18.29 (4th, warm). Reading the middle arms against the cold baseline would have repeated the thermal-ordering error #31 caught. Any future contention test must INTERLEAVE arms (A,B,A,C,A,B...) to cancel drift."
+    }
+  ],
+  "open_contradictions": [
+    {
+      "id": "C-01",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "The GLM kvp values are wrong in BOTH directions and by 2x - not the 30-60x we believed. glm-744b is 2.10x too LARGE, glm-air is 2x too SMALL, and the two are related by a transposition.",
+      "magnitude": "GLM-5.2 is MLA + DeepSeek Sparse Attention (GlmMoeDsaForCausalLM): 78 layers, kv_lora_rank 512, qk_rope_head_dim 64. By quantprobe's own MLA convention that is 78 x (512+64) x 2 = 89,856 B/token against a shipped 188,416 - 2.10x too large. Separately GLM-4.5-Air is plain GQA: 46 x 8 x (128+128) x 2 = 188,416, EXACTLY the value sitting in the glm-744b row, against a shipped glm-air value of 94,208 - 2x too small.",
+      "evidence": "C-01 research from primary configs (zai-org/GLM-5.2 config.json; Glm4MoeForCausalLM configs). NOT back-solved from any observed datapoint.",
+      "scope": "GLM family",
+      "wired_into": "NOT FIXED - task #17",
+      "next_action": "Verify the config fields directly before changing a shipped number, then fix BOTH rows in quantprobe/plan.py and mirror into docs/index.html and docs/simulator.html. llama.cpp does not implement the DSA indexer yet, so 89,856 is the right target for what we predict against; the indexer would add ~5,376 B/token on top.",
+      "lesson": "Our stated belief - '30-60x too large' - was itself wrong by more than an order of magnitude, and it came from reasoning about a symptom instead of reading the architecture. The register had recorded that belief with the same confidence as a measurement."
+    },
+    {
+      "id": "C-02",
+      "kind": "contradiction",
+      "status": "reclassified",
+      "confidence": "measured",
+      "claim": "RECLASSIFIED 2026-07-28: the all-in-VRAM shortfall is a SOFTWARE gap of 1.5-2.6x, not an unexplained property of the hardware. Independent measurement (prereg #44) puts the card's decode-shaped ceiling at eta 0.84; llama.cpp reaches 0.32-0.56.",
+      "magnitude": "Implied eta from the 7 ratchet points, same box, plan --gguf: gemma4-12b custom mix 0.319 (the only OVER-prediction, +9.8%) | Qwen3-0.6B Q8_0 0.357 | Qwen2.5-7B Q2_K 0.377 | Qwen2.5-7B IQ3_XS 0.384 | Bonsai-27B Q1_0 0.445 | Qwen3.5-4B Q4_K_M 0.464 | Qwen2.5-7B Q4_K_M 0.561. The law assumes 0.35 for all of them. HEADROOM CORRECTED (same session): the 1.5-2.6x figure compared against the fp32 GEMV ceiling; against the fp16 ceiling (108.9 GB/s, Pascal fp16 is 1/64 rate) llama.cpp's Q4_K_M at 98.6 GB/s sits at 91%. Honest range: 1.1x-1.64x at Q4_K_M, pending which arithmetic the kernels use.",
+      "evidence": "prereg #24 (eta-vram-bytes-per-token) + prereg #15 (law4-v3-overhead-term) + weights/data/prereg24_eta_bytes_per_token.log; verify.py layer 3 FAILS on this",
+      "scope": "dense models fully resident, GTX 1060 6GB",
+      "wired_into": "disclosed in CLI output as 'a floor, not a ceiling' - but the disclosed band (2%-67%) is itself now too narrow",
+      "priority": 1,
+      "why_it_is_the_top_item": "It is the placement most users land on, it is the one we undersell, and underselling -ngl 99 pushes people toward complicated offload placements that are actually SLOWER for them. Every other finding in this register is about configurations that are harder than the default.",
+      "what_the_data_rules_out": "(a) FIXED OVERHEAD - refuted by prereg #15. (b) GPU CLOCK STATE - refuted by its own prediction (cold 144.21 vs warm 143.37). (c) GATE MODEL-SELECTION - the 7B misses by more than the 0.5B. (d) BYTES PER TOKEN - refuted by prereg #24's control, which has fewer bytes and higher eta. (e) MONOTONE IN BIT-WIDTH - refuted here: Q8_0 at 8.5 bits gives 0.357, LOWER than Q2_K at 2.8 bits (0.377). (f) A PER-FORMAT CONSTANT - refuted here: two models both labelled Q4_K_M give 0.464 and 0.561, a 21% spread that no single per-format value can absorb. (g) A BYTES-WEIGHTED MIX OVER ACTUAL TENSOR TYPES - the most promising candidate, and it does not close. The mix genuinely differs and in the right direction (the 4B 'Q4_K_M' is only 54.9% Q4_K with 37.8% Q6_K, while the 7B is 73.3% Q4_K), but solving the linear system across all points forces a NEGATIVE eta for Q5_K or for Q2_K depending on which points are used. It is not a linear mixture.",
+      "leading_hypothesis": "WITHIN one architecture the pattern is clean and monotone in the dominant tensor type - Qwen2.5-7B goes Q2_K 0.377 -> IQ3_XS 0.384 -> Q4_K_M 0.561. ACROSS architectures it does not transfer at all, and the two worst outliers are both architecturally unusual: gemma4-12b (sliding-window attention, and the only model we OVER-predict) and Bonsai-27B (linear-attention hybrid, already flagged under Law 2). So eta looks like a property of (architecture x tensor mix x kernel), which is not a constant and is not something the tool can derive from the inputs it has.",
+      "next_action": "DISCRIMINATING TEST: measure llama.cpp all-in-VRAM eta against FORMAT at fixed model and size, on a 7B+ model so per-token overhead does not dominate: Q8_0 (trivial dequant) vs Q4_K_M vs Q2_K. If eta rises toward 0.84 as dequant cheapens, the gap is ARITHMETIC and Pascal owns it. If eta stays ~0.4 at Q8_0, the gap is the KERNEL and it is addressable. Existing C-02 data hints at the awkward answer - Q8_0 measured the LOWEST eta (0.354) - but those were 0.5-0.6B models where overhead dominates, so it must be re-run at 7B+.",
+      "also_establishes": "Between-session drift is 10-13% on decode against sub-1% within-session error bars, now measured three times on the same 4B model: 27.30 (07-26), 30.89 (07-27 early), 30.03 (07-27 late). C-04 recorded this for prefill; it holds for decode too, and it bounds what any single session can conclude.",
+      "direction_of_the_error": "A floor with an exception is not a floor, and two earlier versions of this entry were incoherent in exactly that way ('faster every time' beside a listed over-prediction; then 'floor with one measured exception'). The coherent form is a ONE-SIDED BOUND placed BELOW the worst measurement: real >= 0.90x predicted, 13 of 13 benchmarks (worst point gemma4-12b at 0.910x), falsified by any single measurement below it. Same logical form as the law's +/-25% claim - a bound stated with its evidence that a future measurement can kill - just asymmetric, because the measured error is asymmetric.",
+      "what_shipped": "verify.py:e2e_band - layer 3's accuracy band is now PER REGIME. All-in-VRAM is -15/+90, the other regimes keep +/-25% because that is where the layer-4 anchors validate it. The lower bound is the load-bearing half: it is what fails if the tool ever becomes OPTIMISTIC, which is the direction that costs a user something. Published as a correction in README and CHANGELOG rather than edited quietly - a measured per-regime accuracy is honest, but only if it is stated at least as loudly as the number it replaces.",
+      "why_it_stayed_open_so_long": "Every GPU number in this project came out of llama.cpp, so 'the hardware is the wall' and 'llama.cpp is the wall' were indistinguishable on that side - while on the CPU side they were NOT, because the numpy stream benchmark (26.1 GB/s) independently corroborated llama.cpp's dense kernel (28.4-29.7). The asymmetry was invisible until it was pointed out. Six candidate explanations were refuted over the project's life without anyone measuring the card directly."
+    },
+    {
+      "id": "C-03",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "verify.py layer 3 is sensitive to GPU clock state - the same 0.5B model measures across the +/-25% band depending on whether the card is warm.",
+      "magnitude": "+30% warm vs prediction",
+      "evidence": "2026-07-27 gate run",
+      "scope": "verify layer 3 on the smallest model",
+      "wired_into": "NOT FIXED",
+      "next_action": "either fix the clock state before measuring, or stop selecting the smallest model - a 0.5B decode is overhead-dominated and is the worst possible test of a bandwidth law"
+    },
+    {
+      "id": "C-04",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "Absolute prefill figures are not stable across invocation shapes, only ratios are.",
+      "magnitude": "split/nkvo0/ub2048 measured 85.47 swept alone vs 161.59 in the full matrix",
+      "evidence": "prereg #21 reproducibility note",
+      "scope": "reference box",
+      "wired_into": "flagged, not averaged away",
+      "next_action": "any future use of an absolute figure needs its own controlled run"
+    },
+    {
+      "id": "C-05",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "A QUANTIZED BYTE IS NOT A BYTE. Below a format-specific threshold, bytes removed from the bandwidth bill reappear as dequantisation compute - so every efficiency constant fitted at ONE format is wrong at another. Measured three times.",
+      "magnitude": "D-06: the sub-4-bit decode collapse is a weight-FORMAT property, not bit-width. C-02: eta is a weight-FORMAT-CLASS property - sub-4-bit 0.425-0.443 vs 4-bit 0.510-0.631, against one assumed 0.35. #25: ETA_KV holds to 8 bits and collapses below - q8_0 KV delivers 0.563 of f16's KV time against a 0.53 nominal ratio (+6.2%, the model works), while q4_0 delivers 0.532 against 0.28 nominal (+90%, the model fails) and buys only +2.0% over q8_0. FOURTH INSTANCE (prereg #31): on the CPU tier, IQ formats deliver 10.6 GB/s vs ~29 for K-quants at identical size - dequant cost is format-shaped, again. FIFTH INSTANCE (prereg #40): on the speculation axis. Bytes rise 1.299x from Q2_K_L to Q3_K_M; raw decode cost rises 1.222x (tracks bytes, as Law 4 requires) but SPECULATED decode cost rises 1.670x - 1.37x faster than bytes. A verify round processes ~50 tokens at once, which #26 measured to be compute-bound, and once compute-bound the extra bits cost extra DEQUANTISATION on every one of those tokens rather than extra bytes moved. SIXTH INSTANCE: on the VRAM tier. Same model all-in-VRAM, eta rises with bits (0.311 Q2_K -> 0.513 Q4_K_M) because fewer bits means more unpacking per delivered byte - so Q4_K_M carries 55% MORE bytes than Q2_K and is still faster (22.60 vs 21.26 tok/s).",
+      "evidence": "prereg #16 (gl-format-not-bitwidth), prereg #24 (eta-vram-bytes-per-token), prereg #25 (kv-cache-quantization)",
+      "scope": "the decode law's constants",
+      "priority": 1,
+      "wired_into": "nothing yet - this is a lint waiting to be written",
+      "next_action": "Three instances is a pattern, not a coincidence. Audit EVERY remaining efficiency constant for the same assumption and add a gate check that refuses a constant fitted at a single format. The saturation point differs by quantity - ~4-bit for weights, ~8-bit for KV - so the lint cannot be a fixed threshold; it must demand that the constant was MEASURED across formats."
+    },
+    {
+      "id": "C-06",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.",
+      "magnitude": "Aggregate decode, npl 1 -> 8, one session: split 21.93 -> 44.48 (2.03x); all-experts-CPU 19.89 -> 37.70 (1.90x); DENSE 7B fully in VRAM 22.47 -> 50.48 (2.25x). Per-step time grows 3.56x while weight bytes per step are unchanged, so weight amortisation works as expected - the cost that grows is per-sequence work, unidentified.",
+      "evidence": "prereg #26 (parallel-slots); weights/data/prereg26_parallel_slots.log",
+      "scope": "GTX 1060 6GB, llama-batched-bench, npp 512 / ntg 128. A 2016 card without tensor cores is exactly where a batched-decode ceiling would appear first.",
+      "priority": 2,
+      "wired_into": "disclosed in the CLI; NOT modelled",
+      "hypotheses_already_refuted": "(a) Host-residency amortisation - staked as P-2 and refuted BY DIRECTION: the placement with MORE host-resident weight gained LESS (1.90x vs 2.03x). (b) MoE routing divergence across slots - refuted by the dense control, which saturates at 2.25x, barely above the MoE split. No mechanism is named here on purpose: in this project the first mechanism guess has been wrong four times, and each wrong guess survived exactly as long as nobody built a control that could kill it.",
+      "next_action": "Run the identical sweep on ANY modern GPU. It costs one command and decides whether this is a law or a museum piece. Until then quantprobe must not model concurrency - it can only disclose it.",
+      "the_part_that_did_work": "PREFILL shows the staked mechanism plainly: arm A gains 2.12x from batching against arm S's 1.44x, because A has the most host-resident weight to amortise - exactly L-09. But all three arms converge to ~405-445 t/s, a ceiling that caps the effect before it can change any recommendation."
+    },
+    {
+      "id": "C-07",
+      "kind": "contradiction",
+      "status": "reported",
+      "confidence": "measured",
+      "claim": "CPU decode speed depends ~40% on the OpenMP runtime the binary was BUILT with - a variable no hardware spec exposes and the tool cannot currently see.",
+      "magnitude": "Same source, same box, same model, tg32 t=4: gcc+libgomp (mingw, kernel-semaphore barriers, no spin phase) 11.92; gcc+GGML_OPENMP=OFF (ggml spin barrier) 16.64 (+40%); MSVC+libomp default 13.28; +KMP_BLOCKTIME=infinite 13.89. ~2070 barriers/token; the mechanism, not the count, was most of the tax.",
+      "evidence": "prereg #34; the E3 per-op profiler (barrier 30.8 -> 10.8 ms/token); barrier-map desk research (symbol-level libgomp evidence)",
+      "scope": "pure-CPU decode, 4-core Windows box. The split placement runs on libomp (mostly spinning already); CUDA+no-OpenMP is unmeasured.",
+      "priority": 2,
+      "wired_into": "UPSTREAM ISSUE FILED: ggml-org/llama.cpp#26200 (2026-07-27, FedericoTs). Carries the three-build A/B, the E3 barrier ledger, the symbol-level libgomp evidence, a copy-paste repro, and both supporting nulls.",
+      "next_action": "Watch ggml-org/llama.cpp#26200 for maintainer response. Remaining open: whether the finding transfers to a CUDA build - MEASURED NOT to transfer to the shipped split config via the libomp spin-policy A/B (20.12 vs 20.56, bars overlap), but a CUDA + GGML_OPENMP=OFF build is untested here (no nvcc on this box)."
+    },
+    {
+      "id": "C-08",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "inferred",
+      "claim": "quantprobe SUMS multi-device bandwidth, which models tensor-parallel (--split-mode row). llama.cpp's DEFAULT is --split-mode LAYER, which is SERIAL - so for any multi-GPU user on defaults the tool over-predicts decode by roughly the device count.",
+      "magnitude": "agg_bw() returns sum(v)*eff for a device list (quantprobe/plan.py). Under a layer split each GPU holds a disjoint subset of layers and they run SEQUENTIALLY within a token, so t = sum(bytes_i/BW_i): two IDENTICAL cards give the same decode speed as one card that could hold everything - capacity, not bandwidth. The tool would predict ~2x. For HETEROGENEOUS cards it is worse than wrong in magnitude, it is wrong in DIRECTION: adding a slow card to a fast one makes a fitting model SLOWER (3090 alone 1.30 ms/token vs 3090+1060 at 20/80 = 2.31 ms), while the tool predicts a gain.",
+      "evidence": "first-principles from llama.cpp split-mode semantics + Law 4; NOT yet measured - this box has one GPU",
+      "scope": "multi-device inputs (--vram 24,6 style). Single-GPU predictions unaffected. Row-split may approach the summed model, minus sync.",
+      "priority": 1,
+      "wired_into": "NOT FIXED - no second GPU to measure on",
+      "next_action": "Highest-value thing a two-GPU contributor can measure. Until then the honest interim is a WARNING on multi-device input stating that the estimate assumes row-split and that layer-split (the default) adds capacity rather than bandwidth. The moment a second GPU exists on this box, this is the first measurement - it is also the same session that unblocks C-02."
+    },
+    {
+      "id": "C-09",
+      "kind": "contradiction",
+      "status": "open",
+      "confidence": "measured",
+      "claim": "~20 ms of the split placement's 50.6 ms token is UNATTRIBUTED, and the five obvious explanations are each refuted by their own control.",
+      "magnitude": "Byte accounting: CPU share 0.516 GB at measured 26.1 GB/s = 19.8 ms, GPU share 0.70 GB at eta=1 = 3.6 ms, total 23.4 ms against 50.6 ms measured. Refuted as causes: CPU expert read (at physics, 23.1 GB/s marginal, #33); per-layer GPU<->CPU round trips (prereg #43: -ngl 20 with ONE crossing gives 19.70 tok/s vs -ot with ~32 crossings at 19.76 - eliminating 31 boundaries saves nothing); scheduling (#31, six null arms); memory scatter (#32); graph barriers (#34, the shipped CUDA build already spins). GPU-side inefficiency (C-02, eta 0.32-0.56) accounts for only ~5 ms.",
+      "evidence": "prereg #43 (layer-count sweep + pure-layer-split refutation)",
+      "scope": "Qwen3-30B-A3B Q2_K split placement, reference box, decode",
+      "priority": 1,
+      "wired_into": "nothing - an open measurement, deliberately unexplained",
+      "the_named_blocker": "The instrument that closes this is the E3 per-op profiler (already written, GGML_OP_PROFILE=1) running on a CUDA build. This box has no nvcc, so only CPU-only builds can carry the profiler. A tooling gap, not a conceptual one: install the CUDA toolkit and the decomposition takes one run.",
+      "the_pattern": "Fifth mechanism hypothesis killed by its own control in this project - after fixed overhead (#15), GPU clock state (#24), bytes-per-token (#24), and memory scatter (#32). Every attribution made without a control has been wrong, which is why this entry names no mechanism."
+    }
+  ],
+  "untried_levers": [
+    {
+      "id": "U-06",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "The disk-streaming tier has ~7x available that our fork verdict (D-05) explicitly does not cover.",
+      "hypothesis": "D-05 concluded a custom runtime buys 1-6%, but scoped that to the VRAM/host-resident regimes. antirez/ds4 reports order-of-magnitude gains on streaming, where the bottleneck is I/O scheduling rather than bandwidth accounting.",
+      "predicted_effect": "unknown; the point is that our own verdict has a hole in it",
+      "cost": "1 day to characterise",
+      "why_it_is_promising": "it is the one regime where we have already said our no-fork conclusion does not apply",
+      "protocol": "reproduce ds4's approach on the reference box's SATA MX500; compare against our stream-from-disk tier",
+      "priority": 3
+    },
+    {
+      "id": "U-07",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.",
+      "hypothesis": "D-01 killed top-k for decode. Prereg #22 showed the PREFILL prize reaches every shipped placement at +21% to +63%. The open question is whether the +20.6% perplexity cost attaches to ingestion or only to generation.",
+      "predicted_effect": "if the cost is generation-only, asymmetric top-k is real and ships as an upstream PR, never a fork",
+      "cost": "1 day",
+      "why_it_is_promising": "prereg #22 Stage 1 passed its own kill rule",
+      "protocol": "slot save/restore between a k=4 and a k=8 server; measure perplexity attributable to each phase",
+      "priority": 2
+    },
+    {
+      "id": "U-10",
+      "kind": "untried",
+      "status": "untested",
+      "confidence": "speculative",
+      "claim": "Speculation and batching may compose (5x x 2x) or contend for the same forward pass - staked in prereg #39 and WITHDRAWN incomplete when the project's priority moved to single-user quality.",
+      "hypothesis": "Batching amortises one weight read across N slots (#26: ~2.0-2.25x, saturating by 4); speculation amortises it across k tokens within a slot (#36/#37: 4.7x at ~3-bit). They attack the same denominator by different means. The interference mechanism is real though: with continuous batching, one slot's 384-token verify batch may monopolise the forward pass other slots need, and the MoE expert-union tax (Law 6) grows with batch diversity.",
+      "predicted_effect": "staked in #39: aggregate >= 150 tok/s at -np 4 with speculation, and batching's multiplier surviving to within 80% with speculation on",
+      "cost": "1 hour - two arms remain (-np 4 with and without speculation); the harness exists at weights/data/prereg39_spec_x_batch.log",
+      "why_it_is_promising": "it is the only remaining measured-multiplier composition, and it decides whether one cheap box serves one person fast or several people adequately",
+      "protocol": "resume prereg #39 arms C and D; report aggregate AND per-request (they diverge 2.3x - see the withdrawal note)",
+      "priority": 2,
+      "evidence": "prereg #39 (staked then WITHDRAWN incomplete; partial data in weights/data/prereg39_spec_x_batch.log: np1 bare 16.16 aggregate / 20.62 per-request, np1 speculated 42.79 / 99.28)"
+    }
+  ],
+  "external_prior_art_reviewed": [
+    {
+      "id": "E-01",
+      "kind": "external",
+      "status": "open",
+      "repo": "kvcache-ai/ktransformers",
+      "why": "The closest prior art to our entire MoE offload thesis - heterogeneous CPU/GPU MoE inference with explicit expert placement. If they have solved expert residency we should adopt rather than rediscover.",
+      "question_to_answer": "How do they choose WHICH experts stay resident? Index-based like ours, or frequency-based like U-02?",
+      "priority": 1
+    },
+    {
+      "id": "E-02",
+      "kind": "external",
+      "status": "open",
+      "repo": "SJTU-IPADS/PowerInfer",
+      "why": "Hot/cold neuron residency driven by measured activation frequency - the dense analogue of U-02, and the strongest published evidence that frequency-ranked placement beats index-ranked.",
+      "question_to_answer": "What is the measured routing/activation skew, and does it hold for MoE experts as well as dense neurons?",
+      "priority": 1
+    },
+    {
+      "id": "E-03",
+      "kind": "external",
+      "status": "reviewed",
+      "repo": "antirez/ds4",
+      "why": "Reported ~7x on the disk-streaming tier - the one regime our no-fork verdict (D-05) does not cover.",
+      "question_to_answer": "Is the gain I/O scheduling, or a different quantization? See U-06.",
+      "priority": 2
+    },
+    {
+      "id": "E-04",
+      "kind": "external",
+      "status": "reviewed",
+      "repo": "tonyd2wild/GLM-5.2-Abliterated-NVFP4-316K-4x-DGX-Spark",
+      "why": "A GLM-5.2 deployment at known hardware - the datapoint that could close C-01 without back-solving.",
+      "question_to_answer": "What attention architecture does the config declare? That is the input C-01 needs.",
+      "priority": 1
+    },
+    {
+      "id": "E-05",
+      "kind": "external",
+      "status": "open",
+      "repo": "vllm-project/vllm and sgl-project/sglang",
+      "why": "Paged attention and automatic prefix caching are the production form of U-04.",
+      "question_to_answer": "What hit rate does prefix caching achieve on RAG-shaped workloads, and what is the memory overhead of paging?",
+      "priority": 2
+    }
+  ],
+  "preregistrations": [
+    {
+      "n": 9,
+      "file": "2026-07-25-law5-prefill-pilot.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 10,
+      "file": "2026-07-24-law6-speculation-economics.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 11,
+      "file": "2026-07-25-apex-vs-probe-depthaware.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 12,
+      "file": "2026-07-25-recipe-upgrade-shexp-imatrix.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 13,
+      "file": "2026-07-26-moe-partial-expert-offload.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 14,
+      "file": "2026-07-26-apex-rematch-ood-kl.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 15,
+      "file": "2026-07-26-law4-v3-overhead-term.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 16,
+      "file": "2026-07-26-gl-format-not-bitwidth.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 and P-3 MISS. The bug is real; my explanation of it was wrong.",
+      "scored": true
+    },
+    {
+      "n": 17,
+      "file": "2026-07-26-dense-activation-model.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 HIT decisively, P-3 MISS. The correction ships.",
+      "scored": true
+    },
+    {
+      "n": 18,
+      "file": "2026-07-26-topk-decode.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "all three speed stakes HIT — and the lever is a DEAD END anyway. It does not ship.",
+      "scored": true
+    },
+    {
+      "n": 19,
+      "file": "2026-07-27-ubatch-cpu-resident.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1, P-2, P-3, P-4 all HIT. Four for four, and the control is the important one.",
+      "scored": true
+    },
+    {
+      "n": 20,
+      "file": "2026-07-27-phase-split-placement.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1, P-2, P-3, P-4 all HIT. And the measurement caught a regression I had shipped five hours earlier.",
+      "scored": true
+    },
+    {
+      "n": 21,
+      "file": "2026-07-27-kv-placement.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 MISS, P-3 HIT far beyond the stake, P-4 HIT.",
+      "scored": true
+    },
+    {
+      "n": 22,
+      "file": "2026-07-27-asymmetric-topk-prefill.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 HIT, P-3 partial. The kill rule is NOT triggered — Stage 1 passes.",
+      "scored": true
+    },
+    {
+      "n": 23,
+      "file": "2026-07-27-vram-cliff-gate.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 HIT, P-3 HIT. And the shipped command was on the wrong side of the cliff.",
+      "scored": true
+    },
+    {
+      "n": 24,
+      "file": "2026-07-27-eta-vram-bytes-per-token.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 HIT, P-3 HIT, P-4 HIT. Four for four — and the control point carries the result, which is not what the stakes were pointing at.",
+      "scored": true
+    },
+    {
+      "n": 25,
+      "file": "2026-07-27-kv-cache-quantization.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 HIT, P-3 MISS by the letter, P-4 HIT decisively. And the shipped \"evict KV to RAM\" row turns out to be dominated.",
+      "scored": true
+    },
+    {
+      "n": 26,
+      "file": "2026-07-27-parallel-slots.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 MISS, P-2 MISS and refuted by DIRECTION, P-3 MISS, P-4 HIT. The refutation condition I wrote into the stake is triggered — and it is the outcome that is better for the tool.",
+      "scored": true
+    },
+    {
+      "n": 27,
+      "file": "2026-07-27-decode-gap-decomposition.md",
+      "has_kill_rule": false,
+      "kill_rule_fired": false,
+      "verdict": "P-1 MISS (low — the wall was too optimistic), P-2 HIT, P-3 marginal at 17–25%, P-4 HIT. The decomposition closes, and it MOVES THE WALL DOWN.",
+      "scored": true
+    },
+    {
+      "n": 28,
+      "file": "2026-07-27-speculation-flagship.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT but on the WRONG AXIS (see below), P-2 HIT, P-3 MISS decisively, P-4 HIT — 50.04 tok/s, the measured raw-decode wall exceeded by 22% on a 2016 GPU.",
+      "scored": true
+    },
+    {
+      "n": 29,
+      "file": "2026-07-27-prefix-caching.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT (29×), P-2 HIT (110×), P-3 HIT. The asymptote moves.",
+      "scored": true
+    },
+    {
+      "n": 30,
+      "file": "2026-07-27-novel-generation-speculation.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": true,
+      "verdict": "P-1 MISS (after diagnosing my own artifact), P-2 MISS (unmeasurable — worse than a miss), P-3 MISS for one variant. THE KILL RULE FIRES: novel-generation speculation on this box is CLOSED.",
+      "scored": true
+    },
+    {
+      "n": 31,
+      "file": "2026-07-27-kernel-sync-levers.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 MISS, P-2 MISS (the refutation clause fires), P-3 MISS as staked — and arm F caught two unstaked findings that matter more than every staked one.",
+      "scored": true
+    },
+    {
+      "n": 32,
+      "file": "2026-07-27-fork-gate-scatter.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 REFUTED — decisively, and in the direction that reopens the question. P-2 HIT (sequential chunks at 23.88 GB/s = 91% of the stream benchmark; harness valid).",
+      "scored": true
+    },
+    {
+      "n": 33,
+      "file": "2026-07-27-mmid-profile.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 MISS (the dispatch hypothesis dies with proof of mode), P-3 HIT — and the k-sweep relocates the entire problem.",
+      "scored": true
+    },
+    {
+      "n": 34,
+      "file": "2026-07-27-barrier-runtime.md",
+      "has_kill_rule": false,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT at +40%, P-2 marginal miss (10.8 vs staked ≤10), P-3 MISS (+4.6%, bars overlap). The barrier tax was largely the MECHANISM, and it is a build property.",
+      "scored": true
+    },
+    {
+      "n": 35,
+      "file": "2026-07-27-lever-composition.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 HIT, P-3 HIT at 1.038 (no interference — slightly super-multiplicative), P-4 HIT. The levers compose.",
+      "scored": true
+    },
+    {
+      "n": 36,
+      "file": "2026-07-27-draft-length-sweep.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT at +81%, P-2 HIT (exactly at the boundary), P-3 HIT in letter but the MECHANISM I predicted is wrong, P-4 HIT. The default draft length was leaving 81% on the table.",
+      "scored": true
+    },
+    {
+      "n": 37,
+      "file": "2026-07-28-drafter-availability.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "P-1 MISS (availability is NOT the mechanism), P-2 HIT at 108.41, P-3 HIT, P-4 HIT. The headline lands, and the reason I gave for it was wrong again.",
+      "scored": true
+    },
+    {
+      "n": 38,
+      "file": "2026-07-28-ngram-mod-chaining.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": true,
+      "verdict": "P-1 MISS (the floor suppresses less than I claimed), P-2 MISS — the KILL RULE FIRES, P-3 REFUTED BY DIRECTION (accumulation makes mod WORSE, not better), P-4 HIT once request index is matched. `ngram-simple` at `m 384 / n 4` stands as the shipped optimum.",
+      "scored": true
+    },
+    {
+      "n": 39,
+      "file": "2026-07-28-speculation-x-batching.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "WITHDRAWN, incomplete",
+      "scored": true
+    },
+    {
+      "n": 40,
+      "file": "2026-07-28-quality-at-speed.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": true,
+      "verdict": "P-1 HIT, P-2 MISS — the KILL RULE FIRES, P-3 MISS (predicted, and worse than predicted), P-4 HIT. The speculation multiplier is NOT invariant in bits, and our headline is hereby scoped.",
+      "scored": true
+    },
+    {
+      "n": 41,
+      "file": "2026-07-28-novel-retest-tuned.md",
+      "has_kill_rule": false,
+      "kill_rule_fired": false,
+      "verdict": "P-1 MISS (the tuned drafter fires LESS, not more — and the reason is a trap we were shipping), P-2 HIT, P-3 VIOLATED reproducibly — which corrects a claim I have repeated all day.",
+      "scored": true
+    },
+    {
+      "n": 42,
+      "file": "2026-07-28-draft-model-budget.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": true,
+      "verdict": "P-1 HIT, P-2 MISS — the KILL RULE FIRES, P-3 answered by monotonicity, P-4 divergence reported. The draft-model path is closed for good, and #28's conclusion was RIGHT for a reason it did not state.",
+      "scored": true
+    },
+    {
+      "n": 43,
+      "file": "2026-07-28-split-token-decomposition.md",
+      "has_kill_rule": false,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": 44,
+      "file": "2026-07-28-independent-gpu-bandwidth.md",
+      "has_kill_rule": false,
+      "kill_rule_fired": false,
+      "verdict": "P-1 HIT, P-2 HIT DECISIVELY, P-3 HIT. The GTX 1060 delivers η 0.84 on a decode-shaped operation. llama.cpp achieves 0.32–0.56. \"No software lever left\" is REFUTED for the GPU half.",
+      "scored": true
+    },
+    {
+      "n": 45,
+      "file": "2026-07-28-dual-bus-headroom.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": "the EXPERIMENT is void on protocol — but the IDEA is refuted by physics that the experiment did not need to establish. Kill rule fires on the second ground, not the first.",
+      "scored": true
+    },
+    {
+      "n": null,
+      "file": "2026-07-23-colibri-v1.1.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": null,
+      "file": "2026-07-23-laguna-s-2.1-on-2016-desktop.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    },
+    {
+      "n": null,
+      "file": "2026-07-24-reap-expert-pruning.md",
+      "has_kill_rule": true,
+      "kill_rule_fired": false,
+      "verdict": null,
+      "scored": false
+    }
+  ]
+}
