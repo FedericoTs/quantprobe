@@ -1,0 +1,4 @@
+=== #63: the full v1.19 chain, calibrate->plan->run->measure, PRISTINE binary ===
+prediction from calibrated plan: 19.4 tok/s, band [14.6, 24.3]
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | blk\.(1[3-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU |    0 |           tg128 |         21.21 ± 0.13 |
+1898 MHz, 36
