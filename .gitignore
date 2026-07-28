@@ -56,3 +56,6 @@ weights/data/quantize_proof.log
 
 # llama.cpp builds live outside the repo - never commit binaries
 tools/
+# ...except our own source. kernelprobe is a standalone CUDA benchmark with no llama.cpp in it.
+!tools/kernelprobe/
+!tools/kernelprobe/*.cu
