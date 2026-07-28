@@ -78,4 +78,4 @@ layer   overlap  top1_agree  divergence
 
 # early-half mean div=0.2408 late-half=0.2556 ratio=1.06x max=0.3287
 
-saved -> C:\Users\Federico\Documents\evo-compress\weights\data\route_diverge_qwen_uniform.txt
+saved -> <repo>\weights\data\route_diverge_qwen_uniform.txt

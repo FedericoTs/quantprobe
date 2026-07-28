@@ -4,12 +4,12 @@ Two windows. Every number prints in the SERVER window (`print_timing` lines).
 
 ## Window 1 - the server (speculation ON)
 
-    cd C:\Users\Federico\Documents\evo-compress
+    cd <repo>
     tools\llamacpp-b10098\llama-server.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -ngl 99 -ot "blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU" --no-mmap -t 4 -b 1024 -ub 1024 --spec-type ngram-simple --spec-ngram-simple-size-m 384 --spec-ngram-simple-size-n 4 --port 8089
 
 ## Window 2 - the requests
 
-    curl -s http://127.0.0.1:8089/v1/chat/completions -H "Content-Type: application/json" -d @"C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\demo\edit_task.json"
+    curl -s http://127.0.0.1:8089/v1/chat/completions -H "Content-Type: application/json" -d @"<repo>\demo\edit_task.json"
 
 Watch Window 1. Expected (measured 2026-07-27):
 
@@ -18,7 +18,7 @@ Watch Window 1. Expected (measured 2026-07-27):
 
 Then the honest control - novel generation on the SAME server:
 
-    curl -s http://127.0.0.1:8089/v1/chat/completions -H "Content-Type: application/json" -d @"C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\demo\novel_task.json"
+    curl -s http://127.0.0.1:8089/v1/chat/completions -H "Content-Type: application/json" -d @"<repo>\demo\novel_task.json"
 
 Expected: ~21-22 tok/s, acceptance ~0% - nothing to copy, no gain. This is the scope of the
 lever, not a failure of it.

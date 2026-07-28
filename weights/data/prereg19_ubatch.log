@@ -1,9 +1,9 @@
 === Pre-reg #19: ubatch on CPU-resident experts. P-1 >=1.5x, P-2 control <=1.05x, P-3 decode flat ===
 GPU before: 987 MiB, 835 MHz, 43
 --- warm-up (DISCARDED) ---
-load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
-load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
-load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+load_backend: loaded CUDA backend from <repo>\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from <repo>\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from <repo>\tools\llamacpp-b10098\ggml-cpu-haswell.dll
 | qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 | exps=CPU              |    0 |           pp512 |        205.38 ± 0.00 |
 --- P-1: MoE, experts on CPU, pp2048 across ubatch ---
 | qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |      512 | exps=CPU              |    0 |          pp2048 |        199.90 ± 1.42 |

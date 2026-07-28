@@ -89,4 +89,4 @@ layer   overlap  top1_agree  divergence
 # early-half mean divergence = 0.0864 ; late-half mean = 0.1317 ; ratio late/early = 1.52x
 # first MoE layer div = 0.0474 ; last = 0.1180
 
-saved -> C:\Users\Federico\Documents\evo-compress\weights\data\route_diverge.txt
+saved -> <repo>\weights\data\route_diverge.txt

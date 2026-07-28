@@ -40,4 +40,4 @@ layer  consec_ov  rand_ov   ws@8  ws@32  ws@128  topshare
 # mean working set: W=8 -> 27.0, W=32 -> 51.0, W=128 -> 62.3 distinct routed experts of 64
 # verdict: high overlap + small saturating working set -> hot-expert cache wins (paper-2 alive)
 
-saved -> C:\Users\Federico\Documents\evo-compress\weights\data\route_locality.txt
+saved -> <repo>\weights\data\route_locality.txt

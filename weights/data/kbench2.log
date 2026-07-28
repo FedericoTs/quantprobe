@@ -6,10 +6,10 @@ In riga:1 car:212
     + FullyQualifiedErrorId : NativeCommandError
  
  un programma eseguibile o un file batch.
-Using C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensions\torch_extensions\
+Using <tmp>>\LocalCache\Local\torch_extensions\torch_extensions\
 Cache\py312_cu124 as PyTorch extensions root...
 Detected CUDA files, patching ldflags
-Emitting ninja build file C:\Users\Federico\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\torch_extensio
+Emitting ninja build file <tmp>>\LocalCache\Local\torch_extensio
 ns\torch_extensions\Cache\py312_cu124\evoq_f0\build.ninja...
 Building extension module evoq_f0...
 Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)

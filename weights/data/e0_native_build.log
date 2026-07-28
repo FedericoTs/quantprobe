@@ -1,6 +1,6 @@
 === E0 configure: CPU-only, native codegen, no CUDA/curl ===
 -- Generating done (0.9s)
--- Build files have been written to: C:/Users/Federico/Documents/evo-compress/tools/llama.cpp-src/build-cpu
+-- Build files have been written to: <repo>/tools/llama.cpp-src/build-cpu
 CHECKPOINT OK: configured
 === E0 build llama-bench (-j4, ~10 min) ===
 [ 98%] Building CXX object tools/llama-bench/CMakeFiles/llama-bench.dir/main.cpp.obj

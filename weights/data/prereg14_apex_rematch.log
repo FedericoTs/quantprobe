@@ -5,7 +5,7 @@
 0.01.586.450 W resolve_fused_ops: fused Gated Delta Net (chunked) not supported, set to disabled
 0.22.036.709 I 
 0.22.037.113 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
-0.22.037.860 I perplexity: saving all logits to C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/q35_q8_ref.logits
+0.22.037.860 I perplexity: saving all logits to <tmp>
 0.22.037.870 I perplexity: tokenizing the input ..
 0.22.106.662 I perplexity: tokenization took 68.787 ms
 0.22.106.755 I perplexity: calculating perplexity over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4

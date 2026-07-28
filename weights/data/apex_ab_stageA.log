@@ -5,12 +5,12 @@ CHECKPOINT OK: source file present
 quant-probe: Qwen3.5-35B-A3B-Q8_0.gguf | 40 layers -> 4 bands [(0, 9), (10, 19), (20, 29), (30, 39)]
 
 [1/3] reference Q6_K
-  $ C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_ref_q6k.gguf Q6_K 8
+  $ <repo>/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_ref_q6k.gguf Q6_K 8
 ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
   Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
-load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
-load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
-load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+load_backend: loaded CUDA backend from <repo>\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from <repo>\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from <repo>\tools\llamacpp-b10098\ggml-cpu-haswell.dll
 llama_print_build_info: build = 10098 (0278d8362)
 llama_print_build_info: built with Clang 20.1.8 for Windows x86_64
 llama_quantize: quantizing 'D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf' to 'D:\evo-compress-data\gguf\_probe_ref_q6k.gguf' as Q6_K using 8 threads
@@ -812,12 +812,12 @@ llama_quantize:    total time = 733239.32 ms
   ref PPL = None
 
 [2/3] band probe (one band's FFNs -> Q2_K at a time)
-  $ C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(0|1|2|3|4|5|6|7|8|9)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b0_9.gguf Q6_K 8
+  $ <repo>/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(0|1|2|3|4|5|6|7|8|9)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b0_9.gguf Q6_K 8
 ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
   Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
-load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
-load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
-load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+load_backend: loaded CUDA backend from <repo>\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from <repo>\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from <repo>\tools\llamacpp-b10098\ggml-cpu-haswell.dll
 llama_print_build_info: build = 10098 (0278d8362)
 llama_print_build_info: built with Clang 20.1.8 for Windows x86_64
 llama_quantize: quantizing 'D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf' to 'D:\evo-compress-data\gguf\_probe_b0_9.gguf' as Q6_K using 8 threads
@@ -1677,12 +1677,12 @@ llama_quantize: quantize time = 783589.38 ms
 llama_quantize:    total time = 783589.38 ms
   measuring perplexity on 32 chunks (this can take 1-3 min; llama.cpp is quiet while it works)...
   layers 0-9: PPL None  (delta None)
-  $ C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(10|11|12|13|14|15|16|17|18|19)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b10_19.gguf Q6_K 8
+  $ <repo>/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(10|11|12|13|14|15|16|17|18|19)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b10_19.gguf Q6_K 8
 ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
   Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
-load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
-load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
-load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+load_backend: loaded CUDA backend from <repo>\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from <repo>\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from <repo>\tools\llamacpp-b10098\ggml-cpu-haswell.dll
 llama_print_build_info: build = 10098 (0278d8362)
 llama_print_build_info: built with Clang 20.1.8 for Windows x86_64
 llama_quantize: quantizing 'D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf' to 'D:\evo-compress-data\gguf\_probe_b10_19.gguf' as Q6_K using 8 threads
@@ -2542,12 +2542,12 @@ llama_quantize: quantize time = 774572.36 ms
 llama_quantize:    total time = 774572.36 ms
   measuring perplexity on 32 chunks (this can take 1-3 min; llama.cpp is quiet while it works)...
   layers 10-19: PPL None  (delta None)
-  $ C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(20|21|22|23|24|25|26|27|28|29)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b20_29.gguf Q6_K 8
+  $ <repo>/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(20|21|22|23|24|25|26|27|28|29)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b20_29.gguf Q6_K 8
 ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
   Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
-load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
-load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
-load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+load_backend: loaded CUDA backend from <repo>\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from <repo>\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from <repo>\tools\llamacpp-b10098\ggml-cpu-haswell.dll
 llama_print_build_info: build = 10098 (0278d8362)
 llama_print_build_info: built with Clang 20.1.8 for Windows x86_64
 llama_quantize: quantizing 'D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf' to 'D:\evo-compress-data\gguf\_probe_b20_29.gguf' as Q6_K using 8 threads
@@ -3407,12 +3407,12 @@ llama_quantize: quantize time = 772456.83 ms
 llama_quantize:    total time = 772456.83 ms
   measuring perplexity on 32 chunks (this can take 1-3 min; llama.cpp is quiet while it works)...
   layers 20-29: PPL None  (delta None)
-  $ C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(30|31|32|33|34|35|36|37|38|39)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b30_39.gguf Q6_K 8
+  $ <repo>/tools/llamacpp-b10098\llama-quantize.exe --allow-requantize --tensor-type blk\.(30|31|32|33|34|35|36|37|38|39)\.ffn_.*=q2_k D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf D:\evo-compress-data\gguf\_probe_b30_39.gguf Q6_K 8
 ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
   Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
-load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
-load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
-load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+load_backend: loaded CUDA backend from <repo>\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from <repo>\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from <repo>\tools\llamacpp-b10098\ggml-cpu-haswell.dll
 llama_print_build_info: build = 10098 (0278d8362)
 llama_print_build_info: built with Clang 20.1.8 for Windows x86_64
 llama_quantize: quantizing 'D:/evo-compress-data/gguf/Qwen3.5-35B-A3B-Q8_0.gguf' to 'D:\evo-compress-data\gguf\_probe_b30_39.gguf' as Q6_K using 8 threads
