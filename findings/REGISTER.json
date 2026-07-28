@@ -862,7 +862,8 @@
    "claim": "The shipped -ot pattern (expert layers 11-47 to CPU) costs ~13% prompt processing vs the older 16-47 split: pp2048 measured 336.94 at full clocks where the original 386.04 was recorded on the other pattern, tracking the +15.6% CPU expert-layer count. A resident-expert-count sweep would map the pp/tg frontier and may recover the pp without hurting tg. [CONFIRMED and SHIPPED by prereg #62: 16 residents beats the shipped 11 on BOTH metrics (+15.3% pp, +6.3% tg, clocks-controlled). Root cause was a double VRAM discount in the pattern generator; fixed, plan now emits 31% residency on the reference box. The VRAM edge is a soft -6.6% degradation at 18 residents, not a hard cliff.]",
    "hypothesis": "prefill is CPU-expert-bound, so pp scales inversely with CPU-resident expert layers while tg is roughly flat across nearby splits (tg parity measured repeatedly)",
    "predicted_effect": "~+15% pp at 16 resident expert layers if VRAM headroom allows at ub 1024; tg unchanged within noise",
-   "wired_into": "prereg #61 scoring; candidate next single-session sweep"
+   "wired_into": "prereg #61 scoring; candidate next single-session sweep",
+   "evidence": "prereg #62 (the sweep + the shipped fix)"
   }
  ],
  "external": [
