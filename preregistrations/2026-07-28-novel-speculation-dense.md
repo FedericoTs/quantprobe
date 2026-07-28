@@ -38,3 +38,33 @@ the only speculation that pays is copy-regime, full stop. That is a publishable 
 If P-2 HITS, the tool's speculation advice gains a dense-model branch it has never had.
 
 **Wired into:** pending; `speculation_advice()` and D-09/D-10/L-13 score either way.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg67_novel_spec.log`, baseline 22.63 same-state)
+
+**Verdict: P-1 HIT (67.9% @ K=4, in the staked band). P-2 MISS — best is 1.11x at K=2, below
+the 1.25x bar. P-3 MISS (prose 0.95x best). THE KILL RULE FIRES as pre-committed — and it
+closes the Big Thing with a number instead of a null.**
+
+The full K-curve on novel code (first-ever positive novel-text speculation on this box):
+K=1: 85.5%/24.27 · **K=2: 79.0%/25.16 (1.11x)** · K=3: 75.5%/24.13 · K=4: 67.9%/22.92 ·
+K=8: 39.1%/20.90 (0.92x) · adaptive p-min 0.75 changed nothing · prose peaked at 0.95x.
+
+### What this settles
+
+1. **Novel-text speculation is ALIVE but SMALL on this box: +11% on code-style output, dense
+   all-in-VRAM targets, K=2.** Prose: net-negative at every K. MoE flagship: measured dead
+   before (D-09/D-10). The 0.5B drafter's own cost is the binder — at a 6.8x speed ratio the
+   draft+verify overhead eats most of an 79%-acceptance harvest. The arithmetic says the prize
+   needs a ~20x-faster drafter (sub-100M class), which does not exist in this model family.
+2. **llama.cpp's default draft length (3) is not the optimum here** — K=2 beats it; K>=4 is a
+   regression on novel text. The tool's advice now says so.
+3. **The "anything left on the table" question closes measured:** the last crumb on this box is
+   +11% code-novel via a dense-target draft, now shipped as scoped advice. Everything larger
+   requires either a drafter class that does not exist locally, batching (serving), or the
+   copy-regime (measured 2.2-5x, long shipped).
+
+**Wired into:** `speculation_advice()` (dense-target branch added) · D-09 scope amended (the
+0.72x was the SPLIT flagship; the dense cell measures 1.11x) · L-13 (curve extended with the
+dense-target datapoints).

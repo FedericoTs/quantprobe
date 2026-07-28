@@ -453,6 +453,20 @@ def format_advice(placement, bits):
     return None
 
 
+def dense_draft_note(moe, placement):
+    """The dense-target draft cell, measured (prereg #67): 0.5B drafting the dense 7B, both
+    all-in-VRAM, NOVEL prompts: +11% on code at --spec-draft-n-max 2 (79% acceptance), net
+    NEGATIVE on prose at every draft length, and llama.cpp's default K=3 is past the optimum.
+    Small, real, and scoped - the first positive novel-text speculation this box has measured."""
+    if moe or "all in VRAM" not in placement:
+        return None
+    return ("dense-model speculation (measured, prereg #67): pairing this model with a small "
+            "same-family draft (-md draft.gguf -ngld 99 --spec-draft-n-max 2) buys ~+11% on "
+            "CODE-style novel output at 79%% acceptance - and LOSES speed on prose and at "
+            "draft lengths >=4 (llama.cpp's default 3 is past the optimum here). Copy-regime "
+            "ngram speculation remains the big multiplier where output copies context.")
+
+
 def speculation_advice(moe, placement):
     """What speculative decoding is worth for THIS model and placement.
 
@@ -977,6 +991,10 @@ def run(args):
     if fit_adv:
         print(f"\n  note: {fit_adv}")
     adv = speculation_advice(moe, best[0])
+    dn = dense_draft_note(moe, best[0])
+    if dn:
+        print("
+  " + dn)
     if adv:
         print(f"\n  speculation: {adv}")
     # upgrade advisor
