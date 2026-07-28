@@ -76,6 +76,7 @@ def best_flags(a):
     _true = os.path.getsize(gguf) / 1e9 if gguf and os.path.isfile(gguf) else None
     # same size-classed GPU-eta dispatch as plan (ONE shared function; layer 3 enforces parity)
     vb, geta = planmod.resolve_gpu_eta(hw, a, ac, a.bits, vb, geta)
+    rb = planmod.resolve_cpu_bw(hw, a, ac, a.bits, rb)
     _, _, cfgs = planmod.evaluate(t, ac, ne, moe, a.bits, vc, vb, rc, rb, db, geta, act_scale, gl,
                                   ctx=ctx, kvp=kvp, true_size_gb=_true,
                                   n_layer=planmod.effective_n_layer(a, m))
@@ -93,7 +94,10 @@ def best_flags(a):
         print(f"[quantprobe] note: the fastest placement ({cfgs[0][0]}, {cfgs[0][1]:.1f} tok/s) needs an "
               f"expert-caching runtime; launching the fastest STOCK-llama.cpp placement instead.")
     best = runnable[0]
-    return best, best[3].replace('"', "").split()
+    # same --threads logic as plan's printout - the command a user SEES must be the command
+    # run/bench EXECUTE (found by the end-to-end audit: plan printed --threads, run dropped it)
+    fl_str, _ = planmod.append_threads_flag(best[3].replace('"', ""), best[0])
+    return best, fl_str.split()
 
 
 def run(a):
@@ -132,11 +136,14 @@ def bench(a):
     # defect in this project's history, so unknown flags now RAISE.
     BENCH_VALUED = {"-ngl", "-ot", "-ub", "-b", "-c", "-t"}   # take a value, same spelling in bench
     BENCH_TRANSLATE = {"--no-mmap": ["--mmap", "0"]}          # spelled differently in llama-bench
+    BENCH_VALUED_RENAME = {"--threads": "-t"}                 # take a value, renamed in bench
     bflags, i = [], 0
     while i < len(flags):
         f = flags[i]
         if f in BENCH_TRANSLATE:
             bflags += BENCH_TRANSLATE[f]; i += 1
+        elif f in BENCH_VALUED_RENAME:
+            bflags += [BENCH_VALUED_RENAME[f], flags[i + 1]]; i += 2
         elif f in BENCH_VALUED:
             bflags += [f, flags[i + 1]]; i += 2
         else:

@@ -725,8 +725,10 @@ def apply_calibration_overrides(hw, args):
                 if "pure CPU" in an.get("placement", ""):
                     pred = 0.62 * hw["rb"] / act_a           # dense CPU eta, same as evaluate()
                     ratios["cpu"] = max(0.70, min(1.40, ts / pred))
+                    hw["_anchor_cpu_act"] = act_a
                 elif "all-in-VRAM" in an.get("placement", "") and hw.get("vb"):
-                    pred = hw.get("geta", 0.45) * hw["vb"] / act_a
+                    eta_a = (an["fmt_bw"] / 192.2) if an.get("fmt_bw") else hw.get("geta", 0.45)
+                    pred = eta_a * hw["vb"] / act_a
                     ratios["gpu"] = max(0.70, min(1.40, ts / pred))
                     hw["_anchor_gpu_act"] = act_a       # for the size-class dispatcher below
                     # FORMAT RESCALING (L-16): the anchor measured ONE format's eta; the target
@@ -743,7 +745,10 @@ def apply_calibration_overrides(hw, args):
                 continue
         if ratios:
             if "cpu" in ratios:
-                hw["rb"] = hw["rb"] * ratios["cpu"]
+                # stored, not applied: validity depends on the TARGET's size class, resolved in
+                # resolve_gpu_eta (a 0.5B CPU anchor measures 16% hotter per byte than the
+                # flagship's CPU path - the small-model bias exists on BOTH tiers)
+                hw["_cpu_ratio"] = ratios["cpu"]
             if "gpu" in ratios:
                 # NOT applied to vb here: whether the GPU ratio is valid depends on the TARGET's
                 # size class (resolve_gpu_eta below), which is not known yet. Stored instead.
@@ -777,12 +782,17 @@ def resolve_gpu_eta(hw, args, active_b, bits, vb, geta):
     fmt_bw = getattr(args, "fmt_bw", None) if hw.get("_cal_active") else None
     act_est = (active_b or 0) * (bits or 4.5) / 8 * 1.08
     anchor_act = hw.get("_anchor_gpu_act")
-    same_class = bool(anchor_act and act_est and act_est / 4 <= anchor_act <= act_est * 4)
+    same_class = bool(anchor_act and act_est and act_est / 2 <= anchor_act <= act_est * 2)
     big = act_est >= 1.5
     # The size-class guard holds with OR without format knowledge: an out-of-class anchor ratio
     # never touches a big target (that misapplication is what the ratchet test caught).
     use_ratio = bool(ratio) and (same_class or not big)
-    if fmt_bw and big:
+    if fmt_bw:
+        # format-eta on BOTH sides: the anchor ratio is priced against the anchor's format eta,
+        # so targets must use format eta too or the two references diverge (measured: pricing
+        # the ratio on fmt-eta while the row used table-eta halved the small-model predictions).
+        # Within the anchor's class the ratio then encodes the measured size floor and the
+        # anchored prediction of the anchor's own arm is exact by construction.
         eta_fmt = fmt_bw / 192.2
         if not use_ratio and ratio:
             print(f"[quantprobe] GPU eta from the measured format ladder: {eta_fmt:.2f} "
@@ -790,8 +800,38 @@ def resolve_gpu_eta(hw, args, active_b, bits, vb, geta):
         return (vb * ratio, eta_fmt) if use_ratio else (vb, eta_fmt)
     if ratio and not use_ratio:
         print("[quantprobe] GPU anchor is outside this model's size class - machine ratio not "
-              "applied (small anchors under-price big models; #65). CPU anchor still applies.")
+              "applied (small anchors mis-price big models; #65).")
     return (vb * ratio, geta) if use_ratio else (vb, geta)
+
+
+def resolve_cpu_bw(hw, args, active_b, bits, rb):
+    """CPU-tier twin of resolve_gpu_eta: the anchor's machine ratio applies only within the
+    anchor's size class. Same measured basis: the 0.5B CPU anchor runs 32.6 GB/s effective where
+    the flagship's CPU expert path measured 28.0 (E3) - a +16% small-model bias that, applied to
+    a 30B, over-promised the split row by 25% (caught by the post-ship consistency check)."""
+    ratio = hw.get("_cpu_ratio")
+    if not ratio:
+        return rb
+    act_est = (active_b or 0) * (bits or 4.5) / 8 * 1.08
+    anchor_act = hw.get("_anchor_cpu_act")
+    same_class = bool(anchor_act and act_est and act_est / 2 <= anchor_act <= act_est * 2)
+    if same_class or act_est < 1.5:
+        return rb * ratio
+    print("[quantprobe] CPU anchor is outside this model's size class - machine ratio not "
+          "applied (small anchors mis-price big models; #65).")
+    return rb
+
+
+def append_threads_flag(flags, placement):
+    """--threads for CPU-resident placements - ONE helper for plan's printout AND runtime's
+    launched command, so the command a user sees is the command run/bench executes (E-06's
+    fork auto-detected 6 of 12 threads; C-07 measured the 40% class of swing)."""
+    import os as _os
+    n = _os.cpu_count() or 0
+    if n and any(k in placement for k in ("->RAM", "CPU", "disk", "split experts")) \
+            and "--threads" not in flags:
+        return f"{flags} --threads {n}", n
+    return flags, None
 
 
 def run(args):
@@ -836,6 +876,7 @@ def run(args):
     _g = getattr(args, 'gguf', None)
     true_size = _os.path.getsize(_g) / 1e9 if _g and _os.path.isfile(_g) else None
     vb, geta = resolve_gpu_eta(hw, args, a, args.bits, vb, geta)
+    rb = resolve_cpu_bw(hw, args, a, args.bits, rb)
     size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
                                kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)
@@ -860,15 +901,7 @@ def run(args):
     # VRAM headroom). Not part of the law: `evaluate` is untouched and no anchor can move.
     ub = ubatch_flags(best[0], ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc)
     run_flags = f"{best[3]} {ub}" if ub else best[3]
-    # --threads: llama.cpp's auto-detection can pick PHYSICAL cores only (the first external
-    # replication got 6 of 12 on a Ryzen 8600G and reported "decode struggled at 2 t/s ... this
-    # flag alone helped it jump past 9"; our own C-07 measured a 40% swing from the CPU-thread
-    # runtime alone). Emit the logical count explicitly whenever the placement has CPU-resident
-    # work; harmless when it does not.
-    import os as _os2
-    nthreads = _os2.cpu_count() or 0
-    if nthreads and any(k in best[0] for k in ("->RAM", "CPU", "disk", "split experts")):
-        run_flags = f"{run_flags} --threads {nthreads}"
+    run_flags, nthreads = append_threads_flag(run_flags, best[0])
     print(f"\n  run it:  llama-server -m model.gguf {run_flags}")
     if "--threads" in run_flags:
         print(f"           (--threads {nthreads} = this machine's LOGICAL cores; llama.cpp's own"

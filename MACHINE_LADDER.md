@@ -51,9 +51,16 @@ fitted. Log: `weights/data/prereg65_ladder.log`.
    the measurements existed** — in-sample for the 7B-family formats (the ladder's η constants
    come from those measurements), quasi-out-of-sample for the two MoE mixes (DS at −2.5% is the
    strongest point). The staked column remains the honest pre-registered record; the true
-   out-of-sample test of v1.20.1 is the next machine (E-06's rerun ask). Median |error|:
-   staked 14.8% → v1.20.1 8.6%, worst 34% → 14.3%, and the calibrated-path improvement is gated
-   off preset estimation (the ratchet test caught and blocked that scope creep before release).
+   out-of-sample test is the next machine (E-06's rerun ask). CORRECTED in v1.20.2: the 8.6%
+   median briefly published for v1.20.1 leaned on an internally inconsistent anchor boost (the
+   ratio was priced against a different eta than the rows used). The principled, self-consistent
+   column: preset flagship +3.3%, 0.5B −8.1%, 0.6B +10.3%, 7B −14.3%, DS −18.3%, flagship-gguf
+   −18.8% — median ~12%, every big-model miss an under-promise, and the anchored prediction of
+   the anchor's own arm exact by construction. A consistency audit the same day found and fixed
+   six defects: optimize/auto bypassing calibration, `run` dropping the printed `--threads`,
+   bench unable to forward it, a size-class band wide enough to misapply small-model ratios, the
+   double-priced boost, and the eta mismatch. plan, bench, run, optimize and auto now resolve
+   constants through the same three shared functions, enforced by the verification gate.
 
 **The two headline sentences this table earns:**
 On consumer hardware, the difference between running a model and running it *right* is 2–3×, and
