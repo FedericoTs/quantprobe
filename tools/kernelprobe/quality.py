@@ -13,7 +13,7 @@ destroy one critical tensor.
 """
 import sys, numpy as np
 
-sys.path.insert(0, r"C:/Users/Federico/Documents/evo-compress/tools/llama.cpp-src/gguf-py")
+sys.path.insert(0, r"<repo>/tools/llama.cpp-src/gguf-py")
 from gguf.gguf_reader import GGUFReader
 from gguf.quants import dequantize
 from gguf.constants import GGMLQuantizationType

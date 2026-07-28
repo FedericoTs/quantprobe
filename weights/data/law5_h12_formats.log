@@ -3,9 +3,9 @@
 llama_quantize:    total time = 32396.60 ms
 llama_quantize:    total time = 50352.26 ms
 llama_quantize:    total time = 91276.42 ms
-4.2G C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/qwen7b-Q4_0.gguf
-5.0G C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/qwen7b-Q5_0.gguf
-7.6G C:/Users/Federico/AppData/Roaming/Local/Temp/claude/C--Users-Federico-Documents-evo-compress/891e37a6-673e-49a1-9dd2-a1b7bbce3852/scratchpad/qwen7b-Q8_0.gguf
+4.2G <tmp>
+5.0G <tmp>
+7.6G <tmp>
 --- CPU-pure pp2048 cells (-dev none -ngl 0, r2) ---
 | qwen2 7B Q4_0                  |   4.12 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         23.73 ± 0.07 |
 | qwen2 7B Q5_0                  |   4.94 GiB |     7.62 B | CUDA       |   0 | none         |          pp2048 |         12.43 ± 0.00 |

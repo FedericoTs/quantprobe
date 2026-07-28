@@ -14,8 +14,8 @@ setlocal
 set "CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9"
 set "PATH=%CUDA_PATH%\bin;C:\Windows\System32;%PATH%"
 set "LOG=%~dp0data\prereg61_coldboot.log"
-set "INSTR=C:\Users\Federico\Documents\evo-compress\tools\llama.cpp-src\build-cuda\bin\llama-bench.exe"
-set "PRIST=C:\Users\Federico\Documents\evo-compress\tools\llama.cpp-pristine\build\bin\llama-bench.exe"
+set "INSTR=<repo>\tools\llama.cpp-src\build-cuda\bin\llama-bench.exe"
+set "PRIST=<repo>\tools\llama.cpp-pristine\build\bin\llama-bench.exe"
 set "MODEL=D:/evo-compress-data/gguf/_k_sweep_scratch.gguf"
 set "OT=blk\.(1[1-9]|[2-3][0-9]|4[0-7])\.ffn_.*_exps\.=CPU"
 

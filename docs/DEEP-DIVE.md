@@ -70,7 +70,6 @@ Three honest caveats: (1) 2-bit quality on a 744B is *itself* a probe-first ques
 | `docs/simulator.html` | the interactive calculator (also served via GitHub Pages) |
 | `weights/*.py` · `weights/data/*.log` | every harness, and the raw log behind every number |
 | `weights/REPRODUCE.md` | claim → script → log manifest + the bench protocol |
-| `README_lossless_spike.md` | the project's first thread (evolutionary lossless compression) |
 
 
 ## Reproduce

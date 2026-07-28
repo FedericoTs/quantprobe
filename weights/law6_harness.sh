@@ -3,9 +3,9 @@
 # scoring preregistrations/2026-07-24-law6-speculation-economics.md. NO speculative flag has been
 # run on this box; this file is preparation only. Conventions per LAW5_PROTOCOL + prereg #10.
 set -u
-T="C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098"
+T="<repo>/tools/llamacpp-b10098"
 G="/d/evo-compress-data/gguf"
-W="C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill/weights/data"
+W="<repo>/weights/data"
 SC="${LAW6_SCRATCH:?set LAW6_SCRATCH to a scratch dir}"
 L="$W/law6_pilot.log"   # unique log, never reused
 PORT=8095
@@ -20,7 +20,7 @@ echo "=== LAW6 PILOT $(date '+%F %H:%M') ===" > "$L"; gpu
 python - "$SC" <<'PY'
 import json, sys
 sc = sys.argv[1]
-code = open(r"C:\Users\Federico\Documents\evo-compress\quantprobe\plan.py", encoding="utf-8").read()[:8000]
+code = open(r"<repo>\quantprobe\plan.py", encoding="utf-8").read()[:8000]
 wcode = code + "\n\n# Task: rename the function qual_of to quality_of everywhere above, and show the full corrected file.\n"
 prose = open(r"D:\evo-compress-data\eval\wiki.test.raw", encoding="utf-8", errors="ignore").read()[:8000]
 for name, prompt in [("wcode", wcode), ("wprose", prose)]:

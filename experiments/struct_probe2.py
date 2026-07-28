@@ -2,7 +2,7 @@
 import numpy as np
 from safetensors import safe_open
 
-WP = "C:/Users/Federico/Documents/evo-compress/weights/data/qwen/base.safetensors"
+WP = "<repo>/weights/data/qwen/base.safetensors"
 
 def rowcos(A, B):
     An = A / (np.linalg.norm(A, axis=1, keepdims=True) + 1e-9)

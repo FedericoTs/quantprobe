@@ -9,10 +9,10 @@ GPU before: 688 MiB, 139 MHz, 37
   N/code     21.55 tok/s (n=2)
 --- server harness (llama-cli ignores --spec-type; llama-server is where V-04 lives) ---
 Traceback (most recent call last):
-  File "C:\Users\Federico\AppData\Roaming\Local\Temp\spec_server.py", line 44, in <module>
+  File "<tmp>", line 44, in <module>
     if arm == "B": measure("B", [], C)
                    ^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Federico\AppData\Roaming\Local\Temp\spec_server.py", line 22, in measure
+  File "<tmp>", line 22, in measure
     prompt = open(path, encoding="utf-8", errors="replace").read()
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 FileNotFoundError: [Errno 2] No such file or directory: '/tmp/code_prompt.txt'

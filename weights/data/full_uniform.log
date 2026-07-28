@@ -4,9 +4,9 @@ DeepSeek-V2-Lite carve-out 2-bit: 151 win, routed-gate/up=2 DOWN_K=2 ATTN_K=2 SH
 Traceback (most recent call last):
   File "<frozen runpy>", line 198, in _run_module_as_main
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\Federico\Documents\evo-compress\weights\evoq_moe.py", line 448, in <module>
+  File "<repo>\weights\evoq_moe.py", line 448, in <module>
     {"baseline": baseline, "validate": validate, "measure": measure}.get(mode, baseline)()
-  File "C:\Users\Federico\Documents\evo-compress\weights\evoq_moe.py", line 389, in measure
+  File "<repo>\weights\evoq_moe.py", line 389, in measure
     d = _json.load(open(lm)); rep["bits"] += d["bits"]; rep["q"] += d["q"]; rep["kept"] += d["kept"]
                                              ~^^^^^^^^
 KeyError: 'bits'
