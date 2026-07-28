@@ -62,3 +62,54 @@ for a format nobody can use is worth nothing. Quality is a separate, later measu
 is made here.
 
 **Wired into:** pending P-1.
+
+---
+
+## Scored (2026-07-28, log: `weights/data/prereg53_q2k_ladder.log`)
+
+**Verdict: P-1 HIT and P-2 HIT, both by large margins. The unpack tax grows as bits shrink, and at
+2 bits it is large enough to REVERSE the byte ordering.**
+
+Qwen2.5-7B, all-in-VRAM, tg128, r=2, interleaved with a position control:
+
+| format | file | tg128 | mean | bytes/token | effective GB/s | eta | GW/s |
+|---|---|---|---|---|---|---|---|
+| Q2_K | 2.80 GiB | 21.76 ± 0.11, 21.58 ± 0.15 | **21.67** | 3.016 GB | **65.4** | 0.340 | 165.1 |
+| Q4_0 | 4.12 GiB | 26.87 ± 0.27 | **26.87** | 4.431 GB | **119.1** | 0.619 | 204.7 |
+
+- **P-1 HIT, hugely.** The byte model predicts Q2_K at **39.5 tok/s**. Measured **21.67** — 45%
+  short, against a staked threshold of 15%.
+- **P-2 HIT.** Effective bandwidth 65.4 vs 119.1 GB/s. Halving the bits nearly halves the rate at
+  which bytes can be consumed, which is precisely what an ALU-bound unpack predicts and what a byte
+  model forbids.
+- **The ordering reverses.** **Q2_K is SLOWER than Q4_0 in absolute tok/s (21.67 vs 26.87) while
+  being 32% smaller** — and Q2_K is also the lower-quality format. On this card Q2_K is strictly
+  dominated whenever Q4_0 also fits in VRAM. That inverts the standard "smaller is faster"
+  intuition and the standard "K-quants are strictly better" advice at the same time.
+
+### P-3: the prize, quantified rather than assumed
+
+Against the probe's measured ceilings for the same bits/weight class:
+
+| | measured GW/s | probe ceiling GW/s | fraction of ceiling |
+|---|---|---|---|
+| llama.cpp Q4_0 (4.50 bit) | 204.7 | 231.2 (4.5-bit dp4a) | **88%** |
+| llama.cpp Q2_K (2.625 bit) | 165.1 | 342.4 (2.5-bit dp4a) | **48%** |
+
+**llama.cpp's Q4_0 kernel is already near-optimal — there is nothing to win at 4 bits.** The entire
+opportunity is at 2 bits, where the measured headroom is **2.07×** at essentially equal size
+(2.625 vs 2.50 bits/weight). This is the number that justifies building a new quant type, and it is
+measured on both ends rather than extrapolated from one.
+
+### What is still NOT decided, and it is the thing that could kill the whole project
+
+**Quality.** The 2.5-bit probe format is symmetric with one fp16 scale per 32 weights. Q2_K is
+asymmetric with a 4-bit scale AND a 4-bit min per 16 weights — four times the metadata resolution
+and an offset our format does not have. Q2_K should win on quality by a wide margin. A 2× speed win
+on a format that degrades the model is worth nothing, and the honest next step is a format that
+keeps dp4a-native unpacking **while carrying enough metadata to match Q2_K's fidelity** — which
+costs bits and will eat some of the 2.07×. No quality claim is made here and none should be read in.
+
+**Wired into:** `findings/REGISTER.json:L-14` (unpack tax confirmed to grow as bits shrink) ·
+`V-17` (on pre-Ampere, Q2_K is dominated by Q4_0 when both fit — a real user-facing lever) ·
+`U-12` (the 2.07× headroom at 2 bits, contingent on a quality-preserving layout).
