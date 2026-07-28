@@ -454,11 +454,27 @@ def format_advice(placement, bits):
 
 
 def dense_draft_note(moe, placement):
-    """The dense-target draft cell, measured (prereg #67): 0.5B drafting the dense 7B, both
-    all-in-VRAM, NOVEL prompts: +11% on code at --spec-draft-n-max 2 (79% acceptance), net
-    NEGATIVE on prose at every draft length, and llama.cpp's default K=3 is past the optimum.
-    Small, real, and scoped - the first positive novel-text speculation this box has measured."""
-    if moe or "all in VRAM" not in placement:
+    """The dense-target draft cells, measured (preregs #67/#69). All-in-VRAM: 0.5B drafting the
+    dense 7B, NOVEL prompts: +11% on code at --spec-draft-n-max 2 (79% acceptance), net NEGATIVE
+    on prose at every draft length, and llama.cpp's default K=3 is past the optimum. SPLIT: the
+    best speculation cell on this box - the K+1 verify batch reads each CPU-resident layer once,
+    so the CPU share of the token amortizes: +33% on the 14B at K=2 (76% acceptance) with the
+    draft itself on CPU (-ngld 0, zero VRAM cost). The K-cliff is HARDER on split (K=3+ lands at
+    or below baseline) because the CPU draft pays from the same bandwidth pocket the
+    amortization saves."""
+    if moe:
+        return None
+    if "layers->VRAM" in (placement or ""):
+        return ("dense-SPLIT speculation (measured, prereg #69): a small same-family draft is "
+                "the best speculation cell on this box - `-md draft.gguf -ngld 0 "
+                "--spec-draft-n-max 2` bought **+33%** decode on a 14B split target (5.5 -> 7.4 "
+                "tok/s, 76%% acceptance, novel code), and the draft costs ZERO VRAM because it "
+                "runs on CPU. Mechanism: the K+1-token verify batch reads each CPU-resident "
+                "layer once, so the CPU share of every token amortizes. Keep K=2: every "
+                "measured K>=3 landed AT OR BELOW no-draft baseline (the CPU draft spends the "
+                "same RAM bandwidth the amortization saves), so llama.cpp's default 3 already "
+                "loses here.")
+    if "all in VRAM" not in placement:
         return None
     return ("dense-model speculation (measured, prereg #67): pairing this model with a small "
             "same-family draft (-md draft.gguf -ngld 99 --spec-draft-n-max 2) buys ~+11% on "

@@ -1357,6 +1357,18 @@ def t_clock_sampler_min_samples():
     assert s.sustained() == 1873
 
 
+def t_dense_draft_note_three_cells():
+    # prereg #67/#69: the draft-model advice must match the measured cell — split gets the +33%
+    # CPU-draft note (K=2, -ngld 0), AIV keeps the +11% note, MoE never gets either.
+    from quantprobe.plan import dense_draft_note
+    split = dense_draft_note(False, "split: 28/48 layers->VRAM, rest->RAM")
+    assert split and "+33%" in split and "-ngld 0" in split and "prereg #69" in split
+    aiv = dense_draft_note(False, "all in VRAM")
+    assert aiv and "+11%" in aiv and "prereg #67" in aiv
+    assert dense_draft_note(True, "split: 10/48 layers->VRAM, rest->RAM") is None
+    assert dense_draft_note(False, "pure CPU (GPU idle)") is None
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

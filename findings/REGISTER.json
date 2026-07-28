@@ -98,7 +98,7 @@
    "magnitude": "The claimed spread shrank three times, each time from correcting one of our own measurement errors: 2.25x (contained a cell measured past the compute-buffer cliff) -> 1.33x (corrected to ub 512) -> 1.23x (all cells in one session) -> gone (the surviving alternative wins by 0.44 tok/s against combined error bars of 0.456, i.e. 0.96 sigma). Same-session table: split+ub1024+KV-in-VRAM 386.04/21.58 dominates all-experts-CPU 381.82/19.79 and evict-KV 381.60/17.95.",
    "evidence": "prereg #21 (original), prereg #25 (refutation); weights/data/prereg25_frontier_rematch.log",
    "scope": "MoE whose experts exceed VRAM",
-   "wired_into": "quantprobe/plan.py:MOE_FRONTIER (one row) \u00b7 tests/smoke.py:t_workload_frontier_is_pareto (rewritten to assert the collapse)",
+   "wired_into": "quantprobe/plan.py:MOE_FRONTIER (one row) · tests/smoke.py:t_workload_frontier_is_pareto (rewritten to assert the collapse)",
    "why_it_was_wrong": "The frontier was an ARTEFACT of never measuring split + KV-in-VRAM at ub 1024. That cell had been benchmarked only at ub 2048 (past the cliff, 161.59 pp) and ub 512 (307.13 pp), and was recorded as 'dominated' - a claim that silently inherited the scope of the sweep that produced it. It really meant 'dominated AT ub 2048'. Excluding a configuration is also a claim, and it needs a scope like any other."
   },
   {
@@ -424,6 +424,17 @@
    "evidence": "prereg #64 (gate staked before any number; anchor arms excluded from targets); prereg #64 gate log weights/data/prereg64_gate.log",
    "scope": "one box; the ratios are per-machine BY DESIGN (that is the point); format blindness of the single GPU ratio documented (Q4_0 -43% under-promise), fix logged as U-15",
    "wired_into": "quantprobe/plan.py anchor composition; quantprobe/calibrate.py gpu_anchor; tests t_anchored_predictions_wiring"
+  },
+  {
+   "id": "V-20",
+   "kind": "lever",
+   "status": "confirmed",
+   "confidence": "measured",
+   "claim": "Dense-SPLIT draft speculation is the best model-draft cell on this box: a same-family 0.5B draft at K=2 buys +33.5% decode on a split dense 14B (5.54 -> 7.40 tok/s, 76% acceptance, novel code) with the draft on CPU (-ngld 0) so it costs ZERO VRAM. Mechanism (prereg #69 P-2): the K+1-token verify batch reads each CPU-resident layer once - the same host-transfer amortization as -ub, applied to decode. The staked K-shift (P-3) MISSED: the optimum stays at K=2 and every K>=3 lands at or below baseline, because the CPU-resident draft pays serial 0.5B passes from the same DDR4 pocket the amortization saves. Open anomaly: K>=3 arms are deterministically non-monotonic (3.54 / 4.43 / 3.92 / 5.57 at K=3/4/6/8).",
+   "magnitude": "+33.5% decode at K=2; llama.cpp default K=3 measures 0.64x (a LOSS) on the same pair",
+   "evidence": "prereg #69 (preregistrations/2026-07-28-dense-split-draft.md), raw log weights/data/prereg69_dense_split.log, 3 runs at K=2",
+   "scope": "dense split GPU/CPU, novel output, same-family draft; this box (Pascal + DDR4)",
+   "wired_into": "quantprobe plan.py dense_draft_note split branch"
   }
  ],
  "dead_ends": [
@@ -524,11 +535,11 @@
    "kind": "dead_end",
    "status": "refuted",
    "confidence": "measured",
-   "claim": "An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not. [SCOPE AMENDED by prereg #67: the 0.72x was the SPLIT FLAGSHIP cell. The dense all-in-VRAM cell measures POSITIVE: +11% on novel code at K=2/79% acceptance (0.5B drafting the 7B), negative on prose, negative at K>=4. Shipped as scoped advice; the larger prize needs a ~20x-faster drafter class that does not exist locally.] [RECONFIRMED at optimal draft lengths (prereg #68 inline, weights/data/prereg68_moe_draft.log): K=1 gives 77% acceptance and still 0.81x; K=2 0.74x. The expert-union tax makes verify batches cost more than sequential decode on the CPU-expert path - MoE draft speculation is closed at EVERY draft length, and the dense(+11%)-vs-MoE(-19%) asymmetry is fully explained.]",
+   "claim": "An external draft model is net-negative on this box at EVERY draft budget - and the reason is not the budget but the drafter's kind: model drafts decay geometrically in acceptance while n-gram drafts do not. [SCOPE AMENDED by prereg #67: the 0.72x was the SPLIT FLAGSHIP cell. The dense all-in-VRAM cell measures POSITIVE: +11% on novel code at K=2/79% acceptance (0.5B drafting the 7B), negative on prose, negative at K>=4. Shipped as scoped advice; the larger prize needs a ~20x-faster drafter class that does not exist locally.] [RECONFIRMED at optimal draft lengths (prereg #68 inline, weights/data/prereg68_moe_draft.log): K=1 gives 77% acceptance and still 0.81x; K=2 0.74x. The expert-union tax makes verify batches cost more than sequential decode on the CPU-expert path - MoE draft speculation is closed at EVERY draft length, and the dense(+11%)-vs-MoE(-19%) asymmetry is fully explained.] [MAP COMPLETED by prereg #69 (weights/data/prereg69_dense_split.log): the third and last regime, DENSE SPLIT, is the BEST cell: +33.5% at K=2 (5.54 -> 7.40 tok/s, 76% acceptance, novel code, 0.5B drafting the 14B) with the DRAFT ON CPU (-ngld 0, zero VRAM cost) - the K+1 verify batch reads each CPU-resident layer once, so the CPU share amortizes. Model-draft speculation map, final: dense split 1.335x > dense AIV 1.11x > MoE split 0.74-0.81x. The K-cliff is HARDER on split (every K>=3 at or below baseline; K=3 measured 0.64x, deterministic) because the CPU draft spends the same DDR4 bandwidth the amortization saves - the staked K-shift (P-3) MISSED and the mechanism story was revised accordingly in the prereg.]",
    "magnitude": "0.72x on code / 0.79x on prose versus no speculation, DESPITE 81-83% draft acceptance - the draft's own forward passes plus the VRAM it displaces (a fourth claimant, L-06) cost more than verification saves. Free drafting (ngram) is the only speculation that pays here. BUDGET SWEEP (prereg #42, novel content, req1 fresh server): base 19.39 (code) / 21.61 (prose); n-max 3 -> 15.95 / 9.52; n-max 8 -> 14.67 / 6.48; n-max 16 -> 10.58 / 3.91. MONOTONE DOWN, with acceptance collapsing 75->57->35% (code) and 36->18->9% (prose).",
    "evidence": "prereg #28 arm D; prereg #42 (budget sweep - the suspicion that #28 was a defaults artifact is REFUTED); prereg #67 (the dense-target cell, full K-curve)",
    "scope": "reference box, Qwen3-0.6B draft for Qwen3-30B-A3B; a bigger GPU changes the VRAM-displacement half of the argument",
-   "wired_into": "quantprobe/plan.py:speculation_advice"
+   "wired_into": "quantprobe plan.py dense_draft_note (both cells: AIV +11% K=2, split +33% K=2 -ngld 0) + speculation_advice"
   },
   {
    "id": "D-10",
@@ -918,6 +929,16 @@
    "hypothesis": "discount eta_r by the measured IQ penalty on the IQ byte share (args.iq_share already computed)",
    "predicted_effect": "both IQ arms move inside the band from the warned side (under-promise)",
    "wired_into": "prereg #66 IQ arms; candidate next release"
+  },
+  {
+   "id": "U-18",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "observed",
+   "claim": "quantprobe fetch silently skips the download when a same-named file exists ('already complete' checks size only), which handed prereg #69 a June-era 0.5B GGUF whose tokenizer metadata mismatched the bartowski 14B target and crashed llama-speculative at draft load ('invalid vector subscript'). Three runs lost before the collision was spotted.",
+   "hypothesis": "add --force and/or verify the remote SHA/etag instead of size-only; warn when the local file predates the repo revision",
+   "predicted_effect": "fetch collisions become visible instead of silent; draft-pair mismatches caught before a crash",
+   "wired_into": "candidate next release (with C-11, U-17, U-06)"
   }
  ],
  "external": [
