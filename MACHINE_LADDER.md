@@ -129,6 +129,50 @@ an under-promise; the two out-of-band arms (dense split at 16k depth, the disk t
 IQ pricing gap are diagnosed, registered (C-11, U-16, U-17, U-06), and queued — which is the
 point of measuring everything: the table maps the machine AND the tool's honesty at once.
 
+**Status update (v1.21, preregs #69/#70):** three of the queued defects are now closed and
+scored — C-11 (the depth fit math: a 14B now emits 21/48 layers at ctx 0 and 16/48 at 16k
+instead of a flat 28/48), U-16 (split placements emit `-ub 1024`), and U-17 (the IQ-on-CPU
+warning is priced: the pure-CPU IQ arm above now retrodicts **11.4 vs 11.44 measured** — exact).
+The split IQ arm improves to 26.5 (+12.3%) and its residual is reattributed to a structural
+split cost, registered U-20 with a measured suspect (#27's 7.4–11.1 ms/token sync excess).
+
+---
+
+## The quality ladder gained a drafted row (prereg #69)
+
+A dense model split across GPU/CPU is the BEST speculation cell this box has measured: a 0.5B
+same-family draft running **on CPU** (`-ngld 0`, zero VRAM cost) at `--spec-draft-n-max 2` took
+the 14B from 5.54 to **7.40 tok/s (+33.5%, 76% acceptance, novel code)**. The mechanism is the
+mirror of the MoE union tax: the K+1-token verify batch reads each CPU-resident layer once. The
+staked K-shift MISSED and is published as such: every K≥3 measured at or below baseline —
+llama.cpp's default K=3 is a measured LOSS on this pair (0.64×).
+
+| target | no draft | +0.5B CPU draft (K=2) | gain |
+|---|---|---|---|
+| Qwen2.5-14B Q4_K_M, split 28/48 | 5.54 ± 0.03 | **7.40** (7.31/7.46/7.43) | **+33.5%** |
+
+Speculation map, final: dense split 1.335× > dense all-in-VRAM 1.11× > MoE split 0.74–0.81×
+(never pays — the verify batch unions experts). Raw logs: `weights/data/prereg69_dense_split.log`.
+
+## The IQ format ladder (prereg #70) — the divide is codebook-vs-not
+
+Same session, same card, Q4_K_M control run twice (22.42 both times), clocks logged:
+
+| format | GiB | tok/s | ebw (pure-type, GB/s) |
+|---|---|---|---|
+| Q4_0 (prereg #52) | 4.12 | 26.87 | 119.1 |
+| **IQ4_NL** | 4.13 | **25.63** | **117.0** |
+| Q4_K_M (control) | 4.36 | 22.42 | 106.4 |
+| IQ3_XS file | 3.11 | 20.29 | IQ3_XXS 68.3 / IQ3_S 61.1 |
+| IQ3_M file | 3.32 | 19.74 | (IQ3_S-dominated) |
+| IQ2_XS file | 2.29 | 24.42 | IQ2_XS **51.1** |
+
+"IQ is slow" was the wrong sentence — ours included. The **codebook** formats (IQ2/IQ3) pay
+their grid lookup in decode, 36–52% below Q4_K per byte; **IQ4_NL's kernel is Q4_0-class** and
+lands beside it. Practical consequence on pre-Ampere: IQ4_NL is +14% over Q4_K_M at the same
+size class WITH imatrix quality. The measured entries and the IQ4_NL advice are queued for the
+next release; the staked split-arm retrodiction MISSED (P-2, see the prereg for the full
+diagnosis) and the residual is U-20. Raw log: `weights/data/prereg70_iq_gpu_eta.log`.
 
 ---
 
