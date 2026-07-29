@@ -1,0 +1,79 @@
+=== #71: tool prediction captured BEFORE any run, Wed Jul 29 21:35:48     2026 ===
+[quantprobe] read from GGUF: 35.5B total, 3.5B active, 2.83 effective bits, KV 82 KB/pos
+[quantprobe] no hardware flags: auto-detected this machine (vram 6GB@192 | ram 16GB@48 | disk 0.5 GB/s). Pass --machine/flags to estimate a different box.
+[quantprobe] calibration applied [ram 24.3 GB/s measured; disk 3.13 GB/s measured] (2026-07-28)
+[quantprobe] anchored: CPU x1.18, GPU x0.60 from your calibrate anchor runs [tier ratios; format x0.57; --no-anchors disables]
+
+quantprobe plan - custom model @ 2.83-bit on THIS machine [auto-detected - run `quantprobe hw` for details]
+  model 12.6 GB | active 2.03 GB/token | est. quality cost x1.05 (depth-aware recipe)
+
+  *   15.9 tok/s  split experts: 23%->VRAM, rest->RAM   [pins 8GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      15.1 tok/s  hybrid: attention->VRAM, experts->RAM   [RAM boundary - needs --no-mmap; can be unstable; pins 11GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      15.0 tok/s  stream from disk (VRAM+RAM expert cache)   [needs an expert-caching runtime (ktransformers/colibri-class) - stock llama.cpp gets the RAM-cache row]
+       7.0 tok/s  stream from disk (cold experts)   [exceeds RAM - capacity demo]
+
+  speculation: pays ONLY when output copies its context (edits, refactors, RAG quoting)
+  - on novel generation the ngram drafter produces 0 drafts and changes nothing (D-10,
+  independently replicated on an RTX 3090). Details below.
+
+  run it:  llama-server -m model.gguf -ngl 99 -ot "blk\.(9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40)\.ffn_.*_exps\.=CPU" --no-mmap -b 1024 -ub 1024 --threads 4
+           (--threads 4 = this machine's LOGICAL cores; llama.cpp's own auto-detect may pick
+           physical-only and cost 2x on CPU-bound decode - verify with your fork if unsure)
+
+  WARNING: this file is 83% I-quant (IQ*) tensors and this placement puts weights
+  on the CPU tier, where IQ formats decode ~2.7x slower than K-quants of the same size
+  (measured: 10.6 vs ~29 GB/s effective). Re-download the model as Q_K (e.g. Q3_K_M
+  instead of IQ3_XS) before trusting the speed above.
+
+  phase: this command is tuned for GENERATION. If your prompts are long - agent transcripts, RAG context, whole files - the other placement is far better at reading them: measured 349.6 vs 161.9 tok/s prompt processing (2.2x), for 8% less generation. Use `-ngl 99 -ot "exps=CPU" --no-mmap -b 2048 -ub 2048` instead. Prompt processing and generation genuinely want different placements here, and one command cannot serve both.
+
+  workload: one setup wins at every prompt:generation ratio - KV in VRAM, safe batch
+  (386 pp2048 / 21.6 tg128 - REFERENCE-BOX numbers at those exact batch sizes;
+  a 22-token prompt measures startup, not prefill). Earlier versions offered a choice here; re-measuring
+  every cell in ONE session (pre-registration #25) showed the alternatives were dominated,
+  so there is nothing to choose. One fewer knob, and the honest number.
+
+  honesty on GENERATION speed (preregs #43/#60/#61): a plain fixed -ngl split measures
+  EQUAL tg to this -ot placement - three times, at degraded AND full clocks. The -ot
+  advice earns its keep on PROMPT PROCESSING (2.2x measured), on keeping KV in VRAM,
+  and on enabling the speculation numbers below - not on raw generation.
+  IF YOUR NUMBERS SAG 25-30% after hours of GPU churn: the cause on our box was a
+  STUCK BOOST STATE (SM 1506 vs 1835+ MHz at cool temps - diagnosed and confirmed by
+  cold-boot A/B, preregs #60/#61). Check `nvidia-smi --query-gpu=clocks.sm` under
+  load; consumer cards cannot reset it - reboot restores full speed. Not thermal,
+  not your config.
+
+  long prompts, same document: send cache_prompt=true to llama-server. Measured
+  here (pre-registration #29): the second question against a 2k-token document
+  pays 183 ms of prompt time instead of 5381 - 29x - because the document KV is
+  reused and only the new question is processed. Restarting the server is cold.
+
+  prompt speed: `-b 1024 -ub 1024` is worth **+73% prefill** on this placement (measured 199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation (18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe once per batch instead of once per token. Do NOT set it when a model is fully in VRAM - measured there, the same flag LOSES 39%.
+
+  speculation: if your output REUSES its context - edits, refactors, RAG quoting - add `--spec-type ngram-simple --spec-ngram-simple-size-m 384 --spec-ngram-simple-size-n 4` to llama-server: measured **4.7x decode at ~3-bit** (21.3 -> 98.8 tok/s), no download. REQUIRES A LONG PROMPT: with these values the drafter cannot fire until the context exceeds size_m+size_n+1 = 389 tokens, so on short prompts it does NOTHING and llama.cpp's default m=48 (61-token floor) is better. Output was byte-identical in every copy-regime test we ran, but that is evidence, not a guarantee - a verify pass batches several positions and batched reductions are not bit-identical to single-token decode, which at temp 0 can flip an argmax (measured: a rejected-draft case diverged reproducibly). The multiplier SHRINKS with bit-width - the SAME model at Q3_K_M gives 3.4x (17.5 -> 59.2) - because a verify round is compute-bound, so extra bits cost dequantisation on every drafted token, not just extra bytes moved. Speculation and quantization are NOT independent levers. BOTH tunables matter and llama.cpp's defaults (m=48, n=12) capture only 2.3x of it: the cost unit is the VERIFY ROUND (one full weight read), not the token, so what pays is delivering the same accepted tokens in fewer, longer runs. 108 tok/s is 2.6x this box's raw-decode wall, which no runtime, fork or rewrite can pass. Two traps, both measured: do NOT tune on acceptance rate (it falls 89%->68% while throughput doubles), and do NOT over-shorten n (n=2 drafts 36% MORE and runs 25% SLOWER). Novel generation gains nothing (0% acceptance), a 0.6B DRAFT MODEL is net negative here (0.72x), and stacking a second drafter costs 10%. Note llama-cli ignores --spec-type silently; the flag only works on llama-server.
+
+  concurrency: every number above is SINGLE-STREAM. Measured with 8 parallel slots, aggregate
+  throughput is ~2x higher and saturates by about 4 slots (pre-registration #26). The same
+  ratio appeared on every placement AND on a dense control, so it is a ceiling we do not model -
+  read our figures as one user's speed, not a server's capacity.
+
+  (eta bands fitted from published measurements; estimates +/-25%. Hybrid needs --no-mmap.)
+139 MHz, 33
+--- ARM A: champion control (APEX-Mini, exact #66 config) ---
+| qwen35moe 35B.A3B Q3_K - Medium |  12.33 GiB |    34.66 B | CUDA       |  99 | blk\.(7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39)\.ffn_.*_exps\.=CPU |    0 |           tg128 |         22.63 ± 0.03 |
+--- ARM B: Qwen3.6-35B raw, tool-emitted config ---
+| qwen35moe 35B.A3B Q2_K - Medium |  11.70 GiB |    35.51 B | CUDA       |  99 | blk\.(9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40)\.ffn_.*_exps\.=CPU |    0 |           tg128 |         16.69 ± 0.26 |
+1885 MHz, 45
+--- ARM C: MTP draft-mtp K=2 ---
+--- ARM C: MTP draft-mtp K=4 ---
+708 MHz, 43
+--- ARM C: MTP K=2 ---
+--- ARM C: MTP K=4 ---
+139 MHz, 40
+--- ARM C STATUS: blocked-by-runtime (disclosed risk fired) ---
+llama-speculative + this file dies in 0.18s, exit 1, ZERO output (not even the build banner),
+with ANY --spec-type (draft-mtp AND ngram-simple). Controls: llama-bench loads and runs the
+same file (arm B, 16.69); llama-speculative runs fine on the 14B+draft pair (d69 control,
+same binary, same shell, same session). The failure is (llama-speculative x this file), not
+flags, not environment. Arm C scores blocked-by-runtime per the prereg's stated risk;
+salvage paths: llama-completion --spec-type if available, or a rebuilt llama-server.
