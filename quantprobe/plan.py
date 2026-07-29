@@ -468,7 +468,7 @@ def dense_draft_note(moe, placement):
         return ("dense-SPLIT speculation (measured, prereg #69): a small same-family draft is "
                 "the best speculation cell on this box - `-md draft.gguf -ngld 0 "
                 "--spec-draft-n-max 2` bought **+33%** decode on a 14B split target (5.5 -> 7.4 "
-                "tok/s, 76%% acceptance, novel code), and the draft costs ZERO VRAM because it "
+                "tok/s, 76% acceptance, novel code), and the draft costs ZERO VRAM because it "
                 "runs on CPU. Mechanism: the K+1-token verify batch reads each CPU-resident "
                 "layer once, so the CPU share of every token amortizes. Keep K=2: every "
                 "measured K>=3 landed AT OR BELOW no-draft baseline (the CPU draft spends the "
@@ -478,7 +478,7 @@ def dense_draft_note(moe, placement):
         return None
     return ("dense-model speculation (measured, prereg #67): pairing this model with a small "
             "same-family draft (-md draft.gguf -ngld 99 --spec-draft-n-max 2) buys ~+11% on "
-            "CODE-style novel output at 79%% acceptance - and LOSES speed on prose and at "
+            "CODE-style novel output at 79% acceptance - and LOSES speed on prose and at "
             "draft lengths >=4 (llama.cpp's default 3 is past the optimum here). Copy-regime "
             "ngram speculation remains the big multiplier where output copies context.")
 
