@@ -1029,7 +1029,11 @@
    "magnitude": "three cross-engine confirmations + one inaccessible-in-llama.cpp lever + a disk-tier scoping correction",
    "evidence": "github.com/JustVugg/colibri releases v1.2.0/v1.3.0 (fetched 2026-07-30); prereg #28 (copy-regime), D-08 (pinning), prereg #31 (IQ CPU)",
    "scope": "reported by the colibri project, not measured by us; magnitudes are theirs",
-   "wired_into": "U-06 runtime-class label (queued); plan.py expert-cache row already names colibri-class runtimes"
+   "wired_into": "U-06 runtime-class label (queued); plan.py expert-cache row already names colibri-class runtimes",
+   "repo": "github.com/JustVugg/colibri (releases v1.2.0 + v1.3.0, Jul 28-29 2026)",
+   "why": "Three cross-engine confirmations of our finding classes, one lever we cannot reach in stock llama.cpp, and a disk-tier scoping correction - the strongest external echo of the register since E-06.",
+   "question_to_answer": "Does the disk tier's constant shift by runtime class as predicted (stock mmap 0.66 vs colibri O_DIRECT parallel reads) - and is the which-experts (usage-locality) lever worth an llama.cpp upstream proposal for unfused expert tensors?",
+   "priority": "medium"
   }
  ]
 }

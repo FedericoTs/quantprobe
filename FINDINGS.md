@@ -13,7 +13,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
 | Untried levers | 11 |
-| External work to study | 6 |
+| External work to study | 7 |
 
 ## Established laws
 
@@ -616,6 +616,14 @@ Paged attention and automatic prefix caching are the production form of U-04.
 first external datapoint the project has ever received; converts "one box" from a disclaimer into a testable boundary, and every one of his five suggestions was a real defect or gap
 
 `reviewed` · `measured` · scope: his numbers are his; ours become validated only when he re-runs with v1.19 - the ask is in drafts/reddit_reply_moneroape.md · evidence: his Reddit report (raw timings quoted), analogalok 4090 benchmarks (external), our reconciliation arithmetic; prereg #63: the full v1.19 chain closed end-to-end on the reference box - the tool PRINTED 19.4 tok/s from calibrated inputs, the emitted command measured 21.21 on the pristine binary (-8.5%, under-promise), and the 3090-sim through the shipped code lands at 10.6 vs 9.26-11.36 measured externally · wired into: `quantprobe/detect.py (channel fix), plan.py (cap/pinning/threads/topline/pp2048), calibrate.py, tests t_moneroape_*`
+
+### E-07 — github.com/JustVugg/colibri (releases v1.2.0 + v1.3.0, Jul 28-29 2026)
+
+Three cross-engine confirmations of our finding classes, one lever we cannot reach in stock llama.cpp, and a disk-tier scoping correction - the strongest external echo of the register since E-06.
+
+**Question to answer:** Does the disk tier's constant shift by runtime class as predicted (stock mmap 0.66 vs colibri O_DIRECT parallel reads) - and is the which-experts (usage-locality) lever worth an llama.cpp upstream proposal for unfused expert tensors?
+
+`reviewed` · `reported` · scope: reported by the colibri project, not measured by us; magnitudes are theirs · evidence: github.com/JustVugg/colibri releases v1.2.0/v1.3.0 (fetched 2026-07-30); prereg #28 (copy-regime), D-08 (pinning), prereg #31 (IQ CPU) · wired into: `U-06 runtime-class label (queued); plan.py expert-cache row already names colibri-class runtimes`
 
 ---
 
