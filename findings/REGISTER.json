@@ -1019,6 +1019,17 @@
    "wired_into": "quantprobe/detect.py (channel fix), plan.py (cap/pinning/threads/topline/pp2048), calibrate.py, tests t_moneroape_*",
    "repo": "reddit.com (u/MoneroApe replication report) + TheTom/llama-cpp-turboquant laguna/port + thecodacus/llama.cpp fable5/prefetch-experts (his fork chain)",
    "why": "first external datapoint the project has ever received; converts \"one box\" from a disclaimer into a testable boundary, and every one of his five suggestions was a real defect or gap"
+  },
+  {
+   "id": "E-07",
+   "kind": "external",
+   "status": "reviewed",
+   "confidence": "reported",
+   "claim": "Colibri v1.2.0/v1.3.0 (JustVugg, Jul 28-29 2026) independently confirms three of our finding classes from a different engine: (1) copy-regime speculation pays (+22% wall clock on replayed prompts via corpus drafts - same mechanism as V-04/V-12, disk-bound magnitude); (2) host-memory pressure is a first-order failure (CUDA_RELEASE_HOST default = 3.8x on a single H200, 1.10 -> 4.75 t/s - the D-08/pinning class at 10x our measured magnitude); (3) format x kernel sets speed on CPU too (their fmt=6 E8/IQ3 decode bottleneck fixed by hand AVX2 kernels - the L-15 lesson on AVX paths, implying our IQ CPU penalty k=0.242 is engine-version-scoped). New lever exposed: TOPP unused-expert trimming = WHICH-experts placement (usage-locality-aware), beyond our HOW-MANY residency lever - impossible in stock llama.cpp (exps tensors are fused 3D) but real in colibri-class runtimes. Scale note: Inkling 975B/41B runs on 25GB machines via one-slot expert-cache rounds; Kimi K3 2.8T preview - the disk tier is RUNTIME-CLASS-DEPENDENT (O_DIRECT parallel reads vs our stock-mmap 0.66 t/s point), so U-06's re-derivation must carry the runtime label.",
+   "magnitude": "three cross-engine confirmations + one inaccessible-in-llama.cpp lever + a disk-tier scoping correction",
+   "evidence": "github.com/JustVugg/colibri releases v1.2.0/v1.3.0 (fetched 2026-07-30); prereg #28 (copy-regime), D-08 (pinning), prereg #31 (IQ CPU)",
+   "scope": "reported by the colibri project, not measured by us; magnitudes are theirs",
+   "wired_into": "U-06 runtime-class label (queued); plan.py expert-cache row already names colibri-class runtimes"
   }
  ]
 }
