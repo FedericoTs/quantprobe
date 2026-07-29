@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 19 |
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
-| Untried levers | 10 |
+| Untried levers | 11 |
 | External work to study | 6 |
 
 ## Established laws
@@ -103,11 +103,11 @@ What we believe, and the measurement that earned it.
 
 `established` · `measured` · scope: GTX 1060 6GB (Pascal sm_61), fp32. NOT established for quantized kernels - see the caveat below. · evidence: prereg #44 · wired into: `findings/REGISTER.json:C-02 (reclassified) - deliberately NOT wired into plan.py: the tool's eta constants describe what llama.cpp achieves, which is what users get, and must not be raised to a ceiling no shipped runtime reaches.`
 
-### L-15 — Law 4 AMENDED: eta is a function of the FORMAT's unpack instruction cost, not the tier alone. A matvec with no unpacking runs at 95% of the streaming ceiling; the same bytes with a naive unpack run at 42%; dp4a recovers 80%. On an ALU-weak GPU the format sets decode speed as much as the byte count.
+### L-15 — Law 4 AMENDED: eta is a function of the FORMAT's unpack instruction cost, not the tier alone. A matvec with no unpacking runs at 95% of the streaming ceiling; the same bytes with a naive unpack run at 42%; dp4a recovers 80%. On an ALU-weak GPU the format sets decode speed as much as the byte count. [AMENDED by prereg #70: the IQ ladder is measured - IQ2_XS 51.1 / IQ3_S 61.1 / IQ3_XXS 68.3 / IQ4_NL 117.0 ebw on the same card, same session. The divide is CODEBOOK vs not, not IQ vs K: codebook formats pay their grid lookup in decode (36-52% below Q4_K per byte) while IQ4_NL's kernel is Q4_0-class and lands beside Q4_0 (117 vs 119.1). 'IQ is slow' is scoped to codebook formats.]
 
 **Magnitude:** Same tier, same card, same model, same session: Q4_0 eta 0.619 vs Q4_K_M 0.553 vs Q2_K 0.340. Bare-metal ladder (own CUDA, zero llama.cpp): no-unpack 152.5 GB/s (0.79 spec), naive 4.5-bit 67.8 (0.35), dp4a 4.5-bit 128.7-132.1 (0.67-0.69), stream 161.0 (0.84).
 
-`established` · `measured` · scope: measured on ONE Pascal card (cc 6.1); on Ampere+ the ALU/BW ratio flips and the ranking may invert - unverified, replication asked · evidence: prereg #52, prereg #53, tools/kernelprobe/bench.cu (every kernel correctness-checked vs double host reference); prereg #56 NARROWS the mechanism: at real 1-row geometry with dp4a, marginal instruction differences (min term, packed scales) cost <=5% - the naive-float->dp4a 1.9x remains the proven instruction effect, and the residual K-quant e2e deficit is attributed to layout/occupancy, OPEN · wired into: `quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; explains C-05 (6 prior sightings, mechanism now named)`
+`established` · `measured` · scope: measured on ONE Pascal card (cc 6.1); on Ampere+ the ALU/BW ratio flips and the ranking may invert - unverified, replication asked · evidence: prereg #52, prereg #53, tools/kernelprobe/bench.cu (every kernel correctness-checked vs double host reference); prereg #56 NARROWS the mechanism: at real 1-row geometry with dp4a, marginal instruction differences (min term, packed scales) cost <=5% - the naive-float->dp4a 1.9x remains the proven instruction effect, and the residual K-quant e2e deficit is attributed to layout/occupancy, OPEN; prereg #70 IQ ladder · wired into: `quantprobe/plan.py format_advice; GROK_KERNEL_BRIEF.md; explains C-05 (6 prior sightings, mechanism now named)`
 
 ### L-16 — THE K-QUANT DEFICIT MECHANISM: metadata application DENSITY. A format that defines scale+min per 16 weights forces a metadata FMA chain every 4 bytes at 2 bits - 4x the application density of Q4_K per byte. Confirmation arm with identical loads and identical dp4a count, scale applied per-u32 instead of per-quad: 83.8 -> 103.2 GB/s (+23%). Full decomposition of real Q2_K: 131 (Q4_K-class ceiling) x0.64 (density) x0.885 (e2e dilution) = 74 vs 65.4 measured - 88% accounted; Q4_K 91% accounted. The deficit is intrinsic to the format DEFINITION because quality at 2 bits requires exactly the fine asymmetric metadata that costs the density (quality.py: every coarser/symmetric variant loses).
 
@@ -551,13 +551,21 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `observed` · wired into: `quantprobe/fetch.py fetch() + cli.py --force`
 
-### U-19 — The GPU share of an IQ file is priced at K-quant eta: FORMAT_EBW has no IQ entries (fmt_bw None on IQ2_XS), so after U-17 closed the CPU side, the #66 split arm still over-predicts +14% (26.9 vs 23.60) while the pure-CPU arm is exact. V-11's matched pair measured IQ decode 1.55x slower on GPU - the number exists, it just is not in the ladder.
+### U-19 — The GPU share of an IQ file is priced at K-quant eta: FORMAT_EBW has no IQ entries (fmt_bw None on IQ2_XS), so after U-17 closed the CPU side, the #66 split arm still over-predicts +14% (26.9 vs 23.60) while the pure-CPU arm is exact. V-11's matched pair measured IQ decode 1.55x slower on GPU - the number exists, it just is not in the ladder. [REFUTED as hypothesized by prereg #70 (weights/data/prereg70_iq_gpu_eta.log): the calibrated path was NOT pricing the GPU share at K-quant eta - auto-detect geta 0.35 x anchor ratio 0.754 = 0.264 effective, coincidentally pure-IQ2_XS speed already - and the measured blend (0.43, dragged up by DS-Lite's 45% IQ4_NL bytes) makes the GPU FASTER. The measured IQ ladder ships anyway (IQ2_XS 51.1 / IQ3_S 61.1 / IQ3_XXS 68.3 / IQ4_NL 117.0 - the divide is CODEBOOK vs not: IQ4_NL is Q4_0-class). The +12% split residual is reattributed to U-20.]
 
 **Hypothesis:** add measured IQ entries to spec.FORMAT_EBW (or scale geta by iq_share x the V-11 decode ratio) so the VRAM share of IQ files carries its own format cost
 
 **Predicted effect (staked):** the #66 split arm moves inside the band from the under-promise side
 
-`untested` · `speculative` · wired into: `candidate next release; evidence: #66 split arm residual after v1.21 U-17`
+`refuted` · `measured` · wired into: `spec.FORMAT_EBW IQ entries + t_prereg70_iq_format_ladder; prereg #70`
+
+### U-20 — The MoE expert-split residual is STRUCTURAL, not a tier mispricing: with the CPU tier exact (U-17, 11.4 vs 11.44) and the GPU tier measured-priced (prereg #70), the DS-Lite split arm still over-predicts +12.3% (26.5 vs 23.60). The suspect with matching magnitude is already measured: #27's decomposition found 7.4-11.1 ms/token of GPU<->CPU sync excess (17-25% of a token) on split placements - a per-token structural cost no per-tier byte pricing captures.
+
+**Hypothesis:** add a per-token split-placement sync term (ms-class constant, from the #27 decomposition) to the split arms only; pure-CPU and all-in-VRAM rows have no such term and are already exact/banded
+
+**Predicted effect (staked):** the DS-Lite split arm moves inside the band from the under-promise side; the flagship split arm (currently ~0 to +7% over) must NOT leave its band - that is the regression gate
+
+`untested` · `speculative` · wired into: `candidate next release; evidence: prereg #70 P-2 diagnosis + #27 sync ledger`
 
 ## External work to study
 

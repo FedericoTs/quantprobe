@@ -1421,6 +1421,16 @@ def t_u17_iq_cpu_pricing():
     assert abs(base / iq - want) < 0.01, f"IQ penalty off: {base/iq:.4f} vs {want:.4f}"
 
 
+def t_prereg70_iq_format_ladder():
+    # #70: measured IQ entries exist, and the divide is CODEBOOK vs not - codebook formats
+    # (IQ2/IQ3) sit far below Q4_K, while IQ4_NL's Q4_0-class kernel lands beside Q4_0.
+    from quantprobe.spec import FORMAT_EBW
+    assert FORMAT_EBW["IQ2_XS"] < FORMAT_EBW["IQ3_S"] < FORMAT_EBW["Q4_K"], "codebook ladder order"
+    assert FORMAT_EBW["IQ2_XS"] <= 0.6 * FORMAT_EBW["Q4_K"], "IQ2_XS must price far below Q4_K"
+    assert abs(FORMAT_EBW["IQ4_NL"] - FORMAT_EBW["Q4_0"]) <= 0.05 * FORMAT_EBW["Q4_0"], \
+        "IQ4_NL is Q4_0-class, not codebook-class"
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__
