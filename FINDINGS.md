@@ -209,11 +209,11 @@ Things the tool actually recommends, with the number attached.
 
 `open` · `measured` · scope: one GTX 1060, Qwen3-30B-A3B Q2_K split placement. NOT output-identity-checked (llama-bench emits no text) and NOT replicated on a second card. · evidence: prereg #48 (MoE), prereg #47 P-3 (dense control) · wired into: `nothing yet - deliberately. A 3% claim from one machine is inside the noise others will measure.`
 
-### V-16 — On pre-Ampere GPUs, prefer Q4_0 over Q4_K_M for all-in-VRAM decode: +19.0% measured where the byte difference explains +5.7%. Effective bandwidth RISES 106.4 -> 119.1 GB/s, which a pure byte model forbids. SPEED-only: Q4_K_M is higher quality per byte.
+### V-16 — On pre-Ampere GPUs, prefer Q4_0 over Q4_K_M for all-in-VRAM decode: +19.0% measured where the byte difference explains +5.7%. Effective bandwidth RISES 106.4 -> 119.1 GB/s, which a pure byte model forbids. SPEED-only: Q4_K_M is higher quality per byte. [EXTENDED by prereg #70: IQ4_NL joins the fast side - +14% over Q4_K_M (25.63 vs 22.42) at the same size class with imatrix quality, kernel Q4_0-class. format_advice now offers Q4_0 (max speed) or IQ4_NL (speed + quality per byte) and warns off codebook IQ (36-52% below Q4_K per byte) for VRAM decode on this card class.]
 
 **Magnitude:** Qwen2.5-7B all-in-VRAM interleaved: Q4_K_M 22.72, Q4_0 26.87/27.09 tok/s
 
-`shipped` · `measured` · scope: one Pascal card, all-in-VRAM, speed-only claim; Q4_0 test file requantized FROM Q4_K_M so its quality is strictly worse than a source-built Q4_0 · evidence: prereg #52 · wired into: `quantprobe/plan.py format_advice (tests t_format_advice_*)`
+`shipped` · `measured` · scope: one Pascal card, all-in-VRAM, speed-only claim; Q4_0 test file requantized FROM Q4_K_M so its quality is strictly worse than a source-built Q4_0 · evidence: prereg #52 · wired into: `quantprobe/plan.py format_advice (Q4_0 + IQ4_NL branches) + t_format_advice_iq4nl`
 
 ### V-17 — On pre-Ampere, Q2_K is STRICTLY DOMINATED when a ~4.5-bit file also fits: measured slower in absolute tok/s than Q4_0 (21.67 vs 26.87) while 32% smaller and lower quality. At 2 bits the unpack tax reverses the byte ordering; the byte model predicts 39.5 tok/s and measures 21.67 (45% short).
 

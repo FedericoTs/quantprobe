@@ -440,16 +440,21 @@ def format_advice(placement, bits):
     if bits <= 3.0:
         return ("FORMAT LEVER (pre-Ampere cards): this bit-width is in the regime where unpack "
                 "cost has REVERSED the byte ordering - measured Q2_K decodes 19% slower than Q4_0 "
-                "on the same model while being 32% smaller. If a ~4.5-bit file fits in VRAM, use "
-                "it instead; prefer Q4_0 over Q4_K_M on pre-Ampere (+19% measured, bytes explain "
-                "only 5.7%). On Ampere+ this is unverified and may invert.")
+                "on the same model while being 32% smaller, and CODEBOOK IQ formats pay even more "
+                "(IQ2_XS/IQ3 measured 36-52% below Q4_K per byte, prereg #70). If a ~4.5-bit file "
+                "fits in VRAM, use it instead; prefer Q4_0 or IQ4_NL over Q4_K_M on pre-Ampere "
+                "(+19%/+14% measured). On Ampere+ this is unverified and may invert.")
     if bits <= 5.0:
         return ("FORMAT LEVER (pre-Ampere cards): at this bit-width the FORMAT is worth more than "
                 "the bytes - Q4_0 measured +19% over Q4_K_M on the same model (26.87 vs 22.72 "
-                "tok/s). Mechanism (measured, preregs #56/#57): metadata application DENSITY - "
-                "K-quants apply fine-grained scale+min chains far more often per byte, and that "
-                "cost is intrinsic to the format definition, not a kernel bug. Speed-only: "
-                "Q4_K_M is higher quality per byte. On Ampere+ this is unverified and may invert.")
+                "tok/s), and IQ4_NL measured +14% (25.63) at the same size class WITH imatrix "
+                "quality: its kernel is Q4_0-class, not codebook-class (prereg #70), so it is the "
+                "quality-per-byte pick of the fast formats here. Mechanism (measured, preregs "
+                "#56/#57): metadata application DENSITY - K-quants apply fine-grained scale+min "
+                "chains far more often per byte, and that cost is intrinsic to the format "
+                "definition, not a kernel bug. Avoid codebook IQ (IQ2/IQ3) for VRAM decode on "
+                "this class of card: measured 36-52% below Q4_K per byte. On Ampere+ this is "
+                "unverified and may invert.")
     return None
 
 

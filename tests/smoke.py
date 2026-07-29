@@ -1245,6 +1245,16 @@ def t_format_advice_honesty():
             assert ("unverified" in a and "invert" in a), f"missing scope honesty at {bits}: {a}"
 
 
+def t_format_advice_iq4nl():
+    # prereg #70: the 4-5 bit lever must offer IQ4_NL (Q4_0-class kernel, +14% measured, imatrix
+    # quality) and warn off codebook IQ; the low-bit branch names the codebook penalty too.
+    from quantprobe.plan import format_advice
+    mid = format_advice("all in VRAM", 4.5)
+    assert "IQ4_NL" in mid and "+14%" in mid and "codebook" in mid.lower()
+    low = format_advice("all in VRAM", 2.5)
+    assert "IQ" in low and "prereg #70" in low
+
+
 def t_calibrate_boost_verdict():
     # the #60/#61 diagnostic must classify all three states and never crash on missing data
     from quantprobe.calibrate import boost_verdict

@@ -386,11 +386,11 @@
    "kind": "lever",
    "status": "shipped",
    "confidence": "measured",
-   "claim": "On pre-Ampere GPUs, prefer Q4_0 over Q4_K_M for all-in-VRAM decode: +19.0% measured where the byte difference explains +5.7%. Effective bandwidth RISES 106.4 -> 119.1 GB/s, which a pure byte model forbids. SPEED-only: Q4_K_M is higher quality per byte.",
+   "claim": "On pre-Ampere GPUs, prefer Q4_0 over Q4_K_M for all-in-VRAM decode: +19.0% measured where the byte difference explains +5.7%. Effective bandwidth RISES 106.4 -> 119.1 GB/s, which a pure byte model forbids. SPEED-only: Q4_K_M is higher quality per byte. [EXTENDED by prereg #70: IQ4_NL joins the fast side - +14% over Q4_K_M (25.63 vs 22.42) at the same size class with imatrix quality, kernel Q4_0-class. format_advice now offers Q4_0 (max speed) or IQ4_NL (speed + quality per byte) and warns off codebook IQ (36-52% below Q4_K per byte) for VRAM decode on this card class.]",
    "magnitude": "Qwen2.5-7B all-in-VRAM interleaved: Q4_K_M 22.72, Q4_0 26.87/27.09 tok/s",
    "evidence": "prereg #52",
    "scope": "one Pascal card, all-in-VRAM, speed-only claim; Q4_0 test file requantized FROM Q4_K_M so its quality is strictly worse than a source-built Q4_0",
-   "wired_into": "quantprobe/plan.py format_advice (tests t_format_advice_*)"
+   "wired_into": "quantprobe/plan.py format_advice (Q4_0 + IQ4_NL branches) + t_format_advice_iq4nl"
   },
   {
    "id": "V-17",
