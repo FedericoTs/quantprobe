@@ -1,0 +1,15 @@
+=== prereg #70 matched set, Wed Jul 29 02:30:39     2026 ===
+139 MHz, 30
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |           tg128 |         22.42 ± 0.02 |
+| qwen2 7B IQ2_XS - 2.3125 bpw   |   2.29 GiB |     7.62 B | CUDA       |  99 |           tg128 |         24.42 ± 0.13 |
+| qwen2 7B IQ3_XS - 3.3 bpw      |   3.11 GiB |     7.62 B | CUDA       |  99 |           tg128 |         20.29 ± 0.15 |
+| qwen2 7B IQ3_S mix - 3.66 bpw  |   3.32 GiB |     7.62 B | CUDA       |  99 |           tg128 |         19.74 ± 0.11 |
+1847 MHz, 62
+--- IQ4_NL arm (same session continues) + fresh q4km control re-run:
+| qwen2 7B IQ4_NL - 4.5 bpw      |   4.13 GiB |     7.62 B | CUDA       |  99 |           tg128 |         25.63 ± 0.13 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |           tg128 |         22.42 ± 0.05 |
+1873 MHz, 50
+--- P-2 retrodiction with wired entries:
+[quantprobe] anchored: CPU x1.18, GPU x0.60 from your calibrate anchor runs [tier ratios; format x0.72; --no-anchors disables]
+  *   26.5 tok/s  split experts: 64%->VRAM, rest->RAM
+      11.4 tok/s  pure CPU (GPU idle)
