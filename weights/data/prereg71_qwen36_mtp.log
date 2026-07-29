@@ -77,3 +77,10 @@ same file (arm B, 16.69); llama-speculative runs fine on the 14B+draft pair (d69
 same binary, same shell, same session). The failure is (llama-speculative x this file), not
 flags, not environment. Arm C scores blocked-by-runtime per the prereg's stated risk;
 salvage paths: llama-completion --spec-type if available, or a rebuilt llama-server.
+--- ARM C via rebuilt llama-server (ui-assets.cmake build-script patch disclosed; inference code untouched) ---
+139 MHz, 33
+1885 MHz, 45
+arm=off predicted_n=192 tok/s=16.80 draft_n=n/a draft_accepted=n/a
+arm=2 predicted_n=192 tok/s=18.71 draft_n=133 draft_accepted=124
+arm=4 predicted_n=192 tok/s=10.22 draft_n=176 draft_accepted=146
+1873 MHz, 50
