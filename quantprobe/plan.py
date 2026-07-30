@@ -881,7 +881,9 @@ def apply_calibration_overrides(hw, args):
         applied.append(f"disk {cal['disk_bw_measured']:g} GB/s measured")
     if applied:
         stale = f"; {age:.0f} days old - re-run `quantprobe calibrate`" if age and age > calmod.STALE_DAYS else ""
-        print(f"[quantprobe] calibration applied [{'; '.join(applied)}] ({cal.get('date','?')}{stale})")
+        _cid = cal.get("cal_id")
+        print(f"[quantprobe] calibration applied [{'; '.join(applied)}] ({cal.get('date','?')}"
+              + (f", state {_cid}" if _cid else "") + f"{stale})")
     if cal.get("boost_verdict") and "healthy" not in cal["boost_verdict"]:
         print(f"[quantprobe] GPU health at last calibration: {cal['boost_verdict']}")
     if not getattr(args, "no_anchors", False):

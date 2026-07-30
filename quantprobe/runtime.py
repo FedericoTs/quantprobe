@@ -174,8 +174,15 @@ def bench(a):
     if mm:
         meas, err = float(mm[-1][0]), float(mm[-1][1])
         delta = (meas / best[1] - 1) * 100 if best[1] else 0
+        # C-14: a predicted-vs-measured pair is only meaningful inside ONE machine state, so the
+        # pair is stamped with the state that produced it. Re-running `calibrate` changes the id;
+        # a number carrying a different id must not be scored against this prediction.
+        from . import calibrate as _cal
+        _c, _ = _cal.load()
+        _cid = (_c or {}).get("cal_id")
         print(f"\n[quantprobe] measured: {meas:.2f} +/- {err:.2f} tok/s "
-              f"(predicted {best[1]:.1f}, {delta:+.0f}%)")
+              f"(predicted {best[1]:.1f}, {delta:+.0f}%)"
+              + (f"  [machine state {_cid}]" if _cid else "  [uncalibrated]"))
         # A run whose own error bar is huge is not a measurement - saying so beats letting
         # someone quote a cold-cache artifact. (Seen 2026-07-26: 4.01 +/- 2.16 on a first
         # read from disk, where the warm number was 18.7.)

@@ -1480,6 +1480,25 @@ def t_l19_depth_scope_warning():
     assert depth_scope_warning("all in VRAM", False, 32768) is None
 
 
+def t_c14_machine_state_identity():
+    # C-14: two calibrations of the same idle box drifted 7% and moved every ladder arm 5-12
+    # points. A machine state must have a name, drift must be detected, and a predicted-vs-
+    # measured pair must carry the state it came from.
+    from quantprobe.calibrate import cal_id, drift_vs
+    a = {"ram_bw_measured": 23.21, "disk_bw_measured": 2.82,
+         "anchors": [{"placement": "pure CPU (-ngl 0)", "tok_s": 6.72, "sustained_sm": 1506}]}
+    b = {"ram_bw_measured": 21.66, "disk_bw_measured": 2.50,
+         "anchors": [{"placement": "pure CPU (-ngl 0)", "tok_s": 6.24, "sustained_sm": 1506}]}
+    assert cal_id(a) and cal_id(a) != cal_id(b), "different states must get different ids"
+    assert cal_id(a) == cal_id(dict(a)), "the id must be stable for the same state"
+    moved = drift_vs(a, b)
+    names = {m[0] for m in moved}
+    assert "ram_bw" in names and "disk_bw" in names and any("anchor" in n for n in names), \
+        f"the real 2026-07-30 drift must be detected, got {names}"
+    assert not drift_vs(a, dict(a)), "no drift against itself"
+    assert cal_id(None) is None
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

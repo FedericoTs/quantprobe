@@ -893,13 +893,13 @@
   {
    "id": "C-14",
    "kind": "contradiction",
-   "status": "open",
+   "status": "closed",
    "confidence": "measured",
-   "claim": "MACHINE DRIFT BETWEEN CALIBRATION AND MEASUREMENT SILENTLY INVALIDATES ERROR NUMBERS, AND WE HAVE BEEN DOING IT ALL DAY. Two calibrations hours apart on the same idle box: RAM stream 23.21 -> 21.66 GB/s (-6.7%), CPU anchor 6.72 -> 6.24 tok/s (-7.1%), GPU anchor ratio 0.75 -> 1.03. Predictions computed under the second calibration were compared against measurements taken under the first, which alone moved every ladder arm by 5-12 points - larger than the mechanisms being tested (C-13's true effect is 10.3pt on two arms). Any predicted-vs-measured number is only meaningful when both come from the same machine state, and nothing in the tool or the protocol enforces that.",
+   "claim": "MACHINE DRIFT BETWEEN CALIBRATION AND MEASUREMENT SILENTLY INVALIDATES ERROR NUMBERS, AND WE HAVE BEEN DOING IT ALL DAY. Two calibrations hours apart on the same idle box: RAM stream 23.21 -> 21.66 GB/s (-6.7%), CPU anchor 6.72 -> 6.24 tok/s (-7.1%), GPU anchor ratio 0.75 -> 1.03. Predictions computed under the second calibration were compared against measurements taken under the first, which alone moved every ladder arm by 5-12 points - larger than the mechanisms being tested (C-13's true effect is 10.3pt on two arms). Any predicted-vs-measured number is only meaningful when both come from the same machine state, and nothing in the tool or the protocol enforces that. [CLOSED-SHIPPED: every calibration now mints a `cal_id` fingerprint of its MEASURED state; `calibrate` diffs against the previous state and prints every field that moved >3% with the warning that cross-state scoring is invalid; `plan` prints the state in its provenance line and `bench` stamps predicted-vs-measured pairs with the state that produced them. The detector earned its keep on its first run: ram +7.4%, CPU anchor +9.6%, and disk 2.5 -> 0.46 GB/s (-81.6%) - a file-cache state difference that silently rewrites every disk-tier prediction and that nothing in the tool would have surfaced before.]",
    "magnitude": "5-12 points of spurious error movement across all 14 arms; exceeds most real effects",
    "evidence": "the two calibration.json snapshots of 2026-07-30; the C-13 isolation run (deltas 0.0pt with calibration fixed vs 5-12pt without)",
    "scope": "every cross-session predicted-vs-measured comparison this project publishes",
-   "wired_into": "candidate: stamp calibration id+timestamp into bench/ladder records and REFUSE to score a prediction against a measurement from a different calibration state"
+   "wired_into": "quantprobe/calibrate.py cal_id + drift_vs; plan provenance; runtime bench stamp; t_c14_machine_state_identity"
   }
  ],
  "untried": [

@@ -187,6 +187,41 @@ def gpu_anchor(model_path, vram_gb, llama_dir=None):
     return _bench_anchor(model_path, 99, 128, llama_dir)
 
 
+def cal_id(cal):
+    """A short, stable fingerprint of the MEASURED machine state (C-14).
+
+    Two calibrations of the same idle box hours apart measured RAM 23.21 -> 21.66 GB/s, the CPU
+    anchor 6.72 -> 6.24 tok/s and the GPU ratio 0.75 -> 1.03. Predictions from one state scored
+    against measurements from the other moved every arm of the model ladder by 5-12 points -
+    more than most of the effects being tested. A predicted-vs-measured number is only meaningful
+    when both sides come from the same state, so every state gets a name and every measurement
+    records which one it was taken under.
+    """
+    import hashlib
+    if not cal:
+        return None
+    parts = [f"{cal.get('ram_bw_measured')}", f"{cal.get('disk_bw_measured')}"]
+    for a in cal.get("anchors") or []:
+        parts.append(f"{a.get('placement')}:{a.get('tok_s')}:{a.get('sustained_sm')}")
+    return hashlib.sha1("|".join(parts).encode()).hexdigest()[:8]
+
+
+def drift_vs(prev, cur, tol=0.03):
+    """[(field, old, new, pct)] for measured values that moved more than tol between states."""
+    out = []
+    def cmp(name, a, b):
+        if a and b and abs(b - a) / a > tol:
+            out.append((name, a, b, (b - a) / a * 100))
+    cmp("ram_bw", prev.get("ram_bw_measured"), cur.get("ram_bw_measured"))
+    cmp("disk_bw", prev.get("disk_bw_measured"), cur.get("disk_bw_measured"))
+    pa = {a.get("placement"): a for a in (prev.get("anchors") or [])}
+    for a in cur.get("anchors") or []:
+        p = pa.get(a.get("placement"))
+        if p:
+            cmp(f"anchor {a.get('placement')}", p.get("tok_s"), a.get("tok_s"))
+    return out
+
+
 def load():
     """Return (calibration dict, age_days) or (None, None). Used by plan."""
     try:
@@ -257,10 +292,27 @@ def run(a):
     else:
         print("  (pass --model your.gguf to also measure disk + a real decode anchor)")
 
+    # C-14: name this machine state, and say out loud how far it drifted from the last one.
+    # Silent drift is what made a day of predicted-vs-measured numbers partly fiction.
+    prev, _ = load()
+    cal["cal_id"] = cal_id(cal)
+    if prev:
+        moved = drift_vs(prev, cal)
+        if moved:
+            print(f"\n  DRIFT since the last calibration ({prev.get('date')}, "
+                  f"id {prev.get('cal_id', '?')}):")
+            for name, a, b, pct in moved:
+                print(f"    {name}: {a} -> {b}  ({pct:+.1f}%)")
+            print("    Measurements taken under the OLD state cannot be scored against "
+                  "predictions from this one - that comparison moved every arm of our own model "
+                  "ladder by 5-12 points, more than most real effects (C-14). Re-measure, or "
+                  "compare only within one state.")
+        else:
+            print(f"\n  no drift since {prev.get('date')} (same machine state)")
     os.makedirs(CAL_DIR, exist_ok=True)
     with open(CAL_PATH, "w", encoding="utf-8") as f:
         json.dump(cal, f, indent=1)
-    print(f"\n  saved: {CAL_PATH}")
+    print(f"\n  saved: {CAL_PATH}  [state id {cal['cal_id']}]")
     print("  plan/optimize/auto now use the measured values automatically (tagged [calibrated]).")
     print("  Delete the file to return to auto-detection. Re-run after RAM/driver changes.")
     return cal
