@@ -10,7 +10,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 |---|---|
 | Established laws | 22 |
 | Shipped levers | 20 |
-| Measured dead ends | 23 |
+| Measured dead ends | 24 |
 | Open contradictions | 15 |
 | Untried levers | 23 |
 | External work to study | 10 |
@@ -417,6 +417,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `refuted` · `measured` · scope: Pascal, batch-1 decode, five valid GPU-resident profiles (DS-Lite excluded as streaming) · evidence: weights/perop_shape.py Q1b over weights/data/prereg83_perop.log · wired into: `nothing; corrects L-21's framing`
 
+### D-26 — STATIC HOT-EXPERT PINNING IS REFUTED - not because the skew is absent, but because the hot set is a FINGERPRINT OF THE CALIBRATION DOMAIN. Gate G1 (skew exists) PASSED on both arms: pinning the top 32% of experts by measured usage captures 0.5846 (Qwen3-30B-A3B Q2_K) and 0.5550 (q35-A-shexp) of routing mass on the worst domain, against 0.3203 for selection by array index - a 1.73-1.83x uplift, layer SEM 0.0100-0.0116. Gate G2 (the set transfers across domains) FAILED decisively: ranking experts on code and scoring on prose retains only 0.1283 and 0.2706 of the benefit against a staked gate of 0.90. Rank on prose, score on code is just as bad. A general-purpose assistant cannot know the domain in advance, so a hot set computed once is worth little more than index selection the moment the user changes subject. Secondary measurements: 10.7%/18.3% (q30) and 2.4%/8.2% (q35) of experts are NEVER routed within a domain, and concentration rises modestly with depth (+0.051 to +0.065 early->late).
+
+**Magnitude:** G1 uplift 1.73-1.83x over index selection, but cross-domain retention 0.13-0.27 vs a 0.90 gate
+
+`refuted` · `measured` · scope: Pascal box, 2 MoE models (qwen3moe 128-expert and qwen35moe 256-expert), 2 domains (code, prose), 8 chunks x 512 tokens per shard. Usage proxy is imatrix activation counts, not a live decode router trace - a stronger proxy would be per-token routing logs. REFUTES STATIC pinning only: it says nothing against a RUNTIME adaptive cache, which is what the external system that motivated this (U-34) actually implements. · evidence: prereg #87 / task #52, weights/exp52_expert_usage_skew.py, raw in weights/data/exp52_expert_usage_skew.json; llama-imatrix b10098, 2 models x 2 domains x 2 shards, ranked on shard A and scored on shard B throughout · wired into: `nothing - keep the existing static -ot regex, which the measurement shows is only 1.7x worse than an oracle static set that itself does not transfer. Task #55 loses the gate it was waiting on and must be re-staked against adaptive residency, not static pinning.`
+
 ## Open contradictions
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
@@ -717,7 +723,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Predicted effect (staked):** STAKED BEFORE the next ladder: deriving each model's effective bandwidth from the L-20 knee curve (hidden and feed_forward_length, zero fitted parameters) and re-deriving the format anchor JOINTLY - not on the 7B alone - will beat the shipped model out of sample. Kill rule: leave-one-out median |error| over the clean all-in-VRAM rows must come in BELOW 8.7% and LOO max BELOW 18.6%, the shipped baseline measured today. If either misses, shape joins op count as a refuted pricing axis and the size floor stays an unexplained empirical correction rather than becoming a term.
 
-`open` · `suggestive - one candidate among several, not the sole survivor` · scope: Pascal, six GPU-resident models. Correlation on n=6 with one custom model (gemma4-late12) in it - suggestive only. · evidence: weights/shape_vs_ops.py; L-20 curve from prereg81_knee.log (single session, C-14 safe) · wired into: `nothing yet. The honest next step is a STAKED prereg: predict each model's achieved-bandwidth fraction from geometry BEFORE measuring a fresh ladder, with a kill rule on LOO beating 8.7%.`
+`open` · `suggestive - one candidate among several, not the sole survivor` · scope: Pascal, six GPU-resident models. Correlation on n=6 with one custom model (gemma4-late12) in it - suggestive only. · evidence: weights/shape_vs_ops.py; L-20 curve from prereg81_knee.log (single session, C-14 safe); task #53 staked as prereg #89 (2026-07-30-two-resource-disk-tier.md) · wired into: `nothing yet. The honest next step is a STAKED prereg: predict each model's achieved-bandwidth fraction from geometry BEFORE measuring a fresh ladder, with a kill rule on LOO beating 8.7%.`
 
 ### U-33 — EXTERNAL CORROBORATION OF LAW 4 ON HARDWARE WE DO NOT OWN. BigMoeOnEdge (github.com/Helldez/BigMoeOnEdge, Apache-2.0, an MoE flash-streaming engine on top of llama.cpp) reports that on a Windows laptop (8 cores, 16 GB dual-channel DDR4, NVMe) streamed decode of Qwen3.6-35B-A3B Q4_K_M is DRAM-bandwidth-bound with a ~9 tok/s ceiling at zero I/O, and that extra I/O lanes, extra compute threads and the ~3 GB/s NVMe are ALL neutral. Feeding our own DDR4-3200 preset (51 GB/s) and CPU-tier eta (0.30) into tok/s = eta*BW/active-bytes predicts 8.2-8.7 tok/s. That is ~7% on a machine we have never touched, with zero fitting, from constants calibrated on a GTX 1060. It is NOT scored: the active-byte count was estimated from our own q35-A-shexp sibling GGUF rather than their actual file, and their '~9' is a stated ceiling rather than a single published measurement.
 
@@ -725,7 +731,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Predicted effect (staked):** STAKED FOR TASK #51: obtain their exact GGUF metadata, recompute active bytes with our #76 embedding-gather correction, and predict their zero-I/O ceiling BEFORE looking at their number again. Kill rule: |error| must be under 15% for this to count as the external replication C-06 asks for. Above 15% it is logged as a near-miss and C-06 stays open.
 
-`open` · `suggestive` · scope: their hardware, their build, their protocol - none of which we control. An unstaked match is a coincidence until staked; this is logged to be scored, not cited. · evidence: github.com/Helldez/BigMoeOnEdge README, Desktop section; our arithmetic in the session log; prereg #86 (preregistrations/2026-07-30-external-retrodiction.md) stakes it · wired into: `nothing - it is evidence about Law 4, not a new term`
+`open` · `suggestive` · scope: their hardware, their build, their protocol - none of which we control. An unstaked match is a coincidence until staked; this is logged to be scored, not cited. · evidence: github.com/Helldez/BigMoeOnEdge README, Desktop section; our arithmetic in the session log; prereg #86 (preregistrations/2026-07-30-external-retrodiction.md) stakes it; task #54 staked as prereg #88 (2026-07-30-binding-constraint.md) · wired into: `nothing - it is evidence about Law 4, not a new term`
 
 ### U-34 — EXPERT PREFETCH ON A ROUTING PREDICTOR LOSES ITS A/B - measured by someone else, so we should not spend a cycle on it. BigMoeOnEdge built a routing predictor that guesses most of a layer's experts before the layer runs, proved the prediction accuracy, and still found that reading ahead on it cost more than it saved; the feature ships OFF. Their two levers that DO pay are dynamic hot-expert caching (76-84% hit rate, cache size is the dominant lever) and cache-aware dropping (+55% at F=0.75, bootstrap intervals disjoint). Their --dense-weights anon result (3.2x past RAM, by keeping always-used weights out of the page cache) independently corroborates our own U-23 mmap finding (2.9x) on different hardware and a different OS.
 
@@ -733,7 +739,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Predicted effect (staked):** Tracked as tasks #52 (measure expert-usage skew before building hot-expert selection) and #55 (cache-aware dropping, gated on #52). Kill rule on #52 staked there: if the top 32% of experts by usage do not carry materially more than 32% of routing mass, hot-expert caching is refuted for our models and we keep the static -ot regex.
 
-`open` · `external` · scope: Android phone (12 GB, UFS 4.x) and one Windows laptop, CPU-only, flash-streaming regime. We are GPU-split on a 6 GB card, so nothing here transfers without re-measurement - it tells us what to TRY and what to SKIP, not what is true on our box. · evidence: github.com/Helldez/BigMoeOnEdge docs/expert-prediction.md and the four benchmark tables in its README · wired into: `nothing yet - two staked experiments queued`
+`open` · `external` · scope: Android phone (12 GB, UFS 4.x) and one Windows laptop, CPU-only, flash-streaming regime. We are GPU-split on a 6 GB card, so nothing here transfers without re-measurement - it tells us what to TRY and what to SKIP, not what is true on our box. · evidence: github.com/Helldez/BigMoeOnEdge docs/expert-prediction.md and the four benchmark tables in its README; task #55 staked as prereg #90 (2026-07-30-cache-aware-dropping.md), now blocked by D-26 · wired into: `nothing yet - two staked experiments queued`
 
 ## External work to study
 
