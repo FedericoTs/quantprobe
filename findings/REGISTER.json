@@ -1031,7 +1031,8 @@
    "claim": "ACTIVE-BYTE OVER-CHARGE: ne = total - routed puts token_embd in the always-active set, so a 150k-row embedding is priced at >=4.5 bits every token. Decode GATHERS one row (~zero bytes). Correct when embeddings are TIED (the same tensor is the output projection and is fully read); a double-charge when untied. Measured share of active bytes on untied models: 4.2-17.2%, and it is the sign and roughly the size of the MoE-K-quant under-prediction family (Coder-30B -11.6 -> -1.9, APEX-Mini -9.0 -> +2.0, 30B -10.9 -> -5.5, 7B -4.9 -> +0.9 when removed). [CLOSED-SHIPPED, prereg #76: token_embd is subtracted from ne/active iff a separate output/lm_head exists. The built-in falsification test PASSED - all four tied models moved <=0.03 points, so the change touches only the double-charged case. MoE K-quant family mean error -9.1% -> 0.0%; full-ladder median 9.0% -> 7.4%. Two of six point stakes missed (by 0.01 and 0.4 points, both toward MORE accuracy) because the hand-computed correction ignored the ne->active flow; published, not tuned.]",
    "hypothesis": "subtract token_embd params from ne when a separate output/lm_head tensor exists",
    "predicted_effect": "MoE K-quant splits move to within ~5%; TIED models must not move at all (built-in falsification)",
-   "wired_into": "quantprobe/spec.py from_gguf (gather_only); prereg #76"
+   "wired_into": "quantprobe/spec.py from_gguf (gather_only); prereg #76",
+   "evidence": "prereg #76 (scored 2026-07-30: tied models moved <=0.03pt, MoE-K mean -9.1% -> 0.0%); weights/data/full_ladder_v124.json"
   },
   {
    "id": "U-27",

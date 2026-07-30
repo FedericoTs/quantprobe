@@ -609,13 +609,13 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `measured` · wired into: `quantprobe/plan.py CPU_ATTN_S_PER_POS_LAYER in evaluate(); t_u25_cpu_attention_term`
 
-### U-26 — ACTIVE-BYTE OVER-CHARGE: ne = total - routed puts token_embd in the always-active set, so a 150k-row embedding is priced at >=4.5 bits every token. Decode GATHERS one row (~zero bytes). Correct when embeddings are TIED (the same tensor is the output projection and is fully read); a double-charge when untied. Measured share of active bytes on untied models: 4.2-17.2%, and it is the sign and roughly the size of the MoE-K-quant under-prediction family (Coder-30B -11.6 -> -1.9, APEX-Mini -9.0 -> +2.0, 30B -10.9 -> -5.5, 7B -4.9 -> +0.9 when removed).
+### U-26 — ACTIVE-BYTE OVER-CHARGE: ne = total - routed puts token_embd in the always-active set, so a 150k-row embedding is priced at >=4.5 bits every token. Decode GATHERS one row (~zero bytes). Correct when embeddings are TIED (the same tensor is the output projection and is fully read); a double-charge when untied. Measured share of active bytes on untied models: 4.2-17.2%, and it is the sign and roughly the size of the MoE-K-quant under-prediction family (Coder-30B -11.6 -> -1.9, APEX-Mini -9.0 -> +2.0, 30B -10.9 -> -5.5, 7B -4.9 -> +0.9 when removed). [CLOSED-SHIPPED, prereg #76: token_embd is subtracted from ne/active iff a separate output/lm_head exists. The built-in falsification test PASSED - all four tied models moved <=0.03 points, so the change touches only the double-charged case. MoE K-quant family mean error -9.1% -> 0.0%; full-ladder median 9.0% -> 7.4%. Two of six point stakes missed (by 0.01 and 0.4 points, both toward MORE accuracy) because the hand-computed correction ignored the ne->active flow; published, not tuned.]
 
 **Hypothesis:** subtract token_embd params from ne when a separate output/lm_head tensor exists
 
 **Predicted effect (staked):** MoE K-quant splits move to within ~5%; TIED models must not move at all (built-in falsification)
 
-`untested` · `measured` · wired into: `prereg candidate A; evidence weights/data/residual_decomposition_v124.md`
+`closed` · `measured` · evidence: prereg #76 (scored 2026-07-30: tied models moved <=0.03pt, MoE-K mean -9.1% -> 0.0%); weights/data/full_ladder_v124.json · wired into: `quantprobe/spec.py from_gguf (gather_only); prereg #76`
 
 ### U-27 — THE WITHHELD-FORMAT FALLBACK IS OPTIMISTIC, WHICH INVERTS ITS OWN INTENT. When known formats cover <60% of bytes we withhold fmt_bw ('no number beats a wrong number') - but the fallback eta is a generic one that assumes K-quant-class decode. Isolated on two files of the same architecture and active size: Qwen3.6-35B UD-Q2_K_XL (mix priced, fmt_bw 65.1) errs +8.5%, while APEX-MTP-Nano (37% IQ2_XXS + 22% IQ2_S, both unpriced -> fmt_bw None) errs +49.5%. #70 measured codebook formats 36-52% below K-quants per byte; the withheld path silently assumes they are not.
 
@@ -623,7 +623,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Predicted effect (staked):** the two Qwen3.6 siblings converge; no priced file moves
 
-`untested` · `measured` · wired into: `prereg candidate B; evidence weights/data/residual_decomposition_v124.md`
+`untested` · `measured` · evidence: prereg #77 (staked 2026-07-30); weights/data/residual_decomposition_v124.md; the two Qwen3.6 siblings (+8.5 priced vs +49.5 withheld) · wired into: `prereg #77 (staked; measurement in flight)`
 
 ## External work to study
 
