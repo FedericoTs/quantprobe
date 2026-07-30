@@ -49,3 +49,39 @@ per-tier hypothesis is refuted as the dominant term and U-28 is scored refuted; 
 belongs to something else and the ladder keeps its honest 8.8%.
 
 **Wired into:** pending; `spec.from_gguf` + `plan.evaluate` MoE rows.
+
+---
+
+## SCORED — 2026-07-30. **KILL RULE FIRED; THE CHANGE IS REVERTED.**
+
+| arm | baseline | with per-tier | moved |
+|---|---|---|---|
+| Qwen3-30B-A3B | −10.2% | **−1.4%** | +8.8pt |
+| Qwen3-Coder-30B | −10.0% | **+1.1%** | +11.1pt |
+| DS-Lite IQ2_XS | +22.7% | **+17.5%** | −5.2pt |
+| Qwen3.5-35B APEX-Mini | −3.8% | +9.0% | +12.8pt |
+| **Qwen3.6-35B Q2_K_XL** | +11.3% | **+38.4%** | **+27.1pt** |
+| **Qwen3.6-35B APEX-MTP** | +8.5% | **+35.4%** | **+26.9pt** |
+| DS-Lite Q4_K_M | −19.1% | −19.5% | −0.4pt (P-4 held: unchanged, as stated) |
+
+- **P-3 HIT, exactly as designed.** All six dense all-in-VRAM arms moved by **≤ 0.04 points** —
+  no expert tensors, no per-tier difference, no movement. The implementation is contained.
+- **P-1 MISS** (MoE-K −7.0% → **+4.6%**, overshooting past zero, outside ±4%).
+- **P-2 MISS, badly** (MoE-IQ +9.1% → **+20.6%**, target ±5%).
+- Median |error| unchanged at 8.8%. Per the kill rule as written — "if P-1 and P-2 both fail
+  while P-3 holds, the per-tier hypothesis is refuted as the dominant term" — **the change is
+  reverted and U-28 is scored refuted-as-formulated.**
+
+**What the split evidence actually says, recorded rather than acted on.** The blend is
+spectacularly right for the two K-quant flagships (−10% → −1.4% and +1.1%) and spectacularly
+wrong for the two Qwen3.6 files (+27 points worse). Those are exactly the files with the widest
+attention-vs-expert gap (105.9 vs 57.6), so the blend's weight — `act_ne` vs `f·act_ex`, i.e. how
+many bytes we believe are attention versus experts — is what breaks. **The per-tier PRICE looks
+right; the per-tier WEIGHTS come from the `ne` heuristic, and on newer architectures that
+heuristic is unverified** (already queued as the gpt-oss-class shared-expert question). Fixing
+the weights is the prerequisite; re-running #79 on top of a corrected `ne` is the follow-up, and
+it must be a fresh prereg, not a revival of this one.
+
+**It would have been easy to keep this** — two flagship arms inside ±1.5% is a seductive result.
+The stakes were set in advance precisely so that a change which helps the models we care about
+and wrecks the ones we care about less does not get to ship on selective reading.

@@ -61,6 +61,8 @@ def from_gguf(path):
     routed = 0
     iq_bytes = all_bytes = unpriced_cb = codebook_bytes = 0
     fmt_wsum = fmt_bytes = 0.0
+    tier_exp = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}   # prereg #79: per-tier format stats
+    tier_att = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}
     embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
     has_output = False       # a separate output/lm_head means embeddings are NOT tied
     for t in r.tensors:
@@ -95,6 +97,18 @@ def from_gguf(path):
             fmt_bytes += nb
         elif tn.startswith("IQ"):
             unpriced_cb += nb        # a codebook format we have not measured (prereg #77)
+        # U-28 / prereg #79: the same bytes, split by WHICH TIER holds them. On a MoE split the
+        # GPU holds attention and the CPU holds offloaded experts, and their formats differ
+        # sharply (measured: attention 82-106 GB/s-equivalent vs experts 50-69 on the Qwen MoEs).
+        # One file-wide number cannot price both.
+        _t = tier_exp if ("exps" in t.name or "_expert" in t.name) else tier_att
+        _t["bytes"] += nb
+        if tn in FORMAT_EBW:
+            _t["wsum"] += nb * FORMAT_EBW[tn]; _t["wb"] += nb
+        elif tn.startswith("IQ"):
+            _t["wsum"] += nb * WORST_MEASURED_CODEBOOK; _t["wb"] += nb
+        if tn.startswith("IQ") and tn not in K_CLASS_IQ:
+            _t["cb"] += nb
     # U-26 / prereg #76: token_embd is GATHERED at decode - one row of a ~150k-row matrix, i.e.
     # ~zero bytes - but `total - routed` charged the whole matrix at >=4.5 bits every token.
     # When embeddings are TIED the same tensor IS the output projection and is fully read, so it
@@ -150,6 +164,10 @@ def from_gguf(path):
                 bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
                 iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
                 codebook_share=(codebook_bytes / all_bytes) if all_bytes else 0.0,
+                # prereg #79: what each TIER actually holds. None when a tier has no tensors.
+                fmt_bw_attn=round(tier_att["wsum"] / tier_att["wb"], 1) if tier_att["wb"] else None,
+                fmt_bw_exp=round(tier_exp["wsum"] / tier_exp["wb"], 1) if tier_exp["wb"] else None,
+                codebook_share_exp=(tier_exp["cb"] / tier_exp["bytes"]) if tier_exp["bytes"] else 0.0,
                 fmt_bw=round(fmt_bw, 1) if fmt_bw else None)
 
 
@@ -176,6 +194,9 @@ def apply(a, quiet=False):
         a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
     a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
     a.codebook_share = s.get("codebook_share", 0.0)   # the share that actually pays the tax (C-13)
+    a.fmt_bw_attn = s.get("fmt_bw_attn")              # prereg #79: per-tier format pricing
+    a.fmt_bw_exp = s.get("fmt_bw_exp")
+    a.codebook_share_exp = s.get("codebook_share_exp", 0.0)
     a.fmt_bw = s.get("fmt_bw")           # read-only: lets anchored predictions rescale by format (L-16)
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))

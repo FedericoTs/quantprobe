@@ -1081,13 +1081,24 @@
   {
    "id": "U-28",
    "kind": "untried",
-   "status": "untested",
+   "status": "refuted",
    "confidence": "measured",
-   "claim": "FILE-WIDE FORMAT STATS ARE APPLIED TO TIERS THAT HOLD STRUCTURALLY DIFFERENT TENSORS. On a MoE split the CPU holds offloaded EXPERTS and the GPU holds ATTENTION plus resident experts, and those two sets have very different format profiles - measured on the ladder's own files: Qwen3.6-Q2_K_XL experts 57.6 GB/s-equivalent (97% IQ) vs attention 105.9 (0% IQ); APEX-MTP experts 49.8 (67% IQ) vs attention 84.6 (0%); Qwen3-30B experts 62.2 vs attention 82.4. The tool computes ONE fmt_bw and ONE iq_share per file and feeds both tiers from it, so every split placement prices at least one tier with the wrong format profile. [CONFIRMED AGAINST A DRIFT-FREE BASELINE, 2026-07-30: the first ladder run with predictions AND measurements locked to one named machine state (a19aeee4, weights/data/ladder_state_locked.json) still shows the two-sided bias, so it is NOT the calibration drift C-14 exposed. Median |err| 8.8%, all 14 arms inside +/-25%, but MoE-IQ splits still run +9.1% mean and MoE-K splits -7.0% mean while dense all-in-VRAM sits at -1.5%. Two opposite biases confined to the two placements where the CPU tier holds experts and the GPU tier holds attention - exactly the tiers this entry says are priced from one file-wide statistic.]",
+   "claim": "FILE-WIDE FORMAT STATS ARE APPLIED TO TIERS THAT HOLD STRUCTURALLY DIFFERENT TENSORS. On a MoE split the CPU holds offloaded EXPERTS and the GPU holds ATTENTION plus resident experts, and those two sets have very different format profiles - measured on the ladder's own files: Qwen3.6-Q2_K_XL experts 57.6 GB/s-equivalent (97% IQ) vs attention 105.9 (0% IQ); APEX-MTP experts 49.8 (67% IQ) vs attention 84.6 (0%); Qwen3-30B experts 62.2 vs attention 82.4. The tool computes ONE fmt_bw and ONE iq_share per file and feeds both tiers from it, so every split placement prices at least one tier with the wrong format profile. [CONFIRMED AGAINST A DRIFT-FREE BASELINE, 2026-07-30: the first ladder run with predictions AND measurements locked to one named machine state (a19aeee4, weights/data/ladder_state_locked.json) still shows the two-sided bias, so it is NOT the calibration drift C-14 exposed. Median |err| 8.8%, all 14 arms inside +/-25%, but MoE-IQ splits still run +9.1% mean and MoE-K splits -7.0% mean while dense all-in-VRAM sits at -1.5%. Two opposite biases confined to the two placements where the CPU tier holds experts and the GPU tier holds attention - exactly the tiers this entry says are priced from one file-wide statistic.] [REFUTED AS FORMULATED, prereg #79 (scored against the state-locked baseline a19aeee4): implemented, measured, REVERTED per its own kill rule. Containment was perfect (all six dense arms moved <=0.04pt) but both accuracy stakes missed - MoE-K -7.0% -> +4.6% (overshoot) and MoE-IQ +9.1% -> +20.6% (worse). The split evidence is the finding: the blend is right for the K-quant flagships (30B -10.2% -> -1.4%, Coder -10.0% -> +1.1%) and wrong by +27 points for the two Qwen3.6 files, which have the widest attention-vs-expert gap (105.9 vs 57.6). The per-tier PRICE is defensible; the per-tier WEIGHTS (act_ne vs f*act_ex) come from the `ne` heuristic, which is unverified on newer architectures. Fix the weights first (U-29), then a FRESH prereg may retry the price.]",
    "hypothesis": "compute fmt_bw and codebook_share SEPARATELY for expert vs non-expert tensors and feed each tier its own; the GPU blend must weight resident experts by the split fraction",
    "predicted_effect": "the IQ-heavy MoE splits (+15 to +28%) move toward band; K-quant MoE arms (-2.5, -3.2) must NOT move more than a few points - they are the regression guard",
    "evidence": "per-tier header scan, 2026-07-30; the ladder's format-class residual pattern",
    "wired_into": "prereg candidate #79 (with C-13 fixed first - they touch the same statistic)"
+  },
+  {
+   "id": "U-29",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "measured",
+   "claim": "The always-active byte split (`ne`) is the weight behind every per-tier calculation, and it is unverified on post-2025 MoE architectures. #79's per-tier blend was accurate exactly where the attention/expert byte split is trustworthy (Qwen3 family, errors -1.4% and +1.1%) and wrong by +27 points on Qwen3.6, whose shared-expert and attention structure differs. `ne = total - routed - gather` is a byte-accounting rule, not a measurement of what is read per token.",
+   "hypothesis": "derive per-token read sets from tensor NAMES per architecture (attn/shared-expert/router/norm), and validate against a model whose active-byte count can be checked another way",
+   "predicted_effect": "the per-tier blend (#79) becomes retryable; the DS-Lite MLA residual (-19.5%, untouched by everything so far) may also belong here",
+   "evidence": "prereg #79's split result; the ladder's Qwen3-vs-Qwen3.6 asymmetry",
+   "wired_into": "candidate prereg; blocks a #79 retry"
   }
  ],
  "external": [

@@ -8,7 +8,8 @@
   "cal_id": "a19aeee4",
   "measured": 153.39,
   "bench_s": 2,
-  "err_pct": -18.6
+  "err_pct": -18.6,
+  "err_p79": -18.6
  },
  {
   "name": "Qwen3-0.6B Q8_0",
@@ -19,7 +20,8 @@
   "cal_id": "a19aeee4",
   "measured": 106.38,
   "bench_s": 4,
-  "err_pct": -2.6
+  "err_pct": -2.6,
+  "err_p79": -2.6
  },
  {
   "name": "Qwen3.5-4B Q4_K_M",
@@ -30,7 +32,8 @@
   "cal_id": "a19aeee4",
   "measured": 30.17,
   "bench_s": 13,
-  "err_pct": 8.7
+  "err_pct": 8.7,
+  "err_p79": 8.7
  },
  {
   "name": "Qwen2.5-7B IQ4_NL",
@@ -41,7 +44,8 @@
   "cal_id": "a19aeee4",
   "measured": 25.36,
   "bench_s": 16,
-  "err_pct": 8.8
+  "err_pct": 8.8,
+  "err_p79": 8.8
  },
  {
   "name": "Qwen2.5-7B Q4_K_M",
@@ -52,7 +56,8 @@
   "cal_id": "a19aeee4",
   "measured": 22.73,
   "bench_s": 17,
-  "err_pct": -5.0
+  "err_pct": -5.0,
+  "err_p79": -5.0
  },
  {
   "name": "gemma4-12B depth-aware",
@@ -63,7 +68,8 @@
   "cal_id": "a19aeee4",
   "measured": 12.5,
   "bench_s": 27,
-  "err_pct": 0.0
+  "err_pct": 0.0,
+  "err_p79": 0.0
  },
  {
   "name": "DS-Lite 16B IQ2_XS",
@@ -74,7 +80,8 @@
   "cal_id": "a19aeee4",
   "measured": 24.69,
   "bench_s": 19,
-  "err_pct": 22.7
+  "err_pct": 22.7,
+  "err_p79": 17.5
  },
  {
   "name": "Qwen2.5-14B Q4_K_M",
@@ -85,7 +92,8 @@
   "cal_id": "a19aeee4",
   "measured": 5.08,
   "bench_s": 50,
-  "err_pct": -5.5
+  "err_pct": -5.5,
+  "err_p79": -5.5
  },
  {
   "name": "DS-Lite 16B Q4_K_M",
@@ -96,7 +104,8 @@
   "cal_id": "a19aeee4",
   "measured": 23.86,
   "bench_s": 31,
-  "err_pct": -19.1
+  "err_pct": -19.1,
+  "err_p79": -19.5
  },
  {
   "name": "Qwen3-30B-A3B Q2_K",
@@ -107,7 +116,8 @@
   "cal_id": "a19aeee4",
   "measured": 21.71,
   "bench_s": 36,
-  "err_pct": -10.2
+  "err_pct": -10.2,
+  "err_p79": -1.4
  },
  {
   "name": "Qwen3-Coder-30B Q2_K_L",
@@ -118,7 +128,8 @@
   "cal_id": "a19aeee4",
   "measured": 21.66,
   "bench_s": 33,
-  "err_pct": -10.0
+  "err_pct": -10.0,
+  "err_p79": 1.1
  },
  {
   "name": "Qwen3.5-35B APEX-Mini",
@@ -129,7 +140,8 @@
   "cal_id": "a19aeee4",
   "measured": 22.66,
   "bench_s": 37,
-  "err_pct": -3.8
+  "err_pct": -3.8,
+  "err_p79": 9.0
  },
  {
   "name": "Qwen3.6-35B Q2_K_XL",
@@ -140,7 +152,8 @@
   "cal_id": "a19aeee4",
   "measured": 16.62,
   "bench_s": 37,
-  "err_pct": 11.3
+  "err_pct": 11.3,
+  "err_p79": 38.4
  },
  {
   "name": "Qwen3.6-35B APEX-MTP-Nano",
@@ -151,6 +164,7 @@
   "cal_id": "a19aeee4",
   "measured": 17.51,
   "bench_s": 35,
-  "err_pct": 8.5
+  "err_pct": 8.5,
+  "err_p79": 35.4
  }
 ]
