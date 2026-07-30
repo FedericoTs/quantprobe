@@ -9,7 +9,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | section | count |
 |---|---|
 | Established laws | 19 |
-| Shipped levers | 19 |
+| Shipped levers | 20 |
 | Measured dead ends | 21 |
 | Open contradictions | 12 |
 | Untried levers | 16 |
@@ -250,6 +250,12 @@ Things the tool actually recommends, with the number attached.
 **Magnitude:** +33.5% decode at K=2; llama.cpp default K=3 measures 0.64x (a LOSS) on the same pair
 
 `confirmed` · `measured` · scope: dense split GPU/CPU, novel output, same-family draft; this box (Pascal + DDR4) · evidence: prereg #69 (preregistrations/2026-07-28-dense-split-draft.md), raw log weights/data/prereg69_dense_split.log, 3 runs at K=2 · wired into: `quantprobe plan.py dense_draft_note split branch`
+
+### V-21 — Correcting the active-byte accounting (#76 gather-only embeddings, #77 codebook pricing) frees real VRAM budget, and the emitted MoE splits keep 1-3 more expert layers resident. Measured on 5 re-emitted arms, same files/binary/session: +1.0 to +1.6%, 5 of 5 improved, zero regressions. APEX-Mini reaches 22.55 tok/s - a new measured best for this box. The win is REAL and SMALL: the accounting fix bought ~8 points of median prediction error and ~1.3% of throughput.
+
+**Magnitude:** +1.3% mean decode, 0 regressions; flagship 21.33 -> 21.54, champion 22.20 -> 22.55
+
+`confirmed` · `measured` · scope: MoE expert-splits on this box; the mechanism (freed budget -> one more resident layer) generalises, the magnitude is per-machine · evidence: prereg #78 (staked before measuring); weights/data/full_ladder_v124.json; #62 resident-expert sweep · wired into: `quantprobe/spec.py from_gguf (the accounting that frees the budget); MACHINE_LADDER`
 
 ## Measured dead ends
 

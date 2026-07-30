@@ -29,3 +29,28 @@ while P-3 holds, the accounting fix is accuracy-only: honest, worth shipping, an
 a speed claim. Whatever happens, the MACHINE_LADDER numbers are updated to whatever is measured.
 
 **Wired into:** pending; MACHINE_LADDER + the v1.24 release note either way.
+
+---
+
+## SCORED — 2026-07-30, same session (clocks 139 MHz idle -> loaded, healthy)
+
+| model | previous emit | new emit | delta |
+|---|---|---|---|
+| Qwen3-30B-A3B Q2_K | 21.33 | **21.54** | +1.0% |
+| Qwen3-Coder-30B Q2_K_L | 21.49 | **21.77** | +1.3% |
+| **Qwen3.5-35B APEX-Mini** | 22.20 | **22.55** | **+1.6%** |
+| Qwen3.6-35B Q2_K_XL | 16.68 | **16.87** | +1.1% |
+| Qwen3.6-35B APEX-MTP-Nano | 17.26 | **17.53** | +1.6% |
+
+- **P-1 HIT** (30B 21.33 → 21.54) and **P-2 HIT** (APEX-Mini 22.20 → **22.55, a new measured
+  best for this box**).
+- **P-3 HIT.** 5 of 5 improved, **zero regressions** — the freed budget was spent one layer at a
+  time and no arm crossed the #13 cliff.
+- **Honest size of the win: +1.3% mean.** Real, reproducible, in the predicted direction, and
+  SMALL. Freeing phantom bytes buys one more resident expert layer, and #62 already measured
+  that one layer is worth about this much. Anyone reading "better accounting made it faster"
+  should read the second decimal, not the headline: the accuracy fix was worth ~8 points of
+  median prediction error; the speed it unlocked is worth ~1.3%.
+
+**The honest summary of the day's chain:** the accounting fixes were worth far more as *truth*
+than as *throughput* — and both are now measured rather than assumed.

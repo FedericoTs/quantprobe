@@ -457,6 +457,17 @@
    "evidence": "prereg #69 (preregistrations/2026-07-28-dense-split-draft.md), raw log weights/data/prereg69_dense_split.log, 3 runs at K=2",
    "scope": "dense split GPU/CPU, novel output, same-family draft; this box (Pascal + DDR4)",
    "wired_into": "quantprobe plan.py dense_draft_note split branch"
+  },
+  {
+   "id": "V-21",
+   "kind": "lever",
+   "status": "confirmed",
+   "confidence": "measured",
+   "claim": "Correcting the active-byte accounting (#76 gather-only embeddings, #77 codebook pricing) frees real VRAM budget, and the emitted MoE splits keep 1-3 more expert layers resident. Measured on 5 re-emitted arms, same files/binary/session: +1.0 to +1.6%, 5 of 5 improved, zero regressions. APEX-Mini reaches 22.55 tok/s - a new measured best for this box. The win is REAL and SMALL: the accounting fix bought ~8 points of median prediction error and ~1.3% of throughput.",
+   "magnitude": "+1.3% mean decode, 0 regressions; flagship 21.33 -> 21.54, champion 22.20 -> 22.55",
+   "evidence": "prereg #78 (staked before measuring); weights/data/full_ladder_v124.json; #62 resident-expert sweep",
+   "scope": "MoE expert-splits on this box; the mechanism (freed budget -> one more resident layer) generalises, the magnitude is per-machine",
+   "wired_into": "quantprobe/spec.py from_gguf (the accounting that frees the budget); MACHINE_LADDER"
   }
  ],
  "dead_ends": [
