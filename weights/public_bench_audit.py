@@ -56,3 +56,29 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ---------------------------------------------------------------------------
+# DEPTH CAVEAT (L-19, added 2026-07-30 after preregs #73/#74/#75)
+# ---------------------------------------------------------------------------
+# 17 of the 61 corpus entries carry a depth signal (16k-131k), and 8 of those ALSO offload to
+# CPU. The eta computed above is a d0 quantity: for any depth entry it under-states the machine,
+# because part of the measured token time is KV reads (all placements) and, where whole layers
+# sit on CPU, attention compute (L-19). Consequences for the headroom claims:
+#
+#   * Entries at depth WITHOUT cpu offload (4080/gpt-oss-20b @32k, the 4x3090 GLM rows): eta is
+#     under-stated by the KV-read share only - modest, and it makes those rows look WORSE than
+#     the machine is. Their "at ceiling" verdicts are therefore safe (a real ceiling is higher).
+#   * Entries at depth WITH cpu offload (RTX PRO 6000 GLM rows @16k, RTX 6000 R1 @131k, 3090
+#     Qwen3-235B @32k, and BOTH RTX 3060 gpt-oss rows): eta is under-stated by KV reads AND, for
+#     MoE expert-offload, nothing extra (attention stays on GPU) - but for any DENSE offload the
+#     L-19 term applies and the row cannot be graded on a d0 band at all.
+#   * The single most-quoted headroom case (RTX 2060 + Qwen3.5-35B at ~102k, eta 0.054) is MoE
+#     with --n-cpu-moe 99: attention stays on the GPU, so L-19 does NOT apply, but ~102k of KV
+#     reads absolutely do. Its d0-basis eta is meaningless; what survives is the PLACEMENT
+#     comparison (all experts on CPU vs partial residency), which is depth-independent advice.
+#
+# Bottom line for publication: the eta-generality table (dense Q4-class, all-in-VRAM, d0 entries)
+# is sound and is what L-18 rests on. The HEADROOM column must not be published for depth entries
+# without re-deriving them with the KV term - which needs each reporter's exact context length,
+# and most did not state one. Marked here rather than silently dropped.

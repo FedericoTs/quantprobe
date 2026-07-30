@@ -246,6 +246,39 @@ matters for context too, i.e. the law recurses).
   DDR4-45 (8.0 → 5.7 tok/s) vs −19.5% for the hybrid — pre-registered, unmeasured as of v1.1;
   band ±10 points. A `bench --depth 16384` on any CPU-only box settles it.
 
+#### Law 4 v2 amendment — L-19: the context term is a *bandwidth* model, and attention must be on the GPU for that to be true (2026-07-30, preregs #73/#74/#75)
+
+The v1.1 text above guessed right and stopped short: it named "depth-dependent attention *compute*"
+as the unexplained residual and shipped η_kv ≈ 0.70 to absorb it. Three pre-registrations measured
+it instead.
+
+**Where the bandwidth term is right — validated to 32k, twice the previous ceiling:**
+all-in-VRAM (d4096 predicted 18.8, measured **18.98**, −0.9%) and **MoE expert-splits at every
+depth** (−10% to −23%, in band) — because a MoE split keeps attention and KV in VRAM and offloads
+only expert FFNs.
+
+**Where it breaks — and by how much:** any placement that puts whole layers, attention included,
+on the CPU. Dense splits over-promised **+182% at d16384 and +381% at d32768**. Pure CPU was worse
+still: the v1.1 prediction above said −29% at 16k; the measured pure-CPU slope on a 7B is
+**−94%** (22.89 → 1.38). That old prediction is hereby **scored a miss** and superseded.
+
+**The term:** CPU-resident layers run attention over the whole KV cache every token — compute on
+the machine's threads, not a byte read.
+
+**`t += n_cpu_layers × ctx × k`,  k = 1.55 µs** (this box, 4 threads)
+
+k measured across four arms spanning two models, 8–30 CPU layers and 8k–32k depth: **1.43** (7B,
+8 layers, d16k) · **1.42** (7B, 11, d32k) · **1.76** (14B, 30, d8k) · **1.10** (7B pure CPU, 28,
+d16k). Validated **out-of-sample before shipping** (#74 staked 1.53 against the un-termed tool's
+3.30; measured 1.36 — error cut 11×). With it, the three previously-broken arms retrodict within
+±10%.
+
+*Scope, stated:* k is one 4-thread CPU's constant and spans 1.10–1.76 across arms — a first-order
+correction, not a precision instrument; a wider CPU pays less, so the term reads pessimistic there.
+The honest engineering advice remains to **avoid the regime**: keep attention on the GPU (raise
+`-ngl`), quantize the KV cache (`-ctk q8_0 -ctv q8_0`, +37% at depth measured), or use a MoE model,
+whose splits are validated to 32k here.
+
 ---
 
 **The umbrella claim:** at low bits on commodity hardware, *placement beats budget* — which layers get
