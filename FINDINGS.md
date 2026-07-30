@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 21 |
 | Open contradictions | 14 |
-| Untried levers | 18 |
+| Untried levers | 19 |
 | External work to study | 9 |
 
 ## Established laws
@@ -658,6 +658,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** the per-tier blend (#79) becomes retryable; the DS-Lite MLA residual (-19.5%, untouched by everything so far) may also belong here
 
 `untested` · `measured` · evidence: prereg #79's split result; the ladder's Qwen3-vs-Qwen3.6 asymmetry · wired into: `candidate prereg; blocks a #79 retry`
+
+### U-30 — EFFECTIVE BANDWIDTH IS FORMAT x TENSOR SHAPE, NOT FORMAT ALONE - and FORMAT_EBW was calibrated only on the shape that flatters it. Every entry (Q4_0 119.1, Q4_K 106.4, the IQ ladder) was measured e2e on 7B DENSE files, where the token is one long homogeneous stream of large FFN matrices. Attention is the opposite shape: many small per-layer q/k/v/o tensors where launch overhead and low occupancy dominate and peak bandwidth is never reached. Prereg #79 priced the GPU tier at attention's FORMAT speed and the damage it did tracks the attention share of the token almost linearly: r = 0.87 over six MoE files spanning 45%-77% attention share (45-51% share -> the blend helped or was neutral, -0.4 to +11.1pt; 74-77% share -> it over-promised by +12.8 to +27.1pt). Same physics as #59's small-model size floor, one level down: at TENSOR granularity.
+
+**Hypothesis:** measure decode bandwidth for ATTENTION-SHAPED tensors (small, many, per-layer) vs FFN-SHAPED (large, few) at the same format, on kernelprobe where shape is the only variable; FORMAT_EBW then becomes FORMAT_EBW[fmt][shape-class]
+
+**Predicted effect (staked):** attention-shaped ebw lands materially BELOW its format's headline number, and the gap explains why #79 over-promised exactly in proportion to attention share
+
+`untested` · `measured` · evidence: prereg #79's per-arm damage vs attention share (r=0.87, n=6); FORMAT_EBW's provenance (all entries measured on dense 7B files) · wired into: `candidate prereg; would make a corrected #79 retry possible alongside U-29`
 
 ## External work to study
 
