@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" font-family="Segoe UI,system-ui,sans-serif">
+<rect width="720" height="380" fill="#ffffff"/>
+<text x="58" y="30" font-size="16" font-weight="650" fill="#16181d">Predicted vs measured - all 14 models, ONE locked machine state</text>
+<text x="58" y="49" font-size="12" fill="#5c6066">state a19aeee4: predictions and measurements from the same calibration (C-14). Median |error| 8.8%, 14/14 inside the printed band.</text>
+<text x="14" y="190.0" font-size="11" fill="#5c6066" transform="rotate(-90 14 190.0)" text-anchor="middle"></text>
+<text x="360.0" y="372" font-size="11" fill="#5c6066" text-anchor="middle">prediction error (%)   negative = we under-promised</text>
+<line x1="88" y1="334" x2="680" y2="334" stroke="#d8d7d2"/>
+<line x1="88" y1="70" x2="88" y2="334" stroke="#d8d7d2"/>
+<rect x="334.7" y="70" width="98.7" height="264" fill="#15803d" opacity="0.1"/>
+<rect x="137.3" y="70" width="493.3" height="264" fill="#5c6066" opacity="0.05"/>
+<line x1="384.0" y1="70" x2="384.0" y2="334" stroke="#16181d" stroke-width="1"/>
+<line x1="384.0" y1="79.4" x2="200.5" y2="79.4" stroke="#b45309" stroke-width="2"/>
+<circle cx="200.5" cy="79.4" r="4" fill="#b45309"/>
+<text x="82" y="82.9" font-size="9.5" fill="#16181d" text-anchor="end">Qwen2.5-0.5B Q8_0</text>
+<text x="193.5" y="82.9" font-size="9" fill="#b45309" text-anchor="end">-19%</text>
+<line x1="384.0" y1="98.3" x2="358.3" y2="98.3" stroke="#15803d" stroke-width="2"/>
+<circle cx="358.3" cy="98.3" r="4" fill="#15803d"/>
+<text x="82" y="101.8" font-size="9.5" fill="#16181d" text-anchor="end">Qwen3-0.6B Q8_0</text>
+<text x="351.3" y="101.8" font-size="9" fill="#15803d" text-anchor="end">-3%</text>
+<line x1="384.0" y1="117.1" x2="469.8" y2="117.1" stroke="#0f766e" stroke-width="2"/>
+<circle cx="469.8" cy="117.1" r="4" fill="#0f766e"/>
+<text x="82" y="120.6" font-size="9.5" fill="#16181d" text-anchor="end">Qwen3.5-4B Q4_K_M</text>
+<text x="476.8" y="120.6" font-size="9" fill="#0f766e" text-anchor="start">+9%</text>
+<line x1="384.0" y1="136.0" x2="470.8" y2="136.0" stroke="#0f766e" stroke-width="2"/>
+<circle cx="470.8" cy="136.0" r="4" fill="#0f766e"/>
+<text x="82" y="139.5" font-size="9.5" fill="#16181d" text-anchor="end">Qwen2.5-7B IQ4_NL</text>
+<text x="477.8" y="139.5" font-size="9" fill="#0f766e" text-anchor="start">+9%</text>
+<line x1="384.0" y1="154.9" x2="334.7" y2="154.9" stroke="#15803d" stroke-width="2"/>
+<circle cx="334.7" cy="154.9" r="4" fill="#15803d"/>
+<text x="82" y="158.4" font-size="9.5" fill="#16181d" text-anchor="end">Qwen2.5-7B Q4_K_M</text>
+<text x="327.7" y="158.4" font-size="9" fill="#15803d" text-anchor="end">-5%</text>
+<line x1="384.0" y1="173.7" x2="384.0" y2="173.7" stroke="#15803d" stroke-width="2"/>
+<circle cx="384.0" cy="173.7" r="4" fill="#15803d"/>
+<text x="82" y="177.2" font-size="9.5" fill="#16181d" text-anchor="end">gemma4-12B depth-aware</text>
+<text x="391.0" y="177.2" font-size="9" fill="#15803d" text-anchor="start">+0%</text>
+<line x1="384.0" y1="192.6" x2="608.0" y2="192.6" stroke="#b45309" stroke-width="2"/>
+<circle cx="608.0" cy="192.6" r="4" fill="#b45309"/>
+<text x="82" y="196.1" font-size="9.5" fill="#16181d" text-anchor="end">DS-Lite 16B IQ2_XS</text>
+<text x="615.0" y="196.1" font-size="9" fill="#b45309" text-anchor="start">+23%</text>
+<line x1="384.0" y1="211.4" x2="329.7" y2="211.4" stroke="#0f766e" stroke-width="2"/>
+<circle cx="329.7" cy="211.4" r="4" fill="#0f766e"/>
+<text x="82" y="214.9" font-size="9.5" fill="#16181d" text-anchor="end">Qwen2.5-14B Q4_K_M</text>
+<text x="322.7" y="214.9" font-size="9" fill="#0f766e" text-anchor="end">-6%</text>
+<line x1="384.0" y1="230.3" x2="195.5" y2="230.3" stroke="#b45309" stroke-width="2"/>
+<circle cx="195.5" cy="230.3" r="4" fill="#b45309"/>
+<text x="82" y="233.8" font-size="9.5" fill="#16181d" text-anchor="end">DS-Lite 16B Q4_K_M</text>
+<text x="188.5" y="233.8" font-size="9" fill="#b45309" text-anchor="end">-19%</text>
+<line x1="384.0" y1="249.1" x2="283.4" y2="249.1" stroke="#b45309" stroke-width="2"/>
+<circle cx="283.4" cy="249.1" r="4" fill="#b45309"/>
+<text x="82" y="252.6" font-size="9.5" fill="#16181d" text-anchor="end">Qwen3-30B-A3B Q2_K</text>
+<text x="276.4" y="252.6" font-size="9" fill="#b45309" text-anchor="end">-10%</text>
+<line x1="384.0" y1="268.0" x2="285.3" y2="268.0" stroke="#0f766e" stroke-width="2"/>
+<circle cx="285.3" cy="268.0" r="4" fill="#0f766e"/>
+<text x="82" y="271.5" font-size="9.5" fill="#16181d" text-anchor="end">Qwen3-Coder-30B Q2_K_L</text>
+<text x="278.3" y="271.5" font-size="9" fill="#0f766e" text-anchor="end">-10%</text>
+<line x1="384.0" y1="286.9" x2="346.5" y2="286.9" stroke="#15803d" stroke-width="2"/>
+<circle cx="346.5" cy="286.9" r="4" fill="#15803d"/>
+<text x="82" y="290.4" font-size="9.5" fill="#16181d" text-anchor="end">Qwen3.5-35B APEX-Mini</text>
+<text x="339.5" y="290.4" font-size="9" fill="#15803d" text-anchor="end">-4%</text>
+<line x1="384.0" y1="305.7" x2="495.5" y2="305.7" stroke="#b45309" stroke-width="2"/>
+<circle cx="495.5" cy="305.7" r="4" fill="#b45309"/>
+<text x="82" y="309.2" font-size="9.5" fill="#16181d" text-anchor="end">Qwen3.6-35B Q2_K_XL</text>
+<text x="502.5" y="309.2" font-size="9" fill="#b45309" text-anchor="start">+11%</text>
+<line x1="384.0" y1="324.6" x2="467.9" y2="324.6" stroke="#0f766e" stroke-width="2"/>
+<circle cx="467.9" cy="324.6" r="4" fill="#0f766e"/>
+<text x="82" y="328.1" font-size="9.5" fill="#16181d" text-anchor="end">Qwen3.6-35B APEX-MTP-Nan</text>
+<text x="474.9" y="328.1" font-size="9" fill="#0f766e" text-anchor="start">+8%</text>
+<text x="137.3" y="348" font-size="10" fill="#5c6066" text-anchor="middle">-25</text>
+<text x="285.3" y="348" font-size="10" fill="#5c6066" text-anchor="middle">-10</text>
+<text x="384.0" y="348" font-size="10" fill="#5c6066" text-anchor="middle">+0</text>
+<text x="482.7" y="348" font-size="10" fill="#5c6066" text-anchor="middle">+10</text>
+<text x="630.7" y="348" font-size="10" fill="#5c6066" text-anchor="middle">+25</text>
+</svg>

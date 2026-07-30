@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" font-family="Segoe UI,system-ui,sans-serif">
+<rect width="720" height="380" fill="#ffffff"/>
+<text x="58" y="30" font-size="16" font-weight="650" fill="#16181d">Why per-tier pricing failed (prereg #79) - and what it revealed</text>
+<text x="58" y="49" font-size="12" fill="#5c6066">the damage tracks how much of the token we believe is ATTENTION (r = 0.87, n = 6): attention was priced at a bandwidth only FFN-shaped tensors reach</text>
+<text x="14" y="190.0" font-size="11" fill="#5c6066" transform="rotate(-90 14 190.0)" text-anchor="middle">prediction error added (points)</text>
+<text x="360.0" y="372" font-size="11" fill="#5c6066" text-anchor="middle">attention share of the per-token read</text>
+<line x1="80" y1="334" x2="660" y2="334" stroke="#d8d7d2"/>
+<line x1="80" y1="76" x2="80" y2="334" stroke="#d8d7d2"/>
+<line x1="80" y1="301.8" x2="660" y2="301.8" stroke="#d8d7d2" stroke-dasharray="3 3"/>
+<circle cx="149.0" cy="304.3" r="6" fill="#15803d" opacity="0.85"/>
+<text x="149.0" y="293.3" font-size="9.5" fill="#16181d" text-anchor="middle">DS-Lite Q4KM</text>
+<circle cx="231.9" cy="245.0" r="6" fill="#b45309" opacity="0.85"/>
+<text x="231.9" y="234.0" font-size="9.5" fill="#16181d" text-anchor="middle">Qwen3-30B</text>
+<circle cx="231.9" cy="230.2" r="6" fill="#b45309" opacity="0.85"/>
+<text x="231.9" y="219.2" font-size="9.5" fill="#16181d" text-anchor="middle">Coder-30B</text>
+<circle cx="549.5" cy="219.2" r="6" fill="#b45309" opacity="0.85"/>
+<text x="549.5" y="208.2" font-size="9.5" fill="#16181d" text-anchor="middle">3.5-35B APEX</text>
+<circle cx="563.3" cy="127.0" r="6" fill="#b91c1c" opacity="0.85"/>
+<text x="563.3" y="116.0" font-size="9.5" fill="#16181d" text-anchor="middle">3.6-35B Q2KXL</text>
+<circle cx="591.0" cy="128.2" r="6" fill="#b91c1c" opacity="0.85"/>
+<text x="591.0" y="117.2" font-size="9.5" fill="#16181d" text-anchor="middle">3.6-APEX-MTP</text>
+<line x1="135.2" y1="308.2" x2="604.8" y2="121.2" stroke="#5c6066" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="149.0" y="348" font-size="10" fill="#5c6066" text-anchor="middle">45%</text>
+<text x="287.1" y="348" font-size="10" fill="#5c6066" text-anchor="middle">55%</text>
+<text x="425.2" y="348" font-size="10" fill="#5c6066" text-anchor="middle">65%</text>
+<text x="563.3" y="348" font-size="10" fill="#5c6066" text-anchor="middle">75%</text>
+<text x="72" y="305.8" font-size="10" fill="#5c6066" text-anchor="end">+0</text>
+<text x="72" y="241.2" font-size="10" fill="#5c6066" text-anchor="end">+10</text>
+<text x="72" y="176.8" font-size="10" fill="#5c6066" text-anchor="end">+20</text>
+<text x="72" y="112.2" font-size="10" fill="#5c6066" text-anchor="end">+30</text>
+</svg>
