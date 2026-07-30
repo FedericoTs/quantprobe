@@ -1,0 +1,32 @@
+=== REAL per-op attribution (instrumented build, GGML_GPU_PROFILE_OPS=1) ===
+--- Qwen2.5-0.5B-Instruct-Q8_0.gguf (ngl 99) ---
+[e9] per-op GPU profiler: ON
+| qwen2 1B Q8_0                  | 500.79 MiB |   494.03 M | CUDA       |  99 |            tg32 |        126.60 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                         0.8         33        24.86
+[e9] RMS_NORM                   24.7       1617        15.27
+[e9] MUL_MAT                   209.3       4785        43.73
+[e9] GET_ROWS                    5.8         66        87.96
+[e9] SET_ROWS                   11.1        792        14.02
+[e9] ROPE                       12.0       1584         7.58
+[e9] FLASH_ATTN_EXT             23.0        792        29.06
+[e9] TOTAL                     286.7       9669
+[e9] matmul time by src0 type:
+[e9]   type q8_0              209.3 ms     4785 calls
+--- Qwen2.5-7B-Instruct-Q4_K_M.gguf (ngl 99) ---
+[e9] per-op GPU profiler: ON
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |            tg32 |         22.08 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                         0.3         33         9.65
+[e9] RMS_NORM                   29.2       1881        15.51
+[e9] MUL_MAT                  1532.3       5577       274.75
+[e9] GET_ROWS                    4.1         66        62.21
+[e9] SET_ROWS                   21.1        924        22.80
+[e9] ROPE                       12.3       1848         6.66
+[e9] FLASH_ATTN_EXT             72.7        924        78.71
+[e9] TOTAL                    1672.0      11253
+[e9] matmul time by src0 type:
+[e9]   type q4_K             1074.4 ms     4620 calls
+[e9]   type q6_K              457.9 ms      957 calls

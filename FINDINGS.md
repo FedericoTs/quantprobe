@@ -8,7 +8,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 20 |
+| Established laws | 21 |
 | Shipped levers | 20 |
 | Measured dead ends | 21 |
 | Open contradictions | 15 |
@@ -138,6 +138,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** 3.2x by rows/tensor; +40% ceiling by bytes/row; attention-shaped work -23% vs FFN-shaped at fixed width, which explains prereg #79's failure (r=0.87)
 
 `established` · `measured` · scope: Pascal, batch-1 decode geometry (one output row per block, #55). The two-axis SHAPE is the claim; knee position and ceiling gain are per-card and unmeasured elsewhere. · evidence: prereg #80 (shape sweep) + prereg #81 (K-invariance: the knee is a row count, the ceiling is not); tools/kernelprobe/shape.cu; weights/data/prereg80_shape.log, prereg81_knee.log · wired into: `findings only - deliberately NOT in the tool: a table keyed on rows alone would bake our 7B's row width into every prediction as an invisible constant, the exact error class this day has been about. Needs U-29's per-architecture read sets to supply both keys.`
+
+### L-21 — THE SMALL-MODEL SIZE FLOOR IS NON-MATMUL OVERHEAD SHARE, measured for the first time from inside a real decode (instrumented build, GGML_GPU_PROFILE_OPS, prereg #83). A token is not only weight reads: RMS_NORM, ROPE, FLASH_ATTN_EXT, SET_ROWS and GET_ROWS cost real GPU time, and the normalisation ops cost the SAME absolute time regardless of model size - RMS_NORM measured 15.28 us/call on a 0.5B and 15.52 us/call on a 7B, a 1.6% difference across a 15x model-size range. Against 10x fewer weight bytes that fixed cost becomes a large share of the token: MUL_MAT is 91.6% of GPU device time on the 7B but only 73.0% on the 0.5B, i.e. non-matmul overhead is 8.4% vs 27.0%. Law 4 models weight bytes only, so it necessarily mis-prices whichever end of that range it was not calibrated on - which is exactly #59's size floor and exactly why one anchor cannot price a 100x size range.
+
+**Magnitude:** non-matmul share 8.4% (7B) vs 27.0% (0.5B); RMS_NORM per-call cost constant to 1.6% across 15x model size
+
+`established` · `measured` · scope: Pascal, batch-1 decode, GPU-resident. FLASH_ATTN and SET_ROWS per-call costs DO scale (29 vs 79 us, 14 vs 23 us) - only the normalisation-class ops are size-invariant. · evidence: prereg #83 (weights/data/prereg83_perop.log): per-op GPU attribution on two real decodes, instrumented llama.cpp · wired into: `findings only - not yet a term. Unlike L-20 this is measured INSIDE llama.cpp on real models, so it is the first overhead constant that could be wired without a synthetic-to-real transfer step. Needs the same measurement on 3-4 more sizes to fit the share curve.`
 
 ## Shipped levers
 
