@@ -15,7 +15,7 @@ def main():
         prog="quantprobe",
         description="Probe-then-quantize for LLMs: fragility curves, placement plans, recipes. "
                     "Laws + evidence: github.com/FedericoTs/quantprobe")
-    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub = ap.add_subparsers(dest="cmd")   # not required: bare `quantprobe` shows the banner + help
 
     p = sub.add_parser("probe", help="measure a GGUF's depth-fragility curve, emit the recipe (Law 3)")
     p.add_argument("--gguf", required=True, help="f16/bf16 (or high-precision) source GGUF")
@@ -131,6 +131,11 @@ def main():
     f.add_argument("--force", action="store_true", help="re-download even if a same-named file exists (a stale local file with the same name once fed an incompatible draft model to llama-speculative - three crashed runs before the collision was spotted)")
 
     a = ap.parse_args()
+    if a.cmd is None:
+        from . import branding, __version__
+        print(branding.banner("v" + __version__))
+        ap.print_help()
+        return
     if a.cmd == "probe":
         from . import probe
         probe.run(a)
