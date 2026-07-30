@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.22.0 - 2026-07-30
+
+**The IQ ladder priced in, and the speculation map's first version qualifier.**
+
+- **IQ formats are measured, not guessed** (prereg #70): FORMAT_EBW gains IQ2_XS 51.1 / IQ3_S
+  61.1 / IQ3_XXS 68.3 / IQ4_NL 117.0 - the divide is CODEBOOK vs not, and IQ4_NL's kernel is
+  Q4_0-class. The format advice now offers IQ4_NL (+14% over Q4_K_M at the same size class WITH
+  imatrix quality) and warns off codebook IQ for VRAM decode on pre-Ampere. The staked split-arm
+  retrodiction MISSED and is published with its diagnosis (U-19 refuted as hypothesized; the
+  residual is structural, U-20 - which now also carries public out-of-sample support from a
+  four-point residency curve on RDNA3).
+- **Native MTP is the first positive MoE-split speculation** (prereg #71): models with a
+  trained-in MTP head (Qwen3.6 class) measure **+11.4% at --spec-draft-n-max 2** (93.2%
+  acceptance) on the expert-split placement where every external draft loses. K MUST stay at 2:
+  K=4 measured 0.61x on the same pair - the expert-union tax is alive, the head just out-accepts
+  it at short drafts. speculation_advice prints the exception with its limits.
+- Register at 86 entries: E-07 (colibri cross-engine confirmations), the 61-entry public
+  benchmark corpus + audit script ship in-tree (weights/public_bench_audit.py), and the
+  draft-note %% display fix.
+
+
 ## 1.21.0 - 2026-07-29
 
 **The dense-split release: speculation's best cell shipped as advice, and three registered defects closed.**

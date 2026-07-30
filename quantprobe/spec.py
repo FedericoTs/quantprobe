@@ -33,6 +33,12 @@ FORMAT_EBW = {
     "Q4_0": 119.1, "Q4_K": 106.4, "Q2_K": 65.4, "Q3_K": 57.3, "Q6_K": 100.0,   # measured
     "Q8_0": 115.0, "Q5_K": 103.0, "Q5_0": 117.0, "Q5_1": 115.0,                # derived
     "F16": 150.0, "F32": 150.0, "BF16": 150.0,                                  # derived
+    # IQ entries measured in prereg #70 (same-session matched set vs the Q4_K control, pure-type
+    # values solved from file blends). The divide is CODEBOOK vs not, not IQ vs K: the codebook
+    # formats (IQ2/IQ3) pay their lookup in decode; IQ4_NL's kernel is Q4_0-class and lands
+    # beside it. IQ2/IQ3 variants not listed stay excluded (coverage rule withholds fmt_bw).
+    "IQ2_XS": 51.1, "IQ3_S": 61.1, "IQ3_XXS": 68.3,                             # measured (#70)
+    "IQ4_NL": 117.0,                                                            # measured (#70)
 }
 
 

@@ -1245,6 +1245,16 @@ def t_format_advice_honesty():
             assert ("unverified" in a and "invert" in a), f"missing scope honesty at {bits}: {a}"
 
 
+def t_format_advice_iq4nl():
+    # prereg #70: the 4-5 bit lever must offer IQ4_NL (Q4_0-class kernel, +14% measured, imatrix
+    # quality) and warn off codebook IQ; the low-bit branch names the codebook penalty too.
+    from quantprobe.plan import format_advice
+    mid = format_advice("all in VRAM", 4.5)
+    assert "IQ4_NL" in mid and "+14%" in mid and "codebook" in mid.lower()
+    low = format_advice("all in VRAM", 2.5)
+    assert "IQ" in low and "prereg #70" in low
+
+
 def t_calibrate_boost_verdict():
     # the #60/#61 diagnostic must classify all three states and never crash on missing data
     from quantprobe.calibrate import boost_verdict
@@ -1419,6 +1429,16 @@ def t_u17_iq_cpu_pricing():
     base, iq = cpu_tokps(0.0), cpu_tokps(0.962)
     want = 1.0 + 0.962 * IQ_CPU_TG_PENALTY
     assert abs(base / iq - want) < 0.01, f"IQ penalty off: {base/iq:.4f} vs {want:.4f}"
+
+
+def t_prereg70_iq_format_ladder():
+    # #70: measured IQ entries exist, and the divide is CODEBOOK vs not - codebook formats
+    # (IQ2/IQ3) sit far below Q4_K, while IQ4_NL's Q4_0-class kernel lands beside Q4_0.
+    from quantprobe.spec import FORMAT_EBW
+    assert FORMAT_EBW["IQ2_XS"] < FORMAT_EBW["IQ3_S"] < FORMAT_EBW["Q4_K"], "codebook ladder order"
+    assert FORMAT_EBW["IQ2_XS"] <= 0.6 * FORMAT_EBW["Q4_K"], "IQ2_XS must price far below Q4_K"
+    assert abs(FORMAT_EBW["IQ4_NL"] - FORMAT_EBW["Q4_0"]) <= 0.05 * FORMAT_EBW["Q4_0"], \
+        "IQ4_NL is Q4_0-class, not codebook-class"
 
 
 def t_version():

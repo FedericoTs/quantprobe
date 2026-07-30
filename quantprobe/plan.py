@@ -440,16 +440,21 @@ def format_advice(placement, bits):
     if bits <= 3.0:
         return ("FORMAT LEVER (pre-Ampere cards): this bit-width is in the regime where unpack "
                 "cost has REVERSED the byte ordering - measured Q2_K decodes 19% slower than Q4_0 "
-                "on the same model while being 32% smaller. If a ~4.5-bit file fits in VRAM, use "
-                "it instead; prefer Q4_0 over Q4_K_M on pre-Ampere (+19% measured, bytes explain "
-                "only 5.7%). On Ampere+ this is unverified and may invert.")
+                "on the same model while being 32% smaller, and CODEBOOK IQ formats pay even more "
+                "(IQ2_XS/IQ3 measured 36-52% below Q4_K per byte, prereg #70). If a ~4.5-bit file "
+                "fits in VRAM, use it instead; prefer Q4_0 or IQ4_NL over Q4_K_M on pre-Ampere "
+                "(+19%/+14% measured). On Ampere+ this is unverified and may invert.")
     if bits <= 5.0:
         return ("FORMAT LEVER (pre-Ampere cards): at this bit-width the FORMAT is worth more than "
                 "the bytes - Q4_0 measured +19% over Q4_K_M on the same model (26.87 vs 22.72 "
-                "tok/s). Mechanism (measured, preregs #56/#57): metadata application DENSITY - "
-                "K-quants apply fine-grained scale+min chains far more often per byte, and that "
-                "cost is intrinsic to the format definition, not a kernel bug. Speed-only: "
-                "Q4_K_M is higher quality per byte. On Ampere+ this is unverified and may invert.")
+                "tok/s), and IQ4_NL measured +14% (25.63) at the same size class WITH imatrix "
+                "quality: its kernel is Q4_0-class, not codebook-class (prereg #70), so it is the "
+                "quality-per-byte pick of the fast formats here. Mechanism (measured, preregs "
+                "#56/#57): metadata application DENSITY - K-quants apply fine-grained scale+min "
+                "chains far more often per byte, and that cost is intrinsic to the format "
+                "definition, not a kernel bug. Avoid codebook IQ (IQ2/IQ3) for VRAM decode on "
+                "this class of card: measured 36-52% below Q4_K per byte. On Ampere+ this is "
+                "unverified and may invert.")
     return None
 
 
@@ -468,7 +473,7 @@ def dense_draft_note(moe, placement):
         return ("dense-SPLIT speculation (measured, prereg #69): a small same-family draft is "
                 "the best speculation cell on this box - `-md draft.gguf -ngld 0 "
                 "--spec-draft-n-max 2` bought **+33%** decode on a 14B split target (5.5 -> 7.4 "
-                "tok/s, 76%% acceptance, novel code), and the draft costs ZERO VRAM because it "
+                "tok/s, 76% acceptance, novel code), and the draft costs ZERO VRAM because it "
                 "runs on CPU. Mechanism: the K+1-token verify batch reads each CPU-resident "
                 "layer once, so the CPU share of every token amortizes. Keep K=2: every "
                 "measured K>=3 landed AT OR BELOW no-draft baseline (the CPU draft spends the "
@@ -478,7 +483,7 @@ def dense_draft_note(moe, placement):
         return None
     return ("dense-model speculation (measured, prereg #67): pairing this model with a small "
             "same-family draft (-md draft.gguf -ngld 99 --spec-draft-n-max 2) buys ~+11% on "
-            "CODE-style novel output at 79%% acceptance - and LOSES speed on prose and at "
+            "CODE-style novel output at 79% acceptance - and LOSES speed on prose and at "
             "draft lengths >=4 (llama.cpp's default 3 is past the optimum here). Copy-regime "
             "ngram speculation remains the big multiplier where output copies context.")
 
@@ -527,8 +532,13 @@ def speculation_advice(moe, placement):
                 "negative here (0.72x), and stacking a second drafter costs 10%. Note llama-cli "
                 "ignores --spec-type silently; the flag only works on llama-server.")
     if moe and experts_offloaded:
-        return ("speculation will NOT pay here: measured +3% (ngram) and -24% (MTP) with experts "
-                "offloaded - a verify batch unions experts, and every extra one is a slow read.")
+        return ("speculation will NOT pay here with external drafts: measured +3% (ngram) and "
+                "-24% (MTP, old-generation) with experts offloaded - a verify batch unions "
+                "experts, and every extra one is a slow read. ONE measured exception (prereg "
+                "#71): models with a TRAINED-IN MTP head (Qwen3.6 class) reach ~93% acceptance, "
+                "enough for `--spec-type draft-mtp --spec-draft-n-max 2` to buy +11% - and K "
+                "MUST stay at 2: K=4 measured 0.61x on the same pair (the union tax is alive, "
+                "the head just out-accepts it at short drafts).")
     if not moe:
         return ("if you write CODE, add `--spec-type ngram-simple` - measured **2.10x decode** "
                 "(17.7 -> 37.2 tok/s), one flag, no download, identical output. Prose gains "
