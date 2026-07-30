@@ -12,8 +12,8 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 19 |
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
-| Untried levers | 11 |
-| External work to study | 7 |
+| Untried levers | 12 |
+| External work to study | 8 |
 
 ## Established laws
 
@@ -567,6 +567,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `untested` · `speculative` · wired into: `candidate next release; evidence: prereg #70 P-2 diagnosis + #27 sync ledger`
 
+### U-23 — The split-placement emit carries --no-mmap unconditionally (it is worth +73% prefill with -ub via host-transfer batching, #19/#20), but E-08's box shows the cost side: at 20GB working set on 32GB RAM (330 MiB free), non-evictable pages are an OOM risk under desktop load. The advice needs a RAM-headroom gate like the >45% pinning warning: below a headroom threshold, keep mmap and print what is being traded (evictability vs the measured prefill gain).
+
+**Hypothesis:** gate --no-mmap on (model_ram_share + margin) vs available RAM; print the tradeoff both ways
+
+**Predicted effect (staked):** no more silent OOM-risk emits on RAM-tight boxes; RAM-roomy boxes keep the +73%
+
+`untested` · `observed` · wired into: `candidate next release; evidence: E-08 report`
+
 ## External work to study
 
 Prior art that could make one of the above unnecessary.
@@ -624,6 +632,14 @@ Three cross-engine confirmations of our finding classes, one lever we cannot rea
 **Question to answer:** Does the disk tier's constant shift by runtime class as predicted (stock mmap 0.66 vs colibri O_DIRECT parallel reads) - and is the which-experts (usage-locality) lever worth an llama.cpp upstream proposal for unfused expert tensors?
 
 `reviewed` · `reported` · scope: reported by the colibri project, not measured by us; magnitudes are theirs · evidence: github.com/JustVugg/colibri releases v1.2.0/v1.3.0 (fetched 2026-07-30); prereg #28 (copy-regime), D-08 (pinning), prereg #31 (IQ CPU) · wired into: `U-06 runtime-class label (queued); plan.py expert-cache row already names colibri-class runtimes`
+
+### E-08 — reddit user accurate_east_1093 (RTX 5070 12GB, 32GB RAM, reported 2026-07-30)
+
+THE FIRST TRUE OUT-OF-SAMPLE PREDICTION VALIDATION on a machine we do not own: plan (preset path, no calibration) predicted 58.1 tok/s for Qwen3.6-35B-A3B UD-Q4_K_M at its emitted 41%-expert split; their independent measurement is 54-57 tok/s (+2% to +7.6% over - INSIDE the printed +/-25% band). The 9B Q6_K all-in-VRAM floor also held exactly as disclosed: 45.7 predicted as a floor, 71-76 measured (1.55-1.66x, inside the stated 'typically 1.1-1.8x above'). Blackwell-generation consumer card - a hardware class the laws were never fitted on.
+
+**Question to answer:** Their two feedback items: (1) plan emits 16 resident expert layers where they ran 10 (--n-cpu-moe 30) - residual margin to test on their box; (2) unconditional --no-mmap on split placements is RISKY on RAM-tight boxes (their working set 20GB left 330 MiB free; non-evictable pages could OOM under desktop load) -> should the --no-mmap advice be gated on available-RAM headroom with the tradeoff printed? Registered as U-23.
+
+`reviewed`
 
 ---
 

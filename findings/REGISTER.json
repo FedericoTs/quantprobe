@@ -959,6 +959,16 @@
    "hypothesis": "add a per-token split-placement sync term (ms-class constant, from the #27 decomposition) to the split arms only; pure-CPU and all-in-VRAM rows have no such term and are already exact/banded DESIGN NOTE (banked before staking #71): a placement sweep CANNOT identify the sync term - bytes-on-CPU and boundary-crossings are perfectly collinear when the split fraction varies (every CPU-expert layer adds both, contiguity does not change crossing count). Identification needs the instrumented build's decomposition (GGML_GPU_PROFILE_OPS shares + wall-clock residual, the #27 method) run on BOTH split arms: derive per-crossing cost from the flagship's decomposition, apply to DS-Lite via its crossing count, and the DS-Lite retrodiction is then out-of-sample. Regression gate: the flagship arm must not leave its band. E9 absolutes are WDDM-inflated - shares only, disclosed in #66.",
    "predicted_effect": "the DS-Lite split arm moves inside the band from the under-promise side; the flagship split arm (currently ~0 to +7% over) must NOT leave its band - that is the regression gate",
    "wired_into": "candidate next release; evidence: prereg #70 P-2 diagnosis + #27 sync ledger"
+  },
+  {
+   "id": "U-23",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "observed",
+   "claim": "The split-placement emit carries --no-mmap unconditionally (it is worth +73% prefill with -ub via host-transfer batching, #19/#20), but E-08's box shows the cost side: at 20GB working set on 32GB RAM (330 MiB free), non-evictable pages are an OOM risk under desktop load. The advice needs a RAM-headroom gate like the >45% pinning warning: below a headroom threshold, keep mmap and print what is being traded (evictability vs the measured prefill gain).",
+   "hypothesis": "gate --no-mmap on (model_ram_share + margin) vs available RAM; print the tradeoff both ways",
+   "predicted_effect": "no more silent OOM-risk emits on RAM-tight boxes; RAM-roomy boxes keep the +73%",
+   "wired_into": "candidate next release; evidence: E-08 report"
   }
  ],
  "external": [
@@ -1034,6 +1044,15 @@
    "why": "Three cross-engine confirmations of our finding classes, one lever we cannot reach in stock llama.cpp, and a disk-tier scoping correction - the strongest external echo of the register since E-06.",
    "question_to_answer": "Does the disk tier's constant shift by runtime class as predicted (stock mmap 0.66 vs colibri O_DIRECT parallel reads) - and is the which-experts (usage-locality) lever worth an llama.cpp upstream proposal for unfused expert tensors?",
    "priority": "medium"
+  },
+  {
+   "id": "E-08",
+   "kind": "external",
+   "status": "reviewed",
+   "repo": "reddit user accurate_east_1093 (RTX 5070 12GB, 32GB RAM, reported 2026-07-30)",
+   "why": "THE FIRST TRUE OUT-OF-SAMPLE PREDICTION VALIDATION on a machine we do not own: plan (preset path, no calibration) predicted 58.1 tok/s for Qwen3.6-35B-A3B UD-Q4_K_M at its emitted 41%-expert split; their independent measurement is 54-57 tok/s (+2% to +7.6% over - INSIDE the printed +/-25% band). The 9B Q6_K all-in-VRAM floor also held exactly as disclosed: 45.7 predicted as a floor, 71-76 measured (1.55-1.66x, inside the stated 'typically 1.1-1.8x above'). Blackwell-generation consumer card - a hardware class the laws were never fitted on.",
+   "question_to_answer": "Their two feedback items: (1) plan emits 16 resident expert layers where they ran 10 (--n-cpu-moe 30) - residual margin to test on their box; (2) unconditional --no-mmap on split placements is RISKY on RAM-tight boxes (their working set 20GB left 330 MiB free; non-evictable pages could OOM under desktop load) -> should the --no-mmap advice be gated on available-RAM headroom with the tradeoff printed? Registered as U-23.",
+   "priority": "high"
   }
  ]
 }
