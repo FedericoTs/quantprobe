@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 21 |
 | Open contradictions | 14 |
-| Untried levers | 19 |
+| Untried levers | 20 |
 | External work to study | 9 |
 
 ## Established laws
@@ -672,6 +672,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** attention-shaped ebw lands materially BELOW its format's headline number, and the gap explains why #79 over-promised exactly in proportion to attention share
 
 `confirmed` · `measured` · evidence: prereg #80 (shape sweep, tools/kernelprobe/shape.cu); prereg #79's per-arm damage vs attention share (r=0.87) · wired into: `candidate prereg; would make a corrected #79 retry possible alongside U-29`
+
+### U-31 — THE UNIFIED FORM IS IN REACH AND NEEDS NO NEW BENCHMARKS. Using EXACT per-tensor bytes and L-20's measured geometry curve alone - with NO fitted eta anywhere - the predicted bandwidth of the six all-in-VRAM arms correlates with what the machine actually achieved at r = 0.854. Geometry therefore explains the RANKING. What it does not explain is the LEVEL: the measured/predicted ratio spans 0.51-0.82 (1.6x, the same width as L-18's population spread), and that residual tracks the file's format price (r = 0.79 over the same six). Candidate unified law: bandwidth = FORMAT x ceiling(bytes-per-row) x f(rows-per-tensor), each factor measured rather than fitted, replacing the single eta constant that today absorbs all three.
+
+**Hypothesis:** fit ONE global machine constant on locked data with exact bytes + geometry + format as separate measured factors; the per-model eta disappears
+
+**Predicted effect (staked):** the byte/eta coupling that blocks U-29 dissolves, because eta stops being a free parameter that compensates for byte errors; L-20 and #79 become wireable
+
+`untested` · `measured` · evidence: geometry-vs-measured correlation on the state-locked ladder (r=0.854, n=6); format-vs-residual (r=0.79); weights/data/ladder_state_locked.json · wired into: `candidate prereg - the highest-leverage item on the board`
 
 ## External work to study
 
