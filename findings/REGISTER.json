@@ -218,6 +218,17 @@
    "evidence": "prereg #58 (E9 per-op attribution, reconciled 96.9%/99.1% against E6), prereg #48 (graphs null), prereg #50 (E6 baseline); prereg #59 (out-of-sample test: FAILED, kill rule honoured); prereg #64 REVISES the #59 DS-Lite attribution: at healthy clocks DS measures 23.08, inside its staked band - that miss was substantially the stuck-boost state. The L-17 kill stands on the 0.5B arm alone.",
    "scope": "one Pascal/WDDM box, batch 1; the floor constant is machine-specific, the LAW (floor x calls + format tax) should transfer",
    "wired_into": "quantprobe plan.py eta constants gain mechanistic justification; preregistrations/2026-07-28-split-eta-attribution.md"
+  },
+  {
+   "id": "L-18",
+   "kind": "law",
+   "status": "established",
+   "confidence": "measured",
+   "claim": "The all-in-VRAM efficiency spread is a PROPERTY OF THE POPULATION, not a Pascal artefact and not an architecture constant. On one basis (eta against file bytes / spec bandwidth), 61 public benchmarks across 8 GPU architectures span 0.512 (hopper) to 0.812 (rdna4), median 0.62 - a 1.6x spread - and our own Pascal box (0.509-0.577 measured) sits INSIDE that range, not below it. Consequence: no per-architecture constant can replace the one-sided floor; the variance is irreducible from public data and only a per-machine measurement (calibrate's anchors) collapses it. The 'typically 1.1-1.8x above the floor' disclosure is therefore externally validated, not a hedge.",
+   "magnitude": "1.6x population spread; Pascal inside it; floor + calibrate both justified by external data",
+   "evidence": "prereg #72 (killed as specified, scored before implementation); weights/data/public_bench_corpus.json (61 entries, weights/public_bench_audit.py); E-08 (RTX 5070 at eta_file 0.810, the population maximum)",
+   "scope": "dense Q4-class all-in-VRAM decode, spec-bandwidth basis; MoE-resident rows have a thinner corpus (0.31-0.50) and are NOT covered by this claim",
+   "wired_into": "plan.py fits_in_vram_advice floor language (evidence line); README/LAWS floor section"
   }
  ],
  "levers": [
@@ -963,12 +974,22 @@
   {
    "id": "U-23",
    "kind": "untried",
-   "status": "untested",
+   "status": "closed",
    "confidence": "observed",
-   "claim": "The split-placement emit carries --no-mmap unconditionally (it is worth +73% prefill with -ub via host-transfer batching, #19/#20), but E-08's box shows the cost side: at 20GB working set on 32GB RAM (330 MiB free), non-evictable pages are an OOM risk under desktop load. The advice needs a RAM-headroom gate like the >45% pinning warning: below a headroom threshold, keep mmap and print what is being traded (evictability vs the measured prefill gain).",
+   "claim": "The split-placement emit carries --no-mmap unconditionally (it is worth +73% prefill with -ub via host-transfer batching, #19/#20), but E-08's box shows the cost side: at 20GB working set on 32GB RAM (330 MiB free), non-evictable pages are an OOM risk under desktop load. The advice needs a RAM-headroom gate like the >45% pinning warning: below a headroom threshold, keep mmap and print what is being traded (evictability vs the measured prefill gain). [CLOSED-SHIPPED v1.23, PARTIALLY: --no-mmap is now gated on the placement's share of the usable RAM pool (>75% keeps mmap, same basis as the pinning warning - a second absolute reserve would repeat the #62 double-count), and the exception always prints why plus the +13.7% it costs. HONEST LIMIT: E-08's own case (71% share) does NOT trip the gate - their 330 MiB free came from OTHER processes plus the mapped file, which a share-of-model rule cannot see. Completing it means reading ACTUAL available memory at plan time (detect.py already shells for RAM size) -> U-24.]",
    "hypothesis": "gate --no-mmap on (model_ram_share + margin) vs available RAM; print the tradeoff both ways",
    "predicted_effect": "no more silent OOM-risk emits on RAM-tight boxes; RAM-roomy boxes keep the +73%",
-   "wired_into": "candidate next release; evidence: E-08 report"
+   "wired_into": "quantprobe/plan.py mmap_decision + moe_split_flags; t_u23_mmap_gate"
+  },
+  {
+   "id": "U-24",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "observed",
+   "claim": "The mmap/pinning gates reason about model share, not the machine's ACTUAL free memory, so they miss the case that motivated them (E-08: 20GB working set, 330 MiB free, because browser/OS/mapped-file usage is invisible to a share rule).",
+   "hypothesis": "read available (not total) RAM in detect.py and gate --no-mmap/-ot pinning on it",
+   "predicted_effect": "the gates fire on the machines that actually OOM, not on a proxy",
+   "wired_into": "candidate next release; evidence: E-08 + U-23's partial closure"
   }
  ],
  "external": [

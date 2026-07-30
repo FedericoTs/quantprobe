@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.23.0 - 2026-07-30
+
+**A feature we promised, tested, and did not ship - plus the finding that replaced it.**
+
+We told an external reporter (E-08, RTX 5070) that this release would turn the all-in-VRAM
+FLOOR into a point estimate, using the 61 public benchmarks we had collected. Pre-registration
+#72 staked that with their measurement as the holdout. **It failed its own gate and does not
+ship.** On one basis (efficiency = tok/s x file bytes / spec bandwidth) the public corpus spans
+0.512-0.812 across 8 GPU architectures - and our 2016 Pascal card measures 0.509-0.577, INSIDE
+that range. Their box sits at 0.810: the population maximum. Fitting a constant until their
+number landed in band would have been the exact failure C-02 taught us to refuse.
+
+- **L-18 (new law):** the all-in-VRAM spread is a property of the POPULATION, not of our old
+  GPU and not of any architecture. 1.6x wide, irreducible from public data, collapsed only by
+  measuring the specific machine. The floor advice now cites those 61 benchmarks as evidence
+  and points at `calibrate` as the concrete fix instead of apologising.
+- **U-23 (shipped, with its limit stated):** `--no-mmap` is no longer unconditional on expert
+  splits. Above 75% of the usable RAM pool the emit keeps mmap so pages stay evictable, and
+  says why - naming the +13.7% decode it is giving up. Honest limit, in the register: the gate
+  reasons about model share, so it does NOT catch the reporter's own case (their 330 MiB free
+  came from other processes and the mapped file). Reading actual available memory is U-24.
+- **The mark:** quantprobe has an icon - old-style pixel art, one 12x12 bitmap that generates
+  both the SVG and the terminal banner. Bare `quantprobe` now prints it (with plain-text
+  fallbacks for pipes, NO_COLOR, and legacy Windows consoles).
+- Register at 92 entries: E-08 (the first out-of-sample validation on hardware we do not own -
+  58.1 predicted vs 54-57 measured), E-09 (rabbit: disk-tier bandwidth-indifference), L-18,
+  U-23 closed, U-24 opened.
+
+
 ## 1.22.0 - 2026-07-30
 
 **The IQ ladder priced in, and the speculation map's first version qualifier.**

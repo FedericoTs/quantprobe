@@ -350,7 +350,32 @@ def effective_n_layer(args=None, model=None):
     return None
 
 
-def moe_split_flags(frac, n_layer):
+# U-23 (E-08, a 32 GB box whose 20 GB working set left 330 MiB free): --no-mmap buys measured
+# speed but makes the model's pages NON-EVICTABLE. On a RAM-tight box that is an OOM risk under
+# desktop load, and the reporter was right to override us. Keep mmap when the host share leaves
+# less than this much RAM free, and say which way the trade went either way.
+# Threshold on the SAME basis as the pinning warning above it (share of the post-reserve pool),
+# deliberately NOT a second absolute reserve - stacking one on `ra` would repeat the double-count
+# #62 removed. 0.75 keeps --no-mmap on every configuration this box has measured (the flagship
+# split holds ~58% of the pool and gained +13.7% from it) and drops it only where the placement
+# dominates RAM, which is E-08's regime.
+MMAP_HOST_SHARE_CAP = 0.75
+
+
+def mmap_decision(host_gb, ram_gb):
+    """(use_no_mmap, note). host_gb = how much this placement holds in RAM."""
+    if not ram_gb or (host_gb or 0) <= ram_gb * MMAP_HOST_SHARE_CAP:
+        return True, None
+    return False, (f"keeping mmap: this placement holds ~{host_gb:.0f}GB of your ~{ram_gb:.0f}GB "
+                   f"usable RAM ({host_gb / ram_gb:.0%}) - with --no-mmap those pages are NOT "
+                   f"evictable and the box can OOM under desktop load (U-23, reported by a user "
+                   f"whose 32GB machine was left with 330 MiB free). The trade: mmap gives up the "
+                   f"measured +13.7% decode that --no-mmap buys on this placement. Add it back "
+                   f"yourself if you can free the RAM - and check actual free memory, not just "
+                   f"the model size, since the mapped file counts too.")
+
+
+def moe_split_flags(frac, n_layer, host_gb=None, ram_gb=None):
     """-ot regex placing the FIRST ceil(frac*L) layers' experts on GPU, the rest on CPU.
     Measured 2026-07-26 (pre-registration #13, corrected): +12.4% decode and ~2-3x prefill
     on a 6 GB card, against a properly configured baseline.
@@ -360,9 +385,10 @@ def moe_split_flags(frac, n_layer):
     k = max(1, min(n_layer - 1, int(frac * n_layer)))
     # --no-mmap for the same reason the all-experts row carries it: llama.cpp itself warns that
     # tensor overrides to CPU with mmap enabled cost performance. Measured 2026-07-26 on this
-    # split placement: 16.45 tok/s with mmap vs 18.70 without (+13.7%).
-    return ('-ngl 99 -ot "blk\\.(%s)\\.ffn_.*_exps\\.=CPU" --no-mmap'
-            % "|".join(str(i) for i in range(k, n_layer)))
+    # split placement: 16.45 tok/s with mmap vs 18.70 without (+13.7%). Gated by U-23 above.
+    use_nm = True if host_gb is None or ram_gb is None else mmap_decision(host_gb, ram_gb)[0]
+    return ('-ngl 99 -ot "blk\\.(%s)\\.ffn_.*_exps\\.=CPU"%s'
+            % ("|".join(str(i) for i in range(k, n_layer)), " --no-mmap" if use_nm else ""))
 
 
 def fits_in_vram_advice(placement, bits):
@@ -399,7 +425,12 @@ def fits_in_vram_advice(placement, bits):
             "explanations refuted). What we can state is one-sided and has no exceptions: in 13 of "
             "13 benchmarks real speed was >= 0.90x this number, and in 12 of 13 it was HIGHER, "
             "typically 1.1x-1.8x. Read it as a floor, not a ceiling - a single measurement below "
-            "0.90x would falsify this and we ask for exactly that measurement below.")
+            "0.90x would falsify this and we ask for exactly that measurement below. "
+            "The spread is NOT our old GPU: 61 public benchmarks across 8 architectures "
+            "(hopper/ada/blackwell/ampere/apple/rdna3/rdna4/intel-xe) span efficiency "
+            "0.51-0.81 on one basis - a 1.6x spread that our own card sits INSIDE - so no "
+            "per-architecture constant can replace this floor (prereg #72, L-18). Only a "
+            "measurement of YOUR box collapses it: `quantprobe calibrate` does that in ~5 min.")
     if bits < 4.5:
         note += (" It also already fits, and going lower-bit buys almost nothing: the same 7B at "
                  "Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER (19.17 vs 20.03 tok/s). Quantize "
@@ -660,7 +691,7 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
             if f > 0.05 and ram_left <= ra:
                 t_split = (act_ne / (geta * vb) + f * act_ex / (geta * vb)
                            + (1 - f) * act_ex / (eta_r * rb) + kv_gb / (ETA_KV * vb))
-                fl = moe_split_flags(f, n_layer)
+                fl = moe_split_flags(f, n_layer, host_gb=ram_left, ram_gb=ra)
                 # Only offer it if we can emit the EXACT command. Advertising a speed the
                 # printed flags cannot deliver is the v1.6.5 bug class; without a layer count
                 # the row is suppressed and the footer tells the user how to unlock it.
@@ -668,6 +699,9 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                     pin_warn = ((f"pins {ram_left:.0f}GB of {ra:.0f}GB RAM (CUDA host memory) - "
                                  "fails under memory pressure; if it does, drop -ot and let "
                                  "auto-placement decide") if ram_left > ra * 0.45 else None)
+                    mm_note = mmap_decision(ram_left, ra)[1]
+                    if mm_note:
+                        pin_warn = f"{pin_warn}; {mm_note}" if pin_warn else mm_note
                     out.append((f"split experts: {f:.0%}->VRAM, rest->RAM", 1 / t_split, pin_warn, fl))
     if (not moe) and vc > 0 and size + kv_gb > vc * 0.90 and size + kv_gb <= ra + vc * 0.9:
         # C-11 (prereg #66): the old budget handed the model vc*0.9 outright - no desktop
