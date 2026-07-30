@@ -1137,13 +1137,16 @@ def t_invariant_cpu_override_implies_no_mmap():
 def t_u23_mmap_gate():
     # U-23 (E-08): --no-mmap only while the placement leaves the RAM pool room; the exception
     # must carry its explanation and the measured cost of taking it.
+    # v1.23's remedy (dropping --no-mmap when RAM-tight) was REFUTED by the full ladder: it cost
+    # 2.9x (22.20 -> 7.70), because near the RAM boundary mmap thrashes. --no-mmap now ALWAYS
+    # ships; the tight case gets both measured numbers and the user chooses.
     from quantprobe.plan import mmap_decision, moe_split_flags, MMAP_HOST_SHARE_CAP
-    assert mmap_decision(7, 12)[0] is True, "58% of the pool must keep the measured --no-mmap"
+    assert mmap_decision(7, 12) == (True, None), "roomy: keep the flag, say nothing"
     ok, note = mmap_decision(11, 12)
-    assert ok is False and "keeping mmap" in note and "13.7%" in note, "tight case must explain the trade"
-    assert "--no-mmap" in moe_split_flags(0.3, 48, 7, 12)
-    assert "--no-mmap" not in moe_split_flags(0.3, 48, 11, 12)
-    assert "--no-mmap" in moe_split_flags(0.3, 48), "unknown RAM keeps the measured default"
+    assert ok is True, "the flag must never be dropped again - it measured 2.9x"
+    assert note and "2.9x SLOWER" in note and "OOM" in note, "tight case must give BOTH sides"
+    for args in ((0.3, 48, 7, 12), (0.3, 48, 11, 12), (0.3, 48)):
+        assert "--no-mmap" in moe_split_flags(*args), f"flag dropped for {args}"
     assert 0.5 < MMAP_HOST_SHARE_CAP < 1.0
 
 def t_invariant_flags_are_valid_argv():

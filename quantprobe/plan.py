@@ -363,16 +363,26 @@ MMAP_HOST_SHARE_CAP = 0.75
 
 
 def mmap_decision(host_gb, ram_gb):
-    """(use_no_mmap, note). host_gb = how much this placement holds in RAM."""
+    """(use_no_mmap, note). host_gb = how much this placement holds in RAM.
+
+    U-23 v1 (v1.23) DROPPED --no-mmap on RAM-tight placements to keep pages evictable. The full
+    ladder measured what that costs and the remedy was REFUTED on its own box: the flagship split
+    ran 22.20 tok/s with --no-mmap and 7.70 without it - a 2.9x collapse, not the +13.7% the note
+    promised. The mechanism is exactly the RAM-tightness the gate was reacting to: near the RAM
+    boundary the OS pages the mapped file in and out every token. So the honest answer is not to
+    pick for the user - it is to give them both measured numbers and default to the fast one.
+    """
     if not ram_gb or (host_gb or 0) <= ram_gb * MMAP_HOST_SHARE_CAP:
         return True, None
-    return False, (f"keeping mmap: this placement holds ~{host_gb:.0f}GB of your ~{ram_gb:.0f}GB "
-                   f"usable RAM ({host_gb / ram_gb:.0%}) - with --no-mmap those pages are NOT "
-                   f"evictable and the box can OOM under desktop load (U-23, reported by a user "
-                   f"whose 32GB machine was left with 330 MiB free). The trade: mmap gives up the "
-                   f"measured +13.7% decode that --no-mmap buys on this placement. Add it back "
-                   f"yourself if you can free the RAM - and check actual free memory, not just "
-                   f"the model size, since the mapped file counts too.")
+    return True, (f"RAM-TIGHT TRADE-OFF, both sides measured: this placement holds ~{host_gb:.0f}GB "
+                  f"of your ~{ram_gb:.0f}GB usable RAM ({host_gb / ram_gb:.0%}). We keep "
+                  f"--no-mmap because dropping it measured **2.9x SLOWER** here (22.20 -> 7.70 "
+                  f"tok/s: near the RAM boundary the OS pages the mapped file in and out every "
+                  f"token). The risk you accept: --no-mmap pages are NOT evictable, so under "
+                  f"desktop memory pressure the process can OOM instead of slowing down (U-23, "
+                  f"reported by a user whose 32GB box was left with 330 MiB free). If your box "
+                  f"OOMs, remove --no-mmap and expect roughly a third of the speed, or offload "
+                  f"fewer layers so less sits in RAM.")
 
 
 def moe_split_flags(frac, n_layer, host_gb=None, ram_gb=None):
