@@ -1461,7 +1461,7 @@ def t_l19_depth_scope_warning():
     # the validated placements (all-in-VRAM, MoE splits) must stay silent at every depth.
     from quantprobe.plan import depth_scope_warning
     w = depth_scope_warning("split: 20/28 layers->VRAM, rest->RAM", False, 16384)
-    assert w and "OPTIMISTIC CEILING" in w and "prereg #73" in w
+    assert w and "1.55 us/position/layer" in w and "#73/#74" in w   # the term, not the refusal
     assert depth_scope_warning("split: 20/28 layers->VRAM, rest->RAM", False, 0) is None
     assert depth_scope_warning("split experts: 15%->VRAM, rest->RAM", True, 32768) is None
     assert depth_scope_warning("all in VRAM", False, 32768) is None

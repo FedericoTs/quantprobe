@@ -1,0 +1,2 @@
+=== #75: pure CPU 7B d16384. STAKED 1.1 (band 0.83-1.38); must also be < 3.44 (the split) ===
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |   0 |   tg32 @ d16384 |          1.38 ± 0.02 |

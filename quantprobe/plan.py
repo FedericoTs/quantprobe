@@ -391,6 +391,14 @@ def moe_split_flags(frac, n_layer, host_gb=None, ram_gb=None):
             % ("|".join(str(i) for i in range(k, n_layer)), " --no-mmap" if use_nm else ""))
 
 
+# L-19, validated out-of-sample by prereg #74. Seconds per KV position per CPU-RESIDENT layer
+# per token: CPU attention over the whole cache. Measured 1.43 (7B, 8 layers, d16k), 1.42 (7B,
+# 11, d32k), 1.76 (14B, 30, d8k) us; this is their MEAN, not the value that flatters one arm.
+# Scales with THIS box's 4 threads - a wider CPU pays less, which is why the note below still
+# says the number is soft even though it is now priced.
+CPU_ATTN_S_PER_POS_LAYER = 1.55e-6
+
+
 def depth_scope_warning(placement, moe, ctx):
     """L-19 (prereg #73): the context term is a BANDWIDTH model, true only where attention runs
     on the GPU. Measured to 32k: all-in-VRAM exact (-0.9% at d4096), MoE expert-splits in band at
@@ -400,15 +408,16 @@ def depth_scope_warning(placement, moe, ctx):
     not a byte read. Rather than print a number we cannot stand behind, say so."""
     if ctx <= 4096 or moe or "layers->VRAM" not in (placement or ""):
         return None
-    return (f"DEPTH SCOPE (prereg #73, L-19): this is a DENSE split at {ctx} context, the one "
-            f"regime where our context term is REFUTED - the CPU-resident layers must run "
-            f"attention over the whole KV cache every token, which is compute on your threads, "
-            f"not a byte read that our model prices. Measured on this box: the same class of "
-            f"config ran 3.4 tok/s where the term predicted 9.7 (d16k) and 1.5 vs 7.4 (d32k). "
-            f"Treat the number above as an OPTIMISTIC CEILING, not a prediction. What works "
-            f"instead: keep attention on the GPU - fewer layers offloaded (raise -ngl until it "
-            f"fits with your KV), quantized KV (-ctk q8_0 -ctv q8_0, measured +37% at depth), or "
-            f"a MoE model, whose splits ARE validated to 32k here.")
+    return (f"DEPTH NOTE (preregs #73/#74, L-19): this is a DENSE split at {ctx} context, where "
+            f"the CPU-resident layers run attention over the whole KV cache every token - compute "
+            f"on your threads, not a byte read. The number above INCLUDES that cost "
+            f"(1.55 us/position/layer, measured across 8-30 CPU layers and 8k-32k depth, "
+            f"validated out-of-sample); without it we over-promised this regime by 2-5x. Two "
+            f"caveats: the constant is from ONE 4-thread CPU (a wider CPU pays less, so this "
+            f"reads pessimistic there), and the honest fix is to avoid the regime - raise -ngl "
+            f"until attention fits in VRAM, quantize the KV cache (-ctk q8_0 -ctv q8_0, +37% at "
+            f"depth measured), or use a MoE model, whose splits keep attention on the GPU and "
+            f"are validated to 32k here.")
 
 
 def fits_in_vram_advice(placement, bits):
@@ -747,12 +756,24 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         gpu_layers = int(g * n_layer) if n_layer else 0
         if 0 < gpu_layers < n_layer:
             kv_t = g * kv_gb / (ETA_KV * vb) + (1 - g) * kv_gb / (ETA_KV * rb)
+            # L-19 / prereg #74: the CPU-resident layers of a DENSE split run attention over the
+            # whole KV cache every token. That is compute on this machine's threads, not the byte
+            # read the kv_t term above prices - and it dominates at depth. Validated out-of-sample
+            # (14B, 30 CPU layers, d8192: staked 1.53 against the un-termed 3.30, measured 1.36).
+            cpu_attn_t = (n_layer - gpu_layers) * ctx * CPU_ATTN_S_PER_POS_LAYER
             out.append((f"split: {gpu_layers}/{n_layer} layers->VRAM, rest->RAM",
-                        1 / (g * act / (geta_w * vb) + (1 - g) * act / (eta_r * rb) + kv_t), None,
+                        1 / (g * act / (geta_w * vb) + (1 - g) * act / (eta_r * rb) + kv_t
+                             + cpu_attn_t), None,
                         f"-ngl {gpu_layers}"))
     if size + kv_gb <= ra:
         warn = "RAM boundary - expect bimodal speed" if size + kv_gb > ra * 0.85 else None
-        out.append(("pure CPU (GPU idle)", 1 / (act / (eta_r * rb) + kv_gb / (ETA_KV * rb)), warn, "-ngl 0"))
+        # L-19 applies here MORE than to a split: every layer's attention runs on the CPU, so
+        # this row pays the term over ALL layers. Leaving it un-termed while the split carries it
+        # would rank pure CPU above a config with strictly fewer CPU layers - a ranking inversion
+        # rather than a prediction. (Its own out-of-sample check: prereg #75.)
+        cpu_attn_all = (n_layer or 32) * ctx * CPU_ATTN_S_PER_POS_LAYER
+        out.append(("pure CPU (GPU idle)",
+                    1 / (act / (eta_r * rb) + kv_gb / (ETA_KV * rb) + cpu_attn_all), warn, "-ngl 0"))
     if size + kv_gb > ra:
         ra_eff = max(ra - kv_gb, 1)                        # KV crowds the expert cache
         miss = max(0.0, 1 - (ra_eff * 0.9) / size)

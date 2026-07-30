@@ -23,3 +23,20 @@ number. If P-2 fails (pure CPU genuinely beats the split at depth), the inversio
 physics and BOTH the extension and #74's term need re-derivation on this regime.
 
 **Wired into:** pending; `plan.evaluate` pure-CPU row.
+
+---
+
+## SCORED — 2026-07-30, same session
+
+Raw log: `weights/data/prereg75_pure_cpu_depth.log`. Measured **1.38 ± 0.02 tok/s**.
+
+- **P-1 HIT, at the band edge.** Staked 1.1 (band 0.83–1.38); measured 1.38 — the top boundary
+  exactly. In band and in the under-promise direction, but the narrowest pass of the program;
+  recorded as such rather than as a comfortable hit.
+- **P-2 HIT.** 1.38 (pure CPU) < 3.44 (the same model's dense split at the same depth): the
+  ranking inversion the extension existed to fix is gone.
+- **The constant is lower here:** implied **1.10 µs/pos/layer** against the shipped 1.55, i.e.
+  the term runs ~40% pessimistic on pure CPU. Plausible mechanism (unmeasured, stated as a
+  hypothesis): with no GPU in the loop there is no per-layer hand-off interleaving and the
+  threads keep their cache. One constant across four arms spanning 1.10–1.76 µs is a real
+  spread — the term is a first-order correction, not a precision instrument, and the code says so.

@@ -235,9 +235,9 @@
    "kind": "law",
    "status": "established",
    "confidence": "measured",
-   "claim": "Law 4 v2's context term is a BANDWIDTH model, and that is only true where attention runs on the GPU. Measured at 4k/16k/32k (prereg #73): all-in-VRAM is exact (-0.9% at d4096) and MoE expert-splits stay in band at every depth to 32k (-10% to -23%) because a MoE split keeps attention and KV in VRAM and offloads only expert FFNs. DENSE splits, which put whole layers including attention on the CPU, break: +182% over at d16384 and +381% at d32768. The missing cost is CPU-side attention over the whole KV cache each token - compute on N threads, not a byte read - and it is measured at 1.43 us/position/layer at d16k and 1.42 at d32k (two depths, 1% apart) on this box's 4 threads.",
+   "claim": "Law 4 v2's context term is a BANDWIDTH model, and that is only true where attention runs on the GPU. Measured at 4k/16k/32k (prereg #73): all-in-VRAM is exact (-0.9% at d4096) and MoE expert-splits stay in band at every depth to 32k (-10% to -23%) because a MoE split keeps attention and KV in VRAM and offloads only expert FFNs. DENSE splits, which put whole layers including attention on the CPU, break: +182% over at d16384 and +381% at d32768. The missing cost is CPU-side attention over the whole KV cache each token - compute on N threads, not a byte read - and it is measured at 1.43 us/position/layer at d16k and 1.42 at d32k (two depths, 1% apart) on this box's 4 threads. [TERM VALIDATED OUT-OF-SAMPLE, prereg #74: k = 1.43 (7B/8L/d16k) / 1.42 (7B/11L/d32k) / 1.76 (14B/30L/d8k) us per position per CPU layer - one constant across two models, 8-30 CPU layers, 8k-32k depth. Shipped as the mean 1.55e-6; the dense-split-at-depth regime now carries a priced prediction instead of a refusal.] [EXTENDED to pure CPU, prereg #75: staked 1.1 and measured 1.38 (band edge, under-promise), and the ranking inversion is fixed (pure CPU 1.38 < dense split 3.44 at the same depth). Implied k there is 1.10 us - LOWER than the split arms (no GPU hand-off, threads keep their cache), so the shipped 1.55 mean runs ~40% pessimistic on pure CPU. Four arms now span k = 1.10-1.76 us: a first-order correction, not a precision instrument.]",
    "magnitude": "context term validated to 32k for GPU-attention placements; refuted for dense CPU splits (1.4 us/pos/layer)",
-   "evidence": "prereg #73 (weights/data/prereg73_kv_depth.log); re-explains prereg #66's -58% dense-split-at-16k arm as this class",
+   "evidence": "prereg #73 (weights/data/prereg73_kv_depth.log); re-explains prereg #66's -58% dense-split-at-16k arm as this class; prereg #74 (out-of-sample holdout, weights/data/prereg74_cpu_attention.log); prereg #75 (pure-CPU limiting case, first ever measured in this project)",
    "scope": "this box (4 threads, PCIe3, Pascal); the constant is thread-count and CPU dependent, the SHAPE (linear in depth x CPU layers) is the claim",
    "wired_into": "quantprobe/plan.py depth_scope_warning; LAWS.md Law 4 v2 scope"
   }
@@ -1005,12 +1005,12 @@
   {
    "id": "U-25",
    "kind": "untried",
-   "status": "untested",
+   "status": "closed",
    "confidence": "measured",
-   "claim": "The dense-split-at-depth miss has a measured constant: CPU attention costs ~1.43 us per position per layer per token (d16k 23.5 ms/layer, d32k 46.7 ms/layer, 1% apart). Adding t += n_cpu_layers * depth * 1.43e-6 to dense splits should close a +182%/+381% error to single digits - but the constant was derived FROM those two failing arms, so shipping it now would be fitting on failures.",
+   "claim": "The dense-split-at-depth miss has a measured constant: CPU attention costs ~1.43 us per position per layer per token (d16k 23.5 ms/layer, d32k 46.7 ms/layer, 1% apart). Adding t += n_cpu_layers * depth * 1.43e-6 to dense splits should close a +182%/+381% error to single digits - but the constant was derived FROM those two failing arms, so shipping it now would be fitting on failures. [CLOSED-SHIPPED v1.24 after OUT-OF-SAMPLE validation (prereg #74): the 14B at d8192 with 30 CPU layers - different model, different depth, 3x the CPU layers of the fitting arms - was staked at 1.53 tok/s against the tool's 3.30 and measured 1.36 (in band, error cut 11x). Implied k 1.76 us vs the fitted 1.43 (+23%, inside the staked +/-30%). Shipped as the 3-arm mean 1.55e-6 s/pos/layer.]",
    "hypothesis": "t_cpu_attn = n_cpu_layers x ctx x k, k ~ 1.43e-6 s on 4 threads (scale by thread count)",
    "predicted_effect": "dense splits at depth move inside band; GPU-attention placements untouched (k applies only to CPU-resident attention layers)",
-   "wired_into": "prereg #74 - out-of-sample validation on a DIFFERENT model before it ships"
+   "wired_into": "quantprobe/plan.py CPU_ATTN_S_PER_POS_LAYER in evaluate(); t_u25_cpu_attention_term"
   }
  ],
  "external": [

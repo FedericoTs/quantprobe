@@ -42,3 +42,24 @@ law and gets its own prereg rather than a fudge factor.
 
 **Wired into:** pending; `plan.evaluate` dense-split branch + `depth_scope_warning` (which the
 term would REPLACE for this regime if it survives).
+
+---
+
+## SCORED — 2026-07-30, same session
+
+Raw log: `weights/data/prereg74_cpu_attention.log`. Measured **1.36 ± 0.04 tok/s** (tg64 @ d8192,
+`-ngl 18`, clocks healthy).
+
+- **P-1 HIT.** Staked 1.53, band 1.15–1.91, measured **1.36** (+12.5% over). The term predicted a
+  machine 2.4× slower than the shipped tool said, and the machine was.
+- **P-2 HIT, overwhelmingly.** Corrected error 0.17 tok/s vs uncorrected 1.94 tok/s — the term
+  cuts the error by **11×** on this arm.
+- **P-3 HIT.** Implied constant **1.76 µs/pos/layer** vs the fitted 1.43 (+23%, inside ±30%).
+  Across every arm now measured: 7B/8 CPU layers/d16k **1.43** · 7B/11/d32k **1.42** ·
+  14B/30/d8k **1.76**. One constant, two models, 8→30 CPU layers, 8k→32k depth.
+
+**Shipped:** `CPU_ATTN_S_PER_POS_LAYER = 1.55e-6` (the mean of the three measured arms, stated as
+a mean rather than the value that flatters any single one), applied to dense-split arms only,
+replacing the v1.23 scope warning for that regime with a number the evidence supports. The
+warning's honest-uncertainty text is retained in shortened form because a three-point constant on
+one CPU is still a three-point constant on one CPU. U-25 closes; **L-19 gains its term**.
