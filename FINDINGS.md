@@ -8,11 +8,11 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 18 |
+| Established laws | 19 |
 | Shipped levers | 19 |
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
-| Untried levers | 13 |
+| Untried levers | 14 |
 | External work to study | 9 |
 
 ## Established laws
@@ -126,6 +126,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** 1.6x population spread; Pascal inside it; floor + calibrate both justified by external data
 
 `established` · `measured` · scope: dense Q4-class all-in-VRAM decode, spec-bandwidth basis; MoE-resident rows have a thinner corpus (0.31-0.50) and are NOT covered by this claim · evidence: prereg #72 (killed as specified, scored before implementation); weights/data/public_bench_corpus.json (61 entries, weights/public_bench_audit.py); E-08 (RTX 5070 at eta_file 0.810, the population maximum) · wired into: `plan.py fits_in_vram_advice floor language (evidence line); README/LAWS floor section`
+
+### L-19 — Law 4 v2's context term is a BANDWIDTH model, and that is only true where attention runs on the GPU. Measured at 4k/16k/32k (prereg #73): all-in-VRAM is exact (-0.9% at d4096) and MoE expert-splits stay in band at every depth to 32k (-10% to -23%) because a MoE split keeps attention and KV in VRAM and offloads only expert FFNs. DENSE splits, which put whole layers including attention on the CPU, break: +182% over at d16384 and +381% at d32768. The missing cost is CPU-side attention over the whole KV cache each token - compute on N threads, not a byte read - and it is measured at 1.43 us/position/layer at d16k and 1.42 at d32k (two depths, 1% apart) on this box's 4 threads.
+
+**Magnitude:** context term validated to 32k for GPU-attention placements; refuted for dense CPU splits (1.4 us/pos/layer)
+
+`established` · `measured` · scope: this box (4 threads, PCIe3, Pascal); the constant is thread-count and CPU dependent, the SHAPE (linear in depth x CPU layers) is the claim · evidence: prereg #73 (weights/data/prereg73_kv_depth.log); re-explains prereg #66's -58% dense-split-at-16k arm as this class · wired into: `quantprobe/plan.py depth_scope_warning; LAWS.md Law 4 v2 scope`
 
 ## Shipped levers
 
@@ -588,6 +594,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** the gates fire on the machines that actually OOM, not on a proxy
 
 `untested` · `observed` · wired into: `candidate next release; evidence: E-08 + U-23's partial closure`
+
+### U-25 — The dense-split-at-depth miss has a measured constant: CPU attention costs ~1.43 us per position per layer per token (d16k 23.5 ms/layer, d32k 46.7 ms/layer, 1% apart). Adding t += n_cpu_layers * depth * 1.43e-6 to dense splits should close a +182%/+381% error to single digits - but the constant was derived FROM those two failing arms, so shipping it now would be fitting on failures.
+
+**Hypothesis:** t_cpu_attn = n_cpu_layers x ctx x k, k ~ 1.43e-6 s on 4 threads (scale by thread count)
+
+**Predicted effect (staked):** dense splits at depth move inside band; GPU-attention placements untouched (k applies only to CPU-resident attention layers)
+
+`untested` · `measured` · wired into: `prereg #74 - out-of-sample validation on a DIFFERENT model before it ships`
 
 ## External work to study
 

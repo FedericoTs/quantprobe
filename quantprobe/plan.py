@@ -391,6 +391,26 @@ def moe_split_flags(frac, n_layer, host_gb=None, ram_gb=None):
             % ("|".join(str(i) for i in range(k, n_layer)), " --no-mmap" if use_nm else ""))
 
 
+def depth_scope_warning(placement, moe, ctx):
+    """L-19 (prereg #73): the context term is a BANDWIDTH model, true only where attention runs
+    on the GPU. Measured to 32k: all-in-VRAM exact (-0.9% at d4096), MoE expert-splits in band at
+    every depth (-10%..-23% - a MoE split keeps attention and KV in VRAM, only expert FFNs go to
+    CPU). DENSE splits put whole layers INCLUDING attention on the CPU and break: +182% over at
+    d16384, +381% at d32768, because CPU attention over the whole cache is compute on N threads,
+    not a byte read. Rather than print a number we cannot stand behind, say so."""
+    if ctx <= 4096 or moe or "layers->VRAM" not in (placement or ""):
+        return None
+    return (f"DEPTH SCOPE (prereg #73, L-19): this is a DENSE split at {ctx} context, the one "
+            f"regime where our context term is REFUTED - the CPU-resident layers must run "
+            f"attention over the whole KV cache every token, which is compute on your threads, "
+            f"not a byte read that our model prices. Measured on this box: the same class of "
+            f"config ran 3.4 tok/s where the term predicted 9.7 (d16k) and 1.5 vs 7.4 (d32k). "
+            f"Treat the number above as an OPTIMISTIC CEILING, not a prediction. What works "
+            f"instead: keep attention on the GPU - fewer layers offloaded (raise -ngl until it "
+            f"fits with your KV), quantized KV (-ctk q8_0 -ctv q8_0, measured +37% at depth), or "
+            f"a MoE model, whose splits ARE validated to 32k here.")
+
+
 def fits_in_vram_advice(placement, bits):
     """What we know, and admit we don't know, about the all-in-VRAM row.
 
@@ -1069,6 +1089,9 @@ def run(args):
               f"(18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe "
               f"once per batch instead of once per token. Do NOT set it when a model is fully in "
               f"VRAM - measured there, the same flag LOSES 39%.")
+    dsw = depth_scope_warning(best[0], moe, ctx)
+    if dsw:
+        print(f"\n  {dsw}")
     fit_adv = fits_in_vram_advice(best[0], args.bits)
     if fit_adv:
         print(f"\n  note: {fit_adv}")

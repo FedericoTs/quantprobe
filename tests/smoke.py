@@ -1456,6 +1456,17 @@ def t_prereg70_iq_format_ladder():
         "IQ4_NL is Q4_0-class, not codebook-class"
 
 
+def t_l19_depth_scope_warning():
+    # prereg #73 / L-19: dense splits at depth are the one refuted regime and must say so;
+    # the validated placements (all-in-VRAM, MoE splits) must stay silent at every depth.
+    from quantprobe.plan import depth_scope_warning
+    w = depth_scope_warning("split: 20/28 layers->VRAM, rest->RAM", False, 16384)
+    assert w and "OPTIMISTIC CEILING" in w and "prereg #73" in w
+    assert depth_scope_warning("split: 20/28 layers->VRAM, rest->RAM", False, 0) is None
+    assert depth_scope_warning("split experts: 15%->VRAM, rest->RAM", True, 32768) is None
+    assert depth_scope_warning("all in VRAM", False, 32768) is None
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__

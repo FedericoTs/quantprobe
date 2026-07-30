@@ -53,3 +53,43 @@ reopens with the failing config named. Misses publish at the same prominence as 
 
 **Wired into:** pending; Law 4 v2's scope line, `plan --ctx` behaviour, and the C-11 closure
 either way.
+
+---
+
+## SCORED — 2026-07-30, same session
+
+Raw log: `weights/data/prereg73_kv_depth.log`. Clocks 139 MHz idle → 1847 MHz loaded (healthy).
+
+| arm | depth | predicted | measured | error |
+|---|---|---|---|---|
+| 7B dense, all-in-VRAM | 0 | 19.4 (floor) | **22.89** | 1.18× above the floor ✓ |
+| 7B dense, all-in-VRAM | 4096 | 18.8 | **18.98** | **−0.9%** ✓ |
+| 7B **dense split** 20/28 | 16384 | 9.7 | **3.44** | **+182% over** ✗ |
+| 7B **dense split** 17/28 | 32768 | 7.4 | **1.54** | **+381% over** ✗ |
+| 30B MoE split 31% | 0 | 17.0 | **21.45** | −20.7% (in band) ✓ |
+| 30B MoE split 15% | 16384 | 12.3 | **15.95** | −22.9% (in band) ✓ |
+| 30B MoE hybrid | 32768 | 9.6 | **10.70** ± 2.52 | −10.3% (in band) ✓ |
+
+- **P-1 SPLIT BY PLACEMENT CLASS.** Every arm that keeps attention on the GPU (all-in-VRAM, MoE
+  expert-split, MoE hybrid) lands in band at every depth — including 32k, twice our previously
+  validated ceiling. Every arm that puts whole dense layers (attention included) on the CPU
+  misses catastrophically.
+- **P-2 MISS for dense splits, HIT for MoE.** Predicted decay vs measured: 7B dense ×0.381
+  predicted against ×0.067 measured (ratio 0.18 — far outside ±30%); 30B MoE ×0.565 against
+  ×0.499 (ratio 0.88 — inside). **The kill rule fires for dense splits only.**
+- **P-3 HIT.** Every emitted config loaded and ran; C-11's fit math is sound. The defect is
+  physics, not fit — which also re-explains #66's −58% at 16k as this same class, not a
+  budgeting bug.
+- **THE MECHANISM, and it is quantitative.** The unexplained time per CPU-resident layer:
+  **23.5 ms at d16384 and 46.7 ms at d32768 — 1.43 and 1.42 µs per position per layer.** Two
+  independent depths agreeing to 1%: CPU-side attention reads and multiplies the whole KV cache
+  every token, which is COMPUTE on 4 threads, not the bandwidth read our KV term prices. A
+  GPU-resident attention block does the same work with ~100× the parallelism, which is why the
+  same term is exact (−0.9%) on the all-in-VRAM arm.
+
+**Actions taken:** the kill rule's scope line ships now (dense splits at depth print the
+warning instead of a number we cannot stand behind). The measured constant is NOT shipped as a
+term in this prereg — it was derived from the two arms that failed here, and fitting on failures
+is the thing this project refuses. It becomes **prereg #74**, tested out-of-sample on a different
+model before any prediction depends on it. Register: **L-19** (the law's scope, measured),
+**U-25** (the term, staked separately).
