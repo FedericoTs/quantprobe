@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" font-family="Segoe UI,system-ui,sans-serif">
+<rect width="720" height="380" fill="#ffffff"/>
+<text x="58" y="30" font-size="16" font-weight="650" fill="#16181d">L-20: decode bandwidth is set by tensor GEOMETRY, not format alone</text>
+<text x="58" y="49" font-size="12" fill="#5c6066">same card, same 4.5-bit format, same kernel, same bytes swept - only the shape changes (preregs #80/#81)</text>
+<text x="14" y="190.0" font-size="11" fill="#5c6066" transform="rotate(-90 14 190.0)" text-anchor="middle">effective GB/s</text>
+<text x="360.0" y="372" font-size="11" fill="#5c6066" text-anchor="middle">rows per tensor (log2)</text>
+<line x1="80" y1="334" x2="570" y2="334" stroke="#d8d7d2"/>
+<line x1="80" y1="70" x2="80" y2="334" stroke="#d8d7d2"/>
+<line x1="80" y1="80.29600000000002" x2="570" y2="80.29600000000002" stroke="#5c6066" stroke-dasharray="4 4"/><text x="576" y="84.29600000000002" font-size="10" fill="#5c6066">spec peak 192</text>
+<path d="M80.0,269.1 L150.0,245.2 L220.0,212.2 L290.0,186.7 L360.0,173.8 L430.0,164.1 L500.0,160.3 L570.0,151.2" fill="none" stroke="#b45309" stroke-width="2.5"/>
+<circle cx="80.0" cy="269.1" r="3.5" fill="#b45309"/>
+<circle cx="150.0" cy="245.2" r="3.5" fill="#b45309"/>
+<circle cx="220.0" cy="212.2" r="3.5" fill="#b45309"/>
+<circle cx="290.0" cy="186.7" r="3.5" fill="#b45309"/>
+<circle cx="360.0" cy="173.8" r="3.5" fill="#b45309"/>
+<circle cx="430.0" cy="164.1" r="3.5" fill="#b45309"/>
+<circle cx="500.0" cy="160.3" r="3.5" fill="#b45309"/>
+<circle cx="570.0" cy="151.2" r="3.5" fill="#b45309"/>
+<text x="578.0" y="155.18" font-size="11" fill="#b45309">K=4096 (2304 B/row)</text>
+<path d="M80.0,294.1 L150.0,274.1 L220.0,253.3 L290.0,233.0 L360.0,217.3 L430.0,209.7 L500.0,206.1 L570.0,203.7" fill="none" stroke="#0f766e" stroke-width="2.5"/>
+<circle cx="80.0" cy="294.1" r="3.5" fill="#0f766e"/>
+<circle cx="150.0" cy="274.1" r="3.5" fill="#0f766e"/>
+<circle cx="220.0" cy="253.3" r="3.5" fill="#0f766e"/>
+<circle cx="290.0" cy="233.0" r="3.5" fill="#0f766e"/>
+<circle cx="360.0" cy="217.3" r="3.5" fill="#0f766e"/>
+<circle cx="430.0" cy="209.7" r="3.5" fill="#0f766e"/>
+<circle cx="500.0" cy="206.1" r="3.5" fill="#0f766e"/>
+<circle cx="570.0" cy="203.7" r="3.5" fill="#0f766e"/>
+<text x="578.0" y="207.716" font-size="11" fill="#0f766e">K=2048 (1152 B/row)</text>
+<text x="80.0" y="349" font-size="10" fill="#5c6066" text-anchor="middle">128</text>
+<text x="220.0" y="349" font-size="10" fill="#5c6066" text-anchor="middle">512</text>
+<text x="360.0" y="349" font-size="10" fill="#5c6066" text-anchor="middle">2048</text>
+<text x="500.0" y="349" font-size="10" fill="#5c6066" text-anchor="middle">8192</text>
+<text x="570.0" y="349" font-size="10" fill="#5c6066" text-anchor="middle">16384</text>
+<text x="72" y="338.0" font-size="10" fill="#5c6066" text-anchor="end">0</text>
+<text x="72" y="272.0" font-size="10" fill="#5c6066" text-anchor="end">50</text>
+<text x="72" y="206.0" font-size="10" fill="#5c6066" text-anchor="end">100</text>
+<text x="72" y="140.0" font-size="10" fill="#5c6066" text-anchor="end">150</text>
+<line x1="430.0" y1="70" x2="430.0" y2="334" stroke="#15803d" stroke-dasharray="3 3"/>
+<text x="436.0" y="84" font-size="10" fill="#15803d">knee ~4096 rows - SAME for both widths</text>
+<text x="436.0" y="98" font-size="10" fill="#15803d">(occupancy floor, not launch cost)</text>
+<text x="114.4" y="281.1" font-size="10" fill="#b91c1c">attention-shaped: -23% vs FFN</text>
+</svg>

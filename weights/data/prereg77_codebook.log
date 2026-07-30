@@ -1,0 +1,4 @@
+=== #77: IQ2_XXS vs the #70 Q4_K_M control (22.42), same session ===
+139 MHz
+| qwen2 7B IQ2_XXS - 2.0625 bpw  |   2.11 GiB |     7.62 B | CUDA       |  99 |           tg128 |         25.93 ± 0.01 |
+| qwen2 7B Q4_K - Medium         |   4.36 GiB |     7.62 B | CUDA       |  99 |           tg128 |         22.87 ± 0.04 |

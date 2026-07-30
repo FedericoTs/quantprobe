@@ -1,0 +1,4 @@
+=== #74 out-of-sample: 14B, 30 CPU layers, d8192. STAKED 1.53 (band 1.15-1.91) ===
+139 MHz, 37
+| qwen2 14B Q4_K - Medium        |   8.37 GiB |    14.77 B | CUDA       |  18 |    tg64 @ d8192 |          1.36 ± 0.04 |
+1177 MHz, 51

@@ -363,16 +363,26 @@ MMAP_HOST_SHARE_CAP = 0.75
 
 
 def mmap_decision(host_gb, ram_gb):
-    """(use_no_mmap, note). host_gb = how much this placement holds in RAM."""
+    """(use_no_mmap, note). host_gb = how much this placement holds in RAM.
+
+    U-23 v1 (v1.23) DROPPED --no-mmap on RAM-tight placements to keep pages evictable. The full
+    ladder measured what that costs and the remedy was REFUTED on its own box: the flagship split
+    ran 22.20 tok/s with --no-mmap and 7.70 without it - a 2.9x collapse, not the +13.7% the note
+    promised. The mechanism is exactly the RAM-tightness the gate was reacting to: near the RAM
+    boundary the OS pages the mapped file in and out every token. So the honest answer is not to
+    pick for the user - it is to give them both measured numbers and default to the fast one.
+    """
     if not ram_gb or (host_gb or 0) <= ram_gb * MMAP_HOST_SHARE_CAP:
         return True, None
-    return False, (f"keeping mmap: this placement holds ~{host_gb:.0f}GB of your ~{ram_gb:.0f}GB "
-                   f"usable RAM ({host_gb / ram_gb:.0%}) - with --no-mmap those pages are NOT "
-                   f"evictable and the box can OOM under desktop load (U-23, reported by a user "
-                   f"whose 32GB machine was left with 330 MiB free). The trade: mmap gives up the "
-                   f"measured +13.7% decode that --no-mmap buys on this placement. Add it back "
-                   f"yourself if you can free the RAM - and check actual free memory, not just "
-                   f"the model size, since the mapped file counts too.")
+    return True, (f"RAM-TIGHT TRADE-OFF, both sides measured: this placement holds ~{host_gb:.0f}GB "
+                  f"of your ~{ram_gb:.0f}GB usable RAM ({host_gb / ram_gb:.0%}). We keep "
+                  f"--no-mmap because dropping it measured **2.9x SLOWER** here (22.20 -> 7.70 "
+                  f"tok/s: near the RAM boundary the OS pages the mapped file in and out every "
+                  f"token). The risk you accept: --no-mmap pages are NOT evictable, so under "
+                  f"desktop memory pressure the process can OOM instead of slowing down (U-23, "
+                  f"reported by a user whose 32GB box was left with 330 MiB free). If your box "
+                  f"OOMs, remove --no-mmap and expect roughly a third of the speed, or offload "
+                  f"fewer layers so less sits in RAM.")
 
 
 def moe_split_flags(frac, n_layer, host_gb=None, ram_gb=None):
@@ -389,6 +399,35 @@ def moe_split_flags(frac, n_layer, host_gb=None, ram_gb=None):
     use_nm = True if host_gb is None or ram_gb is None else mmap_decision(host_gb, ram_gb)[0]
     return ('-ngl 99 -ot "blk\\.(%s)\\.ffn_.*_exps\\.=CPU"%s'
             % ("|".join(str(i) for i in range(k, n_layer)), " --no-mmap" if use_nm else ""))
+
+
+# L-19, validated out-of-sample by prereg #74. Seconds per KV position per CPU-RESIDENT layer
+# per token: CPU attention over the whole cache. Measured 1.43 (7B, 8 layers, d16k), 1.42 (7B,
+# 11, d32k), 1.76 (14B, 30, d8k) us; this is their MEAN, not the value that flatters one arm.
+# Scales with THIS box's 4 threads - a wider CPU pays less, which is why the note below still
+# says the number is soft even though it is now priced.
+CPU_ATTN_S_PER_POS_LAYER = 1.55e-6
+
+
+def depth_scope_warning(placement, moe, ctx):
+    """L-19 (prereg #73): the context term is a BANDWIDTH model, true only where attention runs
+    on the GPU. Measured to 32k: all-in-VRAM exact (-0.9% at d4096), MoE expert-splits in band at
+    every depth (-10%..-23% - a MoE split keeps attention and KV in VRAM, only expert FFNs go to
+    CPU). DENSE splits put whole layers INCLUDING attention on the CPU and break: +182% over at
+    d16384, +381% at d32768, because CPU attention over the whole cache is compute on N threads,
+    not a byte read. Rather than print a number we cannot stand behind, say so."""
+    if ctx <= 4096 or moe or "layers->VRAM" not in (placement or ""):
+        return None
+    return (f"DEPTH NOTE (preregs #73/#74, L-19): this is a DENSE split at {ctx} context, where "
+            f"the CPU-resident layers run attention over the whole KV cache every token - compute "
+            f"on your threads, not a byte read. The number above INCLUDES that cost "
+            f"(1.55 us/position/layer, measured across 8-30 CPU layers and 8k-32k depth, "
+            f"validated out-of-sample); without it we over-promised this regime by 2-5x. Two "
+            f"caveats: the constant is from ONE 4-thread CPU (a wider CPU pays less, so this "
+            f"reads pessimistic there), and the honest fix is to avoid the regime - raise -ngl "
+            f"until attention fits in VRAM, quantize the KV cache (-ctk q8_0 -ctv q8_0, +37% at "
+            f"depth measured), or use a MoE model, whose splits keep attention on the GPU and "
+            f"are validated to 32k here.")
 
 
 def fits_in_vram_advice(placement, bits):
@@ -585,11 +624,18 @@ def speculation_advice(moe, placement):
 # that number is a different regime (isolated prefill-heavy comparison) and would overshoot
 # this correction ~7x - the retrodiction gate rejected it. Scope: weight bytes read from RAM
 # during token generation; KV terms are format-independent and untouched.
-IQ_CPU_TG_PENALTY = 0.242
+#
+# C-13 RE-DERIVATION (2026-07-30): this constant was fitted against `iq_share`, which counts
+# IQ4_NL as codebook although #70 measured it Q4_0-class. Switching the driver to the true
+# codebook share changes the BASIS, so the constant must move with it or the calibration point
+# breaks. On the arm it was fitted to (DS-Lite pure CPU, exact at 11.4 vs 11.44): iq_share 0.962
+# x 0.242 = 0.2328 of penalty, delivered by a codebook share of 0.510 -> k = 0.2328 / 0.510.
+# The number changed; the measurement it encodes did not.
+IQ_CPU_TG_PENALTY = 0.456
 
 
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
-             n_layer=None, true_size_gb=None, iq_share=0.0):
+             n_layer=None, true_size_gb=None, codebook_share=0.0):
     ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
     size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
     # CAPACITY uses the real file size when we have the file. The estimate above assumes the
@@ -626,8 +672,9 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     ra = max(rc - 4, 1)
     eta_r = 0.38 if moe else 0.62
     # U-17: price the IQ share into every RAM weight read (pure CPU, hybrid experts, both split
-    # kinds, waterfall). iq_share is 0.0 unless a real GGUF was scanned, so presets are untouched.
-    eta_r /= (1.0 + iq_share * IQ_CPU_TG_PENALTY)
+    # kinds, waterfall). 0.0 unless a real GGUF was scanned, so presets are untouched. C-13:
+    # this is the CODEBOOK share, not every format named IQ - IQ4_NL is Q4_0-class (#70).
+    eta_r /= (1.0 + codebook_share * IQ_CPU_TG_PENALTY)
     if gl is None: gl = geta * 0.6
     # The sub-4-bit GPU DECODE collapse does not exist. It was gated on bit-width (`bits >= 4`),
     # which made 3.99 bits predict 8.75x slower than 4.00. Pre-registration #16 measured decode
@@ -727,19 +774,34 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         gpu_layers = int(g * n_layer) if n_layer else 0
         if 0 < gpu_layers < n_layer:
             kv_t = g * kv_gb / (ETA_KV * vb) + (1 - g) * kv_gb / (ETA_KV * rb)
+            # L-19 / prereg #74: the CPU-resident layers of a DENSE split run attention over the
+            # whole KV cache every token. That is compute on this machine's threads, not the byte
+            # read the kv_t term above prices - and it dominates at depth. Validated out-of-sample
+            # (14B, 30 CPU layers, d8192: staked 1.53 against the un-termed 3.30, measured 1.36).
+            cpu_attn_t = (n_layer - gpu_layers) * ctx * CPU_ATTN_S_PER_POS_LAYER
             out.append((f"split: {gpu_layers}/{n_layer} layers->VRAM, rest->RAM",
-                        1 / (g * act / (geta_w * vb) + (1 - g) * act / (eta_r * rb) + kv_t), None,
+                        1 / (g * act / (geta_w * vb) + (1 - g) * act / (eta_r * rb) + kv_t
+                             + cpu_attn_t), None,
                         f"-ngl {gpu_layers}"))
     if size + kv_gb <= ra:
         warn = "RAM boundary - expect bimodal speed" if size + kv_gb > ra * 0.85 else None
-        out.append(("pure CPU (GPU idle)", 1 / (act / (eta_r * rb) + kv_gb / (ETA_KV * rb)), warn, "-ngl 0"))
+        # L-19 applies here MORE than to a split: every layer's attention runs on the CPU, so
+        # this row pays the term over ALL layers. Leaving it un-termed while the split carries it
+        # would rank pure CPU above a config with strictly fewer CPU layers - a ranking inversion
+        # rather than a prediction. (Its own out-of-sample check: prereg #75.)
+        cpu_attn_all = (n_layer or 32) * ctx * CPU_ATTN_S_PER_POS_LAYER
+        out.append(("pure CPU (GPU idle)",
+                    1 / (act / (eta_r * rb) + kv_gb / (ETA_KV * rb) + cpu_attn_all), warn, "-ngl 0"))
     if size + kv_gb > ra:
         ra_eff = max(ra - kv_gb, 1)                        # KV crowds the expert cache
         miss = max(0.0, 1 - (ra_eff * 0.9) / size)
         hot = act_ne if moe else 0.0                       # MoE attention stays LRU-hot; dense has no hot set
         streamable = act - hot
+        # L-19 applies here too: this row is `-ngl 0`, so every layer's attention runs on the CPU
+        # exactly as in the pure-CPU row. Pricing one and not the other would let a disk-streaming
+        # config outrank the same config WITHOUT disk misses - the inversion class #75 caught.
         tps = 0.95 / (streamable * miss / db + (streamable * (1 - miss) + hot) / (eta_r * rb)
-                      + kv_gb / (ETA_KV * rb))
+                      + kv_gb / (ETA_KV * rb) + (n_layer or 32) * ctx * CPU_ATTN_S_PER_POS_LAYER)
         out.append(("stream from disk (cold experts)", tps, "exceeds RAM - capacity demo", "-ngl 0"))
     if moe and vc > 0 and size + kv_gb > ra:
         # three-tier expert cache (VRAM + RAM + disk): what expert-caching runtimes achieve.
@@ -819,7 +881,9 @@ def apply_calibration_overrides(hw, args):
         applied.append(f"disk {cal['disk_bw_measured']:g} GB/s measured")
     if applied:
         stale = f"; {age:.0f} days old - re-run `quantprobe calibrate`" if age and age > calmod.STALE_DAYS else ""
-        print(f"[quantprobe] calibration applied [{'; '.join(applied)}] ({cal.get('date','?')}{stale})")
+        _cid = cal.get("cal_id")
+        print(f"[quantprobe] calibration applied [{'; '.join(applied)}] ({cal.get('date','?')}"
+              + (f", state {_cid}" if _cid else "") + f"{stale})")
     if cal.get("boost_verdict") and "healthy" not in cal["boost_verdict"]:
         print(f"[quantprobe] GPU health at last calibration: {cal['boost_verdict']}")
     if not getattr(args, "no_anchors", False):
@@ -898,6 +962,14 @@ def resolve_gpu_eta(hw, args, active_b, bits, vb, geta):
     # The size-class guard holds with OR without format knowledge: an out-of-class anchor ratio
     # never touches a big target (that misapplication is what the ratchet test caught).
     use_ratio = bool(ratio) and (same_class or not big)
+    # The ladder eta is a BIG-MODEL quantity - #59 measured that small models pay a size floor
+    # big models do not, and #65 measured a 0.5B anchor mis-pricing a 7B by -34%. This function's
+    # docstring has always said "target active >= 1.5 GB and format known"; the code computed
+    # `big` and then never used it HERE, so a 0.5B Q8_0 was handed a big-model efficiency
+    # (0.60 instead of ~0.35). Caught by verify layer 3 on the v1.24 full-ladder re-run: the
+    # small arms over-promised 56-81%. The gate the docstring promised, now actually applied:
+    if fmt_bw and not big:
+        fmt_bw = None
     if fmt_bw:
         # format-eta on BOTH sides: the anchor ratio is priced against the anchor's format eta,
         # so targets must use format eta too or the two references diverge (measured: pricing
@@ -989,7 +1061,7 @@ def run(args):
     vb, geta = resolve_gpu_eta(hw, args, a, args.bits, vb, geta)
     rb = resolve_cpu_bw(hw, args, a, args.bits, rb)
     size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
-                               iq_share=getattr(args, "iq_share", 0.0),
+                               codebook_share=getattr(args, "codebook_share", 0.0),
                                kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
@@ -1069,6 +1141,9 @@ def run(args):
               f"(18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe "
               f"once per batch instead of once per token. Do NOT set it when a model is fully in "
               f"VRAM - measured there, the same flag LOSES 39%.")
+    dsw = depth_scope_warning(best[0], moe, ctx)
+    if dsw:
+        print(f"\n  {dsw}")
     fit_adv = fits_in_vram_advice(best[0], args.bits)
     if fit_adv:
         print(f"\n  note: {fit_adv}")
@@ -1081,11 +1156,11 @@ def run(args):
     # upgrade advisor
     alts = []
     if rb < 40:
-        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
         if c2[0][1] > best[1] * 1.08: alts.append(("enable XMP (free)", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("+16 GB RAM", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("NVMe SSD", c2[0][1]))
     if alts:
         print("  upgrade advisor: " + " | ".join(f"{n} -> ~{v:.1f} tok/s" for n, v in alts))
@@ -1102,7 +1177,7 @@ def run(args):
             continue                                   # not a "shave" - a different model class
         fit_scale = max(0.05, (cap - kvg) / size_now) * 0.995
         _, _, c9 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, fit_scale, gl,
-                            ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+                            ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
         promoted = [x for x in c9 if x[0].startswith("all in VRAM")] if "VRAM" in tier_name else                    [x for x in c9 if x[0].startswith("pure CPU")]
         if promoted and promoted[0][1] > best[1] * 1.15:
             print(f"  tier-boundary advisor: this config is {gap:.1f} GB over the {tier_name} boundary - "

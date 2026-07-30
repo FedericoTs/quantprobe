@@ -1,0 +1,48 @@
+=== K=2048 (1152 B/row) ===
+device    : NVIDIA GeForce GTX 1060 6GB (cc 6.1, 10 SMs)
+spec peak : 192.2 GB/s
+layout    : 4.5-bit, K=2048, 1152 B/row, one output row per block (decode geometry)
+
+ rows/tsr   tensors        GB/s   of peak   shape class
+      128      2730        30.2       16%   attention (kv proj)
+      256      1365        45.4       24%   attention (kv proj)
+      512       682        61.1       32%   attention (kv proj)
+     1024       341        76.5       40%   attention (q/o proj)
+     2048       170        88.4       46%   attention (q/o proj)
+     4096        85        94.2       49%   FFN / expert
+     8192        42        96.9       50%   FFN / expert
+    16384        21        98.7       51%   large FFN
+
+shape penalty relative to the fastest shape measured:
+     128 rows/tensor :  -69.4%
+     256 rows/tensor :  -54.0%
+     512 rows/tensor :  -38.1%
+    1024 rows/tensor :  -22.5%
+    2048 rows/tensor :  -10.4%
+    4096 rows/tensor :   -4.6%
+    8192 rows/tensor :   -1.8%
+   16384 rows/tensor :   +0.0%
+=== K=4096 (2304 B/row) ===
+device    : NVIDIA GeForce GTX 1060 6GB (cc 6.1, 10 SMs)
+spec peak : 192.2 GB/s
+layout    : 4.5-bit, K=4096, 2304 B/row, one output row per block (decode geometry)
+
+ rows/tsr   tensors        GB/s   of peak   shape class
+      128      1365        49.2       26%   attention (kv proj)
+      256       682        67.3       35%   attention (kv proj)
+      512       341        92.3       48%   attention (kv proj)
+     1024       170       111.6       58%   attention (q/o proj)
+     2048        85       121.4       63%   attention (q/o proj)
+     4096        42       128.7       67%   FFN / expert
+     8192        21       131.6       68%   FFN / expert
+    16384        10       138.5       72%   large FFN
+
+shape penalty relative to the fastest shape measured:
+     128 rows/tensor :  -64.5%
+     256 rows/tensor :  -51.4%
+     512 rows/tensor :  -33.3%
+    1024 rows/tensor :  -19.4%
+    2048 rows/tensor :  -12.4%
+    4096 rows/tensor :   -7.1%
+    8192 rows/tensor :   -5.0%
+   16384 rows/tensor :   +0.0%

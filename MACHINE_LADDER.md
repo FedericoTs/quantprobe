@@ -113,6 +113,14 @@ v1.20.2 code before any run). tg = tg128 unless noted; predictions carry the too
 2. The one hard miss of the program: the dense layer-split at 16k depth overcommits VRAM
    (26 layers + 2.1 GB KV do not actually fit at the emitted config) — opened as C-11. The 4k
    arm's −0.9% shows the KV *term* is right; the *placement fit math at depth* is the defect.
+   **CORRECTED 2026-07-30 (preregs #73/#74/#75, L-19): that diagnosis was wrong.** The fit math
+   was fine — every emitted depth config loads and runs. The defect was PHYSICS: a dense split
+   puts whole layers, attention included, on the CPU, and CPU attention over the whole KV cache
+   is compute on your threads, not the byte read our term priced. Measured at 1.10–1.76 µs per
+   position per CPU layer across four arms (two models, 8–30 CPU layers, 8k–32k depth) and
+   validated out-of-sample before shipping. With the term, the same three arms retrodict within
+   ±10% (7B d16k 3.3 vs 3.44 measured; 7B d32k 1.4 vs 1.54; 14B d8k 1.5 vs 1.36). C-11's
+   depth-aware VRAM budget remains correct and useful — it just was not what caused this miss.
 3. Both IQ arms over-predict: the tool's IQ-on-CPU warning is prose but not priced into the
    number. Logged as U-17 (discount eta_r by the measured 2.7x on the IQ byte share).
 
@@ -209,3 +217,41 @@ machine, the tool's command is never slower than the best llama.cpp arm measured
 everything fits, +16–52% at the RAM edge, and stable where informed configs thrash), and its
 prediction lands in the printed band on 6 of 8 staked arms, erring low. Where it misses, the
 table says so, names the register entry, and the fix is queued.
+
+## THE FULL TABLE — every model, one machine state (2026-07-30)
+
+Machine state **`a19aeee4`** (`quantprobe calibrate`: RAM 23.26 GB/s, disk 0.46 GB/s cold-cache,
+GPU sustained 1860/1911 MHz). **Predictions and measurements come from the same calibration** —
+the discipline C-14 introduced after we found that drift between sessions moved every arm by
+5–12 points, more than most effects under test. Predictions were committed to git before the
+benches ran.
+
+| model | file | predicted | measured | error | placement the tool emitted |
+|---|---|---|---|---|---|
+| Qwen2.5-0.5B Q8_0 | Qwen2.5-0.5B-Instruct-Q8_0.gguf | 124.8 | **153.39** | -18.6% | all in VRAM |
+| Qwen3-0.6B Q8_0 | Qwen3-0.6B-Q8_0.gguf | 103.6 | **106.38** | -2.6% | all in VRAM |
+| Qwen3.5-4B Q4_K_M | Qwen3.5-4B-Q4_K_M.gguf | 32.8 | **30.17** | +8.7% | all in VRAM |
+| Qwen2.5-7B IQ4_NL | Qwen2.5-7B-Instruct.i1-IQ4_NL.gguf | 27.6 | **25.36** | +8.8% | all in VRAM |
+| Qwen2.5-7B Q4_K_M | Qwen2.5-7B-Instruct-Q4_K_M.gguf | 21.6 | **22.73** | -5.0% | all in VRAM |
+| gemma4-12B depth-aware | gemma4-12b-B-late12.gguf | 12.5 | **12.50** | +0.0% | all in VRAM |
+| DS-Lite 16B IQ2_XS | DeepSeek-Coder-V2-Lite-Base-IQ2_XS | 30.3 | **24.69** | +22.7% | split experts: 65%->VRAM, rest->RAM |
+| Qwen2.5-14B Q4_K_M | Qwen2.5-14B-Instruct-Q4_K_M.gguf | 4.8 | **5.08** | -5.5% | split: 21/48 layers->VRAM, rest->RAM |
+| DS-Lite 16B Q4_K_M | DeepSeek-Coder-V2-Lite-Base-Q4_K_M | 19.3 | **23.86** | -19.1% | split experts: 35%->VRAM, rest->RAM |
+| Qwen3-30B-A3B Q2_K | Qwen3-30B-A3B-Q2_K.gguf | 19.5 | **21.71** | -10.2% | split experts: 32%->VRAM, rest->RAM |
+| Qwen3-Coder-30B Q2_K_L | Qwen3-Coder-30B-A3B-Instruct-Q2_K_ | 19.5 | **21.66** | -10.0% | split experts: 32%->VRAM, rest->RAM |
+| Qwen3.5-35B APEX-Mini | Qwen3.5-35B-A3B-APEX-Mini.gguf | 21.8 | **22.66** | -3.8% | split experts: 24%->VRAM, rest->RAM |
+| Qwen3.6-35B Q2_K_XL | Qwen3.6-35B-A3B-UD-Q2_K_XL.gguf | 18.5 | **16.62** | +11.3% | split experts: 25%->VRAM, rest->RAM |
+| Qwen3.6-35B APEX-MTP-Nano | Qwen3.6-35B-A3B-APEX-MTP-I-Nano.gg | 19.0 | **17.51** | +8.5% | split experts: 28%->VRAM, rest->RAM |
+
+**Median |error| 8.8%** · 4/14 within ±5% · 9/14 within ±10% · **14/14 within the printed ±25% band**.
+
+What shipped into these numbers today: the CPU-attention depth term (L-19, validated
+out-of-sample), gather-only embeddings (#76), the conservative codebook fallback (#77),
+codebook-vs-IQ4_NL classing (C-13), the format-ladder size gate (C-12), and named machine
+states (C-14). What did NOT ship, because it failed its own pre-registered gate: per-tier
+format pricing (#79), the unified three-factor bandwidth model (#82), and the RAM-tight mmap
+gate (U-23, reverted after it measured 2.9× SLOWER than the flag it replaced).
+
+**The two arms still outside ±10% are named, not hidden:** DS-Lite Q4_K_M (−19.1%, the only
+MLA architecture here, unmoved by every fix today) and Qwen2.5-0.5B (−18.6%, the small-model
+size floor — one anchor cannot price a 100× range of model sizes).

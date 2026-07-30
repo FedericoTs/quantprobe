@@ -39,7 +39,18 @@ FORMAT_EBW = {
     # beside it. IQ2/IQ3 variants not listed stay excluded (coverage rule withholds fmt_bw).
     "IQ2_XS": 51.1, "IQ3_S": 61.1, "IQ3_XXS": 68.3,                             # measured (#70)
     "IQ4_NL": 117.0,                                                            # measured (#70)
+    "IQ2_XXS": 46.0,                                                            # measured (#77)
 }
+
+# The slowest codebook format we have MEASURED. Prereg #77: when a file's unpriced formats are
+# codebook-named and material, pricing them here is conservative by construction - the entire
+# measured codebook ladder (IQ2_XXS 46.0 < IQ2_XS 51.1 < IQ3_S 61.1 < IQ3_XXS 68.3) descends with
+# bit-width, so an unmeasured IQ2/IQ1 variant cannot plausibly sit above the floor of what we
+# have measured. Withholding a number is only honest when the FALLBACK is conservative; the old
+# fallback assumed K-quant-class decode and over-promised a 59%-codebook file by 50%.
+K_CLASS_IQ = {"IQ4_NL"}   # IQ by name, Q4_0-class by measurement (#70)
+WORST_MEASURED_CODEBOOK = 46.0
+CODEBOOK_FALLBACK_MIN_SHARE = 0.25
 
 
 def from_gguf(path):
@@ -48,8 +59,12 @@ def from_gguf(path):
     n_layer = _field(r, ".block_count") or 32
     total = 0
     routed = 0
-    iq_bytes = all_bytes = 0
+    iq_bytes = all_bytes = unpriced_cb = codebook_bytes = 0
     fmt_wsum = fmt_bytes = 0.0
+    tier_exp = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}   # prereg #79: per-tier format stats
+    tier_att = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}
+    embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
+    has_output = False       # a separate output/lm_head means embeddings are NOT tied
     for t in r.tensors:
         n = 1
         for d in t.shape:
@@ -57,6 +72,10 @@ def from_gguf(path):
         total += n
         if "exps" in t.name or "_expert" in t.name:
             routed += n
+        if "token_embd" in t.name:
+            embd_params += n
+        if t.name.startswith("output.") or "lm_head" in t.name:
+            has_output = True
         # bytes-weighted I-quant share. Measured (pre-registration #31): on the CPU tier the
         # IQ formats deliver 10.6 GB/s against ~29 for K-quants at the same size - a 2.7x
         # decode penalty for any host-resident placement. The K-format dequant is
@@ -66,11 +85,38 @@ def from_gguf(path):
         all_bytes += nb
         if t.tensor_type.name.startswith("IQ"):
             iq_bytes += nb
+            # C-13: "IQ" is a NAME, not a kernel class. Prereg #70 measured IQ4_NL at 117.0 GB/s -
+            # Q4_0-class, 2.3x faster than IQ2_XS - so charging it the codebook penalty applied
+            # the tax to up to 89x the bytes that earn it. The penalty follows the CODEBOOK
+            # formats (grid lookup in decode), which is what #31 and #70 both actually measured.
+            if t.tensor_type.name not in K_CLASS_IQ:
+                codebook_bytes += nb
         tn = t.tensor_type.name
         if tn in FORMAT_EBW:
             fmt_wsum += nb * FORMAT_EBW[tn]
             fmt_bytes += nb
-    ne_params = total - routed
+        elif tn.startswith("IQ"):
+            unpriced_cb += nb        # a codebook format we have not measured (prereg #77)
+        # U-28 / prereg #79: the same bytes, split by WHICH TIER holds them. On a MoE split the
+        # GPU holds attention and the CPU holds offloaded experts, and their formats differ
+        # sharply (measured: attention 82-106 GB/s-equivalent vs experts 50-69 on the Qwen MoEs).
+        # One file-wide number cannot price both.
+        _t = tier_exp if ("exps" in t.name or "_expert" in t.name) else tier_att
+        _t["bytes"] += nb
+        if tn in FORMAT_EBW:
+            _t["wsum"] += nb * FORMAT_EBW[tn]; _t["wb"] += nb
+        elif tn.startswith("IQ"):
+            _t["wsum"] += nb * WORST_MEASURED_CODEBOOK; _t["wb"] += nb
+        if tn.startswith("IQ") and tn not in K_CLASS_IQ:
+            _t["cb"] += nb
+    # U-26 / prereg #76: token_embd is GATHERED at decode - one row of a ~150k-row matrix, i.e.
+    # ~zero bytes - but `total - routed` charged the whole matrix at >=4.5 bits every token.
+    # When embeddings are TIED the same tensor IS the output projection and is fully read, so it
+    # must stay counted; only the untied case (a separate output/lm_head exists) double-charges.
+    # Measured share of active bytes on untied models: 4.2-17.2%, the sign and size of the
+    # MoE-K-quant under-prediction family.
+    gather_only = embd_params if has_output else 0
+    ne_params = total - routed - gather_only
 
     n_exp = _field(r, ".expert_count")
     n_used = _field(r, ".expert_used_count")
@@ -78,7 +124,7 @@ def from_gguf(path):
         active = ne_params + routed * n_used / n_exp
         moe = True
     else:
-        active, moe = total, False
+        active, moe = total - gather_only, False    # same gather correction on the dense path
 
     # exact KV bytes/pos (f16): MLA caches the latent; GQA caches heads x dims, K+V
     kv_lora = _field(r, ".attention.kv_lora_rank")
@@ -104,10 +150,24 @@ def from_gguf(path):
             except Exception:
                 arch = None
             break
-    fmt_bw = (fmt_wsum / fmt_bytes) if (all_bytes and fmt_bytes / all_bytes >= 0.6) else None
+    # prereg #77: unmeasured CODEBOOK bytes get the slowest measured codebook rather than being
+    # dropped. Dropping them withheld fmt_bw entirely, and the fallback path then assumed
+    # K-quant-class decode - over-promising a 59%-codebook file by 50%. Conservative by
+    # construction: the measured ladder descends with bit-width, so an unmeasured IQ2/IQ1 variant
+    # cannot plausibly beat the floor of what we have measured.
+    ws, wb = fmt_wsum, fmt_bytes
+    if all_bytes and unpriced_cb / all_bytes >= CODEBOOK_FALLBACK_MIN_SHARE:
+        ws += unpriced_cb * WORST_MEASURED_CODEBOOK
+        wb += unpriced_cb
+    fmt_bw = (ws / wb) if (all_bytes and wb / all_bytes >= 0.6) else None
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
                 bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
                 iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
+                codebook_share=(codebook_bytes / all_bytes) if all_bytes else 0.0,
+                # prereg #79: what each TIER actually holds. None when a tier has no tensors.
+                fmt_bw_attn=round(tier_att["wsum"] / tier_att["wb"], 1) if tier_att["wb"] else None,
+                fmt_bw_exp=round(tier_exp["wsum"] / tier_exp["wb"], 1) if tier_exp["wb"] else None,
+                codebook_share_exp=(tier_exp["cb"] / tier_exp["bytes"]) if tier_exp["bytes"] else 0.0,
                 fmt_bw=round(fmt_bw, 1) if fmt_bw else None)
 
 
@@ -133,6 +193,10 @@ def apply(a, quiet=False):
     if getattr(a, "n_layer", None) is None:
         a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
     a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
+    a.codebook_share = s.get("codebook_share", 0.0)   # the share that actually pays the tax (C-13)
+    a.fmt_bw_attn = s.get("fmt_bw_attn")              # prereg #79: per-tier format pricing
+    a.fmt_bw_exp = s.get("fmt_bw_exp")
+    a.codebook_share_exp = s.get("codebook_share_exp", 0.0)
     a.fmt_bw = s.get("fmt_bw")           # read-only: lets anchored predictions rescale by format (L-16)
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))

@@ -764,7 +764,10 @@ def t_simulator_law_matches_the_cli():
                 return js[i:k + 1]
         raise AssertionError("unbalanced braces around " + sig)
 
-    consts = "\n".join(l for l in js.splitlines() if re.match(r"\s*(const|let)\s+ETA_KV\s*=", l))
+    # every scalar constant the law reads, not just ETA_KV: the harness silently lost CPU_ATTN
+    # when L-19 shipped, and an un-run parity test is worse than none.
+    consts = "\n".join(l for l in js.splitlines()
+                       if re.match(r"\s*(const|let)\s+(ETA_KV|CPU_ATTN|NLAY_DEFAULT|DEFAULT_KVP)\s*=", l))
     qm = re.search(r"(?:const|let)\s+QUAL\s*=\s*\{.*?\};", js, re.S)
     harness = consts + "\n" + (qm.group(0) if qm else "") + "\n" + grab("function evalCore(") + """
 const H = {vc:6,vb:192,rc:16,rb:48,db:0.45,geta:0.35,gl:0.04};
@@ -1134,13 +1137,16 @@ def t_invariant_cpu_override_implies_no_mmap():
 def t_u23_mmap_gate():
     # U-23 (E-08): --no-mmap only while the placement leaves the RAM pool room; the exception
     # must carry its explanation and the measured cost of taking it.
+    # v1.23's remedy (dropping --no-mmap when RAM-tight) was REFUTED by the full ladder: it cost
+    # 2.9x (22.20 -> 7.70), because near the RAM boundary mmap thrashes. --no-mmap now ALWAYS
+    # ships; the tight case gets both measured numbers and the user chooses.
     from quantprobe.plan import mmap_decision, moe_split_flags, MMAP_HOST_SHARE_CAP
-    assert mmap_decision(7, 12)[0] is True, "58% of the pool must keep the measured --no-mmap"
+    assert mmap_decision(7, 12) == (True, None), "roomy: keep the flag, say nothing"
     ok, note = mmap_decision(11, 12)
-    assert ok is False and "keeping mmap" in note and "13.7%" in note, "tight case must explain the trade"
-    assert "--no-mmap" in moe_split_flags(0.3, 48, 7, 12)
-    assert "--no-mmap" not in moe_split_flags(0.3, 48, 11, 12)
-    assert "--no-mmap" in moe_split_flags(0.3, 48), "unknown RAM keeps the measured default"
+    assert ok is True, "the flag must never be dropped again - it measured 2.9x"
+    assert note and "2.9x SLOWER" in note and "OOM" in note, "tight case must give BOTH sides"
+    for args in ((0.3, 48, 7, 12), (0.3, 48, 11, 12), (0.3, 48)):
+        assert "--no-mmap" in moe_split_flags(*args), f"flag dropped for {args}"
     assert 0.5 < MMAP_HOST_SHARE_CAP < 1.0
 
 def t_invariant_flags_are_valid_argv():
@@ -1436,14 +1442,21 @@ def t_c11_depth_aware_dense_split():
 def t_u17_iq_cpu_pricing():
     # U-17 (prereg #66): iq_share must slow every RAM weight read by the calibrated per-byte
     # penalty (pure-CPU arm 14.1 -> 11.44 at share 0.962); iq_share=0 (presets) must be untouched.
+    # C-13: the penalty follows the CODEBOOK share, not every format named IQ (IQ4_NL is
+    # Q4_0-class per #70). The constant was re-derived so the calibration arm is unchanged:
+    # old iq_share 0.962 x 0.242 == new codebook_share 0.510 x 0.456, to within rounding.
     from quantprobe.plan import evaluate, IQ_CPU_TG_PENALTY
     def cpu_tokps(share):
         _, _, cfgs = evaluate(15.7, 2.4, 0.8, True, 2.9, 6, 154, 16, 26, 2.0, 0.55,
-                              gl=None, iq_share=share)
+                              gl=None, codebook_share=share)
         return [c for c in cfgs if c[0].startswith("pure CPU")][0][1]
-    base, iq = cpu_tokps(0.0), cpu_tokps(0.962)
-    want = 1.0 + 0.962 * IQ_CPU_TG_PENALTY
-    assert abs(base / iq - want) < 0.01, f"IQ penalty off: {base/iq:.4f} vs {want:.4f}"
+    base, cb = cpu_tokps(0.0), cpu_tokps(0.510)
+    want = 1.0 + 0.510 * IQ_CPU_TG_PENALTY
+    assert abs(base / cb - want) < 0.01, f"codebook penalty off: {base/cb:.4f} vs {want:.4f}"
+    assert abs((0.510 * IQ_CPU_TG_PENALTY) - (0.962 * 0.242)) < 0.005, \
+        "the re-derivation must reproduce U-17's calibration arm exactly"
+    from quantprobe.spec import K_CLASS_IQ
+    assert "IQ4_NL" in K_CLASS_IQ, "#70 measured IQ4_NL at Q4_0-class; it must not pay the codebook tax"
 
 
 def t_prereg70_iq_format_ladder():
@@ -1454,6 +1467,36 @@ def t_prereg70_iq_format_ladder():
     assert FORMAT_EBW["IQ2_XS"] <= 0.6 * FORMAT_EBW["Q4_K"], "IQ2_XS must price far below Q4_K"
     assert abs(FORMAT_EBW["IQ4_NL"] - FORMAT_EBW["Q4_0"]) <= 0.05 * FORMAT_EBW["Q4_0"], \
         "IQ4_NL is Q4_0-class, not codebook-class"
+
+
+def t_l19_depth_scope_warning():
+    # prereg #73 / L-19: dense splits at depth are the one refuted regime and must say so;
+    # the validated placements (all-in-VRAM, MoE splits) must stay silent at every depth.
+    from quantprobe.plan import depth_scope_warning
+    w = depth_scope_warning("split: 20/28 layers->VRAM, rest->RAM", False, 16384)
+    assert w and "1.55 us/position/layer" in w and "#73/#74" in w   # the term, not the refusal
+    assert depth_scope_warning("split: 20/28 layers->VRAM, rest->RAM", False, 0) is None
+    assert depth_scope_warning("split experts: 15%->VRAM, rest->RAM", True, 32768) is None
+    assert depth_scope_warning("all in VRAM", False, 32768) is None
+
+
+def t_c14_machine_state_identity():
+    # C-14: two calibrations of the same idle box drifted 7% and moved every ladder arm 5-12
+    # points. A machine state must have a name, drift must be detected, and a predicted-vs-
+    # measured pair must carry the state it came from.
+    from quantprobe.calibrate import cal_id, drift_vs
+    a = {"ram_bw_measured": 23.21, "disk_bw_measured": 2.82,
+         "anchors": [{"placement": "pure CPU (-ngl 0)", "tok_s": 6.72, "sustained_sm": 1506}]}
+    b = {"ram_bw_measured": 21.66, "disk_bw_measured": 2.50,
+         "anchors": [{"placement": "pure CPU (-ngl 0)", "tok_s": 6.24, "sustained_sm": 1506}]}
+    assert cal_id(a) and cal_id(a) != cal_id(b), "different states must get different ids"
+    assert cal_id(a) == cal_id(dict(a)), "the id must be stable for the same state"
+    moved = drift_vs(a, b)
+    names = {m[0] for m in moved}
+    assert "ram_bw" in names and "disk_bw" in names and any("anchor" in n for n in names), \
+        f"the real 2026-07-30 drift must be detected, got {names}"
+    assert not drift_vs(a, dict(a)), "no drift against itself"
+    assert cal_id(None) is None
 
 
 def t_version():
