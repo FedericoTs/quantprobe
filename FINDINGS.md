@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 23 |
 | Open contradictions | 15 |
-| Untried levers | 21 |
+| Untried levers | 23 |
 | External work to study | 10 |
 
 ## Established laws
@@ -718,6 +718,22 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** STAKED BEFORE the next ladder: deriving each model's effective bandwidth from the L-20 knee curve (hidden and feed_forward_length, zero fitted parameters) and re-deriving the format anchor JOINTLY - not on the 7B alone - will beat the shipped model out of sample. Kill rule: leave-one-out median |error| over the clean all-in-VRAM rows must come in BELOW 8.7% and LOO max BELOW 18.6%, the shipped baseline measured today. If either misses, shape joins op count as a refuted pricing axis and the size floor stays an unexplained empirical correction rather than becoming a term.
 
 `open` · `suggestive, now sole surviving candidate` · scope: Pascal, six GPU-resident models. Correlation on n=6 with one custom model (gemma4-late12) in it - suggestive only. · evidence: weights/shape_vs_ops.py; L-20 curve from prereg81_knee.log (single session, C-14 safe) · wired into: `nothing yet. The honest next step is a STAKED prereg: predict each model's achieved-bandwidth fraction from geometry BEFORE measuring a fresh ladder, with a kill rule on LOO beating 8.7%.`
+
+### U-33 — EXTERNAL CORROBORATION OF LAW 4 ON HARDWARE WE DO NOT OWN. BigMoeOnEdge (github.com/Helldez/BigMoeOnEdge, Apache-2.0, an MoE flash-streaming engine on top of llama.cpp) reports that on a Windows laptop (8 cores, 16 GB dual-channel DDR4, NVMe) streamed decode of Qwen3.6-35B-A3B Q4_K_M is DRAM-bandwidth-bound with a ~9 tok/s ceiling at zero I/O, and that extra I/O lanes, extra compute threads and the ~3 GB/s NVMe are ALL neutral. Feeding our own DDR4-3200 preset (51 GB/s) and CPU-tier eta (0.30) into tok/s = eta*BW/active-bytes predicts 8.2-8.7 tok/s. That is ~7% on a machine we have never touched, with zero fitting, from constants calibrated on a GTX 1060. It is NOT scored: the active-byte count was estimated from our own q35-A-shexp sibling GGUF rather than their actual file, and their '~9' is a stated ceiling rather than a single published measurement.
+
+**Magnitude:** predicted 8.2-8.7 tok/s vs their stated ~9 tok/s ceiling (~7%)
+
+**Predicted effect (staked):** STAKED FOR TASK #51: obtain their exact GGUF metadata, recompute active bytes with our #76 embedding-gather correction, and predict their zero-I/O ceiling BEFORE looking at their number again. Kill rule: |error| must be under 15% for this to count as the external replication C-06 asks for. Above 15% it is logged as a near-miss and C-06 stays open.
+
+`open` · `suggestive` · scope: their hardware, their build, their protocol - none of which we control. An unstaked match is a coincidence until staked; this is logged to be scored, not cited. · evidence: github.com/Helldez/BigMoeOnEdge README, Desktop section; our arithmetic in the session log · wired into: `nothing - it is evidence about Law 4, not a new term`
+
+### U-34 — EXPERT PREFETCH ON A ROUTING PREDICTOR LOSES ITS A/B - measured by someone else, so we should not spend a cycle on it. BigMoeOnEdge built a routing predictor that guesses most of a layer's experts before the layer runs, proved the prediction accuracy, and still found that reading ahead on it cost more than it saved; the feature ships OFF. Their two levers that DO pay are dynamic hot-expert caching (76-84% hit rate, cache size is the dominant lever) and cache-aware dropping (+55% at F=0.75, bootstrap intervals disjoint). Their --dense-weights anon result (3.2x past RAM, by keeping always-used weights out of the page cache) independently corroborates our own U-23 mmap finding (2.9x) on different hardware and a different OS.
+
+**Magnitude:** prefetch refuted by its author; caching and cache-aware dropping are the levers that paid
+
+**Predicted effect (staked):** Tracked as tasks #52 (measure expert-usage skew before building hot-expert selection) and #55 (cache-aware dropping, gated on #52). Kill rule on #52 staked there: if the top 32% of experts by usage do not carry materially more than 32% of routing mass, hot-expert caching is refuted for our models and we keep the static -ot regex.
+
+`open` · `external` · scope: Android phone (12 GB, UFS 4.x) and one Windows laptop, CPU-only, flash-streaming regime. We are GPU-split on a 6 GB card, so nothing here transfers without re-measurement - it tells us what to TRY and what to SKIP, not what is true on our box. · evidence: github.com/Helldez/BigMoeOnEdge docs/expert-prediction.md and the four benchmark tables in its README · wired into: `nothing yet - two staked experiments queued`
 
 ## External work to study
 
