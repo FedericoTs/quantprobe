@@ -425,8 +425,9 @@ def depth_scope_warning(placement, moe, ctx):
             f"validated out-of-sample); without it we over-promised this regime by 2-5x. Two "
             f"caveats: the constant is from ONE 4-thread CPU (a wider CPU pays less, so this "
             f"reads pessimistic there), and the honest fix is to avoid the regime - raise -ngl "
-            f"until attention fits in VRAM, quantize the KV cache (-ctk q8_0 -ctv q8_0, +37% at "
-            f"depth measured), or use a MoE model, whose splits keep attention on the GPU and "
+            f"until attention fits in VRAM, quantize the KV cache (-ctk q8_0 -ctv q8_0: +37% SPEED "
+            f"at depth measured - but we have NOT measured its quality cost, and an external "
+            f"report calls the quality difference large on niche-domain code at 100k+ context, so try it and judge the output yourself, E-10), or use a MoE model, whose splits keep attention on the GPU and "
             f"are validated to 32k here.")
 
 

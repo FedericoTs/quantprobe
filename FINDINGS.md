@@ -13,7 +13,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Measured dead ends | 21 |
 | Open contradictions | 15 |
 | Untried levers | 20 |
-| External work to study | 9 |
+| External work to study | 10 |
 
 ## Established laws
 
@@ -764,6 +764,14 @@ THE FIRST TRUE OUT-OF-SAMPLE PREDICTION VALIDATION on a machine we do not own: p
 The best-documented specimen of the disk-tier expert-streaming runtime class, with a public measured bottleneck log (PERFORMANCE.md) and a machine-readable GET /profile endpoint. Headline datapoint for OUR disk-tier law: doubling raw NVMe bandwidth (4.35 -> 8.7-9.1 GB/s via shard-dirs) left generation speed UNCHANGED at ~1.02 words/s on GLM-5.2 744B - the disk tier goes latency/compute-bound past ~4 GB/s, so U-06's re-derivation cannot be a pure bandwidth term at the NVMe end. Also: learned persistent expert pinning (.rabbit_usage) = the WHICH-experts lever (E-07) with empirical learning; expert-cache hit rates 70-77% steady-state published. License is TBD (unlicensed) - observe and benchmark, never lift code. No quantprobe mention.
 
 **Question to answer:** Can our law family extend to the CPU/disk expert-streaming tier using rabbit's published numbers + /profile as the validation corpus - and is ferrumox/fox (176 stars, llama.cpp orchestration, prefix caching, continuous batching) a integration target or a competitor for the serve/harness direction?
+
+`reviewed`
+
+### E-10 — reddit r/LocalLLM (2026-07-30): 2x RTX 5060 Ti 16GB, split-mode tensor, bartowski Qwen3.6-27B IQ4_NL, Elixir coding at 100k+ context
+
+CHALLENGES OUR OWN SHIPPED ADVICE ON A DIMENSION WE HAVE NEVER MEASURED. quantprobe recommends `-ctk q8_0 -ctv q8_0` at depth (depth_scope_warning, and the KV-quant lever generally) on the strength of V-08/U-01, which measured SPEED ONLY (+37% at d16384 with -fa 1). This reporter removed q8 KV quantization and calls the QUALITY difference 'night and day' for niche-language coding (Elixir) at 100k+ context. We have zero quality measurements for KV quantization - not one perplexity or KL number - so our advice rests on half the tradeoff. Second convergence worth noting: they independently found bartowski's IQ4_NL uniquely good for their task, and prereg #70 measured IQ4_NL to be Q4_0-class in SPEED (117.0 GB/s, +14% over Q4_K_M) - fast and, per this report, quality-preserving. Their epistemic point ('my synthetic tests prove 99.999%...' vs niche-language failure) is the same critique our own quality work faces: perplexity on wikitext does not see Elixir.
+
+**Question to answer:** Measure KV-quant QUALITY, not just speed: perplexity/KL for f16 vs q8_0 vs q4_0 KV at increasing depth, on a niche-domain corpus rather than wikitext. Until then the KV advice must state that only its speed side is measured. Also: split-mode tensor is a multi-GPU lever this project has no data on (single-GPU box).
 
 `reviewed`
 
