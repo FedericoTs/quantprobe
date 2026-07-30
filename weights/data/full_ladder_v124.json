@@ -9,7 +9,9 @@
   "bench_s": 2,
   "err_pct": 55.6,
   "predicted_v124": 134.8,
-  "err_v124": -9.0
+  "err_v124": -9.0,
+  "predicted_p76": 134.8,
+  "err_p76": -9.0
  },
  {
   "name": "Qwen3-0.6B Q8_0",
@@ -21,7 +23,9 @@
   "bench_s": 4,
   "err_pct": 80.9,
   "predicted_v124": 112.0,
-  "err_v124": 5.8
+  "err_v124": 5.8,
+  "predicted_p76": 112.0,
+  "err_p76": 5.8
  },
  {
   "name": "Qwen3.5-4B Q4_K_M",
@@ -33,7 +37,9 @@
   "bench_s": 13,
   "err_pct": 17.4,
   "predicted_v124": 35.4,
-  "err_v124": 17.4
+  "err_v124": 17.4,
+  "predicted_p76": 35.4,
+  "err_p76": 17.4
  },
  {
   "name": "Qwen2.5-7B IQ4_NL",
@@ -45,7 +51,9 @@
   "bench_s": 17,
   "err_pct": 7.2,
   "predicted_v124": 27.7,
-  "err_v124": 7.2
+  "err_v124": 7.2,
+  "predicted_p76": 29.8,
+  "err_p76": 15.3
  },
  {
   "name": "Qwen2.5-7B Q4_K_M",
@@ -57,7 +65,9 @@
   "bench_s": 16,
   "err_pct": -4.9,
   "predicted_v124": 21.7,
-  "err_v124": -4.9
+  "err_v124": -4.9,
+  "predicted_p76": 23.3,
+  "err_p76": 2.1
  },
  {
   "name": "gemma4-12B depth-aware",
@@ -69,7 +79,9 @@
   "bench_s": 27,
   "err_pct": 1.4,
   "predicted_v124": 13.5,
-  "err_v124": 1.4
+  "err_v124": 1.4,
+  "predicted_p76": 13.5,
+  "err_p76": 1.4
  },
  {
   "name": "DS-Lite 16B IQ2_XS",
@@ -81,7 +93,9 @@
   "bench_s": 19,
   "err_pct": 34.3,
   "predicted_v124": 30.0,
-  "err_v124": 18.5
+  "err_v124": 18.5,
+  "predicted_p76": 32.5,
+  "err_p76": 28.4
  },
  {
   "name": "Qwen2.5-14B Q4_K_M",
@@ -93,7 +107,9 @@
   "bench_s": 52,
   "err_pct": 0.6,
   "predicted_v124": 4.9,
-  "err_v124": 0.6
+  "err_v124": 0.6,
+  "predicted_p76": 5.1,
+  "err_p76": 4.7
  },
  {
   "name": "DS-Lite 16B Q4_K_M",
@@ -105,7 +121,9 @@
   "bench_s": 31,
   "err_pct": -22.4,
   "predicted_v124": 18.6,
-  "err_v124": -22.4
+  "err_v124": -22.4,
+  "predicted_p76": 19.3,
+  "err_p76": -19.5
  },
  {
   "name": "Qwen3-30B-A3B Q2_K",
@@ -117,7 +135,9 @@
   "bench_s": 36,
   "err_pct": -13.3,
   "predicted_v124": 19.0,
-  "err_v124": -10.9
+  "err_v124": -10.9,
+  "predicted_p76": 20.8,
+  "err_p76": -2.5
  },
  {
   "name": "Qwen3-Coder-30B Q2_K_L",
@@ -129,7 +149,9 @@
   "bench_s": 34,
   "err_pct": -13.9,
   "predicted_v124": 19.0,
-  "err_v124": -11.6
+  "err_v124": -11.6,
+  "predicted_p76": 20.8,
+  "err_p76": -3.2
  },
  {
   "name": "Qwen3.5-35B APEX-Mini",
@@ -143,7 +165,9 @@
   "measured_v123_gate_bug": 7.7,
   "note": "the 7.70 was OUR OWN v1.23 mmap gate dropping --no-mmap (2.9x cost, measured); re-run with the flag restored gives 22.20 - the gate is reverted in v1.24 and the refutation registered",
   "predicted_v124": 20.2,
-  "err_v124": -9.0
+  "err_v124": -9.0,
+  "predicted_p76": 23.4,
+  "err_p76": 5.4
  },
  {
   "name": "Qwen3.6-35B Q2_K_XL",
@@ -155,7 +179,9 @@
   "bench_s": 38,
   "err_pct": 6.1,
   "predicted_v124": 18.1,
-  "err_v124": 8.5
+  "err_v124": 8.5,
+  "predicted_p76": 20.9,
+  "err_p76": 25.3
  },
  {
   "name": "Qwen3.6-35B APEX-MTP-Nano",
@@ -167,6 +193,8 @@
   "bench_s": 35,
   "err_pct": 49.5,
   "predicted_v124": 25.8,
-  "err_v124": 49.5
+  "err_v124": 49.5,
+  "predicted_p76": 29.4,
+  "err_p76": 70.3
  }
 ]

@@ -50,6 +50,8 @@ def from_gguf(path):
     routed = 0
     iq_bytes = all_bytes = 0
     fmt_wsum = fmt_bytes = 0.0
+    embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
+    has_output = False       # a separate output/lm_head means embeddings are NOT tied
     for t in r.tensors:
         n = 1
         for d in t.shape:
@@ -57,6 +59,10 @@ def from_gguf(path):
         total += n
         if "exps" in t.name or "_expert" in t.name:
             routed += n
+        if "token_embd" in t.name:
+            embd_params += n
+        if t.name.startswith("output.") or "lm_head" in t.name:
+            has_output = True
         # bytes-weighted I-quant share. Measured (pre-registration #31): on the CPU tier the
         # IQ formats deliver 10.6 GB/s against ~29 for K-quants at the same size - a 2.7x
         # decode penalty for any host-resident placement. The K-format dequant is
@@ -70,7 +76,14 @@ def from_gguf(path):
         if tn in FORMAT_EBW:
             fmt_wsum += nb * FORMAT_EBW[tn]
             fmt_bytes += nb
-    ne_params = total - routed
+    # U-26 / prereg #76: token_embd is GATHERED at decode - one row of a ~150k-row matrix, i.e.
+    # ~zero bytes - but `total - routed` charged the whole matrix at >=4.5 bits every token.
+    # When embeddings are TIED the same tensor IS the output projection and is fully read, so it
+    # must stay counted; only the untied case (a separate output/lm_head exists) double-charges.
+    # Measured share of active bytes on untied models: 4.2-17.2%, the sign and size of the
+    # MoE-K-quant under-prediction family.
+    gather_only = embd_params if has_output else 0
+    ne_params = total - routed - gather_only
 
     n_exp = _field(r, ".expert_count")
     n_used = _field(r, ".expert_used_count")
@@ -78,7 +91,7 @@ def from_gguf(path):
         active = ne_params + routed * n_used / n_exp
         moe = True
     else:
-        active, moe = total, False
+        active, moe = total - gather_only, False    # same gather correction on the dense path
 
     # exact KV bytes/pos (f16): MLA caches the latent; GQA caches heads x dims, K+V
     kv_lora = _field(r, ".attention.kv_lora_rank")
