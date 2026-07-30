@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 19 |
 | Shipped levers | 19 |
 | Measured dead ends | 21 |
-| Open contradictions | 11 |
+| Open contradictions | 12 |
 | Untried levers | 14 |
 | External work to study | 9 |
 
@@ -474,6 +474,12 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 **Magnitude:** -58% on one arm; the only hard prediction failure of the 13-arm program
 
 `closed` · `measured` · scope: dense models at deep context on VRAM-tight cards; the MoE split at 4k held (+22% under) · evidence: prereg #66 (ctx7b16k arm, clocks logged) · wired into: `quantprobe/plan.py evaluate() dense-split v_budget`
+
+### C-12 — resolve_gpu_eta applied the per-format ladder eta to targets of ANY size, though its own docstring said 'target active >= 1.5 GB': it computed the `big` flag and used it only for the anchor-ratio decision. A 0.5B Q8_0 therefore received a big-model efficiency (0.60 from FORMAT_EBW/192.2 instead of ~0.35), contradicting #59's measured small-model size floor. Caught by verify layer 3 during the v1.24 full-ladder re-run (-37% off band) after fresh anchors exposed it; the small arms had over-promised 56-81%.
+
+**Magnitude:** 0.5B +56% -> -9.0%, 0.6B +81% -> +5.8% after the gate; big models unchanged; full-ladder median |err| 15.6% -> 9.0%, 13 of 14 arms in band
+
+`closed` · `measured` · scope: calibrated path with a known format mix; presets unaffected · evidence: weights/data/full_ladder_v124.json; verify.py layer 3; #59 size floor; #65 anchor class · wired into: `quantprobe/plan.py resolve_gpu_eta (the documented gate now applied)`
 
 ## Untried levers
 

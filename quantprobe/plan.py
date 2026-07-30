@@ -952,6 +952,14 @@ def resolve_gpu_eta(hw, args, active_b, bits, vb, geta):
     # The size-class guard holds with OR without format knowledge: an out-of-class anchor ratio
     # never touches a big target (that misapplication is what the ratchet test caught).
     use_ratio = bool(ratio) and (same_class or not big)
+    # The ladder eta is a BIG-MODEL quantity - #59 measured that small models pay a size floor
+    # big models do not, and #65 measured a 0.5B anchor mis-pricing a 7B by -34%. This function's
+    # docstring has always said "target active >= 1.5 GB and format known"; the code computed
+    # `big` and then never used it HERE, so a 0.5B Q8_0 was handed a big-model efficiency
+    # (0.60 instead of ~0.35). Caught by verify layer 3 on the v1.24 full-ladder re-run: the
+    # small arms over-promised 56-81%. The gate the docstring promised, now actually applied:
+    if fmt_bw and not big:
+        fmt_bw = None
     if fmt_bw:
         # format-eta on BOTH sides: the anchor ratio is priced against the anchor's format eta,
         # so targets must use format eta too or the two references diverge (measured: pricing
