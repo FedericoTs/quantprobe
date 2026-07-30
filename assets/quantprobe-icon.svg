@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="quantprobe">
+  <!-- quantprobe: the Q is a gauge - the dial is the Q's circle, the needle is its tail. -->
+  <rect width="128" height="128" rx="26" fill="#14181f"/>
+  <!-- dial: a 300-degree arc, open exactly where the tail exits (gap centered on 45deg) -->
+  <path d="M 71.3 96.8 A 36 36 0 1 0 96.8 71.3" fill="none" stroke="#14b8a6"
+        stroke-width="11" stroke-linecap="round"/>
+  <!-- ticks -->
+  <g stroke="#0f766e" stroke-width="4" stroke-linecap="round">
+    <line x1="62" y1="14" x2="62" y2="24"/>
+    <line x1="24" y1="40" x2="33" y2="45"/>
+    <line x1="100" y1="40" x2="91" y2="45"/>
+    <line x1="20" y1="76" x2="30" y2="73"/>
+  </g>
+  <!-- needle = the Q's tail: from the hub out past the rim, bottom-right -->
+  <line x1="62" y1="62" x2="107" y2="107" stroke="#e6fffa" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="62" cy="62" r="9" fill="#e6fffa"/>
+  <circle cx="62" cy="62" r="4" fill="#14181f"/>
+</svg>

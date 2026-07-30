@@ -1,3 +1,5 @@
+<img src="assets/quantprobe-icon.svg" width="88" align="left" alt="quantprobe — the Q is a gauge">
+
 # quantprobe
 
 Predicts how fast an LLM will run on your machine — **before you download it** — then hands you the exact llama.cpp command. If nothing fits well enough, it builds a quantization tuned to your specific model and hardware.
