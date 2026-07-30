@@ -1041,7 +1041,7 @@
    "claim": "THE WITHHELD-FORMAT FALLBACK IS OPTIMISTIC, WHICH INVERTS ITS OWN INTENT. When known formats cover <60% of bytes we withhold fmt_bw ('no number beats a wrong number') - but the fallback eta is a generic one that assumes K-quant-class decode. Isolated on two files of the same architecture and active size: Qwen3.6-35B UD-Q2_K_XL (mix priced, fmt_bw 65.1) errs +8.5%, while APEX-MTP-Nano (37% IQ2_XXS + 22% IQ2_S, both unpriced -> fmt_bw None) errs +49.5%. #70 measured codebook formats 36-52% below K-quants per byte; the withheld path silently assumes they are not.",
    "hypothesis": "measure IQ2_XXS/IQ2_S/IQ1_M (extend the #70 ladder) AND make the withheld-coverage fallback conservative (worst known codebook) instead of generic",
    "predicted_effect": "the two Qwen3.6 siblings converge; no priced file moves",
-   "wired_into": "prereg candidate B; evidence weights/data/residual_decomposition_v124.md"
+   "wired_into": "prereg #77 (staked; measurement in flight)"
   }
  ],
  "external": [
