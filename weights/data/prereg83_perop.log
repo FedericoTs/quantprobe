@@ -30,3 +30,87 @@
 [e9] matmul time by src0 type:
 [e9]   type q4_K             1074.4 ms     4620 calls
 [e9]   type q6_K              457.9 ms      957 calls
+--- Qwen3-0.6B-Q8_0.gguf (ngl 99) ---
+[e9] per-op GPU profiler: ON
+| qwen3 0.6B Q8_0                | 604.15 MiB |   596.05 M | CUDA       |  99 |            tg32 |         86.22 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                         0.3         33         8.94
+[e9] RMS_NORM                   34.7       3729         9.30
+[e9] MUL_MAT                   289.9       5577        51.99
+[e9] GET_ROWS                    4.0         66        60.05
+[e9] SET_ROWS                   10.7        924        11.56
+[e9] ROPE                        9.7       1848         5.24
+[e9] FLASH_ATTN_EXT             23.9        924        25.89
+[e9] TOTAL                     373.2      13101
+[e9] matmul time by src0 type:
+[e9]   type q8_0              289.9 ms     5577 calls
+--- Qwen3.5-4B-Q4_K_M.gguf (ngl 99) ---
+[e9] per-op GPU profiler: ON
+| qwen35 4B Q4_K - Medium        |   2.63 GiB |     4.33 B | CUDA       |  99 |            tg32 |         25.96 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                        13.4       1584         8.48
+[e9] CONCAT                     11.9        792        15.01
+[e9] RMS_NORM                   28.6       3465         8.26
+[e9] L2_NORM                    10.9       1584         6.86
+[e9] MUL_MAT                  1052.5       7161       146.98
+[e9] SCALE                       4.6         96        47.90
+[e9] CPY                        12.0        792        15.11
+[e9] CONT                        3.2        264        12.15
+[e9] GET_ROWS                   79.6       1617        49.23
+[e9] SET_ROWS                   15.1        528        28.68
+[e9] ROPE                        3.7        528         7.00
+[e9] FLASH_ATTN_EXT              9.5        264        35.88
+[e9] SSM_CONV                   21.9        792        27.66
+[e9] GATED_DELTA_NET            26.9        792        33.92
+[e9] UNARY                      15.3       2640         5.80
+[e9] TOTAL                    1309.1      22899
+[e9] matmul time by src0 type:
+[e9]   type f32                20.2 ms     1584 calls
+[e9]   type q4_K              563.4 ms     3696 calls
+[e9]   type q5_K               58.0 ms      792 calls
+[e9]   type q6_K              410.9 ms     1089 calls
+--- gemma4-12b-B-late12.gguf (ngl 99) ---
+[e9] per-op GPU profiler: ON
+| gemma4 ?B Q2_K - Medium        |   4.85 GiB |    11.91 B | CUDA       |  99 |            tg32 |         13.10 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                         0.7         33        21.57
+[e9] MUL                        10.8       1584         6.85
+[e9] RMS_NORM                   85.9      11121         7.72
+[e9] MUL_MAT                  2135.5       9273       230.30
+[e9] SCALE                       2.9         66        44.07
+[e9] GET_ROWS                    0.5         33        16.15
+[e9] SET_ROWS                   21.9       3168         6.91
+[e9] ROPE                       18.1       3168         5.71
+[e9] FLASH_ATTN_EXT            213.4       1584       134.71
+[e9] TOTAL                    2489.8      30030
+[e9] matmul time by src0 type:
+[e9]   type q2_K             1043.3 ms     2376 calls
+[e9]   type q4_K             1092.2 ms     6897 calls
+--- DeepSeek-Coder-V2-Lite-Base-Q4_K_M.gguf (ngl 99) ---
+[e9] per-op GPU profiler: ON
+| deepseek2 16B Q4_K - Medium    |   9.65 GiB |    15.71 B | CUDA       |  99 |            tg32 |          3.79 ± 0.00 |
+[e9] per-op GPU device-time attribution
+[e9] op                    device_ms      calls      us/call
+[e9] ADD                        12.1       1749         6.94
+[e9] MUL                         7.0        858         8.17
+[e9] REPEAT                      9.6        891        10.77
+[e9] CONCAT                      9.5       1782         5.34
+[e9] RMS_NORM                   50.2       2706        18.56
+[e9] MUL_MAT                  1994.6       8019       248.73
+[e9] MUL_MAT_ID               4215.8       1716      2456.73
+[e9] CONT                     2579.4       2673       964.97
+[e9] GET_ROWS                    1.4         66        20.59
+[e9] SET_ROWS                   17.1       1782         9.62
+[e9] SOFT_MAX                   20.1       1749        11.48
+[e9] ROPE                       14.8       1782         8.30
+[e9] TOTAL                    8931.5      25773
+[e9] matmul time by src0 type:
+[e9]   type f32                26.8 ms      858 calls
+[e9]   type f16               165.2 ms     1782 calls
+[e9]   type q5_0              257.5 ms      462 calls
+[e9]   type q8_0              456.6 ms      429 calls
+[e9]   type q4_K             5124.0 ms     5775 calls
+[e9]   type q6_K              180.2 ms      429 calls
