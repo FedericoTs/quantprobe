@@ -1,0 +1,23 @@
+device    : NVIDIA GeForce GTX 1060 6GB (cc 6.1, 10 SMs)
+spec peak : 192.2 GB/s
+layout    : 4.5-bit, K=2048, 1152 B/row, one output row per block (decode geometry)
+
+ rows/tsr   tensors        GB/s   of peak   shape class
+      128      2730        31.0       16%   attention (kv proj)
+      256      1365        46.7       24%   attention (kv proj)
+      512       682        64.5       34%   attention (kv proj)
+     1024       341        80.1       42%   attention (q/o proj)
+     2048       170        88.8       46%   attention (q/o proj)
+     4096        85        95.2       50%   FFN / expert
+     8192        42        99.6       52%   FFN / expert
+    16384        21       100.5       52%   large FFN
+
+shape penalty relative to the fastest shape measured:
+     128 rows/tensor :  -69.2%
+     256 rows/tensor :  -53.6%
+     512 rows/tensor :  -35.8%
+    1024 rows/tensor :  -20.2%
+    2048 rows/tensor :  -11.6%
+    4096 rows/tensor :   -5.2%
+    8192 rows/tensor :   -0.9%
+   16384 rows/tensor :   +0.0%

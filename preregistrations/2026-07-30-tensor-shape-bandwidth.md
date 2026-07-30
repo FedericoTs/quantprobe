@@ -34,3 +34,38 @@ a scoped finding, NOT wired into the tool, because a term that cannot explain th
 invented for has not earned a place in the law.
 
 **Wired into:** pending; `spec.FORMAT_EBW` would become shape-classed only if all three hold.
+
+---
+
+## SCORED — 2026-07-30. **ALL THREE STAKES HIT.**
+
+Raw log: `weights/data/prereg80_shape.log`. GTX 1060, 384 MB swept per point, 4.5-bit layout,
+same kernel and activation source throughout; **only rows-per-tensor varies**.
+
+| rows/tensor | GB/s | of spec peak | shape class | penalty vs best |
+|---|---|---|---|---|
+| 128 | 31.0 | 16% | attention (kv proj) | **−69.2%** |
+| 256 | 46.7 | 24% | attention (kv proj) | −53.6% |
+| 512 | 64.5 | 34% | attention (kv proj) | **−35.8%** |
+| 1024 | 80.1 | 42% | attention (q/o proj) | −20.2% |
+| 2048 | 88.8 | 46% | attention (q/o proj) | −11.6% |
+| 4096 | 95.2 | 50% | FFN / expert | −5.2% |
+| 8192 | 99.6 | 52% | FFN / expert | −0.9% |
+| 16384 | 100.5 | 52% | large FFN | 0.0% |
+
+- **P-1 HIT, by more than double the bar.** 512 rows/tensor runs **−35.8%** against 8192 —
+  the stake was ≥15%.
+- **P-2 HIT.** Strictly monotone across all eight points, no U-shape, no plateau until ~8192
+  where it saturates at the format's true ceiling.
+- **P-3 HIT.** Attention-shaped work (mean of kv-proj and q/o-proj: 76.7 GB/s) runs **23% below**
+  FFN-shaped (99.6). On a 75%-attention token that is a **21% over-promise** — the right size to
+  explain #79's damage, which was worst exactly on the highest-attention models.
+
+**The finding: `FORMAT_EBW` is not a format constant. It is a format × shape constant, and every
+entry we ship was measured at the FFN end of the range** — i.e. each is an upper bound that only
+large homogeneous matrices reach. A 4.5-bit weight decodes at 100 GB/s in an FFN matrix and
+31 GB/s in a 128-row projection **on the same card, in the same format, in the same kernel**.
+
+This is #59's small-model size floor and L-19's CPU-attention term seen at a third granularity:
+work that is small per launch does not reach the bandwidth its bytes suggest. Three independent
+regimes, one shape.
