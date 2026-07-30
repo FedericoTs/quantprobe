@@ -15,7 +15,7 @@ import time
 D = "D:/evo-compress-data/gguf"
 BIN = r"C:\Users\Federico\Documents\evo-compress\tools\llama.cpp-pristine\build\bin\llama-bench.exe"
 CUDA = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin"
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "full_ladder_v124.json")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ladder_state_locked.json")
 
 MODELS = [
     ("Qwen2.5-0.5B Q8_0", "Qwen2.5-0.5B-Instruct-Q8_0.gguf"),
@@ -76,13 +76,21 @@ def bench(path, emit):
 
 def main():
     do_bench = "--bench" in sys.argv
+    # C-14: lock the whole run to ONE machine state and record it. Predictions and measurements
+    # that carry different ids must never be scored against each other.
+    from quantprobe.calibrate import load as _cl
+    _cal, _ = _cl()
+    STATE = (_cal or {}).get("cal_id", "uncalibrated")
+    print(f"machine state: {STATE}  (ram {(_cal or {}).get('ram_bw_measured')} GB/s, "
+          f"disk {(_cal or {}).get('disk_bw_measured')} GB/s)\n")
     rows = []
     for name, fn in MODELS:
         path = os.path.join(D, fn).replace("\\", "/")
         if not os.path.isfile(path):
             print(f"  SKIP (missing): {name}"); continue
         pred, place, emit = plan(path)
-        row = {"name": name, "file": fn, "predicted": pred, "placement": place, "emit": emit}
+        row = {"name": name, "file": fn, "predicted": pred, "placement": place, "emit": emit,
+               "cal_id": STATE}
         print(f"  {name:28s} predicted {pred!s:>6s}  {place}")
         if do_bench and pred:
             t0 = time.time()
