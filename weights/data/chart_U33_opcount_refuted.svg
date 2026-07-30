@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" font-family="Segoe UI,system-ui,sans-serif">
+<rect width="720" height="380" fill="#ffffff"/>
+<text x="58" y="30" font-size="16" font-weight="650" fill="#16181d">U-33: op count cannot price the overhead - tensor shape might</text>
+<text x="58" y="49" font-size="12" fill="#5c6066">left: every form of a launch-count term loses out of sample.  right: the L-20 knee curve, zero fitted parameters.</text>
+<text x="14" y="190.0" font-size="11" fill="#5c6066" transform="rotate(-90 14 190.0)" text-anchor="middle"></text>
+<text x="360.0" y="372" font-size="11" fill="#5c6066" text-anchor="middle"></text>
+<line x1="66" y1="322" x2="330" y2="322" stroke="#d8d7d2"/>
+<line x1="66" y1="84" x2="66" y2="322" stroke="#d8d7d2"/>
+<rect x="66" y="290.6" width="264" height="31.4" fill="#15803d" opacity="0.07"/>
+<line x1="66" y1="290.6" x2="330" y2="290.6" stroke="#15803d" stroke-width="2" stroke-dasharray="5 3"/>
+<text x="71" y="303.6" font-size="10" fill="#15803d">shipped model: 8.7% - nothing below this line was reached</text>
+<path d="M66.0,186.8 L79.2,124.8 L92.4,112.1 L105.6,120.6 L118.8,129.1 L132.0,137.5 L145.2,146.1 L158.4,153.7 L171.6,162.2 L184.8,170.7 L198.0,179.2 L211.2,187.7 L224.4,196.2 L237.6,204.7 L250.8,213.2 L264.0,221.7 L277.2,229.3 L290.4,237.8 L303.6,245.5 L316.8,254.0 L330.0,261.6" fill="none" stroke="#b91c1c" stroke-width="2.5"/>
+<circle cx="66.0" cy="186.8" r="4" fill="#b91c1c"/>
+<circle cx="330.0" cy="261.6" r="4" fill="#b91c1c"/>
+<text x="70.0" y="177.8" font-size="10" fill="#5c6066">p=0: pure per-layer</text>
+<text x="326.0" y="252.6" font-size="10" fill="#5c6066" text-anchor="end">p=1: flat per-op (best, still loses)</text>
+<text x="60" y="283.5" font-size="10" fill="#5c6066" text-anchor="end">10%</text>
+<text x="60" y="198.5" font-size="10" fill="#5c6066" text-anchor="end">20%</text>
+<text x="60" y="113.5" font-size="10" fill="#5c6066" text-anchor="end">30%</text>
+<text x="198.0" y="338.0" font-size="10" fill="#5c6066" text-anchor="middle">exponent p in  tax = c x layers x (ops/layer)^p</text>
+<text x="66" y="76" font-size="11" font-weight="600" fill="#16181d">leave-one-out median error (n=6, 2 params)</text>
+<line x1="420" y1="322" x2="674" y2="322" stroke="#d8d7d2"/>
+<line x1="420" y1="84" x2="420" y2="322" stroke="#d8d7d2"/>
+<line x1="420.0" y1="322.0" x2="674.0" y2="84.0" stroke="#5c6066" stroke-dasharray="4 4"/>
+<text x="597.8" y="174.4" font-size="9" fill="#5c6066" transform="rotate(-45 597.8 174.4)">perfect</text>
+<circle cx="500.3" cy="160.6" r="5" fill="#0f766e" opacity="0.9"/>
+<text x="500.3" y="150.6" font-size="9" fill="#16181d" text-anchor="middle">0.5B</text>
+<circle cx="440.8" cy="165.9" r="5" fill="#0f766e" opacity="0.9"/>
+<text x="440.8" y="155.9" font-size="9" fill="#16181d" text-anchor="middle">0.6B</text>
+<circle cx="557.7" cy="126.4" r="5" fill="#0f766e" opacity="0.9"/>
+<text x="557.7" y="116.4" font-size="9" fill="#16181d" text-anchor="middle">4B</text>
+<circle cx="636.9" cy="116.8" r="5" fill="#5c6066" opacity="0.9"/>
+<text x="636.9" y="106.8" font-size="9" fill="#16181d" text-anchor="middle">7B IQ4</text>
+<circle cx="657.2" cy="116.8" r="5" fill="#5c6066" opacity="0.9"/>
+<text x="657.2" y="106.8" font-size="9" fill="#16181d" text-anchor="middle">7B Q4KM</text>
+<circle cx="509.4" cy="116.4" r="5" fill="#b91c1c" opacity="0.9"/>
+<text x="509.4" y="106.4" font-size="9" fill="#16181d" text-anchor="middle">g12B</text>
+<text x="420" y="76" font-size="11" font-weight="600" fill="#16181d">shape-predicted vs actually needed   r = +0.77</text>
+<text x="547.0" y="338.0" font-size="10" fill="#5c6066" text-anchor="middle">fraction of nominal FORMAT_EBW achieved</text>
+<text x="424" y="314" font-size="9.5" fill="#5c6066">grey = the 7B calibration anchor (residual ~0 by construction)</text>
+<text x="424" y="302" font-size="9.5" fill="#b91c1c">gemma: deficit is attention-shaped, not geometry</text>
+</svg>
