@@ -127,9 +127,77 @@ def chart_79():
     return "chart_79_attention_share.svg", "\n".join(s)
 
 
+def chart_u33():
+    """U-33: the op-count term refuted (left) and what survived (right)."""
+    import math
+    loo = [(0.00,20.9),(0.05,28.2),(0.10,29.7),(0.15,28.7),(0.20,27.7),(0.25,26.7),
+           (0.30,25.7),(0.35,24.8),(0.40,23.8),(0.45,22.8),(0.50,21.8),(0.55,20.8),
+           (0.60,19.8),(0.65,18.8),(0.70,17.8),(0.75,16.8),(0.80,15.9),(0.85,14.9),
+           (0.90,14.0),(0.95,13.0),(1.00,12.1)]
+    SHIP = 8.7
+    pts = [("0.5B",0.708,0.889),("0.6B",0.591,0.878),("4B",0.821,0.961),
+           ("7B IQ4",0.977,0.981),("7B Q4KM",1.017,0.981),("g12B",0.726,0.982)]
+    s = frame("U-33: op count cannot price the overhead - tensor shape might",
+              "left: every form of a launch-count term loses out of sample.  "
+              "right: the L-20 knee curve, zero fitted parameters.",
+              "", "")
+    # ---- left panel: LOO vs exponent p
+    x0,y0,x1,y1 = PAD+8, 84, 330, H-58
+    s += axes(x0,y0,x1,y1)
+    def lx(p_): return x0 + p_*(x1-x0)
+    def ly(v):  return y1 - (v-5)/28*(y1-y0)
+    s.append(f'<rect x="{x0}" y="{ly(SHIP):.1f}" width="{x1-x0}" height="{y1-ly(SHIP):.1f}" '
+             f'fill="{GOOD}" opacity="0.07"/>')
+    s.append(f'<line x1="{x0}" y1="{ly(SHIP):.1f}" x2="{x1}" y2="{ly(SHIP):.1f}" '
+             f'stroke="{GOOD}" stroke-width="2" stroke-dasharray="5 3"/>')
+    s.append(f'<text x="{x0+5}" y="{ly(SHIP)+13:.1f}" font-size="10" fill="{GOOD}">'
+             f'shipped model: {SHIP}% - nothing below this line was reached</text>')
+    d = " ".join(f"{'M' if i==0 else 'L'}{lx(a):.1f},{ly(b):.1f}" for i,(a,b) in enumerate(loo))
+    s.append(f'<path d="{d}" fill="none" stroke="{WARN}" stroke-width="2.5"/>')
+    for a,b in (loo[0], loo[-1]):
+        s.append(f'<circle cx="{lx(a):.1f}" cy="{ly(b):.1f}" r="4" fill="{WARN}"/>')
+    s.append(f'<text x="{lx(0)+4:.1f}" y="{ly(20.9)-9:.1f}" font-size="10" fill="{SUB}">'
+             f'p=0: pure per-layer</text>')
+    s.append(f'<text x="{lx(1.0)-4:.1f}" y="{ly(12.1)-9:.1f}" font-size="10" fill="{SUB}" '
+             f'text-anchor="end">p=1: flat per-op (best, still loses)</text>')
+    for v in (10,20,30):
+        s.append(f'<text x="{x0-6}" y="{ly(v)+4:.1f}" font-size="10" fill="{SUB}" '
+                 f'text-anchor="end">{v}%</text>')
+    s.append(f'<text x="{(x0+x1)/2:.1f}" y="{y1+16:.1f}" font-size="10" fill="{SUB}" '
+             f'text-anchor="middle">exponent p in  tax = c x layers x (ops/layer)^p</text>')
+    s.append(f'<text x="{x0}" y="{y0-8}" font-size="11" font-weight="600" fill="{INK}">'
+             f'leave-one-out median error (n=6, 2 params)</text>')
+    # ---- right panel: needed vs shape-predicted
+    a0,a1 = 420, W-46
+    s += axes(a0,y0,a1,y1)
+    def rx(v): return a0 + (v-0.55)/0.50*(a1-a0)
+    def ry(v): return y1 - (v-0.55)/0.50*(y1-y0)
+    s.append(f'<line x1="{rx(0.55):.1f}" y1="{ry(0.55):.1f}" x2="{rx(1.05):.1f}" '
+             f'y2="{ry(1.05):.1f}" stroke="{SUB}" stroke-dasharray="4 4"/>')
+    s.append(f'<text x="{rx(0.90):.1f}" y="{ry(0.86):.1f}" font-size="9" fill="{SUB}" '
+             f'transform="rotate(-45 {rx(0.90):.1f} {ry(0.86):.1f})">perfect</text>')
+    for nm,need,shp in pts:
+        anchor = nm.startswith("7B")
+        col = SUB if anchor else (WARN if nm=="g12B" else A)
+        s.append(f'<circle cx="{rx(need):.1f}" cy="{ry(shp):.1f}" r="5" fill="{col}" '
+                 f'opacity="0.9"/>')
+        s.append(f'<text x="{rx(need):.1f}" y="{ry(shp)-10:.1f}" font-size="9" fill="{INK}" '
+                 f'text-anchor="middle">{nm}</text>')
+    s.append(f'<text x="{a0}" y="{y0-8}" font-size="11" font-weight="600" fill="{INK}">'
+             f'shape-predicted vs actually needed   r = +0.77</text>')
+    s.append(f'<text x="{(a0+a1)/2:.1f}" y="{y1+16:.1f}" font-size="10" fill="{SUB}" '
+             f'text-anchor="middle">fraction of nominal FORMAT_EBW achieved</text>')
+    s.append(f'<text x="{a0+4}" y="{y1-8}" font-size="9.5" fill="{SUB}">'
+             f'grey = the 7B calibration anchor (residual ~0 by construction)</text>')
+    s.append(f'<text x="{a0+4}" y="{y1-(-4)-24:.0f}" font-size="9.5" fill="{WARN}">'
+             f'gemma: deficit is attention-shaped, not geometry</text>')
+    s.append("</svg>")
+    return "chart_U33_opcount_refuted.svg", "\n".join(s)
+
+
 if __name__ == "__main__":
     out = os.path.join(HERE, "data")
-    for fn, svg in (chart_shape(), chart_ladder(), chart_79()):
+    for fn, svg in (chart_shape(), chart_ladder(), chart_79(), chart_u33()):
         with open(os.path.join(out, fn), "w", encoding="utf-8") as f:
             f.write(svg + "\n")
         print("wrote", fn)

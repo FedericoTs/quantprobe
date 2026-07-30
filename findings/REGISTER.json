@@ -255,13 +255,13 @@
   {
    "id": "L-21",
    "kind": "law",
-   "status": "established",
+   "status": "qualified",
    "confidence": "measured",
-   "claim": "THE SMALL-MODEL SIZE FLOOR IS NON-MATMUL OVERHEAD SHARE, measured for the first time from inside a real decode (instrumented build, GGML_GPU_PROFILE_OPS, prereg #83). A token is not only weight reads: RMS_NORM, ROPE, FLASH_ATTN_EXT, SET_ROWS and GET_ROWS cost real GPU time, and the normalisation ops cost the SAME absolute time regardless of model size - RMS_NORM measured 15.28 us/call on a 0.5B and 15.52 us/call on a 7B, a 1.6% difference across a 15x model-size range. Against 10x fewer weight bytes that fixed cost becomes a large share of the token: MUL_MAT is 91.6% of GPU device time on the 7B but only 73.0% on the 0.5B, i.e. non-matmul overhead is 8.4% vs 27.0%. Law 4 models weight bytes only, so it necessarily mis-prices whichever end of that range it was not calibrated on - which is exactly #59's size floor and exactly why one anchor cannot price a 100x size range. [CORRECTED SAME DAY by four more profiles - my 'size-invariant' claim was an artifact of measuring TWO MODELS OF ONE FAMILY. Across six models RMS_NORM costs 15.27 and 15.51 us/call on the two Qwen2.5 models (invariant WITHIN the family, as claimed) but 9.30 / 8.26 / 7.72 us/call on Qwen3-0.6B / Qwen3.5-4B / gemma4-12B - a 2x spread ACROSS families. The per-op cost is architecture-specific, not universal. What survives: the OVERHEAD SHARE is large and falls with model size - 27.0% (0.5B) / 22.3% (0.6B) / 19.6% (4B) / 14.2% (gemma-12B) / 8.4% (7B) - so Law 4's bytes-only model still mis-prices whichever end it was not calibrated on. But the share is not a clean function of size either (the 4.7GB 7B sits at 8.4% while the 5.2GB gemma sits at 14.2%, and gemma's FLASH_ATTN costs 134.7 us/call against the 7B's 78.7), so any overhead term must be per-architecture, measured, not a single constant.]",
-   "magnitude": "non-matmul share 8.4%-27.0% across five GPU-resident models; per-op costs vary 2x by architecture (RMS_NORM 7.72-15.51 us/call), so no universal constant exists",
+   "claim": "THE SMALL-MODEL SIZE FLOOR IS NON-MATMUL OVERHEAD SHARE, measured for the first time from inside a real decode (instrumented build, GGML_GPU_PROFILE_OPS, prereg #83). A token is not only weight reads: RMS_NORM, ROPE, FLASH_ATTN_EXT, SET_ROWS and GET_ROWS cost real GPU time, and the normalisation ops cost the SAME absolute time regardless of model size - RMS_NORM measured 15.28 us/call on a 0.5B and 15.52 us/call on a 7B, a 1.6% difference across a 15x model-size range. Against 10x fewer weight bytes that fixed cost becomes a large share of the token: MUL_MAT is 91.6% of GPU device time on the 7B but only 73.0% on the 0.5B, i.e. non-matmul overhead is 8.4% vs 27.0%. Law 4 models weight bytes only, so it necessarily mis-prices whichever end of that range it was not calibrated on - which is exactly #59's size floor and exactly why one anchor cannot price a 100x size range. [CORRECTED SAME DAY by four more profiles - my 'size-invariant' claim was an artifact of measuring TWO MODELS OF ONE FAMILY. Across six models RMS_NORM costs 15.27 and 15.51 us/call on the two Qwen2.5 models (invariant WITHIN the family, as claimed) but 9.30 / 8.26 / 7.72 us/call on Qwen3-0.6B / Qwen3.5-4B / gemma4-12B - a 2x spread ACROSS families. The per-op cost is architecture-specific, not universal. What survives: the OVERHEAD SHARE is large and falls with model size - 27.0% (0.5B) / 22.3% (0.6B) / 19.6% (4B) / 14.2% (gemma-12B) / 8.4% (7B) - so Law 4's bytes-only model still mis-prices whichever end it was not calibrated on. But the share is not a clean function of size either (the 4.7GB 7B sits at 8.4% while the 5.2GB gemma sits at 14.2%, and gemma's FLASH_ATTN costs 134.7 us/call against the 7B's 78.7), so any overhead term must be per-architecture, measured, not a single constant.] [SECOND CORRECTION, same data, U-33: the overhead SHARES above are UPPER BOUNDS inflated by the profiler itself. The instrumented build records a CUDA event pair per op; comparing its tg32 against the clean ladder tg32 for the same four files gives 3.80-8.32 us of instrumentation per op call - the SAME ORDER as the 5-16 us op times it reports. With 124-373 launch-bound calls per token that is 0.5-3.1 ms, i.e. 30-100% of the non-matmul bucket it claims to measure. The 8.4%-27.0% range is therefore not a clean measurement of overhead, and the direction of the bias is worst exactly where call counts are highest - the small models the law is about.]",
+   "magnitude": "non-matmul share 8.4%-27.0% is an UPPER BOUND (profiler self-cost 3.8-8.3 us/call, same order as the op times); per-op costs vary 2x by architecture, no universal constant",
    "evidence": "prereg #83 (weights/data/prereg83_perop.log): per-op GPU attribution on two real decodes, instrumented llama.cpp",
    "scope": "Pascal, batch-1 decode, GPU-resident. FLASH_ATTN and SET_ROWS per-call costs DO scale (29 vs 79 us, 14 vs 23 us) - only the normalisation-class ops are size-invariant. The DeepSeek-Lite MLA arm in this sweep is INVALID and excluded: at 10.4 GB it does not fit the 6 GB card, so its 22.3%-matmul profile is a streaming artifact, not an MLA measurement. MLA remains unprofiled and DS-Lite's -19.1% unexplained.",
-   "wired_into": "findings only - not yet a term. Unlike L-20 this is measured INSIDE llama.cpp on real models, so it is the first overhead constant that could be wired without a synthetic-to-real transfer step. Needs the same measurement on 3-4 more sizes to fit the share curve."
+   "wired_into": "findings only, and U-33 refuted the obvious wiring. Any real magnitude needs an instrumentation-free probe (one event pair around N launches, not N event pairs)."
   }
  ],
  "levers": [
@@ -735,6 +735,28 @@
    "evidence": "kernelprobe K3d/K2c arms (predictions staked in the source comment before the run)",
    "scope": "Pascal, batch-1 matvec",
    "wired_into": "tools/kernelprobe/bench.cu"
+  },
+  {
+   "id": "D-24",
+   "kind": "dead_end",
+   "status": "refuted",
+   "confidence": "measured",
+   "claim": "OP COUNT IS NOT A USABLE PREDICTIVE TERM. The launch-bound structure is real - ROPE costs 5.24-8.30 us/call across models spanning 32x in size (1.58x spread), which is definitive: these ops are latency-bound, not work-bound, so their cost tracks LAUNCHES (layers x ops-per-layer, countable from GGUF metadata with zero measurement) and not BYTES. That structure does NOT convert into better predictions. Fitting t = a*(bytes/fmt_bw) + c*L*(ops_per_layer^p) jointly on the six clean all-in-VRAM ladder rows and sweeping p over [0,1] in 0.05 steps: the BEST leave-one-out median error is 12.1% (at p=1.0) against the shipped model's 8.7%. Every form tested loses. In-sample it looks like a win (3.3% median) - which is exactly why LOO is the only honest read at 2 parameters and 6 rows.",
+   "magnitude": "LOO median 12.1% (best) vs shipped 8.7%; LOO max 34.6% vs shipped 18.6%",
+   "evidence": "weights/joint_fit.py, weights/sublinear_fit.py over weights/data/ladder_state_locked.json (cal_id a19aeee4) + op counts from weights/data/prereg83_perop.log",
+   "scope": "Pascal, batch-1 decode, six GPU-resident models 0.5B-12B. NOT a claim that overhead is absent - it is a claim that op count cannot price it. The residual is NON-MONOTONE in op count (49 ops -> 1.90 ms, 57 -> 0.92 ms, 108 -> 5.92 ms, 113 -> 3.84 ms, 337 -> 21.95 ms), and no monotone function of op count can fit a non-monotone target.",
+   "wired_into": "nothing - refuted before wiring, which is the point of testing first"
+  },
+  {
+   "id": "D-25",
+   "kind": "dead_end",
+   "status": "refuted",
+   "confidence": "measured",
+   "claim": "THE 'RMS_NORM COST IS SIZE-INVARIANT' READING OF #83 WAS AN ARTIFACT OF AVERAGING. us/call ANTI-correlates with how many norms the architecture emits per layer: 2.04 norms/layer -> 15.27 and 15.51 us/call, 3.28 -> 8.26, 4.04 -> 9.30, 7.02 -> 7.72. Cost per LAYER moves far less than call count does: going from 2 to 7 norms per layer is 3.5x the calls but only 1.74x the time (31.2 -> 54.2 us/layer/token). Back-to-back tiny kernels pipeline and share their launch latency, so us/call is an average over a burst, not a per-call price. Reporting us/call as if it were a constant unit cost - which #83 and L-21 both did - reads the pipelining as physics.",
+   "magnitude": "us/call spans 7.72-15.51 (2.0x) while us/layer/token spans 27.1-54.2 (2.0x) in the OPPOSITE direction",
+   "evidence": "weights/perop_shape.py Q1b over weights/data/prereg83_perop.log",
+   "scope": "Pascal, batch-1 decode, five valid GPU-resident profiles (DS-Lite excluded as streaming)",
+   "wired_into": "nothing; corrects L-21's framing"
   }
  ],
  "contradictions": [
@@ -1154,6 +1176,18 @@
    "predicted_effect": "the byte/eta coupling that blocks U-29 dissolves, because eta stops being a free parameter that compensates for byte errors; L-20 and #79 become wireable",
    "evidence": "geometry-vs-measured correlation on the state-locked ladder (r=0.854, n=6); format-vs-residual (r=0.62, n=6 - weak, stated as such); weights/data/ladder_state_locked.json; prereg #82 (scored refuted: k=0.672 fitted on 6 AIV arms, worst +25.5%, median 6.9%->8.1%)",
    "wired_into": "nothing - refuted; the next step is a real per-op measurement, not another fit"
+  },
+  {
+   "id": "U-32",
+   "kind": "untried",
+   "status": "open",
+   "confidence": "suggestive",
+   "claim": "TENSOR SHAPE (L-20), NOT OP COUNT, IS THE CANDIDATE THAT SURVIVED. Asking what fraction of its nominal FORMAT_EBW each clean model actually achieves, and predicting that fraction from the ALREADY-MEASURED L-20 knee curve using only the model's hidden and feed_forward_length - zero free parameters - gives r = +0.769 (n=6) and the correct direction on every row. It systematically UNDER-corrects (needed 0.591-1.017, shape-predicted 0.878-0.982), so it is a partial explanation, not the whole residual. Two rows say what the remainder is: the 7B pair sits at ~1.00 because FORMAT_EBW was calibrated on dense 7B files, so their residual is ~zero BY CONSTRUCTION and the whole mismatch is pushed onto every other model - that circularity is why U-29 could not be fixed by swapping one constant. And gemma4-12B needs 0.726 where shape predicts 0.982; its deficit is attention-shaped (FLASH_ATTN_EXT 134.71 us/call x 48 layers), not geometry.",
+   "magnitude": "r = +0.769 with zero fitted parameters; under-corrects by 0.14-0.29 on the four non-anchor rows",
+   "evidence": "weights/shape_vs_ops.py; L-20 curve from prereg81_knee.log (single session, C-14 safe)",
+   "scope": "Pascal, six GPU-resident models. Correlation on n=6 with one custom model (gemma4-late12) in it - suggestive only.",
+   "wired_into": "nothing yet. The honest next step is a STAKED prereg: predict each model's achieved-bandwidth fraction from geometry BEFORE measuring a fresh ladder, with a kill rule on LOO beating 8.7%.",
+   "predicted_effect": "STAKED BEFORE the next ladder: deriving each model's effective bandwidth from the L-20 knee curve (hidden and feed_forward_length, zero fitted parameters) and re-deriving the format anchor JOINTLY - not on the 7B alone - will beat the shipped model out of sample. Kill rule: leave-one-out median |error| over the clean all-in-VRAM rows must come in BELOW 8.7% and LOO max BELOW 18.6%, the shipped baseline measured today. If either misses, shape joins op count as a refuted pricing axis and the size floor stays an unexplained empirical correction rather than becoming a term."
   }
  ],
  "external": [
