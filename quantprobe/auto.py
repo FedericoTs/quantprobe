@@ -11,7 +11,7 @@ The two-speed design:
   depth-aware GGUF at the same bits - better quality at the same bytes. `probe --apply` does it.
 """
 from __future__ import annotations
-import json, urllib.request
+import json, os, urllib.request
 from collections import namedtuple
 
 from . import plan as planmod
@@ -77,7 +77,7 @@ WIKI_URL = "https://huggingface.co/datasets/ggml-org/ci/resolve/main/wikitext-2-
 
 def ensure_eval(dest_dir):
     """The held-out corpus for probing, fetched once (1.3 MB)."""
-    import os, zipfile, io
+    import zipfile, io
     path = os.path.join(dest_dir, "wiki.test.raw")
     if os.path.isfile(path):
         return path
@@ -240,7 +240,6 @@ def run(a):
         if not src:
             raise SystemExit("no usable high-precision source in that repo (split files unsupported)")
         sbits, ssize, spath = src
-        import os
         dest = getattr(a, "dir", None) or "./models"
         os.makedirs(dest, exist_ok=True)
         print("\n[quantprobe auto --custom] source: " + spath + f" ({ssize/1e9:.1f} GB, {sbits:.1f}-bit)")
@@ -276,14 +275,38 @@ def run(a):
     print(f"\n[quantprobe auto] optimizer wants ~{want_bits:g}-bit; closest file in {repo}:")
     print(f"  {path}  ({size/1e9:.1f} GB, {bits:.2f} effective bits"
           + (f", {len(parts)} parts" if len(parts) > 1 else "") + ")")
-    print(f"  predicted on this machine: {best[1]:.1f} tok/s  ({best[0]})")
+    # C-15: this number is computed from PRESET params + a size-derived bit-width, because the
+    # file is not downloaded yet - so it misses everything `plan --gguf` reads from the header:
+    # the gather-only embedding (#76), the format mix (#70/#77), the true always-active split.
+    # Measured divergence on the flagship: auto 26.2 vs plan 19.5 for the SAME file. If the file
+    # is already on disk, use the real thing; otherwise say plainly that it is a pre-download
+    # estimate and which command is authoritative.
+    _local = os.path.join(getattr(a, "dir", None) or "./models", os.path.basename(path))
+    if os.path.isfile(_local):
+        from . import spec as specmod
+        _s = specmod.from_gguf(_local)
+        _, _, _c = planmod.evaluate(_s["t"], _s["a"], _s["ne"], _s["moe"], _s["bits"], vc, vb,
+                                    rc, rb, db, geta, 1.0, gl, ctx=ctx, kvp=_s["kvp"],
+                                    n_layer=_s["n_layer"], true_size_gb=size / 1e9,
+                                    codebook_share=_s.get("codebook_share", 0.0))
+        _c = [x for x in _c if "expert cache" not in x[0]]
+        if _c:
+            _b = max(_c, key=lambda x: x[1])
+            print(f"  predicted on this machine: {_b[1]:.1f} tok/s  ({_b[0]})  [from the file's "
+                  f"own header - already on disk]")
+            best = _b
+    else:
+        print(f"  predicted on this machine: ~{best[1]:.1f} tok/s  ({best[0]})")
+        print(f"  NOTE: pre-download estimate from preset params - it cannot see this file's "
+              f"format mix or exact byte layout. After the download, `quantprobe plan --gguf "
+              f"<file>` reads the header and is the authoritative number (they have differed by "
+              f"34% on a MoE flagship).")
     if getattr(a, "dry", False):
         print("  (--dry: nothing downloaded)")
         return path
     # 3. fetch it (resumable; all parts when split), then hand off
     from . import fetch as fetchmod
     dest = getattr(a, "dir", None) or "./models"
-    import os
     os.makedirs(dest, exist_ok=True)
     for i, part in enumerate(parts):
         if len(parts) > 1:

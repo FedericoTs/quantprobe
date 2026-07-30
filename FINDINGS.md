@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 20 |
 | Shipped levers | 20 |
 | Measured dead ends | 21 |
-| Open contradictions | 14 |
+| Open contradictions | 15 |
 | Untried levers | 20 |
 | External work to study | 9 |
 
@@ -504,6 +504,12 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 **Magnitude:** 5-12 points of spurious error movement across all 14 arms; exceeds most real effects
 
 `closed` · `measured` · scope: every cross-session predicted-vs-measured comparison this project publishes · evidence: the two calibration.json snapshots of 2026-07-30; the C-13 isolation run (deltas 0.0pt with calibration fixed vs 5-12pt without) · wired into: `quantprobe/calibrate.py cal_id + drift_vs; plan provenance; runtime bench stamp; t_c14_machine_state_identity`
+
+### C-15 — `auto` and `plan` disagreed by 34% on the SAME model. auto's pre-download prediction is computed from PRESET params plus a size-derived bit-width, because the file is not on disk yet - so it sees none of what plan reads from the header: the gather-only embedding (#76), the format mix and codebook share (#70/#77/C-13), the true always-active split. Measured on the flagship: auto 26.2 vs plan 19.5 tok/s. Found by challenging every command path end-to-end after the v1.24 accounting changes - the same divergence class the v1.20.2 audit fixed for optimize/run, reappearing in the one command that predicts before it can read a header.
+
+**Magnitude:** 34% divergence between two commands on the same model; silent before this fix
+
+`closed` · `measured` · scope: auto's pre-download estimate only; after download it hands off to run --gguf, which is correct · evidence: e2e path challenge 2026-07-30 (plan/run/optimize/target/auto); spec vs preset params on Qwen3-30B-A3B · wired into: `quantprobe/auto.py: uses the file's own header when it is already on disk, and otherwise labels the number a pre-download estimate naming plan --gguf as authoritative. Also removed two function-local `import os` that shadowed the module import.`
 
 ## Untried levers
 
