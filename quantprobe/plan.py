@@ -779,8 +779,11 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         miss = max(0.0, 1 - (ra_eff * 0.9) / size)
         hot = act_ne if moe else 0.0                       # MoE attention stays LRU-hot; dense has no hot set
         streamable = act - hot
+        # L-19 applies here too: this row is `-ngl 0`, so every layer's attention runs on the CPU
+        # exactly as in the pure-CPU row. Pricing one and not the other would let a disk-streaming
+        # config outrank the same config WITHOUT disk misses - the inversion class #75 caught.
         tps = 0.95 / (streamable * miss / db + (streamable * (1 - miss) + hot) / (eta_r * rb)
-                      + kv_gb / (ETA_KV * rb))
+                      + kv_gb / (ETA_KV * rb) + (n_layer or 32) * ctx * CPU_ATTN_S_PER_POS_LAYER)
         out.append(("stream from disk (cold experts)", tps, "exceeds RAM - capacity demo", "-ngl 0"))
     if moe and vc > 0 and size + kv_gb > ra:
         # three-tier expert cache (VRAM + RAM + disk): what expert-caching runtimes achieve.

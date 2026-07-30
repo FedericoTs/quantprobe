@@ -145,6 +145,11 @@
   const BITS = [2.0, 2.5, 3.0, 4.5, 6.5, 8.5];
   const DEFAULT_KVP = 98304;   // KV bytes/pos for customs (Qwen3-30B-class GQA)
   const ETA_KV = 0.70;         // single-point calibration: d0->d16384 = 20.02 -> 16.12 measured
+  // L-19 (preregs #73/#74/#75): CPU-RESIDENT layers run attention over the whole KV cache
+  // every token - compute on the CPU's threads, not a byte read. Measured 1.10-1.76 us per
+  // position per CPU layer across two models, 8-30 CPU layers, 8k-32k depth; shipped mean.
+  // Without it the three CPU-resident rows over-promise 2-5x at depth.
+  const CPU_ATTN = 1.55e-6, NLAY_DEFAULT = 32;
   const QUAL = { moe:{"2":1.10,"2.5":1.07,"3":1.05,"4.5":1.02,"6.5":1.01,"8.5":1.00},
                  dense:{"2":1.45,"2.5":1.30,"3":1.12,"4.5":1.03,"6.5":1.01,"8.5":1.00} };
   // validated (predicted, measured, label) — fixed anchors for the law chart
@@ -203,11 +208,14 @@
             tps:1/(actNe/(H.geta*H.vb)+f*actEx/(H.geta*H.vb)+(1-f)*actEx/(etaR*H.rb)+kvGb/(ETA_KV*H.vb))}); } }
     if (!moe && H.vc>0 && size+kvGb>H.vc*0.90 && size+kvGb<=ra+H.vc*0.9){ const g=Math.min(0.95,H.vc*0.9/(size+kvGb));
       const kvT=g*kvGb/(ETA_KV*H.vb)+(1-g)*kvGb/(ETA_KV*H.rb);
-      cfgs.push({n:"split: "+Math.round(g*100)+"% layers→VRAM", tps:1/(g*act/(getaW*H.vb)+(1-g)*act/(etaR*H.rb)+kvT)}); }
-    if (size+kvGb<=ra) cfgs.push({n:"pure CPU (GPU idle)", tps:1/(act/(etaR*H.rb)+kvGb/(ETA_KV*H.rb)), warn:size+kvGb>ra*0.85?"RAM boundary":null});
+      cfgs.push({n:"split: "+Math.round(g*100)+"% layers→VRAM",
+        tps:1/(g*act/(getaW*H.vb)+(1-g)*act/(etaR*H.rb)+kvT+(1-g)*NLAY_DEFAULT*ctx*CPU_ATTN)}); }
+    if (size+kvGb<=ra) cfgs.push({n:"pure CPU (GPU idle)", tps:1/(act/(etaR*H.rb)+kvGb/(ETA_KV*H.rb)+NLAY_DEFAULT*ctx*CPU_ATTN),
+      warn:size+kvGb>ra*0.85?"RAM boundary":null});
     if (size+kvGb>ra){ const raEff=Math.max(ra-kvGb,1), ms=Math.max(0,1-(raEff*0.9)/size);
       const hot=moe?actNe:0, str=act-hot;
-      cfgs.push({n:"stream from disk (cold experts)", tps:0.95/(str*ms/H.db+(str*(1-ms)+hot)/(etaR*H.rb)+kvGb/(ETA_KV*H.rb)),
+      cfgs.push({n:"stream from disk (cold experts)",
+        tps:0.95/(str*ms/H.db+(str*(1-ms)+hot)/(etaR*H.rb)+kvGb/(ETA_KV*H.rb)+NLAY_DEFAULT*ctx*CPU_ATTN),
         warn:"exceeds RAM"}); }
     if (moe && H.vc>0 && size+kvGb>ra){
       const vRes=ne*AB/8*1.08+1.2+kvGb, vFree=Math.max(0,H.vc*0.90-vRes);

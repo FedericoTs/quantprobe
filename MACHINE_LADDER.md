@@ -113,6 +113,14 @@ v1.20.2 code before any run). tg = tg128 unless noted; predictions carry the too
 2. The one hard miss of the program: the dense layer-split at 16k depth overcommits VRAM
    (26 layers + 2.1 GB KV do not actually fit at the emitted config) — opened as C-11. The 4k
    arm's −0.9% shows the KV *term* is right; the *placement fit math at depth* is the defect.
+   **CORRECTED 2026-07-30 (preregs #73/#74/#75, L-19): that diagnosis was wrong.** The fit math
+   was fine — every emitted depth config loads and runs. The defect was PHYSICS: a dense split
+   puts whole layers, attention included, on the CPU, and CPU attention over the whole KV cache
+   is compute on your threads, not the byte read our term priced. Measured at 1.10–1.76 µs per
+   position per CPU layer across four arms (two models, 8–30 CPU layers, 8k–32k depth) and
+   validated out-of-sample before shipping. With the term, the same three arms retrodict within
+   ±10% (7B d16k 3.3 vs 3.44 measured; 7B d32k 1.4 vs 1.54; 14B d8k 1.5 vs 1.36). C-11's
+   depth-aware VRAM budget remains correct and useful — it just was not what caused this miss.
 3. Both IQ arms over-predict: the tool's IQ-on-CPU warning is prose but not priced into the
    number. Logged as U-17 (discount eta_r by the measured 2.7x on the IQ byte share).
 

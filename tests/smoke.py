@@ -764,7 +764,10 @@ def t_simulator_law_matches_the_cli():
                 return js[i:k + 1]
         raise AssertionError("unbalanced braces around " + sig)
 
-    consts = "\n".join(l for l in js.splitlines() if re.match(r"\s*(const|let)\s+ETA_KV\s*=", l))
+    # every scalar constant the law reads, not just ETA_KV: the harness silently lost CPU_ATTN
+    # when L-19 shipped, and an un-run parity test is worse than none.
+    consts = "\n".join(l for l in js.splitlines()
+                       if re.match(r"\s*(const|let)\s+(ETA_KV|CPU_ATTN|NLAY_DEFAULT|DEFAULT_KVP)\s*=", l))
     qm = re.search(r"(?:const|let)\s+QUAL\s*=\s*\{.*?\};", js, re.S)
     harness = consts + "\n" + (qm.group(0) if qm else "") + "\n" + grab("function evalCore(") + """
 const H = {vc:6,vb:192,rc:16,rb:48,db:0.45,geta:0.35,gl:0.04};
