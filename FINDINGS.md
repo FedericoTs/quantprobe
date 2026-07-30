@@ -617,13 +617,13 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `closed` · `measured` · evidence: prereg #76 (scored 2026-07-30: tied models moved <=0.03pt, MoE-K mean -9.1% -> 0.0%); weights/data/full_ladder_v124.json · wired into: `quantprobe/spec.py from_gguf (gather_only); prereg #76`
 
-### U-27 — THE WITHHELD-FORMAT FALLBACK IS OPTIMISTIC, WHICH INVERTS ITS OWN INTENT. When known formats cover <60% of bytes we withhold fmt_bw ('no number beats a wrong number') - but the fallback eta is a generic one that assumes K-quant-class decode. Isolated on two files of the same architecture and active size: Qwen3.6-35B UD-Q2_K_XL (mix priced, fmt_bw 65.1) errs +8.5%, while APEX-MTP-Nano (37% IQ2_XXS + 22% IQ2_S, both unpriced -> fmt_bw None) errs +49.5%. #70 measured codebook formats 36-52% below K-quants per byte; the withheld path silently assumes they are not.
+### U-27 — THE WITHHELD-FORMAT FALLBACK IS OPTIMISTIC, WHICH INVERTS ITS OWN INTENT. When known formats cover <60% of bytes we withhold fmt_bw ('no number beats a wrong number') - but the fallback eta is a generic one that assumes K-quant-class decode. Isolated on two files of the same architecture and active size: Qwen3.6-35B UD-Q2_K_XL (mix priced, fmt_bw 65.1) errs +8.5%, while APEX-MTP-Nano (37% IQ2_XXS + 22% IQ2_S, both unpriced -> fmt_bw None) errs +49.5%. #70 measured codebook formats 36-52% below K-quants per byte; the withheld path silently assumes they are not. [CLOSED-SHIPPED, prereg #77: IQ2_XXS measured at 46.0 (P-1 HIT: the codebook ladder is monotone in bit-width) and unpriced codebook bytes above a 25% share now price at the slowest MEASURED codebook instead of vanishing into an optimistic generic fallback. P-3 exact: all 13 priced arms moved 0.0 points. P-2 MISSED by 0.9pt (+70.3% -> +15.9% against a staked +/-15%), published as a miss; the residual is NOT the fallback (its remaining unpriced format is under-priced, the conservative direction) and stays open.]
 
 **Hypothesis:** measure IQ2_XXS/IQ2_S/IQ1_M (extend the #70 ladder) AND make the withheld-coverage fallback conservative (worst known codebook) instead of generic
 
 **Predicted effect (staked):** the two Qwen3.6 siblings converge; no priced file moves
 
-`untested` · `measured` · evidence: prereg #77 (staked 2026-07-30); weights/data/residual_decomposition_v124.md; the two Qwen3.6 siblings (+8.5 priced vs +49.5 withheld) · wired into: `prereg #77 (staked; measurement in flight)`
+`closed` · `measured` · evidence: prereg #77 (staked 2026-07-30); weights/data/residual_decomposition_v124.md; the two Qwen3.6 siblings (+8.5 priced vs +49.5 withheld); scored: weights/data/prereg77_codebook.log · wired into: `prereg #77 (staked; measurement in flight)`
 
 ## External work to study
 

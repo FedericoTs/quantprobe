@@ -39,7 +39,17 @@ FORMAT_EBW = {
     # beside it. IQ2/IQ3 variants not listed stay excluded (coverage rule withholds fmt_bw).
     "IQ2_XS": 51.1, "IQ3_S": 61.1, "IQ3_XXS": 68.3,                             # measured (#70)
     "IQ4_NL": 117.0,                                                            # measured (#70)
+    "IQ2_XXS": 46.0,                                                            # measured (#77)
 }
+
+# The slowest codebook format we have MEASURED. Prereg #77: when a file's unpriced formats are
+# codebook-named and material, pricing them here is conservative by construction - the entire
+# measured codebook ladder (IQ2_XXS 46.0 < IQ2_XS 51.1 < IQ3_S 61.1 < IQ3_XXS 68.3) descends with
+# bit-width, so an unmeasured IQ2/IQ1 variant cannot plausibly sit above the floor of what we
+# have measured. Withholding a number is only honest when the FALLBACK is conservative; the old
+# fallback assumed K-quant-class decode and over-promised a 59%-codebook file by 50%.
+WORST_MEASURED_CODEBOOK = 46.0
+CODEBOOK_FALLBACK_MIN_SHARE = 0.25
 
 
 def from_gguf(path):
@@ -48,7 +58,7 @@ def from_gguf(path):
     n_layer = _field(r, ".block_count") or 32
     total = 0
     routed = 0
-    iq_bytes = all_bytes = 0
+    iq_bytes = all_bytes = unpriced_cb = 0
     fmt_wsum = fmt_bytes = 0.0
     embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
     has_output = False       # a separate output/lm_head means embeddings are NOT tied
@@ -76,6 +86,8 @@ def from_gguf(path):
         if tn in FORMAT_EBW:
             fmt_wsum += nb * FORMAT_EBW[tn]
             fmt_bytes += nb
+        elif tn.startswith("IQ"):
+            unpriced_cb += nb        # a codebook format we have not measured (prereg #77)
     # U-26 / prereg #76: token_embd is GATHERED at decode - one row of a ~150k-row matrix, i.e.
     # ~zero bytes - but `total - routed` charged the whole matrix at >=4.5 bits every token.
     # When embeddings are TIED the same tensor IS the output projection and is fully read, so it
@@ -117,7 +129,16 @@ def from_gguf(path):
             except Exception:
                 arch = None
             break
-    fmt_bw = (fmt_wsum / fmt_bytes) if (all_bytes and fmt_bytes / all_bytes >= 0.6) else None
+    # prereg #77: unmeasured CODEBOOK bytes get the slowest measured codebook rather than being
+    # dropped. Dropping them withheld fmt_bw entirely, and the fallback path then assumed
+    # K-quant-class decode - over-promising a 59%-codebook file by 50%. Conservative by
+    # construction: the measured ladder descends with bit-width, so an unmeasured IQ2/IQ1 variant
+    # cannot plausibly beat the floor of what we have measured.
+    ws, wb = fmt_wsum, fmt_bytes
+    if all_bytes and unpriced_cb / all_bytes >= CODEBOOK_FALLBACK_MIN_SHARE:
+        ws += unpriced_cb * WORST_MEASURED_CODEBOOK
+        wb += unpriced_cb
+    fmt_bw = (ws / wb) if (all_bytes and wb / all_bytes >= 0.6) else None
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
                 bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
                 iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
