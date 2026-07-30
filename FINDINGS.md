@@ -8,11 +8,11 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 17 |
+| Established laws | 18 |
 | Shipped levers | 19 |
 | Measured dead ends | 21 |
 | Open contradictions | 11 |
-| Untried levers | 12 |
+| Untried levers | 13 |
 | External work to study | 9 |
 
 ## Established laws
@@ -120,6 +120,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** 853 vs 341 GPU nodes/token; matmuls 80% of split device time running 5-15x their byte cost per call; known floor contributor: q8_1 activation re-quantization inside every quantized matmul (~1.5-3 ms/token)
 
 `open` · `refuted-out-of-sample` · scope: one Pascal/WDDM box, batch 1; the floor constant is machine-specific, the LAW (floor x calls + format tax) should transfer · evidence: prereg #58 (E9 per-op attribution, reconciled 96.9%/99.1% against E6), prereg #48 (graphs null), prereg #50 (E6 baseline); prereg #59 (out-of-sample test: FAILED, kill rule honoured); prereg #64 REVISES the #59 DS-Lite attribution: at healthy clocks DS measures 23.08, inside its staked band - that miss was substantially the stuck-boost state. The L-17 kill stands on the 0.5B arm alone. · wired into: `quantprobe plan.py eta constants gain mechanistic justification; preregistrations/2026-07-28-split-eta-attribution.md`
+
+### L-18 — The all-in-VRAM efficiency spread is a PROPERTY OF THE POPULATION, not a Pascal artefact and not an architecture constant. On one basis (eta against file bytes / spec bandwidth), 61 public benchmarks across 8 GPU architectures span 0.512 (hopper) to 0.812 (rdna4), median 0.62 - a 1.6x spread - and our own Pascal box (0.509-0.577 measured) sits INSIDE that range, not below it. Consequence: no per-architecture constant can replace the one-sided floor; the variance is irreducible from public data and only a per-machine measurement (calibrate's anchors) collapses it. The 'typically 1.1-1.8x above the floor' disclosure is therefore externally validated, not a hedge.
+
+**Magnitude:** 1.6x population spread; Pascal inside it; floor + calibrate both justified by external data
+
+`established` · `measured` · scope: dense Q4-class all-in-VRAM decode, spec-bandwidth basis; MoE-resident rows have a thinner corpus (0.31-0.50) and are NOT covered by this claim · evidence: prereg #72 (killed as specified, scored before implementation); weights/data/public_bench_corpus.json (61 entries, weights/public_bench_audit.py); E-08 (RTX 5070 at eta_file 0.810, the population maximum) · wired into: `plan.py fits_in_vram_advice floor language (evidence line); README/LAWS floor section`
 
 ## Shipped levers
 
@@ -567,13 +573,21 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `untested` · `speculative` · wired into: `candidate next release; evidence: prereg #70 P-2 diagnosis + #27 sync ledger`
 
-### U-23 — The split-placement emit carries --no-mmap unconditionally (it is worth +73% prefill with -ub via host-transfer batching, #19/#20), but E-08's box shows the cost side: at 20GB working set on 32GB RAM (330 MiB free), non-evictable pages are an OOM risk under desktop load. The advice needs a RAM-headroom gate like the >45% pinning warning: below a headroom threshold, keep mmap and print what is being traded (evictability vs the measured prefill gain).
+### U-23 — The split-placement emit carries --no-mmap unconditionally (it is worth +73% prefill with -ub via host-transfer batching, #19/#20), but E-08's box shows the cost side: at 20GB working set on 32GB RAM (330 MiB free), non-evictable pages are an OOM risk under desktop load. The advice needs a RAM-headroom gate like the >45% pinning warning: below a headroom threshold, keep mmap and print what is being traded (evictability vs the measured prefill gain). [CLOSED-SHIPPED v1.23, PARTIALLY: --no-mmap is now gated on the placement's share of the usable RAM pool (>75% keeps mmap, same basis as the pinning warning - a second absolute reserve would repeat the #62 double-count), and the exception always prints why plus the +13.7% it costs. HONEST LIMIT: E-08's own case (71% share) does NOT trip the gate - their 330 MiB free came from OTHER processes plus the mapped file, which a share-of-model rule cannot see. Completing it means reading ACTUAL available memory at plan time (detect.py already shells for RAM size) -> U-24.]
 
 **Hypothesis:** gate --no-mmap on (model_ram_share + margin) vs available RAM; print the tradeoff both ways
 
 **Predicted effect (staked):** no more silent OOM-risk emits on RAM-tight boxes; RAM-roomy boxes keep the +73%
 
-`untested` · `observed` · wired into: `candidate next release; evidence: E-08 report`
+`closed` · `observed` · wired into: `quantprobe/plan.py mmap_decision + moe_split_flags; t_u23_mmap_gate`
+
+### U-24 — The mmap/pinning gates reason about model share, not the machine's ACTUAL free memory, so they miss the case that motivated them (E-08: 20GB working set, 330 MiB free, because browser/OS/mapped-file usage is invisible to a share rule).
+
+**Hypothesis:** read available (not total) RAM in detect.py and gate --no-mmap/-ot pinning on it
+
+**Predicted effect (staked):** the gates fire on the machines that actually OOM, not on a proxy
+
+`untested` · `observed` · wired into: `candidate next release; evidence: E-08 + U-23's partial closure`
 
 ## External work to study
 

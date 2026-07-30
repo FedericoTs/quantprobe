@@ -1123,10 +1123,25 @@ def _all_placement_rows():
 def t_invariant_cpu_override_implies_no_mmap():
     # llama.cpp warns that tensor overrides to CPU with mmap enabled cost performance, and we
     # MEASURED it: 16.45 vs 18.70 tok/s (+13.7%). v1.8.0 shipped a row that violated this.
+    # U-23 adds ONE sanctioned exception: on a RAM-dominating placement we keep mmap so the
+    # pages stay evictable - but the row must then SAY so. Silent omission stays a failure.
     bad = [(c[0], c[3]) for c, _ in _all_placement_rows()
            if "-ot" in c[3] and "=CPU" in c[3] and "--no-mmap" not in c[3]
-           and "expert cache" not in c[0]]
-    assert not bad, f"rows override tensors to CPU without --no-mmap: {bad[:3]}"
+           and "expert cache" not in c[0] and "keeping mmap" not in (c[2] or "")]
+    assert not bad, f"rows override tensors to CPU without --no-mmap and without saying why: {bad[:3]}"
+
+
+def t_u23_mmap_gate():
+    # U-23 (E-08): --no-mmap only while the placement leaves the RAM pool room; the exception
+    # must carry its explanation and the measured cost of taking it.
+    from quantprobe.plan import mmap_decision, moe_split_flags, MMAP_HOST_SHARE_CAP
+    assert mmap_decision(7, 12)[0] is True, "58% of the pool must keep the measured --no-mmap"
+    ok, note = mmap_decision(11, 12)
+    assert ok is False and "keeping mmap" in note and "13.7%" in note, "tight case must explain the trade"
+    assert "--no-mmap" in moe_split_flags(0.3, 48, 7, 12)
+    assert "--no-mmap" not in moe_split_flags(0.3, 48, 11, 12)
+    assert "--no-mmap" in moe_split_flags(0.3, 48), "unknown RAM keeps the measured default"
+    assert 0.5 < MMAP_HOST_SHARE_CAP < 1.0
 
 def t_invariant_flags_are_valid_argv():
     # no prose may ever reach a launch command (the v1.6.5 bug: a bare '+' killed llama-cli)

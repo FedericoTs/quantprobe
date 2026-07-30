@@ -61,7 +61,7 @@ effective batches (speculative verify rounds amortize the floor across draft tok
 directly to the existing Law 6 speculation machinery), and the tool's split-placement η constant
 gains a mechanistic justification instead of being a fitted number.
 
-**Wired into:** pending; the N5 entry in `KERNEL_BREAKTHROUGH_BRAINSTORM.md` scores either way.
+**Wired into:** pending; the N5 entry in the kernel brainstorm ledger (internal) scores either way.
 
 ---
 
@@ -134,5 +134,5 @@ matvec cannot hide DRAM latency). Micro-attribution below 16 us is NOT claimed.
   fitted number.
 
 **Wired into:** `findings/REGISTER.json:L-17` (the per-call floor law + two-arm reconciliation) ·
-`C-09` note (the 87%-accounted token now has its GPU share decomposed) · N5 in
-`KERNEL_BREAKTHROUGH_BRAINSTORM.md` scored.
+`C-09` note (the 87%-accounted token now has its GPU share decomposed) · N5 in the
+internal kernel brainstorm ledger, scored.
