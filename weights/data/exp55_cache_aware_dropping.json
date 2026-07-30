@@ -1,0 +1,67 @@
+{
+  "prereg": "preregistrations/2026-07-30-cache-aware-dropping.md",
+  "prereg_id": 90,
+  "task": 55,
+  "started": "2026-07-30 21:14:38",
+  "headline": true,
+  "config": {
+    "ctx": 512,
+    "chunks": 12,
+    "ngl": 0,
+    "k_base": 8,
+    "k_grid": [
+      7,
+      6,
+      5,
+      4
+    ],
+    "k_headline": 6
+  },
+  "gates": {
+    "top1_min": 0.99,
+    "mean_kld_max": 0.05,
+    "speedup_min": 1.2,
+    "primary_model": "qwen3-30b-a3b-q2k"
+  },
+  "arm_b_constants": {
+    "bw_gpu_eff": 130000000000.0,
+    "bw_cpu_eff": 15300000000.0,
+    "gpu_expert_share": 0.32,
+    "NOTE": "CALIBRATION INPUTS, not predictions.  Arm B is arithmetic over GGUF headers -- no tok/s is measured anywhere in #90."
+  },
+  "arm_b_speed_envelope": {
+    "qwen3-30b-a3b-q2k": {
+      "8": 1.0,
+      "7": 1.1282,
+      "6": 1.294,
+      "5": 1.517,
+      "4": 1.8329
+    },
+    "q35-A-shexp": {
+      "8": 1.0,
+      "7": 1.0963,
+      "6": 1.213,
+      "5": 1.3577,
+      "4": 1.5414
+    }
+  },
+  "arm_0_structural": {
+    "qwen3-30b-a3b-q2k": {
+      "arch": "qwen3moe",
+      "n_moe_layer": 48,
+      "n_expert": 128,
+      "experts_fused_per_layer": true,
+      "has_shared_experts": false,
+      "n_vocab": 151936
+    },
+    "q35-A-shexp": {
+      "arch": "qwen35moe",
+      "n_moe_layer": 40,
+      "n_expert": 256,
+      "experts_fused_per_layer": true,
+      "has_shared_experts": true,
+      "n_vocab": 248320
+    }
+  },
+  "overall": "DRY-RUN"
+}

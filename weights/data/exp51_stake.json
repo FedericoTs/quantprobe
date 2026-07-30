@@ -1,0 +1,252 @@
+{
+ "experiment": 51,
+ "kind": "external-retrodiction",
+ "when": "2026-07-30T20:21:47",
+ "source": {
+  "readme": "https://raw.githubusercontent.com/Helldez/BigMoeOnEdge/main/README.md",
+  "findings": "https://raw.githubusercontent.com/Helldez/BigMoeOnEdge/main/docs/bench-data/2026-07-24-desktop-qwen36/findings.md"
+ },
+ "file": {
+  "repo": "bartowski/Qwen_Qwen3.6-35B-A3B-GGUF",
+  "name": "Qwen_Qwen3.6-35B-A3B-Q4_K_M.gguf",
+  "url": "https://huggingface.co/bartowski/Qwen_Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen_Qwen3.6-35B-A3B-Q4_K_M.gguf",
+  "bytes": 22285080192,
+  "gb": 22.2851,
+  "header_bytes": 10990692,
+  "tensor_bytes": 22274089472,
+  "alignment": 32,
+  "identity": {
+   "arch": "qwen35moe",
+   "expert_count": 256,
+   "expert_used_count": 8,
+   "block_count": 41
+  },
+  "header_cached": true
+ },
+ "candidates": [
+  {
+   "repo": "bartowski/Qwen_Qwen3.6-35B-A3B-GGUF",
+   "file": "Qwen_Qwen3.6-35B-A3B-Q4_K_M.gguf",
+   "bytes": 22285080192,
+   "gb": 22.2851,
+   "match": true
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
+   "file": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+   "bytes": 22134528992,
+   "gb": 22.1345,
+   "match": false
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
+   "file": "Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
+   "bytes": 22360456160,
+   "gb": 22.3605,
+   "match": false
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
+   "file": "Qwen3.6-35B-A3B-UD-Q4_K_S.gguf",
+   "bytes": 20893015008,
+   "gb": 20.893,
+   "match": false
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+   "file": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+   "bytes": 22663387424,
+   "gb": 22.6634,
+   "match": false
+  },
+  {
+   "repo": "ggml-org/Qwen3.6-35B-A3B-GGUF",
+   "file": "Qwen3.6-35B-A3B-Q4_K_M.gguf",
+   "bytes": 20419565568,
+   "gb": 20.4196,
+   "match": false
+  },
+  {
+   "repo": "lmstudio-community/Qwen3.6-35B-A3B-GGUF",
+   "file": "Qwen3.6-35B-A3B-Q4_K_M.gguf",
+   "bytes": 21166757728,
+   "gb": 21.1668,
+   "match": false
+  }
+ ],
+ "selftest": [
+  {
+   "file": "qwen35-35b.imatrix.gguf",
+   "t": 0.04803623,
+   "a": 0.04803623,
+   "ne": 0.00081959,
+   "bits": 32.01
+  },
+  {
+   "file": "Qwen2.5-0.5B-Instruct-Q8_0.gguf",
+   "t": 0.494032768,
+   "a": 0.494032768,
+   "ne": 0.494032768,
+   "bits": 8.6
+  },
+  {
+   "file": "DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf",
+   "t": 15.706484224,
+   "a": 2.451435008,
+   "ne": 1.101917696,
+   "bits": 3.04
+  }
+ ],
+ "spec": {
+  "t": 35.505251456,
+  "a": 3.010929792,
+  "ne": 1.979131008,
+  "moe": true,
+  "bits": 5.02,
+  "kvp": 83968,
+  "n_layer": 41,
+  "arch": "qwen35moe",
+  "codebook_share": 0.0
+ },
+ "spec_raw": {
+  "_total": 35505251456,
+  "_routed": 33017561088,
+  "_embd": 508559360,
+  "_has_output": true,
+  "_n_exp": 256,
+  "_n_used": 8,
+  "_all_bytes": 22274089472,
+  "_exp_bytes": 20359151616,
+  "_embd_bytes": 286064640
+ },
+ "constants": {
+  "eta_r_moe": 0.38,
+  "ram_bw_gbs": 51.0,
+  "act_mult": 1.15,
+  "attn_bit_floor": 4.5
+ },
+ "derived": {
+  "active_gb_per_token": 2.172762,
+  "active_gb_ne": 1.42819,
+  "active_gb_experts": 0.744572,
+  "active_gb_exact_bytes": 2.265097
+ },
+ "prediction_tok_s": 8.9195,
+ "sensitivity": {
+  "DDR4-2400 dual (38.4 GB/s)": 6.716,
+  "DDR4-2666 dual (42.7 GB/s)": 7.468,
+  "DDR4-2933 dual (46.9 GB/s)": 8.202,
+  "DDR4-3200 dual (51.2 GB/s)": 8.955
+ },
+ "counterfactuals": {
+  "#76 embedding-gather OFF": 7.631,
+  "activation x1.15 OFF": 10.257,
+  "eta 0.30 (the value U-33's prose quoted)": 7.042,
+  "exact per-tensor bytes (U-29 convention, no x1.15)": 8.556,
+  "plus L-19 CPU-attention term at ctx=256": 7.789,
+  "DDR4-2666 AND the L-19 term together": 6.659
+ },
+ "target": {
+  "rule": "median compute s/token over cells run at the model's own routing width (no --drop-cold-experts)",
+  "full_width_cells": [
+   "A",
+   "B",
+   "D",
+   "E",
+   "F",
+   "G",
+   "I"
+  ],
+  "excluded_cells": [
+   "C",
+   "H",
+   "J"
+  ],
+  "compute_s_per_token": [
+   0.107,
+   0.113,
+   0.115,
+   0.115,
+   0.116,
+   0.116,
+   0.117
+  ],
+  "median_s": 0.115,
+  "measured_tok_s": 8.6957,
+  "headline_tok_s": 9.0,
+  "max_measured_desktop_tok_s": 7.33
+ },
+ "cells": [
+  {
+   "id": "A",
+   "cfg": "round1 baseline io4.t4",
+   "tps": 4.78,
+   "compute": 0.116,
+   "drop": false
+  },
+  {
+   "id": "B",
+   "cfg": "round1 io8",
+   "tps": 5.61,
+   "compute": 0.116,
+   "drop": false
+  },
+  {
+   "id": "C",
+   "cfg": "round1 drop-cold 0.75",
+   "tps": 6.82,
+   "compute": 0.112,
+   "drop": true
+  },
+  {
+   "id": "D",
+   "cfg": "round1 t8",
+   "tps": 6.14,
+   "compute": 0.107,
+   "drop": false
+  },
+  {
+   "id": "E",
+   "cfg": "round2 io4.t4 cache5000",
+   "tps": 4.72,
+   "compute": 0.115,
+   "drop": false
+  },
+  {
+   "id": "F",
+   "cfg": "round2 io8.t4 cache5000",
+   "tps": 4.63,
+   "compute": 0.117,
+   "drop": false
+  },
+  {
+   "id": "G",
+   "cfg": "round2 io4.t8 cache5000",
+   "tps": 4.68,
+   "compute": 0.113,
+   "drop": false
+  },
+  {
+   "id": "H",
+   "cfg": "round2 io8.t8 drop0.75",
+   "tps": 6.33,
+   "compute": 0.107,
+   "drop": true
+  },
+  {
+   "id": "I",
+   "cfg": "round3 overlap cache5000",
+   "tps": 5.14,
+   "compute": 0.115,
+   "drop": false
+  },
+  {
+   "id": "J",
+   "cfg": "round3 overlap+auto+drop0.75",
+   "tps": 7.33,
+   "compute": 0.107,
+   "drop": true
+  }
+ ],
+ "mode": "stake"
+}

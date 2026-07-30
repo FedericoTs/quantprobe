@@ -1,4 +1,4 @@
-# Pre-registration #86: is expert routing skewed enough to justify hot-expert caching?
+# Pre-registration #87: is expert routing skewed enough to justify hot-expert caching?
 
 **Author:** Federico Sciuca · **Date staked:** 2026-07-30, BEFORE any of the four measured arms
 were run. **STAKED.** · **Task:** #52 · **Gates:** U-34, and E-02 (PowerInfer's frequency-ranked
@@ -9,6 +9,41 @@ indices — a choice made on VRAM arithmetic, not on measured usage. BigMoeOnEdg
 that caching the *most-used* experts hits 76-84%, and that cache size is the dominant lever.
 Before we build anything of the sort, the premise has to be measured on **our** models: does
 routing actually concentrate, and does it concentrate on a *stable* set?
+
+---
+
+## AMENDMENT 1 — adversarial review, 2026-07-30, still BEFORE any measurement
+
+This prereg was adversarially reviewed for the one defect that matters most in a
+pre-registration: *ways the experiment cannot fail*. `weights/data/exp52_imatrix/` did not exist
+at the time of review — **no arm had been run and no number existed** — so the corrections below
+are amendments to an unmeasured stake, not a rewrite after seeing a result. They are listed here
+in full because the alternative (quietly tightening a prereg) is the thing this protocol exists
+to prevent. Every change tightens the experiment; none loosens a gate or moves a threshold.
+
+Six ways the kill rules could have been evaded, all now closed:
+
+1. **KR-2 could not fire in the 0.53–0.57 band.** The MARGINAL check ran before the G2 verdict
+   and returned unconditionally, so a retention of 0.20 next to a headline of 0.556 would have
+   been reported "too close to call" instead of a decisive stability refutation.
+2. **KR-2 could pass vacuously.** With a single domain the cross-domain dict is empty and
+   retention defaulted to `1.0` — an unevaluable gate scored as a passed gate.
+3. **KR-3's minimum-data check was skipped whenever `imatrix.chunk_count` was absent** (`if
+   chunk_count is not None and …`). A build that does not write the field would have scored a
+   1-chunk run silently.
+4. **A broken parse would have been published as a refutation.** A zero-mass layer scored share
+   `0.0`, propagating to a headline of `0.0` and a confident FAIL. This is the same failure shape
+   as the profiler-on-an-oversized-model incident: an artifact one step from being published as a
+   measurement. It is now VOID.
+5. **The instrument could be swapped silently** — a missing staked binary fell through to
+   whatever `llama-imatrix` was on `PATH`; and a cached imatrix was reused regardless of the ctx,
+   chunk budget, ngl, threads, corpus, or model that produced it.
+6. **The controls did not exist.** The "negative control" numbers in the Method section were
+   asserted in prose with no code behind them. They are now `--selftest`, they run inside every
+   scored session, and a positive control was added so that a FAIL carries information.
+
+The 0.55 and 0.90 thresholds, the ±0.02 band, the 0.32 budget, the corpus, and all six stakes
+are **unchanged**.
 
 ---
 
@@ -94,10 +129,22 @@ per expert, how many `(token, slot)` pairs the router assigned — `e.counts[ex]
 `blk.<N>.ffn_<gate|up|down>_exps.weight.counts`, one F32 per expert. We drive the stock
 prebuilt `tools/llamacpp-b10098/llama-imatrix.exe` and read those tensors.
 
-**This is not a timing measurement.** Counts are a deterministic function of (model, tokens);
-they do not depend on clocks, thermals, or placement. **C-14 does not bind** — no `cal_id` is
-required, and results are comparable across sessions. Runs use `-ngl 0` (pure CPU) for
-determinism and to sidestep the 6 GB VRAM limit on a 30B file.
+**This is not a timing measurement — but C-14 is not fully waived either.** Counts do not depend
+on clocks, thermals, or placement, so the *timing* form of C-14 does not bind and no `cal_id` is
+required. The earlier draft went further and said "C-14 does not bind", full stop. That was too
+broad. Counts still depend on the binary, the model file, the corpus, the chunk budget, and —
+through CPU float reduction order at router near-ties — on thread count and offload split. The
+idempotent cache made it easy to produce shard A under one setting and shard B under another and
+then compare them, which is the cross-state comparison C-14 exists to forbid. So each imatrix now
+carries a **run stamp** (`<file>.stamp.json`: binary SHA-256, model path/size/mtime, corpus
+SHA-256, ctx, chunks, ngl, threads). A cached file with no stamp, or a stamp that differs from
+the current run, is **refused** rather than reused. Runs use `-ngl 0` (pure CPU) for determinism
+and to sidestep the 6 GB VRAM limit on a 30B file.
+
+**The binary is part of the instrument.** `llama-imatrix` is taken from the staked path only.
+The script previously fell back to whatever `llama-imatrix` was on `PATH` if the staked path was
+missing — a silent instrument swap that would have been invisible in the headline. It now
+refuses, and records the binary's SHA-256 in the output JSON.
 
 **Models (2 arms).**
 
@@ -145,16 +192,31 @@ VRAM the shipped regex spends):
    each domain's held-out B shard. This is exactly what a static frequency-ranked pin would
    deliver, and the reported figure is the **worst domain**.
 
-**Negative control.** On synthetic uniform routing the pipeline returns 0.3202 against a
-structural null of 0.3200 (`uplift 1.00x`) — the metric is not inflated by construction. On
-synthetic data with strong but *domain-disjoint* hot sets it returns a high share (0.766,
-2.39x) yet is correctly killed by the retention gate. Both checks were run before staking.
+**Controls — reproducible, and run automatically inside every scored session.** An earlier draft
+of this prereg asserted two synthetic controls with numbers in the text and *no code in the
+script*. That was an unfalsifiable claim and it has been replaced. The controls are now
+`weights/exp52_expert_usage_skew.py --selftest`; they drive the same `analyse_model` /
+`verdict_for` path the real arms drive, and the measured run refuses to emit any verdict unless
+all four reproduce their ground truth in the same session.
+
+| control | construction | headline | retention | verdict |
+|---|---|---|---|---|
+| `uniform` | flat routing | 0.3187 | 1.0005 | **FAIL** (uplift 0.99x — the metric is not inflated by construction) |
+| `disjoint_hot` | hot sets share no experts | 0.4408 | 0.1177 | **FAIL** |
+| `partial_overlap` | 28 of 41 hot experts shared, 13 domain-specific | 0.7629 | 0.6984 | **FAIL** — G1 *passes*, G2 fires |
+| `shared_hot` | strong and domain-stable | 0.7995 | 1.0000 | **PASS** (uplift 2.50x) |
+
+`partial_overlap` is the load-bearing one: it is the only demonstration that KR-2 can overturn a
+*strong* headline on its own, which is precisely the case where a stability gate earns its keep.
+`shared_hot` is the positive control — without it, "the gate can fail" and "the gate always
+fails" would be indistinguishable, and a FAIL on the real arms would carry no information.
 
 **Reproduce:**
 
 ```
 cd C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill
-python weights\exp52_expert_usage_skew.py
+python weights\exp52_expert_usage_skew.py --selftest   # controls only; no model, no GPU
+python weights\exp52_expert_usage_skew.py              # the staked run (controls run first)
 ```
 
 Idempotent (completed imatrix runs are reused; `--force` redoes them). Raw output:
@@ -233,17 +295,42 @@ to `weights/data/exp52_expert_usage_skew.json` as `overall`.
   domain we calibrated on. Only a *dynamic* cache could exploit it, that is out of scope here,
   and it must be staked separately — with BigMoeOnEdge's own refuted prefetch A/B as the warning
   that online expert machinery can lose to its own overhead.
-- **KR-3 (instrument VOID).** If `gate`/`up`/`down` counts disagree for any layer, or per-layer
-  routing mass is not constant, or any shard yields fewer than 8 chunks, the run is **VOID** —
-  no verdict, no register entry, fix the instrument and rerun. A void is not a failure and must
-  not be reported as one.
+  **KR-2 outranks KR-5.** A retention failure is decisive on its own and is never softened into
+  MARGINAL by a headline that happens to land near 0.55. (The first draft returned MARGINAL
+  whenever the headline sat in 0.53–0.57 *regardless of retention*, which meant KR-2 could not
+  fire anywhere in that band. Fixed; the `partial_overlap` control exists to keep it fixed.)
+- **KR-3 (instrument VOID).** The run is **VOID** — no verdict, no register entry, fix the
+  instrument and rerun — if any of the following hold. A void is not a failure and must not be
+  reported as one.
+  - `gate`/`up`/`down` counts disagree for any layer;
+  - per-layer routing mass is not constant;
+  - any shard yields fewer than 8 chunks, **or `imatrix.chunk_count` is absent** (an absent field
+    used to skip this check silently, so a 1-chunk run would have scored), **or
+    `imatrix.chunk_size` is absent or differs from the requested `-c`**;
+  - any layer has **zero total routing mass** (this used to score as share 0.0 and would have
+    been published as a *refutation* caused by a broken parse);
+  - the ranking and scoring shards cover **different layer sets** (previously the intersection was
+    scored silently and reported as the whole model), or the four runs of an arm disagree on
+    `n_expert` / `n_moe_layers`;
+  - fewer than two domains are present, so KR-2 cannot be evaluated (retention used to default to
+    1.0 — a vacuous pass of the stability gate);
+  - the four synthetic controls do not reproduce their ground truth in the same session.
 - **KR-4 (anti-fudge).** The four corpus shards and `wiki.test.raw` are pinned by SHA-256 above
-  and re-checked at runtime; the script refuses to run on mismatch. The prompt set cannot be
-  reselected after seeing a result. `--frac` defaults to 0.32 and any other value must be
-  reported as a separate, clearly-labelled sweep, never as the headline.
-- **KR-5 (marginality).** If the headline lands within ±0.02 of 0.55 the script reports
-  **MARGINAL**, not PASS/FAIL. The documented remedy is to lengthen the C# corpus and re-stake;
-  a marginal result must not be rounded into a verdict in either direction.
+  and re-checked at runtime; the script refuses to run on mismatch, and a shard with **no** pinned
+  hash is now also refused (it previously logged a warning and continued, so deleting one hash
+  disabled the gate). The prompt set cannot be reselected after seeing a result.
+  The staked budget is `frac=0.32, ctx=512, chunks=8, min_chunks=8, ngl=0`. **Any** departure —
+  not just `--frac` — demotes the run to **SWEEP**: it is labelled in the log, tagged
+  `is_staked_headline: false` in the JSON, and written to `…SWEEP.json` so it cannot overwrite or
+  be mistaken for the staked result.
+- **KR-5 (marginality).** If the headline lands within ±0.02 of 0.55 **and KR-2 has passed**, the
+  script reports **MARGINAL**, not PASS/FAIL. The documented remedy is to lengthen the C# corpus
+  and re-stake; a marginal result must not be rounded into a verdict in either direction.
+- **KR-6 (no split-spinning).** KR-1 is per-model, so the two arms can disagree. A `SPLIT` is
+  reported as what it is: hot-expert caching **refuted for the failing model** and surviving only
+  on the other. It does not license a general claim, the failing arm is published at equal
+  prominence with the passing one, and task #55 stays gated to the surviving arm alone. The
+  script prints this explicitly rather than leaving a split to be summarised by its winner.
 
 ---
 
@@ -271,6 +358,15 @@ layer's experts into one tensor, no `-ot` pattern can express per-expert residen
 authorises a *runtime* change and a follow-up prereg that measures actual tok/s; it does not
 authorise editing the regex, and it does not by itself claim any end-to-end speedup. The
 quantity measured here is routing mass, not time.
+
+**Symmetric reporting, committed in advance.** Whatever `overall` comes back — PASS, FAIL,
+SPLIT, MARGINAL, or VOID — the register entry is written from the JSON verbatim and the outcome
+is published in the same place with the same prominence. Concretely: a FAIL is written up as a
+refutation of E-02's frequency-ranked-residency claim for our rows, not filed as "inconclusive";
+a SPLIT names the failing model in its headline sentence (KR-6); a MARGINAL is published as
+*undecided* with the remedy, not rounded; a VOID is published as an instrument failure and
+explicitly *not* as evidence either way. The only outcome that produces no register entry is
+VOID, and VOID is itself reported.
 
 **Wired into:** nothing yet. Decides U-34's caching lever for our rows, gates task #55, and
 answers E-02's open question for MoE experts. `findings/REGISTER.json` is updated only after

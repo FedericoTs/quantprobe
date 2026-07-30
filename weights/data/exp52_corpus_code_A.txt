@@ -1,0 +1,794 @@
+// ============================ Domain/Orders.cs ============================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Contoso.Ordering.Domain;
+
+public readonly record struct Money(decimal Amount, string Currency)
+{
+    public static Money Zero(string currency) => new(0m, currency);
+
+    public Money Add(Money other)
+    {
+        if (!string.Equals(Currency, other.Currency, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Cannot add {Currency} to {other.Currency}.");
+        }
+        return this with { Amount = Amount + other.Amount };
+    }
+
+    public override string ToString() => $"{Amount:N2} {Currency}";
+}
+
+public enum OrderStatus
+{
+    Draft = 0,
+    Submitted = 1,
+    Paid = 2,
+    Shipped = 3,
+    Cancelled = 4
+}
+
+public sealed class OrderLine
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Sku { get; private set; }
+    public int Quantity { get; private set; }
+    public Money UnitPrice { get; private set; }
+
+    private OrderLine() { Sku = string.Empty; }
+
+    public OrderLine(string sku, int quantity, Money unitPrice)
+    {
+        if (string.IsNullOrWhiteSpace(sku))
+        {
+            throw new ArgumentException("SKU is required.", nameof(sku));
+        }
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), quantity, "Quantity must be positive.");
+        }
+        Sku = sku;
+        Quantity = quantity;
+        UnitPrice = unitPrice;
+    }
+
+    public Money LineTotal => UnitPrice with { Amount = UnitPrice.Amount * Quantity };
+
+    public void Restock(int delta)
+    {
+        var next = Quantity + delta;
+        if (next < 0)
+        {
+            throw new InvalidOperationException("Cannot restock below zero.");
+        }
+        Quantity = next;
+    }
+}
+
+public sealed class Order
+{
+    private readonly List<OrderLine> _lines = new();
+
+    public Guid Id { get; private set; }
+    public string CustomerId { get; private set; }
+    public OrderStatus Status { get; private set; }
+    public DateTimeOffset CreatedUtc { get; private set; }
+    public DateTimeOffset? SubmittedUtc { get; private set; }
+    public IReadOnlyList<OrderLine> Lines => _lines.AsReadOnly();
+
+    private Order()
+    {
+        CustomerId = string.Empty;
+    }
+
+    public Order(string customerId, TimeProvider? clock = null)
+    {
+        Id = Guid.NewGuid();
+        CustomerId = customerId ?? throw new ArgumentNullException(nameof(customerId));
+        Status = OrderStatus.Draft;
+        CreatedUtc = (clock ?? TimeProvider.System).GetUtcNow();
+    }
+
+    public void AddLine(string sku, int quantity, Money unitPrice)
+    {
+        EnsureDraft();
+        var existing = _lines.FirstOrDefault(l => l.Sku == sku);
+        if (existing is not null)
+        {
+            existing.Restock(quantity);
+            return;
+        }
+        _lines.Add(new OrderLine(sku, quantity, unitPrice));
+    }
+
+    public void RemoveLine(string sku)
+    {
+        EnsureDraft();
+        _lines.RemoveAll(l => l.Sku == sku);
+    }
+
+    public Money Total(string currency) =>
+        _lines.Aggregate(Money.Zero(currency), (acc, line) => acc.Add(line.LineTotal));
+
+    public void Submit(TimeProvider? clock = null)
+    {
+        EnsureDraft();
+        if (_lines.Count == 0)
+        {
+            throw new InvalidOperationException("Cannot submit an empty order.");
+        }
+        Status = OrderStatus.Submitted;
+        SubmittedUtc = (clock ?? TimeProvider.System).GetUtcNow();
+    }
+
+    public void Cancel(string reason)
+    {
+        if (Status is OrderStatus.Shipped)
+        {
+            throw new InvalidOperationException($"Order {Id} already shipped; reason='{reason}'.");
+        }
+        Status = OrderStatus.Cancelled;
+    }
+
+    private void EnsureDraft()
+    {
+        if (Status != OrderStatus.Draft)
+        {
+            throw new InvalidOperationException($"Order {Id} is {Status}, not Draft.");
+        }
+    }
+}
+
+// ============================ Domain/Result.cs ============================
+namespace Contoso.Ordering.Domain;
+
+public readonly struct Error
+{
+    public string Code { get; }
+    public string Message { get; }
+
+    public Error(string code, string message)
+    {
+        Code = code;
+        Message = message;
+    }
+
+    public static readonly Error None = new(string.Empty, string.Empty);
+    public bool IsNone => string.IsNullOrEmpty(Code);
+}
+
+public readonly struct Result<T>
+{
+    private readonly T? _value;
+
+    private Result(T value)
+    {
+        _value = value;
+        Error = Error.None;
+        IsSuccess = true;
+    }
+
+    private Result(Error error)
+    {
+        _value = default;
+        Error = error;
+        IsSuccess = false;
+    }
+
+    public bool IsSuccess { get; }
+    public bool IsFailure => !IsSuccess;
+    public Error Error { get; }
+
+    public T Value => IsSuccess
+        ? _value!
+        : throw new InvalidOperationException($"Result is a failure: {Error.Code}");
+
+    public static Result<T> Success(T value) => new(value);
+    public static Result<T> Failure(Error error) => new(error);
+
+    public Result<TOut> Map<TOut>(Func<T, TOut> selector) =>
+        IsSuccess ? Result<TOut>.Success(selector(Value)) : Result<TOut>.Failure(Error);
+
+    public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> binder) =>
+        IsSuccess ? binder(Value) : Result<TOut>.Failure(Error);
+
+    public TOut Match<TOut>(Func<T, TOut> onSuccess, Func<Error, TOut> onFailure) =>
+        IsSuccess ? onSuccess(Value) : onFailure(Error);
+}
+
+// ============================ Infrastructure/OrderingDbContext.cs ============================
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Contoso.Ordering.Domain;
+
+namespace Contoso.Ordering.Infrastructure;
+
+public sealed class OrderingDbContext : DbContext
+{
+    public OrderingDbContext(DbContextOptions<OrderingDbContext> options) : base(options)
+    {
+    }
+
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderLine> OrderLines => Set<OrderLine>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrderingDbContext).Assembly);
+        modelBuilder.HasDefaultSchema("ordering");
+        base.OnModelCreating(modelBuilder);
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder builder)
+    {
+        builder.Properties<decimal>().HavePrecision(18, 4);
+        builder.Properties<string>().HaveMaxLength(512);
+    }
+}
+
+public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
+{
+    public void Configure(EntityTypeBuilder<Order> builder)
+    {
+        builder.ToTable("orders");
+        builder.HasKey(o => o.Id);
+        builder.Property(o => o.CustomerId).IsRequired().HasMaxLength(64);
+        builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(32);
+        builder.Property(o => o.CreatedUtc).HasColumnName("created_utc");
+        builder.HasIndex(o => new { o.CustomerId, o.Status }).HasDatabaseName("ix_orders_customer_status");
+        builder.OwnsMany(o => o.Lines, lines =>
+        {
+            lines.ToTable("order_lines");
+            lines.WithOwner().HasForeignKey("OrderId");
+            lines.HasKey(l => l.Id);
+            lines.Property(l => l.Sku).IsRequired().HasMaxLength(64);
+            lines.OwnsOne(l => l.UnitPrice, price =>
+            {
+                price.Property(p => p.Amount).HasColumnName("unit_price_amount");
+                price.Property(p => p.Currency).HasColumnName("unit_price_currency").HasMaxLength(3);
+            });
+        });
+        builder.Navigation(o => o.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+// ============================ Infrastructure/OrderRepository.cs ============================
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
+namespace Contoso.Ordering.Infrastructure;
+
+public interface IOrderRepository
+{
+    Task<Order?> FindAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Order>> ListByCustomerAsync(string customerId, CancellationToken cancellationToken = default);
+    Task AddAsync(Order order, CancellationToken cancellationToken = default);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+}
+
+public sealed class OrderRepository : IOrderRepository
+{
+    private readonly OrderingDbContext _db;
+    private readonly ILogger<OrderRepository> _logger;
+
+    public OrderRepository(OrderingDbContext db, ILogger<OrderRepository> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
+
+    public async Task<Order?> FindAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _db.Orders
+            .Include(o => o.Lines)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<Order>> ListByCustomerAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        var orders = await _db.Orders
+            .AsNoTracking()
+            .Where(o => o.CustomerId == customerId && o.Status != OrderStatus.Cancelled)
+            .OrderByDescending(o => o.CreatedUtc)
+            .Take(200)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.LogDebug("Loaded {Count} orders for {CustomerId}", orders.Count, customerId);
+        return orders;
+    }
+
+    public async Task AddAsync(Order order, CancellationToken cancellationToken = default)
+    {
+        await _db.Orders.AddAsync(order, cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        _db.SaveChangesAsync(cancellationToken);
+}
+
+// ============================ Application/OrderService.cs ============================
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Contoso.Ordering.Application;
+
+public sealed class OrderingOptions
+{
+    public const string SectionName = "Ordering";
+
+    public int MaxLinesPerOrder { get; set; } = 100;
+    public string DefaultCurrency { get; set; } = "EUR";
+    public TimeSpan SubmitTimeout { get; set; } = TimeSpan.FromSeconds(30);
+    public bool EnableFraudScreening { get; set; } = true;
+}
+
+public sealed record SubmitOrderCommand(Guid OrderId, string IdempotencyKey);
+
+public sealed record OrderSummaryDto(
+    Guid Id,
+    string CustomerId,
+    string Status,
+    decimal Total,
+    string Currency,
+    int LineCount);
+
+public interface IOrderService
+{
+    Task<Result<OrderSummaryDto>> SubmitAsync(SubmitOrderCommand command, CancellationToken cancellationToken);
+}
+
+public sealed class OrderService : IOrderService
+{
+    private static readonly ActivitySource ActivitySource = new("Contoso.Ordering");
+
+    private readonly IOrderRepository _repository;
+    private readonly IFraudScreener _fraud;
+    private readonly OrderingOptions _options;
+    private readonly ILogger<OrderService> _logger;
+
+    public OrderService(
+        IOrderRepository repository,
+        IFraudScreener fraud,
+        IOptions<OrderingOptions> options,
+        ILogger<OrderService> logger)
+    {
+        _repository = repository;
+        _fraud = fraud;
+        _options = options.Value;
+        _logger = logger;
+    }
+
+    public async Task<Result<OrderSummaryDto>> SubmitAsync(
+        SubmitOrderCommand command,
+        CancellationToken cancellationToken)
+    {
+        using var activity = ActivitySource.StartActivity("SubmitOrder", ActivityKind.Internal);
+        activity?.SetTag("order.id", command.OrderId);
+        activity?.SetTag("idempotency.key", command.IdempotencyKey);
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_options.SubmitTimeout);
+
+        var order = await _repository.FindAsync(command.OrderId, timeoutCts.Token).ConfigureAwait(false);
+        if (order is null)
+        {
+            _logger.LogWarning("Order {OrderId} not found", command.OrderId);
+            return Result<OrderSummaryDto>.Failure(new Error("order.not_found", "Order does not exist."));
+        }
+
+        if (order.Lines.Count > _options.MaxLinesPerOrder)
+        {
+            return Result<OrderSummaryDto>.Failure(
+                new Error("order.too_many_lines", $"Order has {order.Lines.Count} lines; max is {_options.MaxLinesPerOrder}."));
+        }
+
+        if (_options.EnableFraudScreening)
+        {
+            var verdict = await _fraud.ScreenAsync(order, timeoutCts.Token).ConfigureAwait(false);
+            if (verdict.IsFailure)
+            {
+                _logger.LogWarning("Fraud screening rejected {OrderId}: {Code}", order.Id, verdict.Error.Code);
+                return Result<OrderSummaryDto>.Failure(verdict.Error);
+            }
+        }
+
+        try
+        {
+            order.Submit();
+            await _repository.SaveChangesAsync(timeoutCts.Token).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogError(ex, "Concurrency conflict submitting {OrderId}", order.Id);
+            return Result<OrderSummaryDto>.Failure(new Error("order.conflict", "Order was modified concurrently."));
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            return Result<OrderSummaryDto>.Failure(new Error("order.timeout", "Submit exceeded the configured timeout."));
+        }
+
+        var total = order.Total(_options.DefaultCurrency);
+        return Result<OrderSummaryDto>.Success(new OrderSummaryDto(
+            order.Id,
+            order.CustomerId,
+            order.Status.ToString(),
+            total.Amount,
+            total.Currency,
+            order.Lines.Count));
+    }
+}
+
+// ============================ Api/OrdersController.cs ============================
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Contoso.Ordering.Api;
+
+[ApiController]
+[Route("api/v{version:apiVersion}/orders")]
+[Authorize(Policy = "OrdersWrite")]
+[Produces("application/json")]
+public sealed class OrdersController : ControllerBase
+{
+    private readonly IOrderService _orders;
+    private readonly IOrderRepository _repository;
+
+    public OrdersController(IOrderService orders, IOrderRepository repository)
+    {
+        _orders = orders;
+        _repository = repository;
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(OrderSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ResponseCache(Duration = 15, Location = ResponseCacheLocation.Private)]
+    public async Task<ActionResult<OrderSummaryDto>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var order = await _repository.FindAsync(id, cancellationToken);
+        if (order is null)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Order not found",
+                Status = StatusCodes.Status404NotFound,
+                Detail = $"No order with id {id}."
+            });
+        }
+
+        var total = order.Total("EUR");
+        return Ok(new OrderSummaryDto(order.Id, order.CustomerId, order.Status.ToString(), total.Amount, total.Currency, order.Lines.Count));
+    }
+
+    [HttpPost("{id:guid}/submit")]
+    [ProducesResponseType(typeof(OrderSummaryDto), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Submit(
+        Guid id,
+        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            ModelState.AddModelError("Idempotency-Key", "Header is required.");
+            return ValidationProblem(ModelState);
+        }
+
+        var result = await _orders.SubmitAsync(new SubmitOrderCommand(id, idempotencyKey), cancellationToken);
+
+        return result.Match<IActionResult>(
+            onSuccess: dto => AcceptedAtAction(nameof(GetById), new { id = dto.Id }, dto),
+            onFailure: error => error.Code switch
+            {
+                "order.not_found" => NotFound(new ProblemDetails { Title = error.Message, Status = 404 }),
+                "order.conflict" => Conflict(new ProblemDetails { Title = error.Message, Status = 409 }),
+                "order.timeout" => StatusCode(StatusCodes.Status504GatewayTimeout),
+                _ => BadRequest(new ProblemDetails { Title = error.Message, Status = 400 })
+            });
+    }
+}
+
+// ============================ Api/Program.cs ============================
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Serilog;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"));
+
+builder.Services.Configure<OrderingOptions>(builder.Configuration.GetSection(OrderingOptions.SectionName));
+
+builder.Services.AddDbContextPool<OrderingDbContext>((sp, options) =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("Ordering")
+        ?? throw new InvalidOperationException("Connection string 'Ordering' is missing.");
+    options.UseNpgsql(connectionString, npgsql =>
+    {
+        npgsql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null);
+        npgsql.MigrationsHistoryTable("__ef_migrations", "ordering");
+    });
+    options.UseSnakeCaseNamingConvention();
+});
+
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddSingleton<IFraudScreener, HeuristicFraudScreener>();
+builder.Services.AddHostedService<OutboxDispatcher>();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
+    });
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<OrderingDbContext>("ef-core")
+    .AddCheck<OutboxLagHealthCheck>("outbox-lag", tags: new[] { "ready" });
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("api", limiter =>
+    {
+        limiter.PermitLimit = 200;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiter.QueueLimit = 20;
+    });
+});
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
+
+app.UseSerilogRequestLogging();
+app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers().RequireRateLimiting("api");
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready")
+});
+
+app.MapGet("/api/v1/orders/{id:guid}/lines", async (Guid id, IOrderRepository repo, CancellationToken ct) =>
+{
+    var order = await repo.FindAsync(id, ct);
+    return order is null
+        ? Results.NotFound()
+        : Results.Ok(order.Lines.Select(l => new { l.Sku, l.Quantity, Total = l.LineTotal.Amount }));
+})
+.WithName("GetOrderLines")
+.WithOpenApi();
+
+await app.RunAsync();
+
+// ============================ Infrastructure/OutboxDispatcher.cs ============================
+using System.Threading.Channels;
+using Microsoft.Extensions.Hosting;
+
+namespace Contoso.Ordering.Infrastructure;
+
+public sealed record OutboxMessage(long Sequence, string Type, string Payload, DateTimeOffset EnqueuedUtc);
+
+public sealed class OutboxDispatcher : BackgroundService
+{
+    private readonly Channel<OutboxMessage> _channel;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<OutboxDispatcher> _logger;
+    private readonly PeriodicTimer _timer;
+
+    public OutboxDispatcher(IServiceScopeFactory scopeFactory, ILogger<OutboxDispatcher> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _logger = logger;
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        _channel = Channel.CreateBounded<OutboxMessage>(new BoundedChannelOptions(2048)
+        {
+            FullMode = BoundedChannelFullMode.Wait,
+            SingleReader = false,
+            SingleWriter = true
+        });
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var producer = ProduceAsync(stoppingToken);
+        var consumers = Enumerable
+            .Range(0, Environment.ProcessorCount / 2)
+            .Select(_ => ConsumeAsync(stoppingToken))
+            .ToArray();
+
+        await Task.WhenAll(consumers.Append(producer)).ConfigureAwait(false);
+    }
+
+    private async Task ProduceAsync(CancellationToken stoppingToken)
+    {
+        while (await _timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false))
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+
+            var batch = await db.Database
+                .SqlQuery<OutboxMessage>($"SELECT sequence, type, payload, enqueued_utc FROM ordering.outbox WHERE dispatched_utc IS NULL ORDER BY sequence LIMIT 256")
+                .ToListAsync(stoppingToken)
+                .ConfigureAwait(false);
+
+            foreach (var message in batch)
+            {
+                await _channel.Writer.WriteAsync(message, stoppingToken).ConfigureAwait(false);
+            }
+        }
+        _channel.Writer.TryComplete();
+    }
+
+    private async Task ConsumeAsync(CancellationToken stoppingToken)
+    {
+        await foreach (var message in _channel.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+        {
+            try
+            {
+                await PublishAsync(message, stoppingToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Failed to dispatch outbox message {Sequence} of type {Type}", message.Sequence, message.Type);
+            }
+        }
+    }
+
+    private static Task PublishAsync(OutboxMessage message, CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    public override void Dispose()
+    {
+        _timer.Dispose();
+        base.Dispose();
+    }
+}
+
+// ============================ Infrastructure/Fraud.cs ============================
+namespace Contoso.Ordering.Infrastructure;
+
+public interface IFraudScreener
+{
+    ValueTask<Result<bool>> ScreenAsync(Order order, CancellationToken cancellationToken);
+}
+
+public sealed partial class HeuristicFraudScreener : IFraudScreener
+{
+    private static readonly HashSet<string> BlockedSkuPrefixes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "GIFTCARD-", "CRYPTO-", "PREPAID-"
+    };
+
+    [GeneratedRegex(@"^[A-Z]{2,4}-\d{4,8}$", RegexOptions.CultureInvariant)]
+    private static partial Regex SkuPattern();
+
+    public ValueTask<Result<bool>> ScreenAsync(Order order, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        foreach (var line in order.Lines)
+        {
+            if (!SkuPattern().IsMatch(line.Sku))
+            {
+                return ValueTask.FromResult(Result<bool>.Failure(new Error("fraud.bad_sku", $"Malformed SKU '{line.Sku}'.")));
+            }
+
+            if (BlockedSkuPrefixes.Any(prefix => line.Sku.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+            {
+                return ValueTask.FromResult(Result<bool>.Failure(new Error("fraud.blocked_sku", "SKU category requires manual review.")));
+            }
+        }
+
+        var total = order.Total("EUR").Amount;
+        var risk = total switch
+        {
+            < 100m => 0.01,
+            >= 100m and < 1_000m => 0.05,
+            >= 1_000m and < 10_000m => 0.25,
+            _ => 0.80
+        };
+
+        return ValueTask.FromResult(risk < 0.5
+            ? Result<bool>.Success(true)
+            : Result<bool>.Failure(new Error("fraud.high_risk", $"Risk score {risk:P0} exceeds threshold.")));
+    }
+}
+
+// ============================ Infrastructure/Buffers.cs ============================
+using System.Buffers;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+namespace Contoso.Ordering.Infrastructure;
+
+public static class SkuCodec
+{
+    private const int MaxStackAlloc = 256;
+
+    public static int Encode(ReadOnlySpan<char> sku, Span<byte> destination)
+    {
+        if (destination.Length < sku.Length)
+        {
+            throw new ArgumentException("Destination too small.", nameof(destination));
+        }
+
+        var written = 0;
+        for (var i = 0; i < sku.Length; i++)
+        {
+            var c = sku[i];
+            if (c == '-')
+            {
+                continue;
+            }
+            destination[written++] = (byte)char.ToUpperInvariant(c);
+        }
+        return written;
+    }
+
+    public static string Normalize(string sku)
+    {
+        var length = sku.Length;
+        byte[]? rented = null;
+        var buffer = length <= MaxStackAlloc
+            ? stackalloc byte[MaxStackAlloc]
+            : (rented = ArrayPool<byte>.Shared.Rent(length));
+
+        try
+        {
+            var written = Encode(sku, buffer);
+            return System.Text.Encoding.ASCII.GetString(buffer[..written]);
+        }
+        finally
+        {
+            if (rented is not null)
+            {
+                ArrayPool<byte>.Shared.Return(rented, clearArray: true);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong FingerprintOf(ReadOnlySpan<byte> data)
+    {
+        const ulong offset = 14695981039346656037UL;
+        const ulong prime = 1099511628211UL;
+
+        var hash = offset;
+        ref var start = ref MemoryMarshal.GetReference(data);
+        for (var i = 0; i < data.Length; i++)
+        {
+            hash ^= Unsafe.Add(ref start, i);
+            hash *= prime;
+        }
+        return hash;
+    }
+}
+

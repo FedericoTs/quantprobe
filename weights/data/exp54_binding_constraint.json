@@ -1,0 +1,7872 @@
+{
+ "prereg": "preregistrations\\2026-07-30-binding-constraint.md",
+ "experiment": 54,
+ "prereg_id": 88,
+ "baseline_ref": "HEAD",
+ "k3_vacuous": false,
+ "grid": {
+  "models": 10,
+  "machines": 17,
+  "ctx": [
+   0,
+   16384
+  ],
+  "cells": 340,
+  "bits": 2.5
+ },
+ "stake": {
+  "grid_models": 10.0,
+  "grid_machines": 17.0,
+  "grid_cells": 340.0,
+  "p1_min_distinct_classes": 3.0,
+  "p1_max_modal_share": 0.85,
+  "p4_min_frac_ceiling_lt_2": 0.1,
+  "p5_hot_gb": 1.428168,
+  "p5_streamable_gb": 0.744573,
+  "p5_miss_uniform": 0.515369,
+  "p5_io_s_uniform": 0.12791,
+  "p5_ram_s_uniform": 0.092312,
+  "p5_class_uniform": "IO-bound",
+  "p5_miss_measured": 0.2,
+  "p5_io_s_measured": 0.049638,
+  "p5_ram_s_measured": 0.104429,
+  "p5_class_measured": "bandwidth-bound",
+  "p5_their_compute_floor_s": 0.115,
+  "p5_kill_rel_error": 0.15,
+  "cap_promotion_min": 1.15,
+  "cap_shave_max_share": 0.3,
+  "regression_rel_tol": 1e-09
+ },
+ "results": {
+  "class_counts": {
+   "bandwidth-bound": 178,
+   "IO-bound": 99,
+   "capacity-bound": 30,
+   "compute-bound": 33
+  },
+  "distinct_classes": 4,
+  "modal_share": 0.5235294117647059,
+  "p1_headroom": [
+   {
+    "bits": 2.0,
+    "distinct": 4,
+    "modal_share": 0.5588235294117647
+   },
+   {
+    "bits": 2.5,
+    "distinct": 4,
+    "modal_share": 0.5235294117647059
+   },
+   {
+    "bits": 3.5,
+    "distinct": 4,
+    "modal_share": 0.5088235294117647
+   },
+   {
+    "bits": 4.5,
+    "distinct": 4,
+    "modal_share": 0.4823529411764706
+   },
+   {
+    "bits": 6.0,
+    "distinct": 4,
+    "modal_share": 0.4323529411764706
+   },
+   {
+    "bits": 8.0,
+    "distinct": 4,
+    "modal_share": 0.4647058823529412
+   }
+  ],
+  "p1_worst_modal_share_over_bits": 0.5588235294117647,
+  "p1_min_distinct_over_bits": 4,
+  "frac_ceiling_lt_2": 0.0058823529411764705,
+  "median_binding_share": 0.9960501498199497,
+  "median_binding_share_multi_resource": 0.9121741725057536,
+  "n_multi_resource_cells": 172,
+  "soundness_checks_run": {
+   "phantom": 228,
+   "monotonic": 280
+  },
+  "k4_vram_winners_checked": 137,
+  "k4_failures": [],
+  "upgrade_changes": [
+   {
+    "cell": "qwen3-30b/2016/ctx0",
+    "old": [],
+    "new": [
+     [
+      "enable XMP (free)",
+      23.446347
+     ]
+    ]
+   },
+   {
+    "cell": "deepseek-16b/2016/ctx0",
+    "old": [],
+    "new": [
+     [
+      "enable XMP (free)",
+      42.677161
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/rtx-3060/ctx0",
+    "old": [
+     [
+      "+16 GB RAM",
+      1.06409
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      1.301974
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/gaming/ctx0",
+    "old": [
+     [
+      "+16 GB RAM",
+      1.06409
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      1.301974
+     ]
+    ]
+   },
+   {
+    "cell": "qwen3-30b/2016/ctx16384",
+    "old": [
+     [
+      "enable XMP (free)",
+      15.707461
+     ]
+    ],
+    "new": [
+     [
+      "enable XMP (free)",
+      16.794276
+     ]
+    ]
+   },
+   {
+    "cell": "qwen3-30b/ddr5/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      1.121369
+     ],
+     [
+      "NVMe SSD",
+      1.121369
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "qwen3-30b/colibri/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      1.089158
+     ],
+     [
+      "NVMe SSD",
+      1.089158
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "qwen3-30b/epyc-256/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      1.184421
+     ],
+     [
+      "NVMe SSD",
+      1.184421
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "deepseek-16b/2016/ctx16384",
+    "old": [],
+    "new": [
+     [
+      "enable XMP (free)",
+      34.627015
+     ]
+    ]
+   },
+   {
+    "cell": "glm-air/2016-xmp/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.229653
+     ],
+     [
+      "NVMe SSD",
+      0.530235
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.211477
+     ],
+     [
+      "NVMe SSD",
+      0.442438
+     ]
+    ]
+   },
+   {
+    "cell": "glm-air/2016/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.223076
+     ],
+     [
+      "NVMe SSD",
+      0.504003
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.205888
+     ],
+     [
+      "NVMe SSD",
+      0.424024
+     ]
+    ]
+   },
+   {
+    "cell": "glm-air/rtx-3060/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      5.143804
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      5.828268
+     ]
+    ]
+   },
+   {
+    "cell": "glm-air/gaming/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      5.143804
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      5.828268
+     ]
+    ]
+   },
+   {
+    "cell": "glm-air/ddr5/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.96603
+     ],
+     [
+      "NVMe SSD",
+      0.96603
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "glm-air/colibri/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.901439
+     ],
+     [
+      "NVMe SSD",
+      0.901439
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "glm-air/epyc-256/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      1.109073
+     ],
+     [
+      "NVMe SSD",
+      1.109073
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "glm-744b/2016-xmp/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.051168
+     ],
+     [
+      "NVMe SSD",
+      0.269055
+     ]
+    ],
+    "new": [
+     [
+      "NVMe SSD",
+      0.202168
+     ]
+    ]
+   },
+   {
+    "cell": "glm-744b/2016/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.05075
+     ],
+     [
+      "NVMe SSD",
+      0.258649
+     ]
+    ],
+    "new": [
+     [
+      "NVMe SSD",
+      0.196236
+     ]
+    ]
+   },
+   {
+    "cell": "glm-744b/laptop-8gb/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.18555
+     ],
+     [
+      "NVMe SSD",
+      0.267314
+     ]
+    ],
+    "new": [
+     [
+      "NVMe SSD",
+      0.201184
+     ]
+    ]
+   },
+   {
+    "cell": "glm-744b/ddr5/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.403034
+     ],
+     [
+      "NVMe SSD",
+      0.314001
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "glm-744b/colibri/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.442926
+     ],
+     [
+      "NVMe SSD",
+      0.359605
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "glm-744b/epyc-256/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.995281
+     ],
+     [
+      "NVMe SSD",
+      0.737425
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.46021
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/2016-xmp/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.0263
+     ],
+     [
+      "NVMe SSD",
+      0.112825
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.025442
+     ],
+     [
+      "NVMe SSD",
+      0.098557
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/2016/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.026111
+     ],
+     [
+      "NVMe SSD",
+      0.111201
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.025265
+     ],
+     [
+      "NVMe SSD",
+      0.097315
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/rtx-3060/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.285071
+     ],
+     [
+      "NVMe SSD",
+      0.161908
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.390196
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/rtx-4090/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.674536
+     ],
+     [
+      "NVMe SSD",
+      0.674536
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "llama-70b/laptop-8gb/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.102253
+     ],
+     [
+      "NVMe SSD",
+      0.112559
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.090393
+     ],
+     [
+      "NVMe SSD",
+      0.098354
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/gaming/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.285071
+     ],
+     [
+      "NVMe SSD",
+      0.161908
+     ]
+    ],
+    "new": [
+     [
+      "+16 GB RAM",
+      0.390196
+     ]
+    ]
+   },
+   {
+    "cell": "llama-70b/ddr5/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.663297
+     ],
+     [
+      "NVMe SSD",
+      0.663297
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "llama-70b/colibri/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.574951
+     ],
+     [
+      "NVMe SSD",
+      0.574951
+     ]
+    ],
+    "new": []
+   },
+   {
+    "cell": "llama-70b/epyc-256/ctx16384",
+    "old": [
+     [
+      "+16 GB RAM",
+      0.916896
+     ],
+     [
+      "NVMe SSD",
+      0.916896
+     ]
+    ],
+    "new": []
+   }
+  ],
+  "oversold_codebook": [
+   "glm-air/2016-xmp/ctx0",
+   "glm-air/2016/ctx0",
+   "glm-air/laptop-8gb/ctx0",
+   "glm-744b/2016-xmp/ctx0",
+   "glm-744b/2016/ctx0",
+   "glm-744b/rtx-3060/ctx0",
+   "glm-744b/rtx-3090/ctx0",
+   "glm-744b/rtx-4090/ctx0",
+   "glm-744b/rtx-5090/ctx0",
+   "glm-744b/laptop-8gb/ctx0",
+   "glm-744b/gaming/ctx0",
+   "glm-744b/mac-m2-max/ctx0",
+   "glm-744b/mac-m3-max/ctx0",
+   "glm-744b/mac-m4-max/ctx0",
+   "glm-744b/mac-m2-ultra/ctx0",
+   "glm-744b/ddr5/ctx0",
+   "glm-744b/dgx-spark/ctx0",
+   "qwen3-235b/2016-xmp/ctx0",
+   "qwen3-235b/2016/ctx0",
+   "qwen3-235b/rtx-3060/ctx0",
+   "qwen3-235b/laptop-8gb/ctx0",
+   "qwen3-235b/gaming/ctx0",
+   "qwen3-235b/mac-m2-max/ctx0",
+   "kimi-k2.6/2016-xmp/ctx0",
+   "kimi-k2.6/2016/ctx0",
+   "kimi-k2.6/rtx-3060/ctx0",
+   "kimi-k2.6/rtx-3090/ctx0",
+   "kimi-k2.6/rtx-4090/ctx0",
+   "kimi-k2.6/rtx-5090/ctx0",
+   "kimi-k2.6/laptop-8gb/ctx0",
+   "kimi-k2.6/gaming/ctx0",
+   "kimi-k2.6/mac-m2-max/ctx0",
+   "kimi-k2.6/mac-m3-max/ctx0",
+   "kimi-k2.6/mac-m4-max/ctx0",
+   "kimi-k2.6/mac-m2-ultra/ctx0",
+   "kimi-k2.6/ddr5/ctx0",
+   "kimi-k2.6/colibri/ctx0",
+   "kimi-k2.6/epyc-256/ctx0",
+   "kimi-k2.6/dgx-spark/ctx0",
+   "gpt-oss-120b/2016-xmp/ctx0",
+   "gpt-oss-120b/2016/ctx0",
+   "gpt-oss-120b/laptop-8gb/ctx0",
+   "llama-70b/2016-xmp/ctx0",
+   "llama-70b/2016/ctx0",
+   "llama-70b/rtx-3060/ctx0",
+   "llama-70b/laptop-8gb/ctx0",
+   "llama-70b/gaming/ctx0",
+   "qwen3-30b/ddr5/ctx16384",
+   "qwen3-30b/colibri/ctx16384",
+   "qwen3-30b/epyc-256/ctx16384",
+   "deepseek-16b/ddr5/ctx16384",
+   "deepseek-16b/colibri/ctx16384",
+   "deepseek-16b/epyc-256/ctx16384",
+   "gemma-12b/2016-xmp/ctx16384",
+   "gemma-12b/laptop-8gb/ctx16384",
+   "gemma-12b/ddr5/ctx16384",
+   "gemma-12b/colibri/ctx16384",
+   "gemma-12b/epyc-256/ctx16384",
+   "mistral-7b/2016-xmp/ctx16384",
+   "mistral-7b/2016/ctx16384",
+   "mistral-7b/ddr5/ctx16384",
+   "mistral-7b/colibri/ctx16384",
+   "mistral-7b/epyc-256/ctx16384",
+   "glm-air/2016-xmp/ctx16384",
+   "glm-air/2016/ctx16384",
+   "glm-air/laptop-8gb/ctx16384",
+   "glm-air/ddr5/ctx16384",
+   "glm-air/colibri/ctx16384",
+   "glm-air/epyc-256/ctx16384",
+   "glm-744b/2016-xmp/ctx16384",
+   "glm-744b/2016/ctx16384",
+   "glm-744b/rtx-3060/ctx16384",
+   "glm-744b/rtx-3090/ctx16384",
+   "glm-744b/rtx-4090/ctx16384",
+   "glm-744b/rtx-5090/ctx16384",
+   "glm-744b/laptop-8gb/ctx16384",
+   "glm-744b/gaming/ctx16384",
+   "glm-744b/mac-m2-max/ctx16384",
+   "glm-744b/mac-m3-max/ctx16384",
+   "glm-744b/mac-m4-max/ctx16384",
+   "glm-744b/mac-m2-ultra/ctx16384",
+   "glm-744b/ddr5/ctx16384",
+   "glm-744b/colibri/ctx16384",
+   "glm-744b/epyc-256/ctx16384",
+   "glm-744b/dgx-spark/ctx16384",
+   "qwen3-235b/2016-xmp/ctx16384",
+   "qwen3-235b/2016/ctx16384",
+   "qwen3-235b/rtx-3060/ctx16384",
+   "qwen3-235b/laptop-8gb/ctx16384",
+   "qwen3-235b/gaming/ctx16384",
+   "qwen3-235b/mac-m2-max/ctx16384",
+   "qwen3-235b/ddr5/ctx16384",
+   "qwen3-235b/epyc-256/ctx16384",
+   "kimi-k2.6/2016-xmp/ctx16384",
+   "kimi-k2.6/2016/ctx16384",
+   "kimi-k2.6/rtx-3060/ctx16384",
+   "kimi-k2.6/rtx-3090/ctx16384",
+   "kimi-k2.6/rtx-4090/ctx16384",
+   "kimi-k2.6/rtx-5090/ctx16384",
+   "kimi-k2.6/laptop-8gb/ctx16384",
+   "kimi-k2.6/gaming/ctx16384",
+   "kimi-k2.6/mac-m2-max/ctx16384",
+   "kimi-k2.6/mac-m3-max/ctx16384",
+   "kimi-k2.6/mac-m4-max/ctx16384",
+   "kimi-k2.6/mac-m2-ultra/ctx16384",
+   "kimi-k2.6/ddr5/ctx16384",
+   "kimi-k2.6/colibri/ctx16384",
+   "kimi-k2.6/epyc-256/ctx16384",
+   "kimi-k2.6/dgx-spark/ctx16384",
+   "gpt-oss-120b/2016-xmp/ctx16384",
+   "gpt-oss-120b/2016/ctx16384",
+   "gpt-oss-120b/laptop-8gb/ctx16384",
+   "gpt-oss-120b/ddr5/ctx16384",
+   "gpt-oss-120b/colibri/ctx16384",
+   "gpt-oss-120b/epyc-256/ctx16384",
+   "llama-70b/2016-xmp/ctx16384",
+   "llama-70b/2016/ctx16384",
+   "llama-70b/rtx-3060/ctx16384",
+   "llama-70b/rtx-4090/ctx16384",
+   "llama-70b/rtx-5090/ctx16384",
+   "llama-70b/laptop-8gb/ctx16384",
+   "llama-70b/gaming/ctx16384",
+   "llama-70b/ddr5/ctx16384",
+   "llama-70b/epyc-256/ctx16384"
+  ],
+  "n_spec_advice_shown": 127,
+  "oversold_spec": [
+   "gemma-12b/2016-xmp/ctx16384",
+   "gemma-12b/2016/ctx16384",
+   "gemma-12b/laptop-8gb/ctx16384",
+   "gemma-12b/ddr5/ctx16384",
+   "gemma-12b/colibri/ctx16384",
+   "gemma-12b/epyc-256/ctx16384",
+   "mistral-7b/2016-xmp/ctx16384",
+   "mistral-7b/2016/ctx16384",
+   "mistral-7b/ddr5/ctx16384",
+   "mistral-7b/colibri/ctx16384",
+   "mistral-7b/epyc-256/ctx16384",
+   "llama-70b/rtx-3090/ctx16384",
+   "llama-70b/rtx-4090/ctx16384",
+   "llama-70b/rtx-5090/ctx16384",
+   "llama-70b/ddr5/ctx16384",
+   "llama-70b/colibri/ctx16384",
+   "llama-70b/epyc-256/ctx16384"
+  ],
+  "n_oversold_spec_ungated": 35,
+  "regressions": [],
+  "phantom_failures": [],
+  "monotonic_failures": [],
+  "external": {
+   "hot_gb": 1.4281680374999999,
+   "streamable_gb": 0.7445726749999997,
+   "act_gb": 2.1727407124999996,
+   "eta_r": 0.38,
+   "derived_from": "inverted out of the shipped disk row's own terms",
+   "c1": {
+    "io_s": 0.1279099120839877,
+    "ram_s": 0.09231222787657567,
+    "miss": 0.5153690823423828,
+    "klass": "IO-bound",
+    "share": 0.5808222193594766,
+    "margin": 1.3856226312185558,
+    "tok_s": 4.313826031161638
+   },
+   "c2": {
+    "io_s": 0.04963817833333331,
+    "ram_s": 0.10442859533023735,
+    "miss": 0.2,
+    "klass": "bandwidth-bound",
+    "share": 0.6778138650340911,
+    "margin": 2.1037958852754852,
+    "tok_s": 6.166157552403066
+   }
+  }
+ },
+ "predictions": {
+  "P1": true,
+  "P2": true,
+  "P3": true,
+  "P3a": true,
+  "P3b": true,
+  "P3c": true,
+  "P4": false,
+  "P5": true
+ },
+ "kill_rules": {
+  "K1": true,
+  "K2": true,
+  "K3": true,
+  "K4": true,
+  "K5": true
+ },
+ "kill_rule_notes": {
+  "K1": "bar not live on this grid - worst modal share over bits 2.0-8.0 was 0.559 against a staked 0.85; PASS is weak evidence",
+  "K3": "scored against the pre-change module",
+  "K4": "scored on 137 all-in-VRAM winners from the grid, not on a synthetic row",
+  "K5": "reproduction check: section 3's arithmetic was done by hand before staking, and the +/-15% band was chosen knowing the answer was -9.2%"
+ },
+ "verdict": "PASS",
+ "cells": [
+  {
+   "model": "qwen3-30b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 34%->VRAM, rest->RAM",
+   "tok_s": 23.446346685610116,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.6394017283700728,
+   "margin_x": 1.7731691432683143,
+   "ceiling_x": 2.773169143268314,
+   "shares": {
+    "vram_bw": 0.3605982716299272,
+    "ram_bw": 0.6394017283700728
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.1347083570987626,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 34%->VRAM, rest->RAM",
+   "tok_s": 18.559851977915745,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.7145546538791381,
+   "margin_x": 2.5032976140258554,
+   "ceiling_x": 3.5032976140258554,
+   "shares": {
+    "vram_bw": 0.2854453461208619,
+    "ram_bw": 0.7145546538791381
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.152963369593584,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 117.57501530924681,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "split experts: 100%->VRAM, rest->RAM",
+   "tok_s": 366.8340477648501,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "split experts: 100%->VRAM, rest->RAM",
+   "tok_s": 408.22045315370497,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 725.7252500510309,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 54%->VRAM, rest->RAM",
+   "tok_s": 32.83068247744666,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.6619600106491745,
+   "margin_x": 1.9582298884827425,
+   "ceiling_x": 2.9582298884827427,
+   "shares": {
+    "vram_bw": 0.3380399893508255,
+    "ram_bw": 0.6619600106491745
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.1401268678659824,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 117.57501530924681,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 67.93223106756481,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 67.93223106756481,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 92.72749540722599,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 130.63890589916312,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 133.74157991426824,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 19.85711369667279,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 14.892835272504596,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 49.64278424168198,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "split experts: 100%->VRAM, rest->RAM",
+   "tok_s": 140.87446417636258,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 68%->VRAM, rest->RAM",
+   "tok_s": 42.67716083964205,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 0.7050580083334862,
+   "margin_x": 2.390497210484305,
+   "ceiling_x": 3.3904972104843045,
+   "shares": {
+    "vram_bw": 0.7050580083334862,
+    "ram_bw": 0.29494199166651375
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0579337387133452,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 68%->VRAM, rest->RAM",
+   "tok_s": 38.05545171818802,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 0.6287039828041624,
+   "margin_x": 1.6932688574263823,
+   "ceiling_x": 2.6932688574263826,
+   "shares": {
+    "vram_bw": 0.6287039828041624,
+    "ram_bw": 0.37129601719583766
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.07404198063002,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 145.6016177957533,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "split experts: 100%->VRAM, rest->RAM",
+   "tok_s": 454.27704752275037,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 505.5288169868555,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 898.7178968655209,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 93.18503538928212,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 145.6016177957533,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 84.1253791708797,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 84.1253791708797,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 114.83114256825078,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 161.77957532861478,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 165.62184024266938,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 24.590495449949444,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 18.442871587462086,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 61.476238624873616,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 174.45500505561176,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 5.941649646316118,
+   "klass": "capacity-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": true
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 4.208668499473916,
+   "klass": "capacity-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": true
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 35.937397054331356,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 112.12467880951384,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 124.77464257263847,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 221.8215867958017,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 5.570296543421359,
+   "klass": "capacity-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": true
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 35.937397054331356,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 20.76382940916923,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 20.76382940916923,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 28.342627143515994,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 39.93044117147929,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 40.878789149301916,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 9.902749410526862,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 7.427062057895147,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 24.756873526317158,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2280000000000002,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 43.05899123726469,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 22.174704997228158,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 22.174704997228158,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 59.396531242575435,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 185.31717747683538,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 206.22475647422192,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 366.62178928750564,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 38.013779995248285,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 59.396531242575435,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 34.31799582904358,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 34.31799582904358,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 46.8440643066445,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 65.99614582508381,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 67.56355428842956,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": true
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 16.367044164620786,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 12.275283123465591,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 40.91761041155197,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 71.16694385047914,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.1943739356248099,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9832978466664781,
+   "margin_x": 91.92903703703705,
+   "ceiling_x": 59.87251943095031,
+   "shares": {
+    "io": 0.9832978466664781,
+    "ram_bw": 0.010696270496886852,
+    "vram_bw": 0.006005882836634969
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0019899043582197,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.19352159941186306,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9789860527002119,
+   "margin_x": 65.1164012345679,
+   "ceiling_x": 47.587442079960056,
+   "shares": {
+    "io": 0.9789860527002119,
+    "ram_bw": 0.015034400460394365,
+    "vram_bw": 0.005979546839393751
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0027992170867426,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 23%->VRAM, rest->RAM",
+   "tok_s": 6.839500528964526,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9039689433646606,
+   "margin_x": 9.4132978958809,
+   "ceiling_x": 10.413297895880907,
+   "shares": {
+    "vram_bw": 0.09603105663533948,
+    "ram_bw": 0.9039689433646606
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2016889237817148,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 56%->VRAM, rest->RAM",
+   "tok_s": 12.270658025274441,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.920581477949697,
+   "margin_x": 11.59152114876437,
+   "ceiling_x": 12.591521148764379,
+   "shares": {
+    "vram_bw": 0.07941852205030303,
+    "ram_bw": 0.920581477949697
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2061595586332032,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 56%->VRAM, rest->RAM",
+   "tok_s": 19.262432145434943,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.8879685524921943,
+   "margin_x": 7.926065156217194,
+   "ceiling_x": 8.926065156217193,
+   "shares": {
+    "vram_bw": 0.11203144750780569,
+    "ram_bw": 0.8879685524921943
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.1974142443578915,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 79%->VRAM, rest->RAM",
+   "tok_s": 40.224193358564804,
+   "klass": "capacity-bound",
+   "resource": "ram_bw",
+   "share": 0.8416748412453134,
+   "margin_x": 5.316115567895487,
+   "ceiling_x": 6.316115567895485,
+   "shares": {
+    "vram_bw": 0.15832515875468653,
+    "ram_bw": 0.8416748412453134
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.1852159144967485,
+   "capacity": true
+  },
+  {
+   "model": "glm-air",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.8828006782986911,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9309876604492596,
+   "margin_x": 17.966281249999998,
+   "ceiling_x": 14.490162288510213,
+   "shares": {
+    "io": 0.9309876604492596,
+    "ram_bw": 0.05181860661617215,
+    "vram_bw": 0.0171937329345683
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.009714507935627,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "split experts: 23%->VRAM, rest->RAM",
+   "tok_s": 6.839500528964526,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9039689433646606,
+   "margin_x": 9.4132978958809,
+   "ceiling_x": 10.413297895880907,
+   "shares": {
+    "vram_bw": 0.09603105663533948,
+    "ram_bw": 0.9039689433646606
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2016889237817148,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 20.43723900761484,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 20.43723900761484,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 27.896831245394257,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 39.30238270695161,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 40.23581429624171,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 5.973962171456645,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 4.480471628592484,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 14.934905428641615,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 42.38172439204128,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.05090295035078069,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9837306165592276,
+   "margin_x": 60.46514424719501,
+   "ceiling_x": 61.46514424719475,
+   "shares": {
+    "io": 0.9837306165592276,
+    "ram_bw": 0.016269383440772375
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0030298521309806,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.050564212706409546,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9771843046175281,
+   "margin_x": 42.829477175096464,
+   "ceiling_x": 43.82947717509629,
+   "shares": {
+    "io": 0.9771843046175281,
+    "ram_bw": 0.022815695382471763
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0042541600950772,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.4222400558282462,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9673866428980098,
+   "margin_x": 49.75930357142858,
+   "ceiling_x": 30.662283458668405,
+   "shares": {
+    "io": 0.9673866428980098,
+    "ram_bw": 0.019441321993370418,
+    "vram_bw": 0.013172035108619725
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0036227031645881,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.5000517939914313,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9453224666648486,
+   "margin_x": 19.160436904761912,
+   "ceiling_x": 18.289047420453315,
+   "shares": {
+    "io": 0.9453224666648486,
+    "ram_bw": 0.04933720829872669,
+    "vram_bw": 0.005340325036424639
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0092450159605313,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7175988749816872,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9496089059319786,
+   "margin_x": 21.82787027777779,
+   "ceiling_x": 19.844776512495038,
+   "shares": {
+    "io": 0.9496089059319786,
+    "ram_bw": 0.04350442319142528,
+    "vram_bw": 0.0068866708765962445
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0081431436470654,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7497026806479216,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9538652512010849,
+   "margin_x": 22.75677499999999,
+   "ceiling_x": 21.675635524941143,
+   "shares": {
+    "io": 0.9538652512010849,
+    "ram_bw": 0.04191566033416797,
+    "vram_bw": 0.004219088464747157
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0078434270265941,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.22737196783371336,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9840838542440998,
+   "margin_x": 90.85618881237328,
+   "ceiling_x": 62.829281368530864,
+   "shares": {
+    "io": 0.9840838542440998,
+    "ram_bw": 0.005084920419381565,
+    "vram_bw": 0.010831225336518651
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0009449979235874,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.4222400558282462,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9673866428980098,
+   "margin_x": 49.75930357142858,
+   "ceiling_x": 30.662283458668405,
+   "shares": {
+    "io": 0.9673866428980098,
+    "ram_bw": 0.019441321993370418,
+    "vram_bw": 0.013172035108619725
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0036227031645881,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.6684228370676646,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9526988499378141,
+   "margin_x": 20.382692019763436,
+   "ceiling_x": 21.141135018605652,
+   "shares": {
+    "io": 0.9526988499378141,
+    "ram_bw": 0.000560569916341678,
+    "vram_bw": 0.046740580145844306
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001040905901777,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7681045654157651,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9381130360262582,
+   "margin_x": 15.317932737422296,
+   "ceiling_x": 16.158491801670746,
+   "shares": {
+    "io": 0.9381130360262582,
+    "ram_bw": 0.0006441675659462663,
+    "vram_bw": 0.06124279640779543
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001196154503107,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.9228612712438049,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9388973095587307,
+   "margin_x": 15.509813911173602,
+   "ceiling_x": 16.36589146530595,
+   "shares": {
+    "io": 0.9388973095587307,
+    "ram_bw": 0.0005669989793407749,
+    "vram_bw": 0.060535691461928436
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001052845097926,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 1.5000684783168996,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9142305073154156,
+   "margin_x": 10.737906461506789,
+   "ceiling_x": 11.659157221291718,
+   "shares": {
+    "io": 0.9142305073154156,
+    "ram_bw": 0.000629012965120884,
+    "vram_bw": 0.08514047971946356
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.000116801064387,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 14.836956521739127,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.5968527150325742,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8555090150248851,
+   "margin_x": 5.920847000746971,
+   "ceiling_x": 6.9208470007469725,
+   "shares": {
+    "io": 0.8555090150248851,
+    "ram_bw": 0.14449098497511498
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0275668613407358,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.6955604475797003,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.7132623195387425,
+   "margin_x": 2.48750815864647,
+   "ceiling_x": 3.4875081586464702,
+   "shares": {
+    "io": 0.7132623195387425,
+    "ram_bw": 0.2867376804612575
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.056231594989923,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 2.5842427891651405,
+   "klass": "capacity-bound",
+   "resource": "io",
+   "share": 0.5416968051819282,
+   "margin_x": 1.181961660548669,
+   "ceiling_x": 2.181961660548669,
+   "shares": {
+    "io": 0.5416968051819282,
+    "ram_bw": 0.45830319481807175
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.093006221022425,
+   "capacity": true
+  },
+  {
+   "model": "glm-744b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.941812819228626,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9581781678733723,
+   "margin_x": 23.562986518898356,
+   "ceiling_x": 23.910956291255015,
+   "shares": {
+    "io": 0.9581781678733723,
+    "ram_bw": 0.001157285333933171,
+    "vram_bw": 0.04066454679269452
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0002149167461698,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.09181559134316697,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9706284199940465,
+   "margin_x": 33.04651706844859,
+   "ceiling_x": 34.046517068448594,
+   "shares": {
+    "io": 0.9706284199940465,
+    "ram_bw": 0.029371580005953524
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0054832573958867,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.09071842636516748,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.959029741670578,
+   "margin_x": 23.40794959015108,
+   "ceiling_x": 24.407949590151073,
+   "shares": {
+    "io": 0.959029741670578,
+    "ram_bw": 0.04097025832942201
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.007665163574885,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.9069286622144671,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.893060563504535,
+   "margin_x": 11.234137755102044,
+   "ceiling_x": 9.351087239387194,
+   "shares": {
+    "io": 0.893060563504535,
+    "ram_bw": 0.0794952476970426,
+    "vram_bw": 0.027444188798422493
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0149808163848761,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.3761902181909544,
+   "klass": "capacity-bound",
+   "resource": "io",
+   "share": 0.527557208661513,
+   "margin_x": 1.1820261904761906,
+   "ceiling_x": 2.1166583940605386,
+   "shares": {
+    "io": 0.527557208661513,
+    "ram_bw": 0.4463160062883053,
+    "vram_bw": 0.02612678505018174
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0903537912880548,
+   "capacity": true
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 3.5624485398348886,
+   "klass": "capacity-bound",
+   "resource": "io",
+   "share": 0.5536496090681162,
+   "margin_x": 1.3465827777777781,
+   "ceiling_x": 2.2403923471697085,
+   "shares": {
+    "io": 0.5536496090681162,
+    "ram_bw": 0.4111515594917872,
+    "vram_bw": 0.035198831440096535
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.082646630201974,
+   "capacity": true
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 5.855703637130668,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.6232582181695053,
+   "margin_x": 1.8243181610872925,
+   "ceiling_x": 2.6543379264738003,
+   "shares": {
+    "io": 0.34163899228961453,
+    "ram_bw": 0.6232582181695053,
+    "vram_bw": 0.0351027895408801
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.1308621878689542,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.41362034551146964,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.963704794672178,
+   "margin_x": 51.574863911509816,
+   "ceiling_x": 27.551848542194396,
+   "shares": {
+    "io": 0.963704794672178,
+    "ram_bw": 0.017609653460430492,
+    "vram_bw": 0.018685551867391563
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0032802697681933,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.9069286622144671,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.893060563504535,
+   "margin_x": 11.234137755102044,
+   "ceiling_x": 9.351087239387194,
+   "shares": {
+    "io": 0.893060563504535,
+    "ram_bw": 0.0794952476970426,
+    "vram_bw": 0.027444188798422493
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0149808163848761,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.304906878830145,
+   "klass": "capacity-bound",
+   "resource": "io",
+   "share": 0.8056850295122208,
+   "margin_x": 4.226320685692513,
+   "ceiling_x": 5.146283878641721,
+   "shares": {
+    "io": 0.8056850295122208,
+    "ram_bw": 0.0036798792511558015,
+    "vram_bw": 0.19063509123662337
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0006837020389248,
+   "capacity": true
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 10.335403726708075,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 14.107826086956521,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 19.875776397515526,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 20.347826086956523,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 1.5226549923233754,
+   "klass": "capacity-bound",
+   "resource": "io",
+   "share": 0.5618849622770837,
+   "margin_x": 1.2825055382656034,
+   "ceiling_x": 2.282505538265603,
+   "shares": {
+    "io": 0.5618849622770837,
+    "ram_bw": 0.43811503772291616
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0885465502855567,
+   "capacity": true
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 2.26583850931677,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 7.5527950310559016,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 21.43304347826087,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.047075528707213696,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9963634434920718,
+   "margin_x": 346.8406895422543,
+   "ceiling_x": 274.9854148615242,
+   "shares": {
+    "io": 0.9963634434920718,
+    "ram_bw": 0.0007638732457451974,
+    "vram_bw": 0.002872683262183079
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001418467463346,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.047060726412577025,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9960501498199497,
+   "margin_x": 346.8406895422543,
+   "ceiling_x": 253.174159630342,
+   "shares": {
+    "io": 0.9960501498199497,
+    "ram_bw": 0.0010780701961779688,
+    "vram_bw": 0.002871779983872407
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.000200202943496,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.3808875232910732,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9774366878045306,
+   "margin_x": 72.01416836734695,
+   "ceiling_x": 44.319734236571726,
+   "shares": {
+    "io": 0.9774366878045306,
+    "ram_bw": 0.01357283865056373,
+    "vram_bw": 0.008990473544905555
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.002526405084466,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.42724184414360955,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.963918305935802,
+   "margin_x": 29.54604047619047,
+   "ceiling_x": 27.714884955810525,
+   "shares": {
+    "io": 0.963918305935802,
+    "ram_bw": 0.03262428028935284,
+    "vram_bw": 0.0034574137748452157
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0060941909981203,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.6121855892542055,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9668243711159339,
+   "margin_x": 33.65931277777778,
+   "ceiling_x": 30.142608705159738,
+   "shares": {
+    "io": 0.9668243711159339,
+    "ram_bw": 0.028723829791148955,
+    "vram_bw": 0.0044517990929170805
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.005361683252418,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.6299707162768137,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9700519030928788,
+   "margin_x": 35.58605000000002,
+   "ceiling_x": 33.39110338467669,
+   "shares": {
+    "io": 0.9700519030928788,
+    "ram_bw": 0.027259330639193675,
+    "vram_bw": 0.0026887662679275213
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0050869244864995,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.20873161729717019,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9888676784098989,
+   "margin_x": 131.50660182057712,
+   "ceiling_x": 89.82852246104716,
+   "shares": {
+    "io": 0.9888676784098989,
+    "ram_bw": 0.003612792800519339,
+    "vram_bw": 0.0075195287895817925
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0006712293659576,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.3808875232910732,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9774366878045306,
+   "margin_x": 72.01416836734695,
+   "ceiling_x": 44.319734236571726,
+   "shares": {
+    "io": 0.9774366878045306,
+    "ram_bw": 0.01357283865056373,
+    "vram_bw": 0.008990473544905555
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.002526405084466,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.5840917758269406,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9685558081630208,
+   "margin_x": 31.178281323156728,
+   "ceiling_x": 31.802375624231278,
+   "shares": {
+    "io": 0.9685558081630208,
+    "ram_bw": 0.0003791116895480626,
+    "vram_bw": 0.03106508014743119
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0000703937702573,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.6402881174270908,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9606713492353014,
+   "margin_x": 24.687630481864236,
+   "ceiling_x": 25.426755827016574,
+   "shares": {
+    "io": 0.9606713492353014,
+    "ram_bw": 0.0004155865910826543,
+    "vram_bw": 0.038913064173615994
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0000771669825956,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7178337463826164,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9637073797014667,
+   "margin_x": 26.80592077799685,
+   "ceiling_x": 27.553810988963313,
+   "shares": {
+    "io": 0.9637073797014667,
+    "ram_bw": 0.00034133223487135394,
+    "vram_bw": 0.035951288063661976
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0000633784054525,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.9340695685655772,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9591194582485983,
+   "margin_x": 23.63678515497476,
+   "ceiling_x": 24.46151536056181,
+   "shares": {
+    "io": 0.9591194582485983,
+    "ram_bw": 0.00030313446186857967,
+    "vram_bw": 0.040577407289533005
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.000056285462098,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 15.482041587901703,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.5393146897073214,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.901266607070894,
+   "margin_x": 9.128285581333511,
+   "ceiling_x": 10.12828558133351,
+   "shares": {
+    "io": 0.901266607070894,
+    "ram_bw": 0.09873339292910596
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0186739303107375,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.5992478573353386,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8122381482401034,
+   "margin_x": 4.325895492758376,
+   "ceiling_x": 5.325895492758379,
+   "shares": {
+    "io": 0.8122381482401034,
+    "ram_bw": 0.18776185175989668
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0361205304167331,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 1.163384939273249,
+   "klass": "capacity-bound",
+   "resource": "io",
+   "share": 0.8423162961914201,
+   "margin_x": 5.341809431454944,
+   "ceiling_x": 6.341809431454946,
+   "shares": {
+    "io": 0.8423162961914201,
+    "ram_bw": 0.15768370380857993
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0301597594928642,
+   "capacity": true
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7265125320296009,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9753588377403146,
+   "margin_x": 40.72437964349521,
+   "ceiling_x": 40.58250132284012,
+   "shares": {
+    "io": 0.9753588377403146,
+    "ram_bw": 0.0006909180502292281,
+    "vram_bw": 0.02395024420945614
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001282976596864,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.5337392660234814,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9799220474397438,
+   "margin_x": 93.46932946780147,
+   "ceiling_x": 49.8058752255184,
+   "shares": {
+    "io": 0.9799220474397438,
+    "ram_bw": 0.009594063855594978,
+    "vram_bw": 0.01048388870466124
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0017844869943087,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.531639027702345,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9760661013500123,
+   "margin_x": 72.34801234567902,
+   "ceiling_x": 41.7817429004828,
+   "shares": {
+    "io": 0.9760661013500123,
+    "ram_bw": 0.013491263542754506,
+    "vram_bw": 0.010442635107233221
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0025111828228181,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 8.926159383359604,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5740543226234129,
+   "margin_x": 1.6291724489795947,
+   "ceiling_x": 2.347717216333857,
+   "shares": {
+    "io": 0.5740543226234129,
+    "ram_bw": 0.35235945892834264,
+    "vram_bw": 0.07358621844824448
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0700014059889562,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "hybrid: attention->VRAM, experts->RAM",
+   "tok_s": 15.805977764609528,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9672291927356353,
+   "margin_x": 29.514963880288956,
+   "ceiling_x": 30.514963880289006,
+   "shares": {
+    "vram_bw": 0.03277080726436471,
+    "ram_bw": 0.9672291927356353
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.218892745374511,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "hybrid: attention->VRAM, experts->RAM",
+   "tok_s": 25.339433505448433,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.95278961391464,
+   "margin_x": 20.18177975058127,
+   "ceiling_x": 21.181779750581228,
+   "shares": {
+    "vram_bw": 0.047210386085359886,
+    "ram_bw": 0.95278961391464
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.2149226118502037,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "hybrid: attention->VRAM, experts->RAM",
+   "tok_s": 27.991963213996144,
+   "klass": "capacity-bound",
+   "resource": "ram_bw",
+   "share": 0.9706642945642849,
+   "margin_x": 33.088152479965345,
+   "ceiling_x": 34.08815247996523,
+   "shares": {
+    "vram_bw": 0.029335705435714968,
+    "ram_bw": 0.9706642945642849
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.2198410433639535,
+   "capacity": true
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.3988073525941065,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9253829100246775,
+   "margin_x": 20.119812500000005,
+   "ceiling_x": 13.40175555399872,
+   "shares": {
+    "io": 0.9253829100246775,
+    "ram_bw": 0.04599361500136631,
+    "vram_bw": 0.02862347497395607
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.008613082812786,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 8.926159383359604,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5740543226234129,
+   "margin_x": 1.6291724489795947,
+   "ceiling_x": 2.347717216333857,
+   "shares": {
+    "io": 0.5740543226234129,
+    "ram_bw": 0.35235945892834264,
+    "vram_bw": 0.07358621844824448
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0700014059889562,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 44.24943491556974,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 44.24943491556974,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 60.4004786597527,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 85.09506714532642,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 87.11607499002793,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 12.934450206089616,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 9.700837654567213,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 32.33612551522404,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 91.76226565616275,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "2016-xmp",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.019130924826847986,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9949366746779724,
+   "margin_x": 196.4986666666666,
+   "ceiling_x": 197.49866666666324,
+   "shares": {
+    "io": 0.9949366746779724,
+    "ram_bw": 0.005063325322027492
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0009409808449756,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "2016",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.019091121772607984,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.992866648331311,
+   "margin_x": 139.18655555555554,
+   "ceiling_x": 140.18655555555753,
+   "shares": {
+    "io": 0.992866648331311,
+    "ram_bw": 0.007133351668689105
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0013261898217682,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-3060",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.23434351305887716,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8637926167537028,
+   "margin_x": 6.341745918367347,
+   "ceiling_x": 7.34174591836735,
+   "shares": {
+    "io": 0.8637926167537028,
+    "ram_bw": 0.13620738324629728
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0259454617652313,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-3090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "split: 37/80 layers->VRAM, rest->RAM",
+   "tok_s": 1.9235137073612627,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9518128070650932,
+   "margin_x": 19.75240201998985,
+   "ceiling_x": 20.752402019989837,
+   "shares": {
+    "vram_bw": 0.04818719293490677,
+    "ram_bw": 0.9518128070650932
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2146549744979513,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-4090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "split: 37/80 layers->VRAM, rest->RAM",
+   "tok_s": 3.062185144566251,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9310645420213353,
+   "margin_x": 13.506322715800291,
+   "ceiling_x": 14.50632271580028,
+   "shares": {
+    "vram_bw": 0.0689354579786647,
+    "ram_bw": 0.9310645420213353
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2089978371316816,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-5090",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "split: 51/80 layers->VRAM, rest->RAM",
+   "tok_s": 4.804043598759161,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9175971819484934,
+   "margin_x": 11.135507299943812,
+   "ceiling_x": 12.135507299943807,
+   "shares": {
+    "vram_bw": 0.0824028180515066,
+    "ram_bw": 0.9175971819484934
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2053539988930753,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "laptop-8gb",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.08344581972905775,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9764422843327939,
+   "margin_x": 41.448937499999985,
+   "ceiling_x": 42.448937499999886,
+   "shares": {
+    "io": 0.9764422843327939,
+    "ram_bw": 0.023557715667206044
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.004393123238027,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "gaming",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.23434351305887716,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8637926167537028,
+   "margin_x": 6.341745918367347,
+   "ceiling_x": 7.34174591836735,
+   "shares": {
+    "io": 0.8637926167537028,
+    "ram_bw": 0.13620738324629728
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0259454617652313,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m2-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 3.499852265851471,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m3-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 3.499852265851471,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m4-max",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 4.777298342887258,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m2-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 6.7304851266374435,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m3-ultra",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 6.890334148395082,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "ddr5",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.669160311406086,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "colibri",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.2518702335545646,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.2280000000000002,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "epyc-256",
+   "ctx": 0,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 4.172900778515215,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "ram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.228,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "dgx-spark",
+   "ctx": 0,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 7.257818636309488,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "split experts: 18%->VRAM, rest->RAM",
+   "tok_s": 16.794275744870017,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.5711698585283148,
+   "margin_x": 1.3319256350967767,
+   "ceiling_x": 2.3319256350967765,
+   "shares": {
+    "vram_bw": 0.42883014147168513,
+    "ram_bw": 0.5711698585283148
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.118628072877822,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "split experts: 18%->VRAM, rest->RAM",
+   "tok_s": 13.596538612493116,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.6528218504152123,
+   "margin_x": 1.8803656024895674,
+   "ceiling_x": 2.8803656024895674,
+   "shares": {
+    "vram_bw": 0.34717814958478765,
+    "ram_bw": 0.6528218504152123
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.1379256536053048,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "split experts: 78%->VRAM, rest->RAM",
+   "tok_s": 44.6916395419663,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 0.6254205734688918,
+   "margin_x": 1.669660769308033,
+   "ceiling_x": 2.6696607693080328,
+   "shares": {
+    "vram_bw": 0.6254205734688918,
+    "ram_bw": 0.37457942653110815
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0747456821264827,
+   "capacity": true
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 192.89273379978468,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "split experts: 100%->VRAM, rest->RAM",
+   "tok_s": 211.31502354339594,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 375.67115296603714,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "split experts: 38%->VRAM, rest->RAM",
+   "tok_s": 21.945072226640676,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.6002209177562079,
+   "margin_x": 1.501381498970432,
+   "ceiling_x": 2.501381498970431,
+   "shares": {
+    "vram_bw": 0.399779082243792,
+    "ram_bw": 0.6002209177562079
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.125418517673101,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "split experts: 78%->VRAM, rest->RAM",
+   "tok_s": 44.6916395419663,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 0.6254205734688918,
+   "margin_x": 1.669660769308033,
+   "ceiling_x": 2.6696607693080328,
+   "shares": {
+    "vram_bw": 0.6254205734688918,
+    "ram_bw": 0.37457942653110815
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0747456821264827,
+   "capacity": true
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 48.845437398392576,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 48.845437398392576,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 66.67402204880587,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 94.95971250767973,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 97.21500567973712,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.7703624150862596,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9390483649727317,
+   "margin_x": 15.406450779419176,
+   "ceiling_x": 16.40645077941919,
+   "shares": {
+    "ram_bw": 0.06095163502726835,
+    "cpu_compute": 0.9390483649727317
+   },
+   "spec_ceiling_k2": 1.0423555152911232,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0114462878970898,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.7550224638679044,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9203494307720738,
+   "margin_x": 11.554838084564384,
+   "ceiling_x": 12.55483808456438,
+   "shares": {
+    "ram_bw": 0.07965056922792621,
+    "cpu_compute": 0.9203494307720738
+   },
+   "spec_ceiling_k2": 1.056078150560901,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0150105259655806,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.7996047450376226,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9746938762166127,
+   "margin_x": 38.516126948547935,
+   "ceiling_x": 39.51612694854797,
+   "shares": {
+    "ram_bw": 0.025306123783387282,
+    "cpu_compute": 0.9746938762166127
+   },
+   "spec_ceiling_k2": 1.0171602555564354,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0047207115359942,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-30b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 64.40546233919338,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "split experts: 58%->VRAM, rest->RAM",
+   "tok_s": 34.62701498161461,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 0.6820005736995899,
+   "margin_x": 2.1446597612893568,
+   "ceiling_x": 3.1446597612893568,
+   "shares": {
+    "vram_bw": 0.6820005736995899,
+    "ram_bw": 0.3179994263004101
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0627469597376116,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "split experts: 58%->VRAM, rest->RAM",
+   "tok_s": 30.617880872033094,
+   "klass": "capacity-bound",
+   "resource": "vram_bw",
+   "share": 0.6030381865511469,
+   "margin_x": 1.5191339975799607,
+   "ceiling_x": 2.5191339975799614,
+   "shares": {
+    "vram_bw": 0.6030381865511469,
+    "ram_bw": 0.3969618134488531
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0795673615720545,
+   "capacity": true
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 112.4820261756602,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 335.6730023946273,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 370.3209847080889,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 658.3484172588247,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 73.6641136852888,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 112.4820261756602,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 72.95517102633339,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 72.95517102633339,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 99.58380845094507,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 141.01857945570583,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 144.36777071777888,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.359736404513715,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9323310043774808,
+   "margin_x": 13.777816499277485,
+   "ceiling_x": 14.777816499277492,
+   "shares": {
+    "ram_bw": 0.06766899562251918,
+    "cpu_compute": 0.9323310043774808
+   },
+   "spec_ceiling_k2": 1.0472439648487044,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0127238116650419,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.329742295978499,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9117649319804959,
+   "margin_x": 10.333362374458115,
+   "ceiling_x": 11.333362374458114,
+   "shares": {
+    "ram_bw": 0.08823506801950406,
+    "cpu_compute": 0.9117649319804959
+   },
+   "spec_ceiling_k2": 1.0624998298376227,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0166552600101126,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.4172799509935137,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9717869109097029,
+   "margin_x": 34.444541248193715,
+   "ceiling_x": 35.444541248193765,
+   "shares": {
+    "ram_bw": 0.02821308909029711,
+    "cpu_compute": 0.9717869109097029
+   },
+   "spec_ceiling_k2": 1.019169275715911,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0052658447090028,
+   "capacity": false
+  },
+  {
+   "model": "deepseek-16b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 119.06398671840267,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.9872580240874481,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.802291679145778,
+   "margin_x": 4.057956062139333,
+   "ceiling_x": 5.057956062139332,
+   "shares": {
+    "ram_bw": 0.1977083208542219,
+    "cpu_compute": 0.802291679145778
+   },
+   "spec_ceiling_k2": 1.1518156984492953,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0381068895437693,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.9129364952271383,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.741894556274951,
+   "margin_x": 2.87438554401536,
+   "ceiling_x": 3.8743855440153614,
+   "shares": {
+    "ram_bw": 0.25810544372504907,
+    "cpu_compute": 0.741894556274951
+   },
+   "spec_ceiling_k2": 1.2078320115189436,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.050333954217694,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 31.16522385102719,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 94.71990285582277,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 104.86366186440496,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 186.42428775894214,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.9744146978390855,
+   "klass": "capacity-bound",
+   "resource": "cpu_compute",
+   "share": 0.7918545963060206,
+   "margin_x": 3.804333808255624,
+   "ceiling_x": 4.804333808255623,
+   "shares": {
+    "ram_bw": 0.20814540369397933,
+    "cpu_compute": 0.7918545963060206
+   },
+   "spec_ceiling_k2": 1.1611213864851033,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.040199432086962,
+   "capacity": true
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 31.16522385102719,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 19.23244640902035,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 19.23244640902035,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 26.252289348312775,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 37.09068649746431,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 37.97159030177909,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.072038387913724,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8711881365998912,
+   "margin_x": 6.763260103565554,
+   "ceiling_x": 7.763260103565552,
+   "shares": {
+    "ram_bw": 0.12881186340010872,
+    "cpu_compute": 0.8711881365998912
+   },
+   "spec_ceiling_k2": 1.09394178666067,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0245022091239167,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.0279030201087864,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8353216888405329,
+   "margin_x": 5.072445077674166,
+   "ceiling_x": 6.072445077674163,
+   "shares": {
+    "ram_bw": 0.164678311159467,
+    "cpu_compute": 0.8353216888405329
+   },
+   "spec_ceiling_k2": 1.123324823176098,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0315397954067687,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.1618331215194557,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9441595036035482,
+   "margin_x": 16.908150258913885,
+   "ceiling_x": 17.908150258913906,
+   "shares": {
+    "ram_bw": 0.0558404963964519,
+    "cpu_compute": 0.9441595036035482
+   },
+   "spec_ceiling_k2": 1.0386664327985347,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0104763964289543,
+   "capacity": false
+  },
+  {
+   "model": "gemma-12b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 34.67082218182199,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "split: 20/32 layers->VRAM, rest->RAM",
+   "tok_s": 2.4716955612571097,
+   "klass": "capacity-bound",
+   "resource": "cpu_compute",
+   "share": 0.7532304374068385,
+   "margin_x": 4.96468517176574,
+   "ceiling_x": 4.05236362820263,
+   "shares": {
+    "vram_bw": 0.09505189846201492,
+    "ram_bw": 0.15171766413114662,
+    "cpu_compute": 0.7532304374068385
+   },
+   "spec_ceiling_k2": 1.1969067740676427,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0289855746086092,
+   "capacity": true
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "split: 20/32 layers->VRAM, rest->RAM",
+   "tok_s": 2.3263630564390234,
+   "klass": "capacity-bound",
+   "resource": "cpu_compute",
+   "share": 0.7089414610905633,
+   "margin_x": 3.5166519966673992,
+   "ceiling_x": 3.435734968459907,
+   "shares": {
+    "vram_bw": 0.08946296966846516,
+    "ram_bw": 0.2015955692409715,
+    "cpu_compute": 0.7089414610905633
+   },
+   "spec_ceiling_k2": 1.2407548655390461,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0388852637421797,
+   "capacity": true
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 39.43565914217932,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 115.29033394466022,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 126.70153450881845,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 225.24717246012165,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 26.116496063143423,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 39.43565914217932,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 27.167405249259343,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 27.167405249259343,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 37.083508165238996,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 52.66708147059396,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 53.91792465552058,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.0963797755570563,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8909690776392497,
+   "margin_x": 8.17170999151326,
+   "ceiling_x": 9.17170999151326,
+   "shares": {
+    "ram_bw": 0.10903092236075028,
+    "cpu_compute": 0.8909690776392497
+   },
+   "spec_ceiling_k2": 1.0783848642744793,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0206617938691336,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.0579307214396114,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.859723592227303,
+   "margin_x": 6.128782493634945,
+   "ceiling_x": 7.128782493634949,
+   "shares": {
+    "ram_bw": 0.1402764077726971,
+    "cpu_compute": 0.859723592227303
+   },
+   "spec_ceiling_k2": 1.1031653849168834,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0267412766984063,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.1731238401585815,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9533348654590467,
+   "margin_x": 20.429274978783152,
+   "ceiling_x": 21.429274978783138,
+   "shares": {
+    "ram_bw": 0.04666513454095331,
+    "cpu_compute": 0.9533348654590467
+   },
+   "spec_ceiling_k2": 1.0321090036783875,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0087399352880515,
+   "capacity": false
+  },
+  {
+   "model": "mistral-7b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 39.54295633577895,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.13107356551422267,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8075787195657929,
+   "margin_x": 5.010532564776014,
+   "ceiling_x": 5.196930390149445,
+   "shares": {
+    "io": 0.8075787195657929,
+    "ram_bw": 0.031245056325204742,
+    "cpu_compute": 0.16117622410900231
+   },
+   "spec_ceiling_k2": 2.2686841197615544,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0058350496693966,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.1294086441827399,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.7973207012401168,
+   "margin_x": 5.010532564776014,
+   "ceiling_x": 4.933902999066091,
+   "shares": {
+    "io": 0.7973207012401168,
+    "ram_bw": 0.043550365670959254,
+    "cpu_compute": 0.15912893308892395
+   },
+   "spec_ceiling_k2": 2.275730778453983,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0081518132468017,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.832094535163008,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5851738767005357,
+   "margin_x": 1.7097593546340133,
+   "ceiling_x": 2.4106485677568976,
+   "shares": {
+    "io": 0.5851738767005357,
+    "ram_bw": 0.3422551104133578,
+    "vram_bw": 0.07257101288610643
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0678578117810513,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "split experts: 48%->VRAM, rest->RAM",
+   "tok_s": 9.960131736715855,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.8936608847643546,
+   "margin_x": 8.403877376485772,
+   "ceiling_x": 9.403877376485775,
+   "shares": {
+    "vram_bw": 0.1063391152356455,
+    "ram_bw": 0.8936608847643546
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.1989315236213947,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "split experts: 48%->VRAM, rest->RAM",
+   "tok_s": 15.4162326571997,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.8499199167450714,
+   "margin_x": 5.663109310123335,
+   "ceiling_x": 6.6631093101233345,
+   "shares": {
+    "vram_bw": 0.15008008325492858,
+    "ram_bw": 0.8499199167450714
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.187370257037036,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "split experts: 70%->VRAM, rest->RAM",
+   "tok_s": 28.252071407586904,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.8265157908341697,
+   "margin_x": 4.764213381773089,
+   "ceiling_x": 5.764213381773086,
+   "shares": {
+    "vram_bw": 0.17348420916583018,
+    "ram_bw": 0.8265157908341697
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.181275362180585,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7740823646061664,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9273778224572238,
+   "margin_x": 20.410162380666655,
+   "ceiling_x": 13.769898312550264,
+   "shares": {
+    "io": 0.9273778224572238,
+    "ram_bw": 0.04543706243786057,
+    "vram_bw": 0.027185115104915704
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.008507972192149,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.832094535163008,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5851738767005357,
+   "margin_x": 1.7097593546340133,
+   "ceiling_x": 2.4106485677568976,
+   "shares": {
+    "io": 0.5851738767005357,
+    "ram_bw": 0.3422551104133578,
+    "vram_bw": 0.07257101288610643
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0678578117810513,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 16.679088106557625,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 16.679088106557625,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 22.766955265451156,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 32.3036399204299,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 33.07085136854011,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.7190636713255898,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8399952243181904,
+   "margin_x": 5.249813455497292,
+   "ceiling_x": 6.249813455497295,
+   "shares": {
+    "ram_bw": 0.16000477568180968,
+    "cpu_compute": 0.8399952243181904
+   },
+   "spec_ceiling_k2": 1.1194069745757655,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0306172973959848,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.6826543524799986,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.7974626153566028,
+   "margin_x": 3.93736009162297,
+   "ceiling_x": 4.937360091622968,
+   "shares": {
+    "ram_bw": 0.20253738464339713,
+    "cpu_compute": 0.7974626153566028
+   },
+   "spec_ceiling_k2": 1.1561026747485363,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0390740265130547,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.7954269364481864,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9292012022784932,
+   "margin_x": 13.124533638743232,
+   "ceiling_x": 14.124533638743232,
+   "shares": {
+    "ram_bw": 0.07079879772150677,
+    "cpu_compute": 0.9292012022784932
+   },
+   "spec_ceiling_k2": 1.049537320293767,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0133201477048057,
+   "capacity": false
+  },
+  {
+   "model": "glm-air",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 25.1578893491129,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.0457077760822957,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8880961802035868,
+   "margin_x": 9.318527176010729,
+   "ceiling_x": 8.936245445591597,
+   "shares": {
+    "io": 0.8880961802035868,
+    "ram_bw": 0.016599469288119353,
+    "cpu_compute": 0.09530435050829372
+   },
+   "spec_ceiling_k2": 2.5197195329065583,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0030915141583039,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.04539748086899569,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8820671843239573,
+   "margin_x": 9.318527176010729,
+   "ceiling_x": 8.479404093487977,
+   "shares": {
+    "io": 0.8820671843239573,
+    "ram_bw": 0.023275455380445977,
+    "cpu_compute": 0.09465736029559675
+   },
+   "spec_ceiling_k2": 2.5224610004900447,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0043402579186265,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.4185720061824483,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9652171550664465,
+   "margin_x": 50.08278712747754,
+   "ceiling_x": 28.749804735935847,
+   "shares": {
+    "io": 0.9652171550664465,
+    "ram_bw": 0.019272432914119658,
+    "vram_bw": 0.015510412019433944
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0035911192952116,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.4957957810897254,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9446611960449083,
+   "margin_x": 19.311395897584763,
+   "ceiling_x": 18.070502586422272,
+   "shares": {
+    "io": 0.9446611960449083,
+    "ram_bw": 0.04891729220688056,
+    "vram_bw": 0.006421511748211132
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0091656090949783,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7111996095180793,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9485556141565973,
+   "margin_x": 21.99984513038578,
+   "ceiling_x": 19.43846706701896,
+   "shares": {
+    "io": 0.9485556141565973,
+    "ram_bw": 0.04311646779942418,
+    "vram_bw": 0.008327918043978566
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.008069940266406,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7432310804196645,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9533801817279438,
+   "margin_x": 22.94325375584001,
+   "ceiling_x": 21.450105063995878,
+   "shares": {
+    "io": 0.9533801817279438,
+    "ram_bw": 0.04155383503463492,
+    "vram_bw": 0.005065983237421284
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0077751943916797,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.14610961376889248,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.6387504539763194,
+   "margin_x": 2.096668614602414,
+   "ceiling_x": 2.7681695686738608,
+   "shares": {
+    "io": 0.6387504539763194,
+    "ram_bw": 0.056599374066275736,
+    "cpu_compute": 0.30465017195740496
+   },
+   "spec_ceiling_k2": 1.8641641452099313,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0106202837205343,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.4185720061824483,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9652171550664465,
+   "margin_x": 50.08278712747754,
+   "ceiling_x": 28.749804735935847,
+   "shares": {
+    "io": 0.9652171550664465,
+    "ram_bw": 0.019272432914119658,
+    "vram_bw": 0.015510412019433944
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0035911192952116,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.6615864274208747,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9498526409053828,
+   "margin_x": 19.153142307619085,
+   "ceiling_x": 19.941229569302276,
+   "shares": {
+    "io": 0.9498526409053828,
+    "ram_bw": 0.0005548365910103796,
+    "vram_bw": 0.04959252250360679
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001030258760637,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7590908403053391,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9350185184133583,
+   "margin_x": 14.531359995700404,
+   "ceiling_x": 15.388999690114332,
+   "shares": {
+    "io": 0.9350185184133583,
+    "ram_bw": 0.0006366082444346837,
+    "vram_bw": 0.06434487334220713
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001182115942602,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.9109958128480852,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9363236898954834,
+   "margin_x": 14.834824317125385,
+   "ceiling_x": 15.704427570608708,
+   "shares": {
+    "io": 0.9363236898954834,
+    "ram_bw": 0.0005597089315194847,
+    "vram_bw": 0.0631166011729972
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001039306998052,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 1.471521240682188,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9121741725057536,
+   "margin_x": 10.45965922024214,
+   "ceiling_x": 11.386172251727563,
+   "shares": {
+    "io": 0.9121741725057536,
+    "ram_bw": 0.0006170424565406569,
+    "vram_bw": 0.08720878503770574
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001145780126848,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 4,
+   "winner": "all in VRAM",
+   "tok_s": 14.292409539694747,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.2634318772551849,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.5492764277085558,
+   "margin_x": 1.4452115503120906,
+   "ceiling_x": 2.2186547619776715,
+   "shares": {
+    "io": 0.3800664529631947,
+    "ram_bw": 0.07065711932824949,
+    "cpu_compute": 0.5492764277085558
+   },
+   "spec_ceiling_k2": 1.4295565595386042,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.013293137872831,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.28034825772380517,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.5845484271733801,
+   "margin_x": 2.0148944138485287,
+   "ceiling_x": 2.407019410701158,
+   "shares": {
+    "io": 0.29011367700249324,
+    "ram_bw": 0.12533789582412666,
+    "cpu_compute": 0.5845484271733801
+   },
+   "spec_ceiling_k2": 1.3830641052234032,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0238256571758535,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.40130418215680475,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8367511551613285,
+   "margin_x": 9.520969254092623,
+   "ceiling_x": 6.125617617620734,
+   "shares": {
+    "io": 0.08788508111205671,
+    "ram_bw": 0.07536376372661484,
+    "cpu_compute": 0.8367511551613285
+   },
+   "spec_ceiling_k2": 1.1221235861351992,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0141911926010738,
+   "capacity": false
+  },
+  {
+   "model": "glm-744b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.925861066253389,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9516022331372697,
+   "margin_x": 20.135433049008007,
+   "ceiling_x": 20.662110358031207,
+   "shares": {
+    "io": 0.9516022331372697,
+    "ram_bw": 0.0011376840613746945,
+    "vram_bw": 0.04726008280135555
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0002112758707304,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.08156360136403554,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8969332182997151,
+   "margin_x": 12.855403264850366,
+   "ceiling_x": 9.702447127028469,
+   "shares": {
+    "io": 0.8969332182997151,
+    "ram_bw": 0.033295869048160044,
+    "cpu_compute": 0.06977091265212482
+   },
+   "spec_ceiling_k2": 2.6326370242698385,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.00622042363898,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.08046048301450504,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8848025193744204,
+   "margin_x": 12.855403264850366,
+   "ceiling_x": 8.680745399721445,
+   "shares": {
+    "io": 0.8848025193744204,
+    "ram_bw": 0.04637019445294937,
+    "cpu_compute": 0.06882728617263018
+   },
+   "spec_ceiling_k2": 2.6370043007127713,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0086842161069134,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.8508000479270275,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8894745083642628,
+   "margin_x": 11.927185145839458,
+   "ceiling_x": 9.047686512861082,
+   "shares": {
+    "io": 0.8894745083642628,
+    "ram_bw": 0.07457539205505977,
+    "vram_bw": 0.03595009958067754
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0140406557965818,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.0564354257691653,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5814899092074445,
+   "margin_x": 1.5054483061536503,
+   "ceiling_x": 2.3894286470040544,
+   "shares": {
+    "io": 0.5814899092074445,
+    "ram_bw": 0.3862569753013465,
+    "vram_bw": 0.0322531154912091
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0772559077790271,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 3.052554397295732,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.6042109029848375,
+   "margin_x": 1.7150303252456294,
+   "ceiling_x": 2.5265981492200895,
+   "shares": {
+    "io": 0.6042109029848375,
+    "ram_bw": 0.35230333486861315,
+    "vram_bw": 0.04348576214654932
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0699894757425747,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 4.634938687051674,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.4933247661475309,
+   "margin_x": 1.0552180438735017,
+   "ceiling_x": 1.9736508382234732,
+   "shares": {
+    "io": 0.46750979004929716,
+    "ram_bw": 0.4933247661475309,
+    "vram_bw": 0.03916544380317201
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.1008299714291114,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.26559601481670464,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.6571549561259012,
+   "margin_x": 2.8924657345913323,
+   "ceiling_x": 2.916769595675488,
+   "shares": {
+    "io": 0.6571549561259012,
+    "ram_bw": 0.11564962777394958,
+    "cpu_compute": 0.22719541610014912
+   },
+   "spec_ceiling_k2": 2.062719272962827,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0219435881025802,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.8508000479270275,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.8894745083642628,
+   "margin_x": 11.927185145839458,
+   "ceiling_x": 9.047686512861082,
+   "shares": {
+    "io": 0.8894745083642628,
+    "ram_bw": 0.07457539205505977,
+    "vram_bw": 0.03595009958067754
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0140406557965818,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.056793455605635,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.806418520878363,
+   "margin_x": 4.237667730459878,
+   "ceiling_x": 5.1657834444567365,
+   "shares": {
+    "io": 0.806418520878363,
+    "ram_bw": 0.0032837558995171784,
+    "vram_bw": 0.1902977232221199
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0006100595231475,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 9.257586905008859,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 12.63660612533709,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 17.874745943427016,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 18.29927115958341,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.6236632887541608,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.5334923435981361,
+   "margin_x": 2.100277432010601,
+   "ceiling_x": 2.143587540905373,
+   "shares": {
+    "io": 0.25401041570371136,
+    "ram_bw": 0.21249724069815257,
+    "cpu_compute": 0.5334923435981361
+   },
+   "spec_ceiling_k2": 1.4513895620916772,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0410744309596025,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.7523989485586705,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.6114342969099889,
+   "margin_x": 1.5735673324939594,
+   "ceiling_x": 2.5735673324939596,
+   "shares": {
+    "ram_bw": 0.3885657030900112,
+    "cpu_compute": 0.6114342969099889
+   },
+   "spec_ceiling_k2": 1.3496074434361995,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0777535847797395,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.0335093494803131,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8398776522215183,
+   "margin_x": 5.245224441646532,
+   "ceiling_x": 6.245224441646532,
+   "shares": {
+    "ram_bw": 0.16012234777848167,
+    "cpu_compute": 0.8398776522215183
+   },
+   "spec_ceiling_k2": 1.1195052007270951,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.030640484439036,
+   "capacity": false
+  },
+  {
+   "model": "qwen3-235b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 15.832307317963627,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.04465829398270047,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.949529715572893,
+   "margin_x": 24.85583868848352,
+   "ceiling_x": 19.81363908190919,
+   "shares": {
+    "io": 0.949529715572893,
+    "ram_bw": 0.012268808811124732,
+    "cpu_compute": 0.03820147561598231
+   },
+   "spec_ceiling_k2": 2.787060363004802,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.002283122933432,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.04443382043366872,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9447569334946453,
+   "margin_x": 24.85583868848352,
+   "ceiling_x": 18.10181916500001,
+   "shares": {
+    "io": 0.9447569334946453,
+    "ram_bw": 0.017233609438336576,
+    "cpu_compute": 0.03800945706701824
+   },
+   "spec_ceiling_k2": 2.7880550802532627,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0032099966390966,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.3789176488892318,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9757974883363737,
+   "margin_x": 72.26714909707755,
+   "ceiling_x": 41.31802574453003,
+   "shares": {
+    "io": 0.9757974883363737,
+    "ram_bw": 0.013502642632623714,
+    "vram_bw": 0.010699869031002575
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.002513306181582,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.4252779875433322,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9633214090597972,
+   "margin_x": 29.664098150064774,
+   "ceiling_x": 27.263860861784565,
+   "shares": {
+    "io": 0.9633214090597972,
+    "ram_bw": 0.032474319771548285,
+    "vram_bw": 0.004204271168654473
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0060660085621498,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.609210366381928,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9659699867441514,
+   "margin_x": 33.79380593174045,
+   "ceiling_x": 29.385824580251455,
+   "shares": {
+    "io": 0.9659699867441514,
+    "ram_bw": 0.028584231935736924,
+    "vram_bw": 0.005445781320111731
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0053354864328767,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.627107254595262,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9695999609665693,
+   "margin_x": 35.73188595008001,
+   "ceiling_x": 32.89469460550059,
+   "shares": {
+    "io": 0.9695999609665693,
+    "ram_bw": 0.02713542638978445,
+    "vram_bw": 0.0032646126436461976
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0050636853553987,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.2077660338805805,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9875709554383424,
+   "margin_x": 111.80515538117155,
+   "ceiling_x": 80.45670727458025,
+   "shares": {
+    "io": 0.9875709554383424,
+    "ram_bw": 0.0035960801775783147,
+    "vram_bw": 0.008832964384079317
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0006681222134257,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.3789176488892318,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9757974883363737,
+   "margin_x": 72.26714909707755,
+   "ceiling_x": 41.31802574453003,
+   "shares": {
+    "io": 0.9757974883363737,
+    "ram_bw": 0.013502642632623714,
+    "vram_bw": 0.010699869031002575
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.002513306181582,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.5805868818785422,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9664076608732267,
+   "margin_x": 29.095078896190667,
+   "ceiling_x": 29.768692088577847,
+   "shares": {
+    "io": 0.9664076608732267,
+    "ram_bw": 0.0003768367965921002,
+    "vram_bw": 0.03321550233018119
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0000699713367065,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.6360787878940429,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9583697175657608,
+   "margin_x": 23.25156529741621,
+   "ceiling_x": 24.02097563425469,
+   "shares": {
+    "io": 0.9583697175657608,
+    "ram_bw": 0.00041285447586175537,
+    "vram_bw": 0.04121742795837741
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.000076659638869,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7130941621822917,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9618443207086624,
+   "margin_x": 25.434446824646006,
+   "ceiling_x": 26.20841821120529,
+   "shares": {
+    "io": 0.9618443207086624,
+    "ram_bw": 0.0003390785474742233,
+    "vram_bw": 0.03781660074386341
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0000629599155124,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.9268691768997109,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9575749157366209,
+   "margin_x": 22.732133743578608,
+   "ceiling_x": 23.570960844577268,
+   "shares": {
+    "io": 0.9575749157366209,
+    "ram_bw": 0.0003007977120949754,
+    "vram_bw": 0.04212428655128415
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0000558515543665,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 15.015189444214188,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.36549584450350625,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.6128679831870693,
+   "margin_x": 1.9602275101696054,
+   "ceiling_x": 2.5830981592080984,
+   "shares": {
+    "io": 0.6128679831870693,
+    "ram_bw": 0.074480561812158,
+    "cpu_compute": 0.31265145500077274
+   },
+   "spec_ceiling_k2": 1.8458097758510423,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0140225513053782,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.391012147909683,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5322100626315348,
+   "margin_x": 1.5911635477777242,
+   "ceiling_x": 2.1377116524255793,
+   "shares": {
+    "io": 0.5322100626315348,
+    "ram_bw": 0.13331139594207414,
+    "cpu_compute": 0.33447854142639105
+   },
+   "spec_ceiling_k2": 1.7975297452658519,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.025379819081423,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.5783889368095616,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.4947638813664397,
+   "margin_x": 1.1722839856209375,
+   "ceiling_x": 1.979272587843792,
+   "shares": {
+    "io": 0.42205121577633103,
+    "ram_bw": 0.08318490285722925,
+    "cpu_compute": 0.4947638813664397
+   },
+   "spec_ceiling_k2": 1.507895519828838,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.015687036367604,
+   "capacity": false
+  },
+  {
+   "model": "kimi-k2.6",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.7199710347321349,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9711200673871396,
+   "margin_x": 34.44270096753555,
+   "ceiling_x": 34.626119576009515,
+   "shares": {
+    "io": 0.9711200673871396,
+    "ram_bw": 0.0006846970445905251,
+    "vram_bw": 0.028195235568269823
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0001271423244893,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.5091698944547256,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9763069699600689,
+   "margin_x": 67.14348901205119,
+   "ceiling_x": 42.206505386379426,
+   "shares": {
+    "io": 0.9763069699600689,
+    "ram_bw": 0.00915242477312936,
+    "vram_bw": 0.014540605266801631
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0017022027073463,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 0.5072582180565374,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9726414292197666,
+   "margin_x": 67.14348901205119,
+   "ceiling_x": 36.55161696979073,
+   "shares": {
+    "io": 0.9726414292197666,
+    "ram_bw": 0.012872558159632255,
+    "vram_bw": 0.014486012620601126
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0023957448171832,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 7.852384992027366,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5872719186845777,
+   "margin_x": 1.8945948539428594,
+   "ceiling_x": 2.4229027421949576,
+   "shares": {
+    "io": 0.5872719186845777,
+    "ram_bw": 0.30997229695963785,
+    "vram_bw": 0.1027557843557844
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0610663411968009,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "hybrid: attention->VRAM, experts->RAM",
+   "tok_s": 15.358422689537909,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9398415587396215,
+   "margin_x": 15.62277111987971,
+   "ceiling_x": 16.622771119879715,
+   "shares": {
+    "vram_bw": 0.06015844126037852,
+    "ram_bw": 0.9398415587396215
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.2113844992607081,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "hybrid: attention->VRAM, experts->RAM",
+   "tok_s": 24.285907969731525,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9131759347765847,
+   "margin_x": 10.517544098249758,
+   "ceiling_x": 11.517544098249763,
+   "shares": {
+    "vram_bw": 0.0868240652234154,
+    "ram_bw": 0.9131759347765847
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.2041625346890723,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "hybrid: attention->VRAM, experts->RAM",
+   "tok_s": 27.25722711412836,
+   "klass": "bandwidth-bound",
+   "resource": "ram_bw",
+   "share": 0.9451861924170056,
+   "margin_x": 17.243578472192194,
+   "ceiling_x": 18.24357847219217,
+   "shares": {
+    "vram_bw": 0.05481380758299429,
+    "ram_bw": 0.9451861924170056
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.2128424431933904,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 2.262510997909324,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9142888180772756,
+   "margin_x": 21.07611381200001,
+   "ceiling_x": 11.667089142482961,
+   "shares": {
+    "io": 0.9142888180772756,
+    "ram_bw": 0.04338033217284636,
+    "vram_bw": 0.04233084974987809
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.008119727731474,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s": 7.852384992027366,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.5872719186845777,
+   "margin_x": 1.8945948539428594,
+   "ceiling_x": 2.4229027421949576,
+   "shares": {
+    "io": 0.5872719186845777,
+    "ram_bw": 0.30997229695963785,
+    "vram_bw": 0.1027557843557844
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0610663411968009,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 37.156350328920034,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 37.156350328920034,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 50.718418198975854,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 71.89779116006572,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 73.60536370011728,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.0970565761242133,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8915190771836679,
+   "margin_x": 8.218210668184387,
+   "ceiling_x": 9.218210668184387,
+   "shares": {
+    "ram_bw": 0.10848092281633215,
+    "cpu_compute": 0.8915190771836679
+   },
+   "spec_ceiling_k2": 1.0779586313943244,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0205554243334316,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.058771087901929,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8604065130075861,
+   "margin_x": 6.163658001138291,
+   "ceiling_x": 7.163658001138292,
+   "shares": {
+    "ram_bw": 0.13959348699241395,
+    "cpu_compute": 0.8604065130075861
+   },
+   "spec_ceiling_k2": 1.1026115985609335,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0266076256666756,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 1.1734336770118154,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.9535866532624145,
+   "margin_x": 20.545526670460966,
+   "ceiling_x": 21.545526670460966,
+   "shares": {
+    "ram_bw": 0.04641334673758546,
+    "cpu_compute": 0.9535866532624145
+   },
+   "spec_ceiling_k2": 1.031930223515341,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": 1.0086923679203883,
+   "capacity": false
+  },
+  {
+   "model": "gpt-oss-120b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 3,
+   "winner": "all in VRAM",
+   "tok_s": 58.0760166611828,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": false,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "2016-xmp",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.016053795855436356,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9606201541548864,
+   "margin_x": 27.980530147507213,
+   "ceiling_x": 25.393700217444728,
+   "shares": {
+    "io": 0.9606201541548864,
+    "ram_bw": 0.005048110560231279,
+    "cpu_compute": 0.03433173528488231
+   },
+   "spec_ceiling_k2": 2.807244827410945,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0009381506435144,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "2016",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.016020495113440118,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.9586275186313031,
+   "margin_x": 27.980530147507213,
+   "ceiling_x": 24.17065563673484,
+   "shares": {
+    "io": 0.9586275186313031,
+    "ram_bw": 0.007111961157763497,
+    "cpu_compute": 0.03426052021093343
+   },
+   "spec_ceiling_k2": 2.807619023407867,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0013222077685315,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-3060",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.13405794505620633,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.6291116741591263,
+   "margin_x": 2.1944069355038716,
+   "ceiling_x": 2.6962293777589563,
+   "shares": {
+    "io": 0.6291116741591263,
+    "ram_bw": 0.08419962467949511,
+    "cpu_compute": 0.2866887011613787
+   },
+   "spec_ceiling_k2": 1.9067262537081935,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0158814319593525,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-3090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "split: 33/80 layers->VRAM, rest->RAM",
+   "tok_s": 0.5403298279993192,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.6449238502563905,
+   "margin_x": 1.89025852705305,
+   "ceiling_x": 2.816297294881878,
+   "shares": {
+    "vram_bw": 0.013893268658110816,
+    "ram_bw": 0.3411828810854986,
+    "cpu_compute": 0.6449238502563905
+   },
+   "spec_ceiling_k2": 1.3101308001087537,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0676308468781686,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-4090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "split: 33/80 layers->VRAM, rest->RAM",
+   "tok_s": 0.6231409749062511,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.7437651152391436,
+   "margin_x": 3.0763030930471205,
+   "ceiling_x": 3.9026692284046267,
+   "shares": {
+    "vram_bw": 0.014462506440866479,
+    "ram_bw": 0.24177237831998993,
+    "cpu_compute": 0.7437651152391436
+   },
+   "spec_ceiling_k2": 1.2060154941004186,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0469990920292869,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "rtx-5090",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "split: 45/80 layers->VRAM, rest->RAM",
+   "tok_s": 0.8531247090827557,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.7582845414234439,
+   "margin_x": 3.3459322616157716,
+   "ceiling_x": 4.137095764949929,
+   "shares": {
+    "vram_bw": 0.01508668006767394,
+    "ram_bw": 0.22662877850888216,
+    "cpu_compute": 0.7582845414234439
+   },
+   "spec_ceiling_k2": 1.192099203812131,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.043925957261327,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "laptop-8gb",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.0627454536835021,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.844770500688125,
+   "margin_x": 6.295619283189123,
+   "ceiling_x": 6.442074505380436,
+   "shares": {
+    "io": 0.844770500688125,
+    "ram_bw": 0.021045638648020462,
+    "cpu_compute": 0.13418386066385454
+   },
+   "spec_ceiling_k2": 2.3652446759364416,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.003922824850591,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "gaming",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "stream from disk (cold experts)",
+   "tok_s": 0.13405794505620633,
+   "klass": "IO-bound",
+   "resource": "io",
+   "share": 0.6291116741591263,
+   "margin_x": 2.1944069355038716,
+   "ceiling_x": 2.6962293777589563,
+   "shares": {
+    "io": 0.6291116741591263,
+    "ram_bw": 0.08419962467949511,
+    "cpu_compute": 0.2866887011613787
+   },
+   "spec_ceiling_k2": 1.9067262537081935,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0158814319593525,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m2-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 3.279760551460791,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m3-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 3.279760551460791,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m4-max",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 4.47687315274398,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m2-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 6.3225240704001,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "mac-m3-ultra",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 6.472684017072101,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "ddr5",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.3667585545723928,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.7451125476061464,
+   "margin_x": 2.923300227642412,
+   "ceiling_x": 3.9233002276424114,
+   "shares": {
+    "ram_bw": 0.2548874523938535,
+    "cpu_compute": 0.7451125476061464
+   },
+   "spec_ceiling_k2": 1.2047103716719425,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0496752298881635,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "colibri",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.3380380058634485,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.6867634213202759,
+   "margin_x": 2.192475170731809,
+   "ceiling_x": 3.192475170731809,
+   "shares": {
+    "ram_bw": 0.31323657867972415,
+    "cpu_compute": 0.6867634213202759
+   },
+   "spec_ceiling_k2": 1.2639418885452738,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.061749133420943,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "epyc-256",
+   "ctx": 16384,
+   "rows": 1,
+   "winner": "pure CPU (GPU idle)",
+   "tok_s": 0.4329743995667963,
+   "klass": "compute-bound",
+   "resource": "cpu_compute",
+   "share": 0.8796377177502964,
+   "margin_x": 7.308250569106029,
+   "ceiling_x": 8.308250569106027,
+   "shares": {
+    "ram_bw": 0.12036228224970354,
+    "cpu_compute": 0.8796377177502964
+   },
+   "spec_ceiling_k2": 1.0872419481586602,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": 1.0228582159928377,
+   "capacity": false
+  },
+  {
+   "model": "llama-70b",
+   "machine": "dgx-spark",
+   "ctx": 16384,
+   "rows": 2,
+   "winner": "all in VRAM",
+   "tok_s": 6.028593812296209,
+   "klass": "bandwidth-bound",
+   "resource": "vram_bw",
+   "share": 1.0,
+   "margin_x": null,
+   "ceiling_x": null,
+   "shares": {
+    "vram_bw": 1.0
+   },
+   "spec_ceiling_k2": 3.0,
+   "spec_advice_prints": true,
+   "codebook_bound_at_50pct": null,
+   "capacity": false
+  }
+ ]
+}

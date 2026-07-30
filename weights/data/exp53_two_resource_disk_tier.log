@@ -1,0 +1,164 @@
+====================================================================================================
+EXPERIMENT #53 - two-resource model for the streaming/disk tier
+held-out set: https://github.com/Helldez/BigMoeOnEdge README tables, read 2026-07-30
+mode: SCORE   2026-07-30 21:31:48
+====================================================================================================
+
+[1] preconditions
+  self-test qwen35-35b.imatrix.gguf                              t=0.0480 a=0.0480 ne=0.0008 moe=False untied=False OK
+  self-test Qwen2.5-0.5B-Instruct-Q8_0.gguf                      t=0.4940 a=0.4940 ne=0.4940 moe=False untied=False OK
+  self-test DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf              t=15.7065 a=2.4514 ne=1.1019 moe=True  untied=True  OK
+  coverage         ['#76 tied (gather does not apply)', '#76 untied (gather applies)', 'moe'] over 3 local files
+  transcription    all 19 rows + 4 desktop literals present verbatim in external_bigmoe_tables.md
+  source verify    all 19 rows still present verbatim upstream
+
+[2] the four benchmarked models, from their own GGUF headers
+  gpt-oss-120b      63.387 GB (they state ~60 GB  ) gpt-oss    E= 128 k=4 L= 36 bits=4.34 cached
+  qwen36-35b-a3b    22.285 GB (they state 22.3 GB ) qwen35moe  E= 256 k=8 L= 41 bits=5.02 cached
+  qwen3-30b-a3b     18.557 GB (they state 18.5 GB ) qwen3moe   E= 128 k=8 L= 48 bits=4.86 cached
+  gemma4-26b-a4b    17.035 GB (they state 17.0 GB ) gemma4     E= 128 k=8 L= 30 bits=5.40 cached
+
+[3] P-0  parameter-free byte accounting: our routed bytes/token vs THEIR instrumented no-cache Flash/token
+  gpt-oss-120b     k=4  ours   1820.1 MiB   theirs  1817 MiB    +0.17%
+  gpt-oss-120b     k=2  ours    910.1 MiB   theirs   909 MiB    +0.12%
+  qwen3-30b-a3b    k=8  ours   1046.2 MiB   theirs  1051 MiB    -0.45%
+  gemma4-26b-a4b   k=8  ours    901.8 MiB   theirs   904 MiB    -0.24%
+  P-0: worst |error| 0.45%  gate 3%  -> HOLDS
+  disclosure: qwen35moe has NO no-cache row.  Back-derived F/(1-hit) scaled to k=8 gives 379-468 MiB against our 607 MiB (-38% to -23%).  No kill power; see prereg section 7 defect 4.
+  P-0 COVERAGE: 4 comparisons over 3 of the 4 models.  The untested model is the one whose byte model visibly disagrees, and it carries 4 of the 18 fitted rows, 2 of the 5 k-pairs and the whole desktop arm.  P-0's 3% gate is therefore a statement about three models, not four.
+
+[4] Arm A  fit the model form on the 18 phone rows (2 device constants, nothing per model, nothing per row)
+  --- active-byte convention: shipped  (PRIMARY - what quantprobe ships)
+    M2   S_c= 11.93 GB/s  S_i= 1746.5 MiB/s          |  in 18.50%  LOO 19.63%  LOMO med 35.39% max 115.67%   STAKED: max(C,I) under --overlap, C+I without
+    N1   S_c=  6.94 GB/s  S_i=  143.1 MiB/s          |  in 38.48%  LOO 40.19%  LOMO med 43.01% max 269.28%   null: compute only (Law 4 alone, disk invisible)
+    N2   S_c=  2.00 GB/s  S_i=  980.3 MiB/s          |  in 28.35%  LOO 29.75%  LOMO med 31.92% max 115.48%   null: I/O only (compute invisible)
+    N3   S_c= 17.24 GB/s  S_i= 1896.1 MiB/s          |  in  4.45%  LOO  4.89%  LOMO med  4.04% max 28.66%   alt: C+I always (--overlap earns no byte-level credit)
+    N4   S_c=  9.95 GB/s  S_i= 1449.8 MiB/s          |  in 13.67%  LOO 15.33%  LOMO med 13.72% max 54.53%   alt: max(C,I) always (perfect overlap everywhere)
+    M2b  S_c= 16.49 GB/s  S_i= 1846.2 MiB/s  phi=0.180  |  in  7.01%  LOO  8.20%  LOMO med  8.61% max 32.15%   alt: C+I-phi*min(C,I) under --overlap (partial overlap, 1 extra param)
+  --- active-byte convention: exact
+    M2   S_c= 13.56 GB/s  S_i= 1724.0 MiB/s          |  in 16.56%  LOO 17.73%  LOMO med 39.07% max 99.09%   STAKED: max(C,I) under --overlap, C+I without
+    N1   S_c=  8.04 GB/s  S_i=  143.1 MiB/s          |  in 39.18%  LOO 40.94%  LOMO med 45.96% max 220.58%   null: compute only (Law 4 alone, disk invisible)
+    N2   S_c=  2.00 GB/s  S_i=  980.3 MiB/s          |  in 28.35%  LOO 29.75%  LOMO med 31.92% max 115.48%   null: I/O only (compute invisible)
+    N3   S_c= 19.50 GB/s  S_i= 1917.0 MiB/s          |  in  6.89%  LOO  7.46%  LOMO med  8.10% max 28.99%   alt: C+I always (--overlap earns no byte-level credit)
+    N4   S_c= 11.17 GB/s  S_i= 1449.8 MiB/s          |  in 15.52%  LOO 17.30%  LOMO med 22.21% max 59.57%   alt: max(C,I) always (perfect overlap everywhere)
+    M2b  S_c= 18.12 GB/s  S_i= 1846.0 MiB/s  phi=0.270  |  in  7.45%  LOO  8.96%  LOMO med  8.41% max 24.92%   alt: C+I-phi*min(C,I) under --overlap (partial overlap, 1 extra param)
+
+[5] per-row, STAKED model M2 and the surviving alternative, primary convention
+  --- M2  S_c=11.930 GB/s  S_i=1746.5 MiB/s
+    gpt-oss-120b     k2 cache2000 8lane     ov=1 meas  2.20 pred   2.96 err  +34.5%   C  177.7 ms  I  337.8 ms  BINDS: I/O
+    gpt-oss-120b     k2 nocache 4lane       ov=1 meas  1.80 pred   1.92 err   +6.7%   C  177.7 ms  I  520.5 ms  BINDS: I/O
+    gpt-oss-120b     k4 cache2000 8lane     ov=1 meas  1.30 pred   1.35 err   +4.0%   C  271.4 ms  I  739.8 ms  BINDS: I/O
+    gpt-oss-120b     k4 nocache 4lane       ov=1 meas  0.70 pred   0.96 err  +37.3%   C  271.4 ms  I 1040.4 ms  BINDS: I/O
+    qwen36-35b-a3b   k8 cache2000           ov=1 meas  4.30 pred   5.49 err  +27.7%   C  182.1 ms  I  118.0 ms  BINDS: COMPUTE
+    qwen36-35b-a3b   k8 cache3000           ov=1 meas  5.00 pred   5.49 err   +9.8%   C  182.1 ms  I   82.5 ms  BINDS: COMPUTE
+    qwen36-35b-a3b   k6 cache2000           ov=1 meas  5.40 pred   6.01 err  +11.2%   C  166.5 ms  I   78.4 ms  BINDS: COMPUTE
+    qwen36-35b-a3b   k6 cache3000           ov=1 meas  5.80 pred   6.01 err   +3.5%   C  166.5 ms  I   52.1 ms  BINDS: COMPUTE
+    qwen3-30b-a3b    k8 nocache             ov=0 meas  1.70 pred   1.28 err  -24.6%   C  178.1 ms  I  601.8 ms  BINDS: I/O
+    qwen3-30b-a3b    k8 cache2000           ov=0 meas  2.40 pred   2.21 err   -8.0%   C  178.1 ms  I  274.8 ms  BINDS: I/O
+    qwen3-30b-a3b    k8 cache4000           ov=0 meas  4.00 pred   3.26 err  -18.6%   C  178.1 ms  I  128.8 ms  BINDS: COMPUTE
+    qwen3-30b-a3b    k8 auto4000 overlap    ov=1 meas  5.20 pred   5.61 err   +8.0%   C  178.1 ms  I  128.8 ms  BINDS: COMPUTE
+    qwen3-30b-a3b    k6 cache4000           ov=0 meas  5.00 pred   4.06 err  -18.7%   C  151.6 ms  I   94.5 ms  BINDS: COMPUTE
+    gemma4-26b-a4b   k8 nocache             ov=0 meas  1.60 pred   1.30 err  -18.4%   C  248.7 ms  I  517.6 ms  BINDS: I/O
+    gemma4-26b-a4b   k8 cache2000           ov=0 meas  2.20 pred   2.18 err   -0.8%   C  248.7 ms  I  209.6 ms  BINDS: COMPUTE
+    gemma4-26b-a4b   k8 cache2000 overlap   ov=1 meas  2.80 pred   4.02 err  +43.6%   C  248.7 ms  I  209.0 ms  BINDS: COMPUTE
+    gemma4-26b-a4b   k8 cache4000           ov=0 meas  4.10 pred   3.02 err  -26.4%   C  248.7 ms  I   82.5 ms  BINDS: COMPUTE
+    gemma4-26b-a4b   k6 cache4000           ov=0 meas  5.00 pred   3.55 err  -29.0%   C  225.5 ms  I   56.1 ms  BINDS: COMPUTE
+  --- N3  S_c=17.237 GB/s  S_i=1896.1 MiB/s
+    gpt-oss-120b     k2 cache2000 8lane     ov=1 meas  2.20 pred   2.30 err   +4.7%   C  123.0 ms  I  311.2 ms  BINDS: I/O
+    gpt-oss-120b     k2 nocache 4lane       ov=1 meas  1.80 pred   1.66 err   -7.8%   C  123.0 ms  I  479.4 ms  BINDS: I/O
+    gpt-oss-120b     k4 cache2000 8lane     ov=1 meas  1.30 pred   1.15 err  -11.5%   C  187.8 ms  I  681.4 ms  BINDS: I/O
+    gpt-oss-120b     k4 nocache 4lane       ov=1 meas  0.70 pred   0.87 err  +24.6%   C  187.8 ms  I  958.3 ms  BINDS: I/O
+    qwen36-35b-a3b   k8 cache2000           ov=1 meas  4.30 pred   4.26 err   -0.9%   C  126.1 ms  I  108.6 ms  BINDS: COMPUTE
+    qwen36-35b-a3b   k8 cache3000           ov=1 meas  5.00 pred   4.95 err   -1.0%   C  126.1 ms  I   75.9 ms  BINDS: COMPUTE
+    qwen36-35b-a3b   k6 cache2000           ov=1 meas  5.40 pred   5.33 err   -1.2%   C  115.3 ms  I   72.3 ms  BINDS: COMPUTE
+    qwen36-35b-a3b   k6 cache3000           ov=1 meas  5.80 pred   6.13 err   +5.6%   C  115.3 ms  I   48.0 ms  BINDS: COMPUTE
+    qwen3-30b-a3b    k8 nocache             ov=0 meas  1.70 pred   1.48 err  -13.2%   C  123.3 ms  I  554.3 ms  BINDS: I/O
+    qwen3-30b-a3b    k8 cache2000           ov=0 meas  2.40 pred   2.66 err  +10.7%   C  123.3 ms  I  253.2 ms  BINDS: I/O
+    qwen3-30b-a3b    k8 cache4000           ov=0 meas  4.00 pred   4.13 err   +3.3%   C  123.3 ms  I  118.7 ms  BINDS: COMPUTE
+    qwen3-30b-a3b    k8 auto4000 overlap    ov=1 meas  5.20 pred   4.13 err  -20.5%   C  123.3 ms  I  118.7 ms  BINDS: COMPUTE
+    qwen3-30b-a3b    k6 cache4000           ov=0 meas  5.00 pred   5.21 err   +4.2%   C  104.9 ms  I   87.0 ms  BINDS: COMPUTE
+    gemma4-26b-a4b   k8 nocache             ov=0 meas  1.60 pred   1.54 err   -3.7%   C  172.1 ms  I  476.8 ms  BINDS: I/O
+    gemma4-26b-a4b   k8 cache2000           ov=0 meas  2.20 pred   2.74 err  +24.5%   C  172.1 ms  I  193.0 ms  BINDS: I/O
+    gemma4-26b-a4b   k8 cache2000 overlap   ov=1 meas  2.80 pred   2.74 err   -2.1%   C  172.1 ms  I  192.5 ms  BINDS: I/O
+    gemma4-26b-a4b   k8 cache4000           ov=0 meas  4.10 pred   4.03 err   -1.7%   C  172.1 ms  I   75.9 ms  BINDS: COMPUTE
+    gemma4-26b-a4b   k6 cache4000           ov=0 meas  5.00 pred   4.81 err   -3.7%   C  156.1 ms  I   51.7 ms  BINDS: COMPUTE
+
+[6] Arm B  the five clean k -> k' pairs (does the prediction sit strictly between the two single-resource bounds, and within 10%?)
+    M2   qwen3-30b-a3b    k8->k6  measured 1.250  predicted 1.247  [compute-only 1.175, io-only 1.364]  bracketed True  (FORCED - see below) within-10% True 
+    M2   gemma4-26b-a4b   k8->k6  measured 1.220  predicted 1.176  [compute-only 1.103, io-only 1.469]  bracketed True  (FORCED - see below) within-10% True 
+    M2   qwen36-35b-a3b   k8->k6  measured 1.256  predicted 1.094  [compute-only 1.094, io-only 1.504]  bracketed False               within-10% False
+    M2   qwen36-35b-a3b   k8->k6  measured 1.160  predicted 1.094  [compute-only 1.094, io-only 1.582]  bracketed False               within-10% True 
+    M2   gpt-oss-120b     k4->k2  measured 1.692  predicted 2.190  [compute-only 1.527, io-only 2.190]  bracketed False               within-10% False
+    M2   -> 2/5 pairs bracketed AND inside 10% (gate: 4)
+    M2      DISCLOSURE: on 2/5 of those pairs this form is additive, so `bracketed` is the mediant identity and CANNOT fail.  K-4 carries evidence on 3 pair(s); on the rest it reduces to the 10% tolerance alone.
+    M2      threshold sensitivity: only 2 of 5 pairs are bracketed at all; a gate of 4 is UNREACHABLE at every tolerance
+    N3   qwen3-30b-a3b    k8->k6  measured 1.250  predicted 1.261  [compute-only 1.175, io-only 1.364]  bracketed True  (FORCED - see below) within-10% True 
+    N3   gemma4-26b-a4b   k8->k6  measured 1.220  predicted 1.194  [compute-only 1.103, io-only 1.469]  bracketed True  (FORCED - see below) within-10% True 
+    N3   qwen36-35b-a3b   k8->k6  measured 1.256  predicted 1.252  [compute-only 1.094, io-only 1.504]  bracketed True  (FORCED - see below) within-10% True 
+    N3   qwen36-35b-a3b   k8->k6  measured 1.160  predicted 1.237  [compute-only 1.094, io-only 1.582]  bracketed True  (FORCED - see below) within-10% True 
+    N3   gpt-oss-120b     k4->k2  measured 1.692  predicted 2.002  [compute-only 1.527, io-only 2.190]  bracketed True  (FORCED - see below) within-10% False
+    N3   -> 4/5 pairs bracketed AND inside 10% (gate: 4)
+    N3      DISCLOSURE: on 5/5 of those pairs this form is additive, so `bracketed` is the mediant identity and CANNOT fail.  K-4 carries evidence on 0 pair(s); on the rest it reduces to the 10% tolerance alone.
+    N3      threshold sensitivity: pass_count stays 4 for any tolerance in (6.67%, 18.31%]
+    M2b  -> 4/5 pairs bracketed AND inside 10% (gate: 4)
+    M2b     DISCLOSURE: on 2/5 of those pairs this form is additive, so `bracketed` is the mediant identity and CANNOT fail.  K-4 carries evidence on 3 pair(s); on the rest it reduces to the 10% tolerance alone.
+    M2b     threshold sensitivity: pass_count stays 4 for any tolerance in (4.87%, 19.69%]
+
+[7] Arm C  cache hit as a MODELLED quantity: h = (M/N)^beta, one beta for every model, PHONE ONLY (pooling devices would violate C-14)
+    gpt-oss-120b     k=2 cache  2000 MiB  expert slot  12.64 MiB  M/N 0.0343  modelled h 0.516  measured 0.32  |err| 0.196
+    gpt-oss-120b     k=4 cache  2000 MiB  expert slot  12.64 MiB  M/N 0.0343  modelled h 0.516  measured 0.27  |err| 0.246
+    qwen36-35b-a3b   k=8 cache  2000 MiB  expert slot   1.85 MiB  M/N 0.1030  modelled h 0.640  measured 0.56  |err| 0.080
+    qwen36-35b-a3b   k=8 cache  3000 MiB  expert slot   1.85 MiB  M/N 0.1545  modelled h 0.693  measured 0.65  |err| 0.043
+    qwen36-35b-a3b   k=6 cache  2000 MiB  expert slot   1.85 MiB  M/N 0.1030  modelled h 0.640  measured 0.60  |err| 0.040
+    qwen36-35b-a3b   k=6 cache  3000 MiB  expert slot   1.85 MiB  M/N 0.1545  modelled h 0.693  measured 0.68  |err| 0.013
+    qwen3-30b-a3b    k=8 cache  2000 MiB  expert slot   2.73 MiB  M/N 0.1195  modelled h 0.659  measured 0.53  |err| 0.129
+    qwen3-30b-a3b    k=8 cache  4000 MiB  expert slot   2.73 MiB  M/N 0.2389  modelled h 0.755  measured 0.76  |err| 0.005
+    qwen3-30b-a3b    k=6 cache  4000 MiB  expert slot   2.73 MiB  M/N 0.2389  modelled h 0.755  measured 0.77  |err| 0.015
+    gemma4-26b-a4b   k=8 cache  2000 MiB  expert slot   3.76 MiB  M/N 0.1386  modelled h 0.678  measured 0.58  |err| 0.098
+    gemma4-26b-a4b   k=8 cache  4000 MiB  expert slot   3.76 MiB  M/N 0.2772  modelled h 0.777  measured 0.82  |err| 0.043
+    gemma4-26b-a4b   k=6 cache  4000 MiB  expert slot   3.76 MiB  M/N 0.2772  modelled h 0.777  measured 0.83  |err| 0.053
+    beta = 0.1965   median |err| 0.0478 vs structural null (h=M/N) 0.4962   within 0.10: 9/12
+    Arm C HOLDS (must beat the structural null AND land inside 0.10 on a majority of rows)
+
+[8] Desktop  DISCLOSURE ONLY - one usable row cannot support two device constants
+    #51's staked compute term        112.1 ms/token (8.92 tok/s ceiling; their own prose says ~110 ms - '~0.11 s/token', verified in the transcription)
+    measured                         208.3 ms/token at 4.8 tok/s, 74 MiB/token
+    implied desktop read rate        0.806 GB/s over the 96.2 ms (46% of the token) the additive model leaves for I/O
+    their prose calls the NVMe ~3 GB/s.  At that rate the additive model predicts 7.25 tok/s against 4.8 measured (+51%).
+    their --overlap A/B is 6.8 -> 7.3 tok/s = x1.074.  A perfect max() would be x(1+min/max) >= x1.0 and typically x1.2-x1.5 here.
+    CAVEAT on that A/B: both of its rows are `--drop-cold-experts 0.75` rows, which section 2 EXCLUDES from every fit because the authors call their output not reproducible.  It is the only overlap A/B the desktop has; it is quoted as an indication and must not be read as a measurement.
+
+[9] re-read the staked pre-registration and check it still reproduces
+  all 23 staked values reproduced to 0.5% relative
+
+[10] THE KILL RULE
+  M2 (STAKED)
+    P-0 byte model reproduces their own flash counter (worst 0.45% < 3%)   -> hit
+    K-1 LOMO median 35.39% < 15% and max 115.67% < 35%          -> MISS
+    K-2 LOMO median x2 = 70.79% < best one-resource 31.92%      -> MISS
+    K-3 no same-cost rival predicts held-out models better              -> MISS
+    K-4 k-pair bracketing 2/5 >= 4                                        -> MISS
+        of which `bracketed` is an algebraic identity on 2/5 pairs (additive form), leaving 3 informative; only 2 of 5 pairs are bracketed at all; a gate of 4 is UNREACHABLE at every tolerance
+    => FAIL
+  N3 (declared alternative)
+    P-0 byte model reproduces their own flash counter (worst 0.45% < 3%)   -> hit
+    K-1 LOMO median 4.04% < 15% and max 28.66% < 35%          -> hit
+    K-2 LOMO median x2 = 8.07% < best one-resource 31.92%      -> hit
+    K-3 no same-cost rival predicts held-out models better              -> hit   [CARRIES NO EVIDENCE: this form was named as the best same-cost form, so K-3 asks a question it was selected to answer]
+    K-4 k-pair bracketing 4/5 >= 4                                        -> hit
+        of which `bracketed` is an algebraic identity on 5/5 pairs (additive form), leaving 0 informative; pass_count stays 4 for any tolerance in (6.67%, 18.31%]
+    => PASS
+
+----------------------------------------------------------------------------------------------------
+  FAIL: the STAKED two-resource form (max under --overlap, sum without) does NOT clear its kill rule.
+  KILL RULE FIRED.  M2 does NOT get wired into quantprobe.  Per prereg section 5, the pre-declared fallback is evaluated next and published either way:
+    two-resource ACCOUNTING survives: YES (N3 = C+I always, LOMO median 4.04% against 31.92% for the best one-resource null)
+    the part that dies is the COMBINE RULE: --overlap does not turn sum into max.  Fitting a partial-overlap credit gives phi=0.180 and still does not beat phi=0 held-out (8.61% vs 4.04%).
+    WHAT THAT FALLBACK PASS IS AND IS NOT (adversarial review 2026-07-30):
+      - N3 was named as the fallback AFTER the arithmetic had been run (prereg section 0), so its pass is a SELECTION, not a prediction.  Two of its four gates cannot fail for it: K-3 asks whether it is the best same-cost form, which is why it was chosen, and K-4's bracketing conjunct is the mediant identity for an additive form.
+      - What survives that is real: K-1 (LOMO max 28.66% < 35%), K-2 (8.07% < 31.92%), and K-4's tolerance half, which N3 clears on 4/5 pairs - pass_count stays 4 for any tolerance in (6.67%, 18.31%].
+      - Wiring N3 in therefore still requires the separate commit prereg section 5 demands, and inherits every caveat in sections 7 and 8.
+----------------------------------------------------------------------------------------------------
+
+  wrote C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp53_two_resource_disk_tier.json
+  elapsed 32.0s

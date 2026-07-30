@@ -1,0 +1,707 @@
+// ============================ Api/Middleware.cs ============================
+namespace Contoso.Ordering.Api;
+
+public sealed class CorrelationIdMiddleware
+{
+    private const string HeaderName = "X-Correlation-Id";
+
+    private readonly RequestDelegate _next;
+    private readonly ILogger<CorrelationIdMiddleware> _logger;
+
+    public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (!context.Request.Headers.TryGetValue(HeaderName, out var correlationId) || StringValues.IsNullOrEmpty(correlationId))
+        {
+            correlationId = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N");
+        }
+
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers[HeaderName] = correlationId;
+            return Task.CompletedTask;
+        });
+
+        using (_logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId.ToString() }))
+        {
+            await _next(context).ConfigureAwait(false);
+        }
+    }
+}
+
+public static class MiddlewareExtensions
+{
+    public static IApplicationBuilder UseCorrelationId(this IApplicationBuilder app) =>
+        app.UseMiddleware<CorrelationIdMiddleware>();
+
+    public static IServiceCollection AddOrderingCore(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<OrderingOptions>()
+            .Bind(configuration.GetSection(OrderingOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(options => options.MaxLinesPerOrder > 0, "MaxLinesPerOrder must be positive.")
+            .ValidateOnStart();
+
+        return services;
+    }
+}
+
+// ============================ Application/Queries.cs ============================
+namespace Contoso.Ordering.Application;
+
+public static class OrderQueries
+{
+    public static IQueryable<OrderSummaryDto> ProjectSummaries(this IQueryable<Order> source, string currency) =>
+        source.Select(o => new OrderSummaryDto(
+            o.Id,
+            o.CustomerId,
+            o.Status.ToString(),
+            o.Lines.Sum(l => l.UnitPrice.Amount * l.Quantity),
+            currency,
+            o.Lines.Count));
+
+    public static IEnumerable<IGrouping<string, OrderSummaryDto>> GroupByCustomer(IEnumerable<OrderSummaryDto> summaries) =>
+        summaries
+            .Where(s => s.Total > 0)
+            .OrderBy(s => s.CustomerId)
+            .ThenByDescending(s => s.Total)
+            .GroupBy(s => s.CustomerId);
+
+    public static Dictionary<string, decimal> RevenueByStatus(IEnumerable<OrderSummaryDto> summaries) =>
+        summaries
+            .GroupBy(s => s.Status)
+            .ToDictionary(g => g.Key, g => g.Sum(s => s.Total));
+
+    public static async IAsyncEnumerable<OrderSummaryDto> StreamAsync(
+        IQueryable<Order> source,
+        string currency,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await foreach (var order in source.AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            var total = order.Total(currency);
+            yield return new OrderSummaryDto(order.Id, order.CustomerId, order.Status.ToString(), total.Amount, total.Currency, order.Lines.Count);
+        }
+    }
+}
+
+// ============================ Tests/OrderServiceTests.cs ============================
+using FluentAssertions;
+using Moq;
+using Xunit;
+
+namespace Contoso.Ordering.Tests;
+
+public sealed class OrderServiceTests
+{
+    private readonly Mock<IOrderRepository> _repository = new(MockBehavior.Strict);
+    private readonly Mock<IFraudScreener> _fraud = new();
+    private readonly OrderService _sut;
+
+    public OrderServiceTests()
+    {
+        var options = Options.Create(new OrderingOptions { MaxLinesPerOrder = 10, EnableFraudScreening = true });
+        _sut = new OrderService(_repository.Object, _fraud.Object, options, NullLogger<OrderService>.Instance);
+    }
+
+    [Fact]
+    public async Task SubmitAsync_WhenOrderMissing_ReturnsNotFound()
+    {
+        _repository
+            .Setup(r => r.FindAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Order?)null);
+
+        var result = await _sut.SubmitAsync(new SubmitOrderCommand(Guid.NewGuid(), "key-1"), CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("order.not_found");
+        _repository.VerifyAll();
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(9, true)]
+    [InlineData(11, false)]
+    public async Task SubmitAsync_EnforcesLineLimit(int lineCount, bool expectedSuccess)
+    {
+        var order = new Order("cust-42");
+        for (var i = 0; i < lineCount; i++)
+        {
+            order.AddLine($"AB-{1000 + i}", 1, new Money(10m, "EUR"));
+        }
+
+        _repository.Setup(r => r.FindAsync(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        _repository.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _fraud.Setup(f => f.ScreenAsync(order, It.IsAny<CancellationToken>()))
+              .Returns(ValueTask.FromResult(Result<bool>.Success(true)));
+
+        var result = await _sut.SubmitAsync(new SubmitOrderCommand(order.Id, "key-2"), CancellationToken.None);
+
+        result.IsSuccess.Should().Be(expectedSuccess);
+    }
+
+    [Fact]
+    public void AddLine_OnSubmittedOrder_Throws()
+    {
+        var order = new Order("cust-7");
+        order.AddLine("XY-2222", 2, new Money(5m, "EUR"));
+        order.Submit();
+
+        var act = () => order.AddLine("XY-3333", 1, new Money(5m, "EUR"));
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*is Submitted, not Draft*");
+    }
+
+    [Fact]
+    public void Money_AddAcrossCurrencies_Throws()
+    {
+        var euros = new Money(10m, "EUR");
+        var dollars = new Money(10m, "USD");
+
+        Assert.Throws<InvalidOperationException>(() => euros.Add(dollars));
+    }
+}
+
+// ============================ Infrastructure/Json.cs ============================
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Contoso.Ordering.Infrastructure;
+
+public sealed class MoneyJsonConverter : JsonConverter<Money>
+{
+    public override Money Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            throw new JsonException($"Expected StartObject but found {reader.TokenType}.");
+        }
+
+        decimal amount = 0m;
+        string currency = "EUR";
+
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
+            {
+                return new Money(amount, currency);
+            }
+
+            if (reader.TokenType != JsonTokenType.PropertyName)
+            {
+                continue;
+            }
+
+            var propertyName = reader.GetString();
+            reader.Read();
+
+            switch (propertyName)
+            {
+                case "amount":
+                    amount = reader.GetDecimal();
+                    break;
+                case "currency":
+                    currency = reader.GetString() ?? "EUR";
+                    break;
+                default:
+                    reader.Skip();
+                    break;
+            }
+        }
+
+        throw new JsonException("Unexpected end of JSON payload while reading Money.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, Money value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        writer.WriteNumber("amount", value.Amount);
+        writer.WriteString("currency", value.Currency);
+        writer.WriteEndObject();
+    }
+}
+
+[JsonSourceGenerationOptions(WriteIndented = false, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(OrderSummaryDto))]
+[JsonSerializable(typeof(IReadOnlyList<OrderSummaryDto>))]
+[JsonSerializable(typeof(ProblemDetails))]
+internal sealed partial class OrderingJsonContext : JsonSerializerContext
+{
+}
+
+// ============================ Infrastructure/Caching.cs ============================
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+
+namespace Contoso.Ordering.Infrastructure;
+
+public interface IPricingCache
+{
+    ValueTask<Money?> GetAsync(string sku, CancellationToken cancellationToken);
+    ValueTask SetAsync(string sku, Money price, TimeSpan ttl, CancellationToken cancellationToken);
+    void Invalidate(string sku);
+}
+
+public sealed class TwoTierPricingCache : IPricingCache, IDisposable
+{
+    private readonly IMemoryCache _local;
+    private readonly IDistributedCache _remote;
+    private readonly SemaphoreSlim _stampedeGuard = new(initialCount: 8, maxCount: 8);
+    private readonly ILogger<TwoTierPricingCache> _logger;
+    private long _hits;
+    private long _misses;
+
+    public TwoTierPricingCache(IMemoryCache local, IDistributedCache remote, ILogger<TwoTierPricingCache> logger)
+    {
+        _local = local;
+        _remote = remote;
+        _logger = logger;
+    }
+
+    public double HitRatio => Volatile.Read(ref _hits) + Volatile.Read(ref _misses) == 0
+        ? 0d
+        : (double)Volatile.Read(ref _hits) / (Volatile.Read(ref _hits) + Volatile.Read(ref _misses));
+
+    public async ValueTask<Money?> GetAsync(string sku, CancellationToken cancellationToken)
+    {
+        var key = KeyFor(sku);
+
+        if (_local.TryGetValue<Money>(key, out var cached))
+        {
+            Interlocked.Increment(ref _hits);
+            return cached;
+        }
+
+        await _stampedeGuard.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_local.TryGetValue(key, out cached))
+            {
+                Interlocked.Increment(ref _hits);
+                return cached;
+            }
+
+            var payload = await _remote.GetAsync(key, cancellationToken).ConfigureAwait(false);
+            if (payload is null || payload.Length == 0)
+            {
+                Interlocked.Increment(ref _misses);
+                return null;
+            }
+
+            var price = JsonSerializer.Deserialize<Money>(payload);
+            _local.Set(key, price, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
+                Size = 1,
+                Priority = CacheItemPriority.High
+            });
+            Interlocked.Increment(ref _hits);
+            return price;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Corrupt cache payload for {Sku}; evicting", sku);
+            await _remote.RemoveAsync(key, cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+        finally
+        {
+            _stampedeGuard.Release();
+        }
+    }
+
+    public async ValueTask SetAsync(string sku, Money price, TimeSpan ttl, CancellationToken cancellationToken)
+    {
+        var key = KeyFor(sku);
+        var payload = JsonSerializer.SerializeToUtf8Bytes(price);
+
+        await _remote.SetAsync(key, payload, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = ttl
+        }, cancellationToken).ConfigureAwait(false);
+
+        _local.Set(key, price, ttl > TimeSpan.FromMinutes(2) ? TimeSpan.FromMinutes(2) : ttl);
+    }
+
+    public void Invalidate(string sku) => _local.Remove(KeyFor(sku));
+
+    private static string KeyFor(string sku) => string.Concat("pricing:v3:", sku.ToUpperInvariant());
+
+    public void Dispose() => _stampedeGuard.Dispose();
+}
+
+// ============================ Infrastructure/Resilience.cs ============================
+using Polly;
+using Polly.CircuitBreaker;
+using Polly.Retry;
+
+namespace Contoso.Ordering.Infrastructure;
+
+public static class ResiliencePipelines
+{
+    public static ResiliencePipeline<HttpResponseMessage> BuildCatalogPipeline(ILogger logger)
+    {
+        return new ResiliencePipelineBuilder<HttpResponseMessage>()
+            .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+            {
+                MaxRetryAttempts = 4,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                Delay = TimeSpan.FromMilliseconds(200),
+                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .Handle<HttpRequestException>()
+                    .HandleResult(response => (int)response.StatusCode >= 500 || response.StatusCode == HttpStatusCode.TooManyRequests),
+                OnRetry = args =>
+                {
+                    logger.LogWarning("Catalog retry {Attempt} after {Delay}", args.AttemptNumber, args.RetryDelay);
+                    return default;
+                }
+            })
+            .AddCircuitBreaker(new CircuitBreakerStrategyOptions<HttpResponseMessage>
+            {
+                FailureRatio = 0.5,
+                SamplingDuration = TimeSpan.FromSeconds(30),
+                MinimumThroughput = 20,
+                BreakDuration = TimeSpan.FromSeconds(15)
+            })
+            .AddTimeout(TimeSpan.FromSeconds(5))
+            .Build();
+    }
+}
+
+public sealed class CatalogClient
+{
+    private readonly HttpClient _http;
+    private readonly ResiliencePipeline<HttpResponseMessage> _pipeline;
+
+    public CatalogClient(HttpClient http, ILogger<CatalogClient> logger)
+    {
+        _http = http;
+        _pipeline = ResiliencePipelines.BuildCatalogPipeline(logger);
+    }
+
+    public async Task<Result<Money>> GetPriceAsync(string sku, CancellationToken cancellationToken)
+    {
+        var response = await _pipeline.ExecuteAsync(
+            static async (state, ct) => await state.http.GetAsync($"/catalog/skus/{state.sku}/price", ct).ConfigureAwait(false),
+            (http: _http, sku),
+            cancellationToken).ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return Result<Money>.Failure(new Error("catalog.unavailable", $"Catalog returned {(int)response.StatusCode}."));
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        var price = await JsonSerializer.DeserializeAsync<Money>(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return Result<Money>.Success(price);
+    }
+}
+
+// ============================ Application/Validation.cs ============================
+using FluentValidation;
+
+namespace Contoso.Ordering.Application;
+
+public sealed record CreateOrderRequest(string CustomerId, IReadOnlyList<CreateOrderLine> Lines, string Currency);
+public sealed record CreateOrderLine(string Sku, int Quantity, decimal UnitPrice);
+
+public sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
+{
+    private static readonly string[] SupportedCurrencies = { "EUR", "USD", "GBP", "CHF" };
+
+    public CreateOrderRequestValidator()
+    {
+        RuleFor(request => request.CustomerId)
+            .NotEmpty().WithMessage("Customer identifier is required.")
+            .MaximumLength(64)
+            .Matches("^[a-zA-Z0-9._-]+$").WithMessage("Customer identifier contains illegal characters.");
+
+        RuleFor(request => request.Currency)
+            .NotEmpty()
+            .Must(currency => SupportedCurrencies.Contains(currency, StringComparer.OrdinalIgnoreCase))
+            .WithMessage(request => $"Currency '{request.Currency}' is not supported.");
+
+        RuleFor(request => request.Lines)
+            .NotEmpty().WithMessage("At least one line is required.")
+            .Must(lines => lines.Count <= 100).WithMessage("Too many lines.")
+            .Must(lines => lines.Select(l => l.Sku).Distinct(StringComparer.OrdinalIgnoreCase).Count() == lines.Count)
+            .WithMessage("Duplicate SKUs are not allowed; merge the quantities instead.");
+
+        RuleForEach(request => request.Lines).ChildRules(line =>
+        {
+            line.RuleFor(l => l.Quantity).InclusiveBetween(1, 9_999);
+            line.RuleFor(l => l.UnitPrice).GreaterThan(0m).PrecisionScale(18, 4, ignoreTrailingZeros: true);
+            line.RuleFor(l => l.Sku).NotEmpty().MaximumLength(64);
+        });
+    }
+}
+
+public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
+{
+    private readonly IEnumerable<IValidator<TRequest>> _validators;
+
+    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators) => _validators = validators;
+
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    {
+        if (!_validators.Any())
+        {
+            return await next().ConfigureAwait(false);
+        }
+
+        var context = new ValidationContext<TRequest>(request);
+        var failures = (await Task.WhenAll(_validators.Select(v => v.ValidateAsync(context, cancellationToken))).ConfigureAwait(false))
+            .SelectMany(result => result.Errors)
+            .Where(failure => failure is not null)
+            .ToList();
+
+        if (failures.Count != 0)
+        {
+            throw new ValidationException(failures);
+        }
+
+        return await next().ConfigureAwait(false);
+    }
+}
+
+// ============================ Infrastructure/Concurrency.cs ============================
+using System.Collections.Concurrent;
+
+namespace Contoso.Ordering.Infrastructure;
+
+/// <summary>
+/// Coalesces concurrent identical requests so only one hits the backing store.
+/// </summary>
+public sealed class RequestCoalescer<TKey, TValue> where TKey : notnull
+{
+    private readonly ConcurrentDictionary<TKey, Lazy<Task<TValue>>> _inFlight = new();
+
+    public async Task<TValue> GetOrAddAsync(TKey key, Func<TKey, CancellationToken, Task<TValue>> factory, CancellationToken cancellationToken)
+    {
+        var lazy = _inFlight.GetOrAdd(key, k => new Lazy<Task<TValue>>(
+            () => factory(k, cancellationToken),
+            LazyThreadSafetyMode.ExecutionAndPublication));
+
+        try
+        {
+            return await lazy.Value.ConfigureAwait(false);
+        }
+        finally
+        {
+            _inFlight.TryRemove(new KeyValuePair<TKey, Lazy<Task<TValue>>>(key, lazy));
+        }
+    }
+}
+
+public sealed class ShardedCounter
+{
+    private readonly PaddedLong[] _shards;
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    private struct PaddedLong
+    {
+        [FieldOffset(0)] public long Value;
+    }
+
+    public ShardedCounter(int shardCount = 0)
+    {
+        var count = shardCount > 0 ? shardCount : Environment.ProcessorCount;
+        _shards = new PaddedLong[count];
+    }
+
+    public void Increment()
+    {
+        var index = Environment.CurrentManagedThreadId % _shards.Length;
+        Interlocked.Increment(ref _shards[index].Value);
+    }
+
+    public long Read()
+    {
+        long total = 0;
+        for (var i = 0; i < _shards.Length; i++)
+        {
+            total += Interlocked.Read(ref _shards[i].Value);
+        }
+        return total;
+    }
+}
+
+// ============================ Api/Hubs.cs ============================
+using Microsoft.AspNetCore.SignalR;
+
+namespace Contoso.Ordering.Api;
+
+public interface IOrderClient
+{
+    Task OrderStatusChanged(Guid orderId, string status, DateTimeOffset changedUtc);
+    Task ShipmentTracked(Guid orderId, string carrier, string trackingNumber);
+}
+
+[Authorize]
+public sealed class OrderHub : Hub<IOrderClient>
+{
+    private readonly IOrderRepository _repository;
+    private readonly ILogger<OrderHub> _logger;
+
+    public OrderHub(IOrderRepository repository, ILogger<OrderHub> logger)
+    {
+        _repository = repository;
+        _logger = logger;
+    }
+
+    public override async Task OnConnectedAsync()
+    {
+        var customerId = Context.User?.FindFirst("customer_id")?.Value;
+        if (!string.IsNullOrEmpty(customerId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, GroupFor(customerId)).ConfigureAwait(false);
+            _logger.LogInformation("Connection {ConnectionId} joined {Group}", Context.ConnectionId, GroupFor(customerId));
+        }
+        await base.OnConnectedAsync().ConfigureAwait(false);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        if (exception is not null)
+        {
+            _logger.LogWarning(exception, "Connection {ConnectionId} dropped", Context.ConnectionId);
+        }
+        await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
+    }
+
+    public async Task<IEnumerable<OrderSummaryDto>> Subscribe(string customerId, CancellationToken cancellationToken)
+    {
+        var orders = await _repository.ListByCustomerAsync(customerId, cancellationToken).ConfigureAwait(false);
+        return orders.Select(o =>
+        {
+            var total = o.Total("EUR");
+            return new OrderSummaryDto(o.Id, o.CustomerId, o.Status.ToString(), total.Amount, total.Currency, o.Lines.Count);
+        });
+    }
+
+    private static string GroupFor(string customerId) => $"customer:{customerId}";
+}
+
+// ============================ Infrastructure/Migrations.cs ============================
+using Microsoft.EntityFrameworkCore.Migrations;
+
+namespace Contoso.Ordering.Infrastructure.Migrations;
+
+public sealed partial class AddOutboxAndIndexes : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.EnsureSchema(name: "ordering");
+
+        migrationBuilder.CreateTable(
+            name: "outbox",
+            schema: "ordering",
+            columns: table => new
+            {
+                sequence = table.Column<long>(type: "bigint", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                type = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                payload = table.Column<string>(type: "jsonb", nullable: false),
+                enqueued_utc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                dispatched_utc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("pk_outbox", x => x.sequence);
+            });
+
+        migrationBuilder.CreateIndex(
+            name: "ix_outbox_pending",
+            schema: "ordering",
+            table: "outbox",
+            column: "sequence",
+            filter: "dispatched_utc IS NULL");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION ordering.touch_updated_utc()
+            RETURNS trigger AS $$
+            BEGIN
+                NEW.updated_utc = now();
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;");
+    }
+
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.Sql("DROP FUNCTION IF EXISTS ordering.touch_updated_utc();");
+        migrationBuilder.DropTable(name: "outbox", schema: "ordering");
+    }
+}
+
+// ============================ Tests/IntegrationTests.cs ============================
+using Microsoft.AspNetCore.Mvc.Testing;
+using Testcontainers.PostgreSql;
+
+namespace Contoso.Ordering.Tests;
+
+public sealed class OrderingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
+{
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
+        .WithImage("postgres:16-alpine")
+        .WithDatabase("ordering_tests")
+        .WithUsername("test")
+        .WithPassword("test")
+        .WithCleanUp(true)
+        .Build();
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseEnvironment("Testing");
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<DbContextOptions<OrderingDbContext>>();
+            services.AddDbContext<OrderingDbContext>(options => options.UseNpgsql(_postgres.GetConnectionString()));
+            services.RemoveAll<IFraudScreener>();
+            services.AddSingleton<IFraudScreener, AlwaysAllowFraudScreener>();
+        });
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _postgres.StartAsync().ConfigureAwait(false);
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        await db.Database.MigrateAsync().ConfigureAwait(false);
+    }
+
+    public new async Task DisposeAsync() => await _postgres.DisposeAsync().ConfigureAwait(false);
+}
+
+public sealed class OrdersEndpointTests : IClassFixture<OrderingApiFixture>
+{
+    private readonly HttpClient _client;
+
+    public OrdersEndpointTests(OrderingApiFixture fixture) => _client = fixture.CreateClient();
+
+    [Fact]
+    public async Task GetById_UnknownOrder_Returns404WithProblemDetails()
+    {
+        var response = await _client.GetAsync($"/api/v1/orders/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Equal(404, problem!.Status);
+    }
+
+    [Fact]
+    public async Task Submit_WithoutIdempotencyKey_ReturnsValidationProblem()
+    {
+        var response = await _client.PostAsync($"/api/v1/orders/{Guid.NewGuid()}/submit", content: null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+}

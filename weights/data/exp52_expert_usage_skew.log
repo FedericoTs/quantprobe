@@ -1,0 +1,112 @@
+# exp52 expert-usage skew | pre-registration #87
+# staked in preregistrations/2026-07-30-expert-usage-skew.md
+# gates: G1 held-out worst-domain share >= 0.55 at frac=0.32; G2 cross-domain retention >= 0.90
+# started 2026-07-30 22:12:06
+
+## corpus
+  corpus code_A     26,915 B  sha256=7fe9821f1570dabd...  PINNED OK
+  corpus code_B     25,550 B  sha256=dccbb1bd4af5b47b...  PINNED OK
+  corpus prose_A   119,318 B  sha256=09e3648bef826e9c...  PINNED OK
+  corpus prose_B   119,800 B  sha256=5fb4087ab6b5c048...  PINNED OK
+
+## preflight
+  binary   C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe
+           sha256=0f9eb11e7307b0d9ea546d485c385f6c461f1e181ff8573046077d364302da56
+  model    qwen3-30b-a3b-q2k      D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf  (11,258,610,240 B)
+  model    q35-A-shexp            D:\evo-compress-data\gguf\q35-A-shexp.gguf  (13,360,683,648 B)
+
+## controls (synthetic routing, same analysis path as the real arms)
+  [OK  ] uniform         headline=0.3187 retention=1.0005 uplift=0.99x -> FAIL (expected FAIL)
+            flat routing must score at the structural null and FAIL G1 -- the metric is not inflated by construction
+            G1 held-out pooled hot-set share on worst domain (code) = 0.3187 vs gate >= 0.55 -> FAIL
+            G2 worst cross-domain retention = 1.0005 vs gate >= 0.90 -> PASS
+  [OK  ] disjoint_hot    headline=0.4408 retention=0.1177 uplift=1.38x -> FAIL (expected FAIL)
+            fully domain-disjoint hot sets must not pass
+            G1 held-out pooled hot-set share on worst domain (code) = 0.4408 vs gate >= 0.55 -> FAIL
+            G2 worst cross-domain retention = 0.1177 vs gate >= 0.90 -> FAIL
+            G2 fails decisively (retention 0.1177 < 0.90); the hot set is a fingerprint of the calibration domain. This settles the verdict regardless of where G1 landed, so the G1 marginality band does not apply.
+  [OK  ] partial_overlap headline=0.7629 retention=0.6984 uplift=2.38x -> FAIL (expected FAIL)
+            THE KR-2 ISOLATION CONTROL: G1 must PASS and G2 must FAIL here. This is the only proof that the stability gate can overturn a strong headline on its own
+            G1 held-out pooled hot-set share on worst domain (prose) = 0.7629 vs gate >= 0.55 -> PASS
+            G2 worst cross-domain retention = 0.6984 vs gate >= 0.90 -> FAIL
+            G2 fails decisively (retention 0.6984 < 0.90); the hot set is a fingerprint of the calibration domain. This settles the verdict regardless of where G1 landed, so the G1 marginality band does not apply.
+  [OK  ] shared_hot      headline=0.7995 retention=1.0000 uplift=2.50x -> PASS (expected PASS)
+            strong and domain-stable concentration must PASS -- the gate is not unconditionally hostile and a positive result is reachable
+            G1 held-out pooled hot-set share on worst domain (code) = 0.7995 vs gate >= 0.55 -> PASS
+            G2 worst cross-domain retention = 1.0000 vs gate >= 0.90 -> PASS
+  CONTROLS: PASS
+
+## arm qwen3-30b-a3b-q2k
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__code__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] qwen3-30b-a3b-q2k__code__A.imatrix.gguf in 140.6s
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__code__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] qwen3-30b-a3b-q2k__code__B.imatrix.gguf in 79.4s
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__prose__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] qwen3-30b-a3b-q2k__prose__A.imatrix.gguf in 53.7s
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__prose__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] qwen3-30b-a3b-q2k__prose__B.imatrix.gguf in 46.4s
+  parsed: 48 MoE layers x 128 experts | chunks=8 x 512 tok | projections=down,gate,up
+
+  pinning 41/128 experts (0.3203 of each layer)
+  routing mass identical across layers: True
+    in-sample   code   0.8976   (inflated: ranked and scored on one shard)
+    in-sample   prose  0.8510   (inflated: ranked and scored on one shard)
+    held-out    code   0.8885   (rank shard A, score shard B)
+    held-out    prose  0.7821   (rank shard A, score shard B)
+    cross       code->prose      0.1524  retention 0.1949
+    cross       prose->code      0.1140  retention 0.1283
+    STATIC PIN  code   0.7663   (rank pooled A, score B - the deployable number)
+    STATIC PIN  prose  0.5846   (rank pooled A, score B - the deployable number)
+    depth       code   early 0.7376 -> late 0.7950  (delta +0.0574)
+    depth       prose  early 0.5589 -> late 0.6103  (delta +0.0514)
+    never-routed experts on code   0.1071
+    never-routed experts on prose  0.1834
+  headline (worst domain) 0.5846 vs index baseline 0.3203 -> uplift 1.83x (layer SEM 0.0100)
+
+  G1 held-out pooled hot-set share on worst domain (prose) = 0.5846 vs gate >= 0.55 -> PASS
+  G2 worst cross-domain retention = 0.1283 vs gate >= 0.90 -> FAIL
+  G2 fails decisively (retention 0.1283 < 0.90); the hot set is a fingerprint of the calibration domain. This settles the verdict regardless of where G1 landed, so the G1 marginality band does not apply.
+  ARM VERDICT: FAIL
+
+## arm q35-A-shexp
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__code__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] q35-A-shexp__code__A.imatrix.gguf in 271.9s
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__code__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] q35-A-shexp__code__B.imatrix.gguf in 352.7s
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__prose__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] q35-A-shexp__prose__A.imatrix.gguf in 287.5s
+  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__prose__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [done] q35-A-shexp__prose__B.imatrix.gguf in 215.4s
+  parsed: 40 MoE layers x 256 experts | chunks=8 x 512 tok | projections=down,gate,up
+
+  pinning 82/256 experts (0.3203 of each layer)
+  routing mass identical across layers: True
+    in-sample   code   0.8272   (inflated: ranked and scored on one shard)
+    in-sample   prose  0.8057   (inflated: ranked and scored on one shard)
+    held-out    code   0.8052   (rank shard A, score shard B)
+    held-out    prose  0.6589   (rank shard A, score shard B)
+    cross       code->prose      0.2690  retention 0.4082
+    cross       prose->code      0.2179  retention 0.2706
+    STATIC PIN  code   0.7161   (rank pooled A, score B - the deployable number)
+    STATIC PIN  prose  0.5550   (rank pooled A, score B - the deployable number)
+    depth       code   early 0.6838 -> late 0.7483  (delta +0.0645)
+    depth       prose  early 0.5250 -> late 0.5850  (delta +0.0600)
+    never-routed experts on code   0.0240
+    never-routed experts on prose  0.0818
+  headline (worst domain) 0.5550 vs index baseline 0.3203 -> uplift 1.73x (layer SEM 0.0116)
+
+  G1 held-out pooled hot-set share on worst domain (prose) = 0.5550 vs gate >= 0.55 -> PASS
+  G2 worst cross-domain retention = 0.2706 vs gate >= 0.90 -> FAIL
+  G2 fails decisively (retention 0.2706 < 0.90); the hot set is a fingerprint of the calibration domain. This settles the verdict regardless of where G1 landed, so the G1 marginality band does not apply.
+  ARM VERDICT: FAIL
+
+==============================================================================
+  q35-A-shexp            FAIL
+  qwen3-30b-a3b-q2k      FAIL
+  OVERALL: FAIL
+==============================================================================
+  REFUTED for our models at this budget: keep the static -ot regex, and
+  task #55 (cache-aware dropping) loses the gate it was waiting on.
+
+  raw -> C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_expert_usage_skew.json
+  log -> C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_expert_usage_skew.log

@@ -1,0 +1,102 @@
+========================================================================================
+EXPERIMENT #51 - external retrodiction against BigMoeOnEdge's desktop DRAM ceiling
+mode: SCORE   2026-07-30 21:18:00
+========================================================================================
+
+[0] provenance: the constants this script quotes vs the ones quantprobe ships
+  constant eta_r (MoE)                  script=0.38    shipped=0.38    OK
+  constant attn bit floor               script=4.5     shipped=4.5     OK
+  constant activation mult (ne)         script=1.15    shipped=1.15    OK
+  constant activation mult (exp)        script=1.15    shipped=1.15    OK
+  constant ram_bw (MACHINES[rtx-3060])  script=51      shipped=51      OK
+
+[1] mirror self-test: our active-byte arithmetic vs quantprobe.spec.from_gguf
+  self-test qwen35-35b.imatrix.gguf                              t=0.0480 a=0.0480 ne=0.0008 moe=False untied=False OK
+  self-test Qwen2.5-0.5B-Instruct-Q8_0.gguf                      t=0.4940 a=0.4940 ne=0.4940 moe=False untied=False OK
+  self-test DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf              t=15.7065 a=2.4514 ne=1.1019 moe=True  untied=True  OK
+  coverage         ['#76 tied (gather does not apply)', '#76 untied (gather applies)', 'moe'] over 3 local files
+
+[2] identify THEIR file (frozen candidate list, selected on published size)
+  candidate bartowski/Qwen_Qwen3.6-35B-A3B-GGUF        Qwen_Qwen3.6-35B-A3B-Q4_K_M.gguf        22.285 GB   <== MATCH
+  candidate unsloth/Qwen3.6-35B-A3B-GGUF               Qwen3.6-35B-A3B-UD-Q4_K_M.gguf          22.135 GB 
+  candidate unsloth/Qwen3.6-35B-A3B-GGUF               Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf         22.360 GB 
+  candidate unsloth/Qwen3.6-35B-A3B-GGUF               Qwen3.6-35B-A3B-UD-Q4_K_S.gguf          20.893 GB 
+  candidate unsloth/Qwen3.6-35B-A3B-MTP-GGUF           Qwen3.6-35B-A3B-UD-Q4_K_M.gguf          22.663 GB 
+  candidate ggml-org/Qwen3.6-35B-A3B-GGUF              Qwen3.6-35B-A3B-Q4_K_M.gguf             20.420 GB 
+  candidate lmstudio-community/Qwen3.6-35B-A3B-GGUF    Qwen3.6-35B-A3B-Q4_K_M.gguf             21.167 GB 
+  selected         bartowski/Qwen_Qwen3.6-35B-A3B-GGUF/Qwen_Qwen3.6-35B-A3B-Q4_K_M.gguf  22,285,080,192 B (22.285 GB)
+
+[3] fetch and validate the GGUF header (Range request, not the 22 GB file)
+  header cache HIT  C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp51_gguf_header.bin (10,990,692 B) - pass --refetch to redo
+  parsed           753 tensors, 49 metadata keys
+  byte accounting  header 10,990,692 + pad 28 + tensors 22,274,089,472 = 22,285,080,192 vs remote 22,285,080,192 (slack 0)
+  file identity    {'arch': 'qwen35moe', 'expert_count': 256, 'expert_used_count': 8, 'block_count': 41}
+
+[4] active bytes per token (quantprobe.spec arithmetic + finding #76)
+  total params     35.5053 B
+  routed (expert)  33.0176 B over 256 experts, top-8
+  token_embd       0.5086 B  untied=True -> #76 gather correction APPLIED
+  always-active ne 1.9791 B
+  active params    3.0109 B  (ne + routed x 8/256)
+  effective bits   5.02  (file bytes x 8 / total params)
+  ACTIVE BYTES     2.1728 GB/token  (ne 1.4282 + experts 0.7446, x1.15 activation)
+
+[5] prediction - shipped constants only, zero fitted parameters
+  eta_r (MoE, RAM tier)  0.38     quantprobe.plan.evaluate, since v1.0 (d590749)
+  RAM bandwidth          51.0 GB/s   DDR4-3200 dual-channel preset (MACHINES[rtx-3060])
+  tok/s = eta x BW / active = 0.38 x 51.0 / 2.1728
+  PREDICTED ZERO-I/O CEILING = 8.920 tok/s
+  plan.evaluate    act=2.172762 GB, pure-CPU row=8.919522 tok/s -> reproduces ours EXACTLY (size 22.29 GB)
+
+[6] sensitivity (disclosure, no kill power)
+  DDR4-2400 dual (38.4 GB/s)                     6.716 tok/s
+  DDR4-2666 dual (42.7 GB/s)                     7.468 tok/s
+  DDR4-2933 dual (46.9 GB/s)                     8.202 tok/s
+  DDR4-3200 dual (51.2 GB/s)                     8.955 tok/s
+  #76 embedding-gather OFF                       7.631 tok/s
+  activation x1.15 OFF                          10.257 tok/s
+  eta 0.30 (the value U-33's prose quoted)       7.042 tok/s
+  exact per-tensor bytes (U-29 convention, no x1.15)   8.556 tok/s
+  plus L-19 CPU-attention term at ctx=256        7.789 tok/s
+  DDR4-2666 AND the L-19 term together           6.659 tok/s
+
+[6b] read THEIR document and extract the target under the pre-registered rule
+  source fetched   4,002 chars, findings sha256 e441b8c2a269410a
+  transcription    all 10 staked cells reproduce verbatim
+
+[7] re-read the staked pre-registration; OUR side must still reproduce
+  our side         staked prediction 8.9195 reproduced (8.9195); 3 keys agree -> abort gate satisfied
+  their side       target_measured_tok_s        staked  8.6957 live  8.6957  unchanged (scored, never aborted)
+  their side       target_headline_tok_s        staked  9.0000 live  9.0000  unchanged (scored, never aborted)
+  their side       max_measured_desktop_tok_s   staked  7.3300 live  7.3300  unchanged (scored, never aborted)
+
+[8] THE COMPARISON
+  DRAM assumption       DDR4-3200 preset (ASSUMED - they published only 'dual-channel DDR4')
+  full-width cells      ['A', 'B', 'D', 'E', 'F', 'G', 'I'] compute s/token [0.107, 0.113, 0.115, 0.115, 0.116, 0.116, 0.117]
+  target  (median)      0.1150 s/token = 8.696 tok/s
+  target  (headline)    9.000 tok/s
+  predicted (scored)    8.919 tok/s
+  P-1 error vs measured +2.57%   (kill: |e| >= 15%)
+  P-2 error vs headline -0.89%   (kill: |e| >= 15%)
+  P-3 ceiling not violated: predicted 8.919 > best measured 7.330? True
+
+[9] KILL-RULE REACHABILITY - could this run have failed?
+  all three predicates hold iff the prediction is in [7.650, 10.000] tok/s
+    low edge bound by  P-2 (headline)
+    high edge bound by P-1 (median cell)
+  equivalently, iff their DRAM delivers [43.74, 57.18] GB/s, i.e. dual-channel DDR4-2734 to DDR4-3573
+  scored prediction 8.919 sits 12.1% from the nearer edge
+  KILL RULE UNREACHABLE THIS RUN. Both operands were public and frozen before
+  staking, and the abort gate holds our side fixed, so this run could only ever
+  print PASS or ABORT. It is a reproduction check, NOT an independent test.
+  The two live routes to a FAIL remain: (i) they revise the published cells,
+  (ii) --dram-mts resolves the DRAM grade below the band printed above.
+
+----------------------------------------------------------------------------------------
+  PASS: P-1 hit | P-2 hit | P-3 hit
+  C-06's external replication ask is satisfied for the CPU/DRAM tier on a machine we have never touched, CONDITIONAL on their DRAM delivering 43.7-57.2 GB/s (dual-channel DDR4-2734+). That condition is an assumption, not a measurement, and the register entry must carry it.
+  ...and it is a PASS on a run that could not have failed. Weigh it as a reproduction of a retrodiction, not as a test.
+----------------------------------------------------------------------------------------
+
+  wrote C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp51_external_retrodiction.json
+  elapsed 15.9s
