@@ -1442,14 +1442,21 @@ def t_c11_depth_aware_dense_split():
 def t_u17_iq_cpu_pricing():
     # U-17 (prereg #66): iq_share must slow every RAM weight read by the calibrated per-byte
     # penalty (pure-CPU arm 14.1 -> 11.44 at share 0.962); iq_share=0 (presets) must be untouched.
+    # C-13: the penalty follows the CODEBOOK share, not every format named IQ (IQ4_NL is
+    # Q4_0-class per #70). The constant was re-derived so the calibration arm is unchanged:
+    # old iq_share 0.962 x 0.242 == new codebook_share 0.510 x 0.456, to within rounding.
     from quantprobe.plan import evaluate, IQ_CPU_TG_PENALTY
     def cpu_tokps(share):
         _, _, cfgs = evaluate(15.7, 2.4, 0.8, True, 2.9, 6, 154, 16, 26, 2.0, 0.55,
-                              gl=None, iq_share=share)
+                              gl=None, codebook_share=share)
         return [c for c in cfgs if c[0].startswith("pure CPU")][0][1]
-    base, iq = cpu_tokps(0.0), cpu_tokps(0.962)
-    want = 1.0 + 0.962 * IQ_CPU_TG_PENALTY
-    assert abs(base / iq - want) < 0.01, f"IQ penalty off: {base/iq:.4f} vs {want:.4f}"
+    base, cb = cpu_tokps(0.0), cpu_tokps(0.510)
+    want = 1.0 + 0.510 * IQ_CPU_TG_PENALTY
+    assert abs(base / cb - want) < 0.01, f"codebook penalty off: {base/cb:.4f} vs {want:.4f}"
+    assert abs((0.510 * IQ_CPU_TG_PENALTY) - (0.962 * 0.242)) < 0.005, \
+        "the re-derivation must reproduce U-17's calibration arm exactly"
+    from quantprobe.spec import K_CLASS_IQ
+    assert "IQ4_NL" in K_CLASS_IQ, "#70 measured IQ4_NL at Q4_0-class; it must not pay the codebook tax"
 
 
 def t_prereg70_iq_format_ladder():

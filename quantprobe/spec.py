@@ -48,6 +48,7 @@ FORMAT_EBW = {
 # bit-width, so an unmeasured IQ2/IQ1 variant cannot plausibly sit above the floor of what we
 # have measured. Withholding a number is only honest when the FALLBACK is conservative; the old
 # fallback assumed K-quant-class decode and over-promised a 59%-codebook file by 50%.
+K_CLASS_IQ = {"IQ4_NL"}   # IQ by name, Q4_0-class by measurement (#70)
 WORST_MEASURED_CODEBOOK = 46.0
 CODEBOOK_FALLBACK_MIN_SHARE = 0.25
 
@@ -58,7 +59,7 @@ def from_gguf(path):
     n_layer = _field(r, ".block_count") or 32
     total = 0
     routed = 0
-    iq_bytes = all_bytes = unpriced_cb = 0
+    iq_bytes = all_bytes = unpriced_cb = codebook_bytes = 0
     fmt_wsum = fmt_bytes = 0.0
     embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
     has_output = False       # a separate output/lm_head means embeddings are NOT tied
@@ -82,6 +83,12 @@ def from_gguf(path):
         all_bytes += nb
         if t.tensor_type.name.startswith("IQ"):
             iq_bytes += nb
+            # C-13: "IQ" is a NAME, not a kernel class. Prereg #70 measured IQ4_NL at 117.0 GB/s -
+            # Q4_0-class, 2.3x faster than IQ2_XS - so charging it the codebook penalty applied
+            # the tax to up to 89x the bytes that earn it. The penalty follows the CODEBOOK
+            # formats (grid lookup in decode), which is what #31 and #70 both actually measured.
+            if t.tensor_type.name not in K_CLASS_IQ:
+                codebook_bytes += nb
         tn = t.tensor_type.name
         if tn in FORMAT_EBW:
             fmt_wsum += nb * FORMAT_EBW[tn]
@@ -142,6 +149,7 @@ def from_gguf(path):
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
                 bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
                 iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
+                codebook_share=(codebook_bytes / all_bytes) if all_bytes else 0.0,
                 fmt_bw=round(fmt_bw, 1) if fmt_bw else None)
 
 
@@ -167,6 +175,7 @@ def apply(a, quiet=False):
     if getattr(a, "n_layer", None) is None:
         a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
     a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
+    a.codebook_share = s.get("codebook_share", 0.0)   # the share that actually pays the tax (C-13)
     a.fmt_bw = s.get("fmt_bw")           # read-only: lets anchored predictions rescale by format (L-16)
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))

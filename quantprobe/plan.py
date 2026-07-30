@@ -624,11 +624,18 @@ def speculation_advice(moe, placement):
 # that number is a different regime (isolated prefill-heavy comparison) and would overshoot
 # this correction ~7x - the retrodiction gate rejected it. Scope: weight bytes read from RAM
 # during token generation; KV terms are format-independent and untouched.
-IQ_CPU_TG_PENALTY = 0.242
+#
+# C-13 RE-DERIVATION (2026-07-30): this constant was fitted against `iq_share`, which counts
+# IQ4_NL as codebook although #70 measured it Q4_0-class. Switching the driver to the true
+# codebook share changes the BASIS, so the constant must move with it or the calibration point
+# breaks. On the arm it was fitted to (DS-Lite pure CPU, exact at 11.4 vs 11.44): iq_share 0.962
+# x 0.242 = 0.2328 of penalty, delivered by a codebook share of 0.510 -> k = 0.2328 / 0.510.
+# The number changed; the measurement it encodes did not.
+IQ_CPU_TG_PENALTY = 0.456
 
 
 def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=None, ctx=0, kvp=0.0,
-             n_layer=None, true_size_gb=None, iq_share=0.0):
+             n_layer=None, true_size_gb=None, codebook_share=0.0):
     ab = max(bits, 4.5)                                   # attention protected at ~4-bit (Law 3 recipes)
     size = (ne * ab / 8 + (t - ne) * bits / 8) * 1.08 * act_scale
     # CAPACITY uses the real file size when we have the file. The estimate above assumes the
@@ -665,8 +672,9 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
     ra = max(rc - 4, 1)
     eta_r = 0.38 if moe else 0.62
     # U-17: price the IQ share into every RAM weight read (pure CPU, hybrid experts, both split
-    # kinds, waterfall). iq_share is 0.0 unless a real GGUF was scanned, so presets are untouched.
-    eta_r /= (1.0 + iq_share * IQ_CPU_TG_PENALTY)
+    # kinds, waterfall). 0.0 unless a real GGUF was scanned, so presets are untouched. C-13:
+    # this is the CODEBOOK share, not every format named IQ - IQ4_NL is Q4_0-class (#70).
+    eta_r /= (1.0 + codebook_share * IQ_CPU_TG_PENALTY)
     if gl is None: gl = geta * 0.6
     # The sub-4-bit GPU DECODE collapse does not exist. It was gated on bit-width (`bits >= 4`),
     # which made 3.99 bits predict 8.75x slower than 4.00. Pre-registration #16 measured decode
@@ -1051,7 +1059,7 @@ def run(args):
     vb, geta = resolve_gpu_eta(hw, args, a, args.bits, vb, geta)
     rb = resolve_cpu_bw(hw, args, a, args.bits, rb)
     size, act, cfgs = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, gl=gl, ctx=ctx,
-                               iq_share=getattr(args, "iq_share", 0.0),
+                               codebook_share=getattr(args, "codebook_share", 0.0),
                                kvp=kvp, n_layer=nlay, true_size_gb=true_size)
     q = qual_of(moe, args.bits)
     print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
@@ -1146,11 +1154,11 @@ def run(args):
     # upgrade advisor
     alts = []
     if rb < 40:
-        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+        s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, 48, db, geta, gl=gl, ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
         if c2[0][1] > best[1] * 1.08: alts.append(("enable XMP (free)", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc + 16, rb, db, geta, gl=gl, ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("+16 GB RAM", c2[0][1]))
-    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+    s2, _, c2 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, 3.5, geta, gl=gl, ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
     if c2[0][1] > best[1] * 1.08: alts.append(("NVMe SSD", c2[0][1]))
     if alts:
         print("  upgrade advisor: " + " | ".join(f"{n} -> ~{v:.1f} tok/s" for n, v in alts))
@@ -1167,7 +1175,7 @@ def run(args):
             continue                                   # not a "shave" - a different model class
         fit_scale = max(0.05, (cap - kvg) / size_now) * 0.995
         _, _, c9 = evaluate(t, a, ne, moe, args.bits, vc, vb, rc, rb, db, geta, fit_scale, gl,
-                            ctx=ctx, kvp=kvp, iq_share=getattr(args, "iq_share", 0.0))
+                            ctx=ctx, kvp=kvp, codebook_share=getattr(args, "codebook_share", 0.0))
         promoted = [x for x in c9 if x[0].startswith("all in VRAM")] if "VRAM" in tier_name else                    [x for x in c9 if x[0].startswith("pure CPU")]
         if promoted and promoted[0][1] > best[1] * 1.15:
             print(f"  tier-boundary advisor: this config is {gap:.1f} GB over the {tier_name} boundary - "

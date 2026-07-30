@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 19 |
 | Shipped levers | 20 |
 | Measured dead ends | 21 |
-| Open contradictions | 13 |
+| Open contradictions | 14 |
 | Untried levers | 17 |
 | External work to study | 9 |
 
@@ -487,11 +487,17 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `closed` · `measured` · scope: calibrated path with a known format mix; presets unaffected · evidence: weights/data/full_ladder_v124.json; verify.py layer 3; #59 size floor; #65 anchor class · wired into: `quantprobe/plan.py resolve_gpu_eta (the documented gate now applied)`
 
-### C-13 — iq_share - the ONLY driver of the CPU-tier format penalty (U-17) - counts every format whose name starts with 'IQ' as slow, but prereg #70 measured IQ4_NL at 117.0 GB/s, Q4_0-CLASS and 2.3x faster than IQ2_XS. The tool therefore contradicts its own measurement inside a single release: FORMAT_EBW knows IQ4_NL is fast, iq_share insists it is slow. Measured misattribution: Qwen2.5-7B i1-IQ4_NL reports iq_share 89% with a TRUE codebook share of 0% (the penalty is applied to 89x the bytes that deserve it); DeepSeek-Lite IQ2_XS reports 96% against a true 51% (1.9x).
+### C-13 — iq_share - the ONLY driver of the CPU-tier format penalty (U-17) - counts every format whose name starts with 'IQ' as slow, but prereg #70 measured IQ4_NL at 117.0 GB/s, Q4_0-CLASS and 2.3x faster than IQ2_XS. The tool therefore contradicts its own measurement inside a single release: FORMAT_EBW knows IQ4_NL is fast, iq_share insists it is slow. Measured misattribution: Qwen2.5-7B i1-IQ4_NL reports iq_share 89% with a TRUE codebook share of 0% (the penalty is applied to 89x the bytes that deserve it); DeepSeek-Lite IQ2_XS reports 96% against a true 51% (1.9x). [CLOSED-SHIPPED: iq_share split into a true codebook_share (IQ4_NL classed K per its own #70 measurement), and IQ_CPU_TG_PENALTY RE-DERIVED from 0.242 to 0.456 so U-17's calibration arm is preserved exactly (0.962x0.242 == 0.510x0.456). Isolated with calibration held fixed: the change moves ONLY the two codebook-heavy files (-10.3pt and -7.6pt of over-prediction) and every other arm by 0.0pt - contained by construction, in the correct direction.]
 
 **Magnitude:** the CPU IQ penalty is applied to 1.9x-89x the bytes that earn it on IQ4_NL-containing files
 
-`open` · `measured` · scope: any file mixing IQ4_NL with codebook IQ formats; pure-codebook files are unaffected · evidence: prereg #70 (IQ4_NL 117.0 vs IQ2_XS 51.1); header scan of the two files; the ladder's IQ-family residuals (+15 to +28%) · wired into: `quantprobe/spec.py iq_share (fix candidate: split into codebook_share and treat IQ4_NL as K-class)`
+`closed` · `measured` · scope: any file mixing IQ4_NL with codebook IQ formats; pure-codebook files are unaffected · evidence: prereg #70 (IQ4_NL 117.0 vs IQ2_XS 51.1); header scan of the two files; the ladder's IQ-family residuals (+15 to +28%) · wired into: `quantprobe/spec.py iq_share (fix candidate: split into codebook_share and treat IQ4_NL as K-class)`
+
+### C-14 — MACHINE DRIFT BETWEEN CALIBRATION AND MEASUREMENT SILENTLY INVALIDATES ERROR NUMBERS, AND WE HAVE BEEN DOING IT ALL DAY. Two calibrations hours apart on the same idle box: RAM stream 23.21 -> 21.66 GB/s (-6.7%), CPU anchor 6.72 -> 6.24 tok/s (-7.1%), GPU anchor ratio 0.75 -> 1.03. Predictions computed under the second calibration were compared against measurements taken under the first, which alone moved every ladder arm by 5-12 points - larger than the mechanisms being tested (C-13's true effect is 10.3pt on two arms). Any predicted-vs-measured number is only meaningful when both come from the same machine state, and nothing in the tool or the protocol enforces that.
+
+**Magnitude:** 5-12 points of spurious error movement across all 14 arms; exceeds most real effects
+
+`open` · `measured` · scope: every cross-session predicted-vs-measured comparison this project publishes · evidence: the two calibration.json snapshots of 2026-07-30; the C-13 isolation run (deltas 0.0pt with calibration fixed vs 5-12pt without) · wired into: `candidate: stamp calibration id+timestamp into bench/ladder records and REFUSE to score a prediction against a measurement from a different calibration state`
 
 ## Untried levers
 
