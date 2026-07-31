@@ -839,6 +839,16 @@ CAP_SHAVE_MAX_SHARE = 0.30      # was: `if gap > size_now * 0.30: continue`
 ETA_R_MOE = 0.38
 ETA_R_DENSE = 0.62
 
+# L-24/L-25 capacity lever: q8_0 KV bytes per f16 KV byte. FORMAT ARITHMETIC, not a tuned
+# threshold - q8_0 stores 32 values in 34 bytes (32 int8 + one f16 scale) = 8.5 bits/value
+# against f16's 16 - and it never gates whether capacity_probe fires or what the weight levers
+# report (prereg #88's thresholds are untouched). It only sizes the KV half of the gap so the
+# probe can OFFER the one capacity lever that costs no weight quant tier: +37% SPEED at d16384
+# (prereg #25), quality measured CLEAN at the deepest depth f16 even runs (PPL ratio
+# 1.00031 +/- 0.0188 at d7168 against a <=1.02 gate, prereg #91/L-24), and f16 KV CUDA-OOMs
+# past ~7k on a 6GB card where q8_0 completes - there the lever is ENABLING, not an optimization.
+KV_Q8_BYTES_PER_F16_BYTE = 8.5 / 16.0
+
 
 class Row(tuple):
     """A placement row: still exactly the 4-tuple (name, tok_s, warn, flags) every caller unpacks.
@@ -971,9 +981,27 @@ def capacity_probe(ev, best_tps, size, kv_gb, vc, rc):
         gain_lift = lift_tps / best_tps if best_tps > 0 else 0.0
         if max(gain_shave, gain_lift) < CAP_PROMOTION_MIN:
             return None
-        return dict(tier=tier, gap_gb=gap, lever=lever, shave_tps=shave_tps, lift_tps=lift_tps,
+        find = dict(tier=tier, gap_gb=gap, lever=lever, shave_tps=shave_tps, lift_tps=lift_tps,
                     gain_shave=gain_shave, gain_lift=gain_lift,
                     need_gb=(lift_kw.get("vc") or lift_kw.get("rc")))
+        # THE KV HALF OF THE GAP (L-24/L-25). This probe used to shave WEIGHTS only, though for
+        # a deep-context config the cheapest GB on the table is often the KV cache itself:
+        # -ctk q8_0 -ctv q8_0 returns (1 - 8.5/16) of the f16 cache at a MEASURED quality cost
+        # indistinguishable from zero (PPL ratio 1.00031 +/- 0.0188 at d7168, gate <=1.02,
+        # prereg #91), where shaving the file means dropping a quant tier, which is NOT free
+        # below ~3 bits (Laws 1-2). L-25's audit named this gap explicitly. Strictly ADDITIVE:
+        # whether the finding fires, and every weight-lever number above, are untouched.
+        if kv_gb > 0:
+            kv_q8 = kv_gb * KV_Q8_BYTES_PER_F16_BYTE
+            find["kv_gb"] = kv_gb
+            find["kv_saved_gb"] = kv_gb - kv_q8
+            find["kv_closes"] = size + kv_q8 <= cap
+            if find["kv_closes"]:
+                kv_rows = [r for r in ev(kvp_scale=KV_Q8_BYTES_PER_F16_BYTE)
+                           if r[0].startswith(want)]
+                find["kv_tps"] = kv_rows[0][1] if kv_rows else 0.0
+                find["kv_gain"] = find["kv_tps"] / best_tps if best_tps > 0 else 0.0
+        return find
     return None
 
 
@@ -1533,6 +1561,30 @@ def binding_report(bc, bits=None, placement=None):
         lines.append(f"  cross it by      shaving the file ({cap['lever']}) -> "
                      f"~{cap['shave_tps']:.1f} tok/s, or fitting {cap['need_gb']:.1f} GB of "
                      f"{cap['tier']} -> ~{cap['lift_tps']:.1f} tok/s")
+        # THE KV CAPACITY LEVER (L-24/L-25). Deep-context configs get a third way across the
+        # boundary, and at depth it is the PREFERRED one: quantizing the KV cache costs no
+        # weight quant tier, and both of its halves are measured - +37% speed at d16384
+        # (prereg #25) and quality clean at the deepest depth f16 even runs (prereg #91).
+        if cap.get("kv_closes"):
+            lines.append(f"  KV lever         PREFER THIS at depth over dropping a quant tier: "
+                         f"quantize the KV cache (-ctk q8_0 -ctv q8_0) - it returns "
+                         f"{cap['kv_saved_gb']:.1f} GB of the {cap['kv_gb']:.1f} GB f16 cache and "
+                         f"crosses the boundary WITHOUT touching the weights -> "
+                         f"~{cap['kv_tps']:.1f} tok/s. Both halves of the lever are measured, "
+                         f"not assumed: speed +37% decode at d16384 vs f16 KV (prereg #25), and "
+                         f"quality PPL ratio 1.00031 +/- 0.0188 at d7168 against a <=1.02 gate "
+                         f"(prereg #91, L-24) - and f16 KV OOMs past ~7k on a 6GB card where "
+                         f"q8_0 runs, so there the lever is ENABLING, not an optimization. "
+                         f"Permanent caveat: wikitext cannot see the niche-domain degradation "
+                         f"reported at 100k+ context (E-10) - judge your own domain.")
+        elif cap.get("kv_gb"):
+            lines.append(f"  KV lever         partial: quantizing the KV cache (-ctk q8_0 "
+                         f"-ctv q8_0) returns {cap['kv_saved_gb']:.1f} GB of the "
+                         f"{cap['gap_gb']:.1f} GB gap at a measured-clean quality cost (PPL ratio "
+                         f"1.00031 +/- 0.0188 at d7168, prereg #91/L-24; speed half also "
+                         f"measured, +37% decode at d16384 vs f16 KV, prereg #25; E-10 "
+                         f"niche-domain caveat applies) - it does not cross the boundary alone "
+                         f"here, so pair it with a smaller file shave.")
         lines.append(f"  until then       {RESOURCE_LABEL[bc['resource']]} is where the time goes "
                      f"({_pct(bc['share'])} of the token) - but making it faster does not solve "
                      f"the reason you are on this placement")
@@ -1639,6 +1691,10 @@ def run(args):
         kw = dict(ev_kw)
         if "rc_delta" in over:
             kw["rc"] = kw["rc"] + over.pop("rc_delta")
+        if "kvp_scale" in over:
+            # The q8_0 KV counterfactual (L-24): scaling kvp shrinks BOTH the capacity crowding
+            # and the per-token KV read, which is exactly what -ctk/-ctv q8_0 does to the model.
+            kw["kvp"] = kw["kvp"] * over.pop("kvp_scale")
         if "true_size_gb_scale" in over:
             # A shave probe scales act_scale; when a REAL file size is pinned it must be scaled
             # too, or `true_size_gb` overrides the shave and the probe silently measures nothing.
@@ -1858,6 +1914,17 @@ def run(args):
                   f"(x{cap_find['gain_shave']:.1f}), but fitting {cap_find['need_gb']:.1f} GB of "
                   f"{cap_find['tier']} does: ~{cap_find['lift_tps']:.1f} tok/s "
                   f"(x{cap_find['gain_lift']:.1f})")
+        # L-24: the same KV lever the binding report offers, at the advisor's own event - the
+        # two read ONE probe result, so they cannot disagree about whether the lever exists.
+        if cap_find.get("kv_closes"):
+            print(f"  tier-boundary advisor: deep-context preference (L-24) - quantize the KV "
+                  f"cache (-ctk q8_0 -ctv q8_0)\n  instead of dropping a quant tier: frees "
+                  f"{cap_find['kv_saved_gb']:.1f} GB, crosses the boundary -> "
+                  f"~{cap_find['kv_tps']:.1f} tok/s (x{cap_find['kv_gain']:.2f}).\n  Speed "
+                  f"measured +37% decode at d16384 vs f16 KV (prereg #25); quality measured "
+                  f"CLEAN at d7168\n  (PPL ratio 1.00031 +/- 0.0188, gate <=1.02, prereg #91) "
+                  f"and f16 KV OOMs past ~7k on 6GB\n  where q8_0 runs; E-10 niche-domain "
+                  f"caveat applies.")
     # Fires only when the layer count is genuinely unknown. It used to test args.n_layer - the raw
     # CLI flag - and so told users to "re-run with --gguf to unlock it" while the exact -ot flags
     # for layers 10-47 sat printed directly above, because presets supply `nl` through the same

@@ -1828,6 +1828,93 @@ def t_p88_capacity_probe_and_tier_advisor_agree():
     assert rc == 0 and "CAPACITY-BOUND" in out and "tier-boundary advisor" in out
 
 
+def _kv_ev(kw):
+    """run()'s ev closure for the KV-lever tests, INCLUDING the kvp_scale override the L-24
+    capacity probe emits - a mirror that silently dropped it would measure f16 KV and call it
+    q8_0."""
+    from quantprobe.plan import evaluate
+    def ev(**over):
+        k = dict(kw)
+        if "rc_delta" in over:
+            k["rc"] = k["rc"] + over.pop("rc_delta")
+        if "kvp_scale" in over:
+            k["kvp"] = k["kvp"] * over.pop("kvp_scale")
+        over.pop("true_size_gb_scale", None)
+        k.update(over)
+        return evaluate(**k)[2]
+    return ev
+
+
+def t_l24_capacity_probe_offers_q8_kv_lever_at_depth():
+    """L-24/L-25 wiring, direction 1: when a deep-context config misses the boundary by less
+    than the f16-vs-q8_0 KV difference, the capacity finding must OFFER the KV lever and the
+    report must PREFER it over dropping a weight quant tier - the quality half is MEASURED
+    (PPL ratio 1.00031 +/- 0.0188 at d7168, prereg #91) where a quant-tier drop below ~3 bits
+    is not free (Laws 1-2). Before this wiring, capacity_probe shaved weights only - the exact
+    gap L-25's audit reported."""
+    from quantprobe.plan import (capacity_probe, binding_constraint, binding_report, evaluate,
+                                 KV_Q8_BYTES_PER_F16_BYTE)
+    kw = dict(t=11.9, a=11.9, ne=11.9, moe=False, bits=2.5, vc=9, vb=300, rc=32, rb=45,
+              db=2, geta=0.45, gl=0.28, ctx=16384, kvp=73728)
+    size, _, rows = evaluate(**kw)
+    kv_gb = kw["ctx"] * kw["kvp"] / 1e9
+    cap = kw["vc"] * 0.90
+    assert size + kv_gb > cap, "fixture drifted: config no longer misses the VRAM boundary"
+    assert size + kv_gb * KV_Q8_BYTES_PER_F16_BYTE <= cap, \
+        "fixture drifted: q8_0 KV no longer closes the gap alone"
+    find = capacity_probe(_kv_ev(kw), rows[0][1], size, kv_gb, kw["vc"], kw["rc"])
+    assert find and find["tier"] == "VRAM", find
+    assert find.get("kv_closes") and find["kv_tps"] > 0 and find["kv_gain"] > 1.15, find
+    assert abs(find["kv_saved_gb"] - kv_gb * (1 - KV_Q8_BYTES_PER_F16_BYTE)) < 1e-9, find
+    text = "\n".join(binding_report(binding_constraint(rows[0], capacity=find), bits=2.5,
+                                    placement=rows[0][0]))
+    assert "-ctk q8_0 -ctv q8_0" in text and "PREFER" in text, text
+    assert "1.00031" in text and "d7168" in text, text     # quality half cited (prereg #91)
+    assert "+37%" in text and "#25" in text, text          # speed half cited too (prereg #25)
+    assert "E-10" in text, text                            # niche-domain caveat is permanent
+    # the same event on the CLI surface: the tier-boundary advisor offers the same lever
+    rc, out = cli("plan", "--total", "11.9", "--active", "11.9", "--vram", "9",
+                  "--vram-bw", "300", "--ram", "32", "--ram-bw", "45", "--disk-bw", "2",
+                  "--ctx", "16384", "--kv-per-pos", "72")
+    assert rc == 0 and "CAPACITY-BOUND" in out, out[:400]
+    assert "-ctk q8_0 -ctv q8_0" in out and "instead of dropping a quant tier" in out, out
+    head, _, tail = out.partition("tier-boundary advisor")
+    assert "+37%" in head and "+37%" in tail, \
+        "the measured speed half (prereg #25) must reach BOTH CLI surfaces (report + advisor)"
+
+
+def t_l24_capacity_kv_lever_is_additive_and_silent_without_kv():
+    """Direction 2: at ctx 0 the finding must carry NO KV fields and the report must print no
+    -ctk advice - the lever may never fire on a config with nothing to quantize. And the KV
+    wiring must be ADDITIVE: every weight-lever number in the finding is byte-identical to a
+    probe that never saw KV fields (prereg #88's thresholds untouched). When KV exists but
+    cannot close the gap alone, the report says 'partial' and never PREFER."""
+    from quantprobe.plan import capacity_probe, binding_constraint, binding_report, evaluate
+    kw = dict(t=11.9, a=11.9, ne=11.9, moe=False, bits=2.5, vc=8, vb=256, rc=32, rb=45,
+              db=2, geta=0.45, gl=0.28)
+    size, _, rows = evaluate(**kw)
+    find = capacity_probe(_kv_ev(kw), rows[0][1], size, 0.0, kw["vc"], kw["rc"])
+    assert find and not any(k.startswith("kv") for k in find), find
+    text = "\n".join(binding_report(binding_constraint(rows[0], capacity=find), bits=2.5,
+                                    placement=rows[0][0]))
+    assert "q8_0" not in text and "KV lever" not in text, text
+    # partial direction: shallow KV cannot close a mostly-weights gap; offered as a pairing,
+    # never as the preferred lever
+    kw2 = dict(kw, ctx=16384, kvp=8192)
+    size2, _, rows2 = evaluate(**kw2)
+    kv2 = kw2["ctx"] * kw2["kvp"] / 1e9
+    find2 = capacity_probe(_kv_ev(kw2), rows2[0][1], size2, kv2, kw2["vc"], kw2["rc"])
+    assert find2 and find2.get("kv_closes") is False, find2
+    assert "kv_tps" not in find2, "no counterfactual speed may be quoted for a lever that does not fit"
+    # additive check: weight levers identical whether or not the probe saw the KV fields
+    for key in ("tier", "gap_gb", "lever", "shave_tps", "lift_tps", "gain_shave", "gain_lift",
+                "need_gb"):
+        assert key in find2, find2
+    text2 = "\n".join(binding_report(binding_constraint(rows2[0], capacity=find2), bits=2.5,
+                                     placement=rows2[0][0]))
+    assert "partial:" in text2 and "-ctk q8_0 -ctv q8_0" in text2 and "PREFER" not in text2, text2
+
+
 def t_p88_speculation_ceiling_bounds_the_headline():
     """P-3c: a verify batch amortizes weight READS. CPU attention is paid per drafted position,
     so on a compute-bound row the 4.7x/2.10x headlines are arithmetically out of reach."""

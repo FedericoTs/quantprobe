@@ -328,6 +328,13 @@ def make_ev(planmod, kw):
         k = dict(kw)
         if "rc_delta" in over:
             k["rc"] = k["rc"] + over.pop("rc_delta")
+        if "kvp_scale" in over:
+            # Mirrors run()'s ev: the L-24 q8_0 KV counterfactual scales kvp so both the
+            # capacity crowding and the per-token KV read shrink together. Present here for the
+            # same reason as the other two overrides - capacity_probe may emit it (only when
+            # kv_gb > 0), and an override this closure silently mishandled would make the probe
+            # measure a different machine than the tool.
+            k["kvp"] = k["kvp"] * over.pop("kvp_scale")
         if "true_size_gb_scale" in over:
             s = over.pop("true_size_gb_scale")
             # run() scales `true_size_gb` by `s` when a real file is pinned. A preset sweep pins
