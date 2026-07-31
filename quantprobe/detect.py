@@ -146,9 +146,16 @@ def detect():
 def measure_disk(path, mb=512):
     """Sequential read of a real file region, uncached-ish: the streaming pattern that matters."""
     import time
+    # C-17 fix: the old probe read a fixed 512MB TAIL region jittered by at most 7MB, so
+    # ~98.6% of it overlapped between calls and `buffering=0` does NOT bypass the OS page
+    # cache. Measured on this box: cold 0.44 GB/s, then 2.99 / 2.99 GB/s on re-reads - the
+    # warm number is RAM, not disk, and it shipped as a disk-tier input (6.8x too fast).
+    # Fix: jitter the offset across the WHOLE file. A GGUF worth streaming is far larger
+    # than free page cache, so a random region is cold in the case the disk tier models.
     size = os.path.getsize(path)
     span = min(mb * 1024 * 1024, size)
-    off = max(0, size - span - (os.urandom(1)[0] % 7) * 1024 * 1024)  # tail region, jittered
+    room = max(0, size - span)
+    off = int.from_bytes(os.urandom(4), "big") % (room + 1) if room else 0
     t0 = time.perf_counter()
     with open(path, "rb", buffering=0) as f:
         f.seek(off)
