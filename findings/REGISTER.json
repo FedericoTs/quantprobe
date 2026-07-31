@@ -316,7 +316,7 @@
    "magnitude": "ub256 hit -0.27%; ub4096 -8.2% (inside band); +4.3% real prefill banked (360.76 vs 345.89)",
    "evidence": "weights/data/prereg92b_ub_oos.log (predictions staked in the log header before the run); fit from weights/data/prereg19_ubatch.log",
    "scope": "Pascal 6GB, qwen3moe 30B.A3B Q2_K, exps=CPU placement, same binary/session as staked. Dense-in-VRAM control VIOLATES the form (prereg #19 P-2 collapses at ub2048) - CPU-expert tier only.",
-   "wired_into": "plan.py MoE prefill advice should emit -b 4096 -ub 4096 for this placement - integration owed"
+   "wired_into": "quantprobe/plan.py:ubatch_flags (the experts->RAM branch emits -b 4096 -ub 4096, sized via quantprobe/plan.py:safe_ubatch with the L-26 full-budget gate, hard-capped at 4096 because the asymptote bends below 1/A) and quantprobe/plan.py:phase_advice (the long-prompt alternative quotes the same sized flags plus the 360.76-vs-345.89 measurement instead of the pre-L-26 hardcoded ub 2048). Scope enforced in the same function: dense and non-expert host-resident rows cap at 2048 - the dense-in-VRAM control violates the form (prereg #19 P-2) - which UNDID the earlier blanket 4096 cap that had handed a dense layer-split -ub 4096 on a MoE datapoint's authority (the locked ladder's Qwen2.5-14B row shipped with it). Guarded by tests/smoke.py:t_l26_cpu_expert_moe_prefill_gets_ub4096 and tests/smoke.py:t_l26_dense_rows_never_get_ub4096, both verified failing on the pre-fix tree"
   }
  ],
  "levers": [

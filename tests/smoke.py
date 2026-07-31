@@ -597,6 +597,80 @@ def t_ubatch_only_when_host_resident():
     assert ubatch_flags("pure CPU (GPU idle)", 0, 0) is None, "ubatch offered with no GPU"
 
 
+def t_l26_cpu_expert_moe_prefill_gets_ub4096():
+    """L-26 (prereg #92): the CPU-expert MoE placement must emit -b 4096 -ub 4096.
+
+    The prefill law sec/token = A + X/C was validated OUT OF SAMPLE on this exact placement
+    (Qwen3-30B-A3B, exps=CPU, this box) with predictions staked before running: C=256 -0.27%,
+    C=4096 -8.2%, both inside the 10% kill band - and ub 4096 is a BANKED number, 360.76 pp2048
+    vs 345.89 at ub 2048 (+4.3% for one flag). Before this wiring the tool sized the same
+    placement to ub 2048 on the reference card: the half-budget margin (calibrated on the SPLIT,
+    #23, where resident experts compete with the compute buffer) rejected by 15 MiB a buffer
+    L-26 measured running clean at 51.5% of headroom.
+
+    Also pins the cap: the fit's asymptote bends below 1/A, so extrapolation past C=4096 is not
+    licensed and no headroom, however large, may raise the batch further.
+
+    FAILS on the pre-fix tree (verified by reverting quantprobe/plan.py in a scratch copy):
+    the reference-box hybrid geometry returned '-b 2048 -ub 2048' and the plan output quoted
+    the pre-L-26 hardcoded '-b 2048 -ub 2048' for the long-prompt alternative.
+    """
+    from quantprobe.plan import ubatch_flags, MODELS
+    # the reference-box geometry L-26 was measured on: qwen3-30b hybrid, attention resident
+    res = MODELS["qwen3-30b"]["ne"] * 4.5 / 8 * 1.08
+    fl = ubatch_flags("hybrid: attention->VRAM, experts->RAM", res, 6)
+    assert fl == "-b 4096 -ub 4096", (
+        f"CPU-expert MoE placement must carry the measured -b 4096 -ub 4096 (L-26): {fl}")
+    # the cap is a law boundary, not a budget artifact: a 48 GB card gets the SAME 4096
+    big = ubatch_flags("hybrid: attention->VRAM, experts->RAM", res, 48)
+    assert big == "-b 4096 -ub 4096", (
+        f"extrapolation past C=4096 is not licensed (asymptote bends below 1/A): {big}")
+    # a tight card still steps DOWN - the flag is sized, never pinned
+    tight = ubatch_flags("hybrid: attention->VRAM, experts->RAM", 6 * 0.9 - 1.6, 6)
+    assert tight and "4096" not in tight, f"tight card must not be handed the 4096 buffer: {tight}"
+    # and the flag reaches the USER: the long-prompt alternative in plan's own output
+    rc, out = cli("plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp")
+    assert rc == 0, out
+    assert "-b 4096 -ub 4096" in out, (
+        "plan output no longer offers -b 4096 -ub 4096 for the CPU-expert MoE placement")
+    assert "360.76" in out and "#92" in out, (
+        "the L-26 flags must be quoted WITH their out-of-sample measurement and prereg citation")
+
+
+def t_l26_dense_rows_never_get_ub4096():
+    """L-26 scope: dense rows must NOT get -b 4096 -ub 4096 - the dense control VIOLATES the form.
+
+    Prereg #19 P-2 measured the dense-in-VRAM control COLLAPSING at ub 2048 (-39%), so the
+    prefill law that licenses 4096 is scoped to the CPU-expert MoE tier only. Before this gate a
+    dense layer-split with room to spare was quietly handed -ub 4096 on the authority of a MoE
+    datapoint (the 3090/117B external replication) - the locked ladder's Qwen2.5-14B row shipped
+    with it. Dense host-resident rows keep the sized ubatch at the 2048 cap the half-budget rule
+    was measured with; the fully-in-VRAM row keeps getting nothing at all.
+
+    FAILS on the pre-fix tree (verified by reverting quantprobe/plan.py in a scratch copy): the
+    dense layer-split at 6 GB and 24 GB headroom both returned '-b 4096 -ub 4096', and the deep
+    dense-split plan command carried -ub 4096.
+    """
+    from quantprobe.plan import ubatch_flags
+    # the measured -39% control: fully in VRAM gets NO batch flag, ever
+    assert ubatch_flags("all in VRAM", 4.36, 6) is None, \
+        "ubatch offered for an all-in-VRAM placement - measured there it LOSES 39% (prereg #19 P-2)"
+    # dense layer-splits are host-resident and keep a SIZED ubatch - but never the MoE-only 4096
+    for vc in (6, 24):
+        fl = ubatch_flags("split: 21/48 layers->VRAM, rest->RAM", 0.0, vc)
+        assert fl and "4096" not in fl, (
+            f"dense split at vc={vc} got a batch the dense control measured collapsing: {fl}")
+    # pure CPU and disk rows: same scope boundary
+    for placement in ("pure CPU (GPU idle)", "stream from disk (cold experts)"):
+        fl = ubatch_flags(placement, 0.0, 24)
+        assert fl and "4096" not in fl, f"{placement} exceeded the L-26 scope: {fl}"
+    # and the command a dense-split user is actually handed is clean of it
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5",
+                  "--ctx", "16384")
+    assert rc == 0, out
+    runline = next(l for l in out.splitlines() if "run it:" in l)
+    assert "-ub 4096" not in runline, f"dense split run command carries the MoE-only flag: {runline}"
+    assert "-b 2048 -ub 2048" in runline, f"dense split lost its sized ubatch entirely: {runline}"
 def t_dense_split_ngl_is_a_layer_count():
     """-ngl must be a LAYER COUNT, and must never exceed the model's layers on a split row.
 

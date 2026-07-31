@@ -136,11 +136,37 @@ def ubatch_flags(placement, vram_resident_gb, vc):
         # the buffer math against the residual headroom.
         ub = safe_ubatch(vc * 0.90 - vram_resident_gb, cap=1024)
         return "-b %d -ub %d" % (ub, ub) if ub else None
+    if "experts->RAM" in placement:
+        # L-26 (prereg #92 out-of-sample run): the CPU-expert placement (all routed experts in
+        # host RAM, attention+KV in VRAM) follows sec/token = A + X/C, validated with staked
+        # predictions at C=256 (-0.27%) and C=4096 (-8.2%, inside the 10% kill band) - so
+        # -b 4096 -ub 4096 is a MEASURED number here: 360.76 pp2048 vs 345.89 at ub 2048, +4.3%
+        # for one flag, ON THIS 6GB REFERENCE CARD. The generic half-budget margin below was
+        # calibrated on the SPLIT (#23), where resident experts compete with the compute buffer
+        # for the same VRAM; on this placement nothing else grows, and the measured ub-4096
+        # buffer (2406 MiB) ran clean at 51.5% of headroom - which the half rule rejects by
+        # 15 MiB. So this branch sizes against the FULL budget after reserving the same
+        # UBATCH_HEADROOM_GB of absolute slack the generic gate demands, takes the generic
+        # answer as a floor (a tight card keeps exactly what it had), and HARD-CAPS at 4096:
+        # the fit's asymptote bends below 1/A, so extrapolation past C=4096 is not licensed.
+        # Scope (L-26): CPU-expert MoE tier ONLY - the dense-in-VRAM control VIOLATES the form
+        # (prereg #19 P-2, -39% at ub 2048), which is why dense rows never reach this branch.
+        head = vc * 0.90 - vram_resident_gb
+        if head < UBATCH_HEADROOM_GB:
+            return None                   # no room for the bigger compute buffer; the -39% case
+        ub = max(safe_ubatch(head, cap=SAFE_UBATCH_CAP),
+                 safe_ubatch(head - UBATCH_HEADROOM_GB, cap=SAFE_UBATCH_CAP, margin=1.0))
+        return "-b %d -ub %d" % (ub, ub) if ub else None
     if not any(k in placement for k in ("->RAM", "CPU", "disk")):
         return None                       # nothing host-resident: no transfer to amortise
     if vc * 0.90 - vram_resident_gb < UBATCH_HEADROOM_GB:
         return None                       # no room for the bigger compute buffer; the -39% case
-    ub = safe_ubatch(vc * 0.90 - vram_resident_gb, cap=SAFE_UBATCH_CAP)
+    # Dense splits, pure CPU and disk rows cap at the 2048 the half-budget rule was measured
+    # with. They must NEVER see SAFE_UBATCH_CAP's 4096: that number is licensed by L-26 for the
+    # CPU-expert MoE tier only (the branch above), and the dense control in the same experiment
+    # violates the very law that licenses it (prereg #19 P-2). Before this gate, a dense
+    # layer-split on a roomy card was quietly handed -ub 4096 on a MoE datapoint's authority.
+    ub = safe_ubatch(vc * 0.90 - vram_resident_gb, cap=2048)
     return "-b %d -ub %d" % (ub, ub) if ub else None
 
 
@@ -155,7 +181,7 @@ def ubatch_flags(placement, vram_resident_gb, vc):
 COMPUTE_BUFFER_MIB_PER_UB_TOKEN = 0.5874
 
 
-def safe_ubatch(headroom_gb, cap=2048):
+def safe_ubatch(headroom_gb, cap=2048, margin=0.5):
     """Largest power-of-two ubatch whose compute buffer fits in `headroom_gb`, or 0.
 
     This replaces a hard-coded `-ub 2048`, and the replacement is a bug fix, not a refinement.
@@ -184,8 +210,15 @@ def safe_ubatch(headroom_gb, cap=2048):
     u/MoneroApe - NOT validated on our hardware; the buffer-fit math still gates it, so a card
     without the headroom never sees 4096]. MoE prefill benefits disproportionately: each layer's
     expert dispatch is one big matmul, and the batch amortizes it.
+
+    `margin` is the fraction of nominal headroom the buffer may claim. The default 0.5 IS the
+    half-budget rule above and no caller may weaken it casually: the single exception is the
+    L-26 CPU-expert MoE branch of ubatch_flags, which passes margin=1.0 against a headroom it
+    has ALREADY debited by UBATCH_HEADROOM_GB of absolute slack - grounded there by a direct
+    measurement of the ub-4096 buffer running clean on the reference card (prereg #92), not by
+    optimism about the cliff #23 mapped.
     """
-    budget_mib = max(0.0, headroom_gb) * 1024 * 0.5
+    budget_mib = max(0.0, headroom_gb) * 1024 * margin
     ub = 0
     n = 256
     while n <= cap:
@@ -195,7 +228,11 @@ def safe_ubatch(headroom_gb, cap=2048):
     return ub
 
 
-SAFE_UBATCH_CAP = 4096      # raised from 2048 for big-VRAM cards; see safe_ubatch docstring
+SAFE_UBATCH_CAP = 4096      # reachable ONLY on the CPU-expert MoE branch of ubatch_flags: L-26
+                            # validated sec/tok = A + X/C out of sample to C=4096 there (and the
+                            # 3090 external datapoint was the same placement). Dense/other
+                            # host-resident rows cap at 2048 - the dense-in-VRAM control violates
+                            # the form (prereg #19 P-2), so 4096 was never licensed for them.
 
 
 # The measured Pareto frontier for a MoE whose experts do not fit VRAM, on the reference box
@@ -296,7 +333,7 @@ def workload_frontier(prompt_to_gen):
                 speedup_vs_worst=worst[0] / best[0])
 
 
-def phase_advice(placement, rows):
+def phase_advice(placement, rows, vram_resident_gb=None, vc=None):
     """Which phase does the recommended command actually optimise, and what does it cost?
 
     `plan` prints ONE command, and the placement that maximises generation is not the placement
@@ -319,11 +356,23 @@ def phase_advice(placement, rows):
     alt = next((r for r in rows if r[0].startswith("hybrid")), None)
     if not alt:
         return None
+    # L-26: the batch flags quoted for the alternative are SIZED by the same gate that would emit
+    # them if this placement won, never re-hardcoded here (the hardcoded "-b 2048 -ub 2048" this
+    # replaces predates the out-of-sample validation of the prefill law at C=4096). Callers that
+    # do not know the card keep the ub-2048 wording the numbers in this sentence were measured at.
+    alt_ub = (ubatch_flags(alt[0], vram_resident_gb or 0.0, vc) if vc else None) \
+        or "-b 2048 -ub 2048"
+    tail = ""
+    if "-ub 4096" in alt_ub:
+        tail = (" At -b 4096 -ub 4096 that placement measured 360.76 pp2048 out of sample "
+                "(+4.3% over ub 2048's 345.89; L-26, prereg #92); the prefill law "
+                "sec/tok = A + X/C is validated to C=4096 and NOT past it, so do not raise "
+                "the batch further.")
     return ("this command is tuned for GENERATION. If your prompts are long - agent transcripts, "
             "RAG context, whole files - the other placement is far better at reading them: "
             "measured 349.6 vs 161.9 tok/s prompt processing (2.2x), for 8% less generation. "
-            f"Use `{alt[3]} -b 2048 -ub 2048` instead. Prompt processing and generation genuinely "
-            "want different placements here, and one command cannot serve both.")
+            f"Use `{alt[3]} {alt_ub}` instead. Prompt processing and generation genuinely "
+            "want different placements here, and one command cannot serve both." + tail)
 
 
 def effective_n_layer(args=None, model=None):
@@ -1667,7 +1716,8 @@ def run(args):
                       f" RAM weight reads are only {ram_share:.0%} of\n  the token here, so"
                       f" re-downloading the model would buy you almost nothing. The 2.7x is real"
                       f"\n  and it is not what limits you: see the binding constraint above.")
-    ph = phase_advice(best[0], cfgs)
+    ph = phase_advice(best[0], cfgs,
+                      vram_resident_gb=ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc=vc)
     if ph:
         print(f"\n  phase: {ph}")
         chat, rag = workload_frontier(0.5), workload_frontier(200)
@@ -1710,6 +1760,12 @@ def run(args):
               f"(18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe "
               f"once per batch instead of once per token. Do NOT set it when a model is fully in "
               f"VRAM - measured there, the same flag LOSES 39%.")
+        if "-ub 4096" in ub:
+            print(f"  L-26 (prereg #92, out of sample): at -b 4096 -ub 4096 this placement "
+                  f"measured 360.76 pp2048,\n  +4.3% over ub 2048's 345.89 - the prefill law "
+                  f"sec/tok = A + X/C held at C=256 (-0.27%) and\n  C=4096 (-8.2%, in band). It "
+                  f"is validated TO 4096 and not past it: the asymptote bends below\n  1/A, so do "
+                  f"not raise the batch further on this law's authority.")
     dsw = depth_scope_warning(best[0], moe, ctx)
     if dsw:
         print(f"\n  {dsw}")
