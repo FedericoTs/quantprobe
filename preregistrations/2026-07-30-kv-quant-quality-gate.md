@@ -40,3 +40,14 @@ measurement that cannot vary** (the #85-arms-C/D shape). Guards, all mechanical:
 Wikitext-2 prose cannot see niche-domain degradation (the MoneroApe/E-10 report
 concerns 100k+ code contexts we cannot reach on this box). A pass here bounds the
 *generic* cost only; the advice line keeps a niche-domain caveat regardless of P1.
+
+---
+
+## Correction (2026-07-31, adversarial final audit — appended, staked text above untouched)
+
+The background paragraph mis-cites the +37.0% speed number to **prereg #35**. It was measured in
+**prereg #25** (P-1: q8_0 KV in VRAM vs f16 KV in VRAM at d16384, +37.0%); prereg #35 is the
+composition/depth-condition experiment and itself attributes the number to #25 three times. The
+mis-citation propagated into the L-24 register entry (corrected there with an inline note) and
+into the then-unpublished L-25 draft (fixed before first publication). Nothing about this run's
+staked gate, guards, or scored result changes.
