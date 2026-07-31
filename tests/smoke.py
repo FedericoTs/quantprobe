@@ -673,6 +673,38 @@ def t_l26_dense_rows_never_get_ub4096():
     assert "-b 2048 -ub 2048" in runline, f"dense split lost its sized ubatch entirely: {runline}"
 
 
+def t_l26_ub_prose_claims_track_the_measured_tier():
+    """The +73% prefill claim may be printed as a property of THIS placement only on the
+    experts->RAM tier it was measured on (-ot exps=CPU, prereg #19). Caught on the v1.23
+    validation pass, live in the tool's own output: the winning split-experts row claimed
+    '+73% on this placement' for its sized command two paragraphs after the tool itself printed
+    that placement's measured 161.9 pp2048, and a dense split (and a disk-stream row) were told
+    'your experts sit in RAM' - one about a model with no experts, the other about experts it
+    streams from disk. Same boundary as the emission gate (L-26): a measured claim travels with
+    the tier that measured it; every other row gets the sized-safe-batch wording that names
+    where the numbers come from and why they do not transfer."""
+    # split-experts winner (reference box): sized flags, no borrowed measured claim
+    rc, out = cli("plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp")
+    assert rc == 0, out
+    assert "sized safe batch" in out, "split-experts row lost its honest sized-batch wording"
+    assert "worth **+73% prefill** on this placement" not in out, \
+        "the hybrid tier's +73% claim leaked onto the split-experts row again"
+    # dense split: no experts, so no expert-mechanism story at all
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5",
+                  "--ctx", "16384")
+    assert rc == 0, out
+    assert "experts sit in RAM" not in out, \
+        "dense split told 'your experts sit in RAM' about a model with no experts"
+    assert "sized safe batch" in out, "dense split lost the sized-batch wording"
+    # the measured tier KEEPS its measured claim (hybrid wins when VRAM fits attention only)
+    rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
+                  "--bits", "2.95", "--vram", "3", "--vram-bw", "192", "--ram", "32",
+                  "--ram-bw", "48", "--disk-bw", "2")
+    assert rc == 0, out
+    assert "worth **+73% prefill** on this placement" in out, \
+        "the experts->RAM tier lost the claim that was measured on it (prereg #19)"
+
+
 def t_disk_tier_kv_deficit_disclosed_not_clamped():
     """When KV alone crowds RAM below the 1 GB expert-cache floor, the disk-stream row must SAY so.
 
@@ -1113,6 +1145,28 @@ def t_auto_dry_picks_a_file():
 def t_auto_unknown_target_graceful():
     rc, out = cli("auto", "not-a-real-preset-or-repo", "--dry")
     assert rc != 0 and ("not a preset" in out or "could not list" in out)
+
+def t_auto_gated_repo_sends_token_and_hints():
+    """A gated HF repo must not dead-end `auto`. Two halves, both from a live failure (unsloth
+    gated their Mistral repo and `auto mistral-7b` died on the LISTING with a bare 401): the
+    tree listing now sends the same token `fetch` sends one step later (it was anonymous-only),
+    and a tokenless 401/403 carries the gated-repo hint instead of a bare 'Unauthorized'."""
+    import io, json as _json, urllib.request
+    from unittest import mock
+    from quantprobe import auto as automod
+    seen = {}
+    def fake_urlopen(req, timeout=None):
+        seen["auth"] = req.get_header("Authorization")
+        return io.BytesIO(_json.dumps([]).encode())
+    with mock.patch.object(urllib.request, "urlopen", fake_urlopen), \
+         mock.patch.dict(os.environ, {"HF_TOKEN": "hf_test_token"}):
+        files = automod.list_ggufs("some/gated-repo")
+    assert files == [] and seen["auth"] == "Bearer hf_test_token", seen
+    # the hint half: 401/403 get the actionable suffix, other errors stay bare
+    assert "gated or private" in automod.gated_hint(Exception("HTTP Error 401: Unauthorized"))
+    assert "HF_TOKEN" in automod.gated_hint(Exception("HTTP Error 403: Forbidden"))
+    assert automod.gated_hint(Exception("HTTP Error 404: Not Found")) == ""
+
 
 def t_auto_custom_dry():
     rc, out = cli("auto", "qwen3-30b", "--machine", "2016-xmp", "--custom", "--dry")

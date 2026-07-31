@@ -1831,17 +1831,34 @@ def run(args):
             print("  pays 183 ms of prompt time instead of 5381 - 29x - because the document KV is")
             print("  reused and only the new question is processed. Restarting the server is cold.")
     if ub:
-        print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
-              f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
-              f"(18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe "
-              f"once per batch instead of once per token. Do NOT set it when a model is fully in "
-              f"VRAM - measured there, the same flag LOSES 39%.")
-        if "-ub 4096" in ub:
-            print(f"  L-26 (prereg #92, out of sample): at -b 4096 -ub 4096 this placement "
-                  f"measured 360.76 pp2048,\n  +4.3% over ub 2048's 345.89 - the prefill law "
-                  f"sec/tok = A + X/C held at C=256 (-0.27%) and\n  C=4096 (-8.2%, in band). It "
-                  f"is validated TO 4096 and not past it: the asymptote bends below\n  1/A, so do "
-                  f"not raise the batch further on this law's authority.")
+        # The +73% is a property of the PLACEMENT it was measured on (-ot exps=CPU, prereg #19),
+        # not of the flags. This paragraph used to print it unconditionally under every sized
+        # batch: the winning split-experts row claimed "+73% on this placement" two paragraphs
+        # after the tool itself printed that row's measured 161.9 pp2048, and a dense split was
+        # told "your experts sit in RAM" about a model with no experts. Same scope boundary as
+        # the emission gate above (L-26): the claim travels only with the experts->RAM tier.
+        if "experts->RAM" in best[0]:
+            print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
+                  f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
+                  f"(18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe "
+                  f"once per batch instead of once per token. Do NOT set it when a model is fully in "
+                  f"VRAM - measured there, the same flag LOSES 39%.")
+            if "-ub 4096" in ub:
+                print(f"  L-26 (prereg #92, out of sample): at -b 4096 -ub 4096 this placement "
+                      f"measured 360.76 pp2048,\n  +4.3% over ub 2048's 345.89 - the prefill law "
+                      f"sec/tok = A + X/C held at C=256 (-0.27%) and\n  C=4096 (-8.2%, in band). It "
+                      f"is validated TO 4096 and not past it: the asymptote bends below\n  1/A, so do "
+                      f"not raise the batch further on this law's authority.")
+        else:
+            print(f"\n  prompt speed: `{ub}` is the sized safe batch for this card (buffer-fit "
+                  f"rule, prereg #23) - a bigger ubatch batches host-resident weights across "
+                  f"PCIe, but the measured numbers behind this lever (+73%, 199.9 -> 345.9 "
+                  f"pp2048, prereg #19; +4.3% more at ub 4096, prereg #92) are from the "
+                  f"CPU-expert MoE placement (-ot exps=CPU) and are NOT a prediction for this "
+                  f"row - the prefill law that licenses them is scoped to that tier (L-26; the "
+                  f"dense control violates its form). Known boundary: fully in VRAM the same "
+                  f"flag LOSES 39% (prereg #19 P-2), so the batch is sized against VRAM "
+                  f"headroom and capped at 2048 outside the measured tier.")
     dsw = depth_scope_warning(best[0], moe, ctx)
     if dsw:
         print(f"\n  {dsw}")
