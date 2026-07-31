@@ -671,6 +671,49 @@ def t_l26_dense_rows_never_get_ub4096():
     runline = next(l for l in out.splitlines() if "run it:" in l)
     assert "-ub 4096" not in runline, f"dense split run command carries the MoE-only flag: {runline}"
     assert "-b 2048 -ub 2048" in runline, f"dense split lost its sized ubatch entirely: {runline}"
+
+
+def t_disk_tier_kv_deficit_disclosed_not_clamped():
+    """When KV alone crowds RAM below the 1 GB expert-cache floor, the disk-stream row must SAY so.
+
+    The row prices every KV read at RAM bandwidth - it ASSUMES host-RAM KV residency. Before this
+    fix, a config whose KV cache did not fit (ra_eff clamped at the 1 GB floor) kept that pricing
+    silently: the deficit was absorbed into a number that looked like a prediction. The fix is
+    DISCLOSURE, not refusal and not repricing - no disk-tier anchor was ever measured with paging
+    KV, so a repriced number would be invented. The row stays, its arithmetic stays (the eff/terms
+    reconstruction check in t_binding_* keeps guaranteeing that), and the warn must name the
+    shortfall in GB and the consequence (the printed tok/s is an upper bound).
+    """
+    from quantprobe.plan import evaluate
+    # oversized on purpose: rc=8 -> ra=4 GB budget; ctx 65536 x kvp 98304 -> kv_gb ~ 6.44 GB.
+    # KV + the 1 GB floor overshoot RAM by ~3.4 GB while the 100B file streams from disk.
+    _, _, rows = evaluate(100, 10, 2, True, 2.5, 0, 0, 8, 40, 2, 0.5,
+                          ctx=65536, kvp=98304.0, n_layer=48)
+    disk = [r for r in rows if r[0] == "stream from disk (cold experts)"]
+    assert disk, "oversized config lost its disk-stream row - the fix must disclose, never refuse"
+    warn = disk[0][2] or ""
+    assert "KV DEFICIT" in warn and "UPPER BOUND" in warn, \
+        f"KV residency deficit silently absorbed again (the 1 GB ra_eff clamp): {warn!r}"
+    kv_gb = 65536 * 98304.0 / 1e9
+    assert f"{kv_gb + 1.0 - 4.0:.1f} GB" in warn, \
+        f"disclosure must print the actual shortfall ({kv_gb + 1.0 - 4.0:.1f} GB): {warn!r}"
+    # control: same machine, shallow ctx -> KV fits beside the floor, no deficit text
+    _, _, rows2 = evaluate(100, 10, 2, True, 2.5, 0, 0, 8, 40, 2, 0.5,
+                           ctx=2048, kvp=98304.0, n_layer=48)
+    disk2 = [r for r in rows2 if r[0] == "stream from disk (cold experts)"]
+    assert disk2 and "KV DEFICIT" not in (disk2[0][2] or ""), \
+        f"deficit disclosed where there is none: {disk2[0][2]!r}"
+    # and the disclosure must survive to the PRINTED row, not just the Row object
+    rc, out = cli("plan", "--total", "100", "--active", "10", "--always-active", "2",
+                  "--bits", "2.5", "--vram", "0", "--ram", "8", "--ram-bw", "40",
+                  "--disk-bw", "2", "--ctx", "65536")
+    assert rc == 0, out
+    row_line = next((l for l in out.splitlines()
+                     if "stream from disk (cold experts)" in l), "")
+    assert "KV DEFICIT" in row_line and "UPPER BOUND" in row_line, \
+        f"deficit disclosure did not reach the printed row: {row_line!r}"
+
+
 def t_dense_split_ngl_is_a_layer_count():
     """-ngl must be a LAYER COUNT, and must never exceed the model's layers on a split row.
 

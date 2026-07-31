@@ -1244,7 +1244,27 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
         k_io = streamable * miss / db
         k_ram = (streamable * (1 - miss) + hot) / (eta_r * rb) + kv_gb / (ETA_KV * rb)
         k_cpu = (n_layer or 32) * ctx * CPU_ATTN_S_PER_POS_LAYER
-        out.append(Row("stream from disk (cold experts)", tps, "exceeds RAM - capacity demo",
+        # THE KV RESIDENCY DEFICIT IS DISCLOSED, NOT SILENTLY ABSORBED (v1.21 integration audit).
+        # The kv_gb/(ETA_KV*rb) term above prices every KV read at RAM bandwidth - i.e. this row
+        # ASSUMES the whole KV cache is host-RAM-resident. When the 1 GB floor on ra_eff binds
+        # (ra - kv_gb < 1), that assumption is false: KV plus the minimum expert cache do not fit
+        # in the RAM budget, and before this fix the row silently granted KV the residency it does
+        # not have. We have NO measured model of KV paging through disk (every disk-tier anchor -
+        # 110B 0.19, laguna 0.38 - ran at ctx where KV fits), so repricing the term would be an
+        # invented number, the exact failure class the anchors exist to prevent. The row therefore
+        # KEEPS its arithmetic - the printed speed is an upper bound - and the warn names the
+        # shortfall and its consequence, so the disclosure travels ON the row it qualifies rather
+        # than in prose ten paragraphs down (the D-10 lesson).
+        disk_warn = "exceeds RAM - capacity demo"
+        kv_deficit = kv_gb + 1.0 - ra
+        if kv_deficit > 0:
+            disk_warn += (
+                f"; KV DEFICIT {kv_deficit:.1f} GB: the {kv_gb:.1f} GB KV cache plus the 1 GB "
+                f"minimum expert cache overshoot the {ra:.0f} GB RAM budget, so this row prices "
+                f"KV at RAM bandwidth it does not have - the deficit pages through disk every "
+                f"token and the printed tok/s is an UPPER BOUND, not a prediction. Shrink ctx "
+                f"or quantize KV (-ctk q8_0 -ctv q8_0) to restore residency")
+        out.append(Row("stream from disk (cold experts)", tps, disk_warn,
                        "-ngl 0", {"io": k_io, "ram_bw": k_ram, "cpu_compute": k_cpu}, eff=0.95))
     if moe and vc > 0 and size + kv_gb > ra:
         # three-tier expert cache (VRAM + RAM + disk): what expert-caching runtimes achieve.
