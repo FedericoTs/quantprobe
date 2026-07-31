@@ -2198,3 +2198,22 @@ if __name__ == "__main__":
     if FAIL:
         sys.exit(f"\n{len(FAIL)} FAILURES")
     print("\nall green")
+
+
+def t_c17_disk_probe_is_not_page_cache_contaminated():
+    """C-17: measure_disk read a fixed 512MB tail jittered by <=7MB, so ~98.6% of the span
+    overlapped between calls and buffering=0 does not bypass the OS page cache. Measured:
+    cold 0.44, then 2.99 / 2.99 GB/s - the warm number is RAM and it shipped as a disk-tier
+    input 6.8x too fast. Repeated probes must now agree: whole-file jitter lands on cold
+    regions because a GGUF worth streaming exceeds free page cache."""
+    import os
+    from quantprobe.detect import measure_disk
+    p = os.environ.get("QP_DISK_TEST_FILE")
+    if not p or not os.path.exists(p):
+        return "skipped (set QP_DISK_TEST_FILE to a >2GB file)"
+    runs = [measure_disk(p, mb=64) for _ in range(3)]
+    lo, hi = min(runs), max(runs)
+    assert hi / lo < 2.5, (
+        f"disk probe drifts {hi/lo:.1f}x across repeats {runs} - page-cache contamination "
+        "is back; the second read is measuring RAM, not the disk")
+    return f"ok: {[round(r, 2) for r in runs]} GB/s, spread {hi/lo:.2f}x"
