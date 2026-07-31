@@ -1,0 +1,11 @@
+0.00.583.350 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
+0.00.826.115 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.29.295.034 I 
+0.29.295.410 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.29.295.698 I perplexity: tokenizing the input ..
+0.29.789.430 I perplexity: tokenization took 493.731 ms
+0.29.790.270 I perplexity: calculating perplexity over 12 chunks, n_ctx=7168, batch_size=2048, n_seq=1
+2.53.589.961 I perplexity: 143.80 seconds per pass - ETA 28.75 minutes
+[1]10.8974,[2]6.7006,[3]7.3796,[4]7.8357,[5]8.2285,[6]7.9858,[7]8.0910,[8]8.5942,[9]8.3540,[10]8.2376,[11]7.8295,[12]7.7207,
+29.15.661.833 I Final estimate: PPL = 7.7207 +/- 0.10244
+

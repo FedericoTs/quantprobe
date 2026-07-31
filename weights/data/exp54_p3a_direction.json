@@ -1,0 +1,430 @@
+{
+ "prereg": "preregistrations/2026-07-30-binding-constraint.md",
+ "section": "8.6",
+ "experiment": 54,
+ "grid": {
+  "models": 10,
+  "machines": 17,
+  "ctx": [
+   0,
+   16384
+  ],
+  "bits": 2.5,
+  "cells": 340
+ },
+ "claim_under_test": "the P-3a defect is one-directional: it can ONLY suppress",
+ "verdict": "REFUTED - 30 invented vs 3 suppressed",
+ "cells_changed": 31,
+ "changed_cells": [
+  "deepseek-16b/2016/ctx0",
+  "deepseek-16b/2016/ctx16384",
+  "glm-744b/2016-xmp/ctx16384",
+  "glm-744b/2016/ctx16384",
+  "glm-744b/colibri/ctx16384",
+  "glm-744b/ddr5/ctx16384",
+  "glm-744b/epyc-256/ctx16384",
+  "glm-744b/laptop-8gb/ctx16384",
+  "glm-air/2016-xmp/ctx16384",
+  "glm-air/2016/ctx16384",
+  "glm-air/colibri/ctx16384",
+  "glm-air/ddr5/ctx16384",
+  "glm-air/epyc-256/ctx16384",
+  "glm-air/gaming/ctx16384",
+  "glm-air/rtx-3060/ctx16384",
+  "llama-70b/2016-xmp/ctx16384",
+  "llama-70b/2016/ctx16384",
+  "llama-70b/colibri/ctx16384",
+  "llama-70b/ddr5/ctx16384",
+  "llama-70b/epyc-256/ctx16384",
+  "llama-70b/gaming/ctx0",
+  "llama-70b/gaming/ctx16384",
+  "llama-70b/laptop-8gb/ctx16384",
+  "llama-70b/rtx-3060/ctx0",
+  "llama-70b/rtx-3060/ctx16384",
+  "llama-70b/rtx-4090/ctx16384",
+  "qwen3-30b/2016/ctx0",
+  "qwen3-30b/2016/ctx16384",
+  "qwen3-30b/colibri/ctx16384",
+  "qwen3-30b/ddr5/ctx16384",
+  "qwen3-30b/epyc-256/ctx16384"
+ ],
+ "n_suppressed": 3,
+ "n_invented": 30,
+ "n_inflated": 14,
+ "n_understated": 7,
+ "n_row_renamed": 7,
+ "worst_inflation_x": 2.1627,
+ "suppressed": [
+  {
+   "cell": "deepseek-16b/2016/ctx0",
+   "upgrade": "enable XMP (free)",
+   "true_tps": 42.677161
+  },
+  {
+   "cell": "deepseek-16b/2016/ctx16384",
+   "upgrade": "enable XMP (free)",
+   "true_tps": 34.627015
+  },
+  {
+   "cell": "qwen3-30b/2016/ctx0",
+   "upgrade": "enable XMP (free)",
+   "true_tps": 23.446347
+  }
+ ],
+ "invented": [
+  {
+   "cell": "glm-744b/2016-xmp/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.051168,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-744b/2016/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.05075,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-744b/colibri/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.442926,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-744b/colibri/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.359605,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-744b/ddr5/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.403034,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-744b/ddr5/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.314001,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-744b/epyc-256/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.737425,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-744b/laptop-8gb/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.18555,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "glm-air/colibri/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.901439,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "glm-air/colibri/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.901439,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "glm-air/ddr5/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.96603,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "glm-air/ddr5/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.96603,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "glm-air/epyc-256/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 1.109073,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "glm-air/epyc-256/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 1.109073,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/colibri/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.574951,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/colibri/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.574951,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/ddr5/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.663297,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/ddr5/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.663297,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/epyc-256/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.916896,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/epyc-256/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.916896,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/gaming/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.161908,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "llama-70b/rtx-3060/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.161908,
+   "bug_row": "stream from disk (cold experts)"
+  },
+  {
+   "cell": "llama-70b/rtx-4090/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.674536,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "llama-70b/rtx-4090/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.674536,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "qwen3-30b/colibri/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 1.089158,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "qwen3-30b/colibri/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 1.089158,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "qwen3-30b/ddr5/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 1.121369,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "qwen3-30b/ddr5/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 1.121369,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "qwen3-30b/epyc-256/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 1.184421,
+   "bug_row": "pure CPU (GPU idle)"
+  },
+  {
+   "cell": "qwen3-30b/epyc-256/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 1.184421,
+   "bug_row": "pure CPU (GPU idle)"
+  }
+ ],
+ "inflated": [
+  {
+   "cell": "glm-744b/2016-xmp/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.269055,
+   "true_tps": 0.202168
+  },
+  {
+   "cell": "glm-744b/2016/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.258649,
+   "true_tps": 0.196236
+  },
+  {
+   "cell": "glm-744b/epyc-256/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.995281,
+   "true_tps": 0.46021
+  },
+  {
+   "cell": "glm-744b/laptop-8gb/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.267314,
+   "true_tps": 0.201184
+  },
+  {
+   "cell": "glm-air/2016-xmp/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.229653,
+   "true_tps": 0.211477
+  },
+  {
+   "cell": "glm-air/2016-xmp/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.530235,
+   "true_tps": 0.442438
+  },
+  {
+   "cell": "glm-air/2016/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.223076,
+   "true_tps": 0.205888
+  },
+  {
+   "cell": "glm-air/2016/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.504003,
+   "true_tps": 0.424024
+  },
+  {
+   "cell": "llama-70b/2016-xmp/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.0263,
+   "true_tps": 0.025442
+  },
+  {
+   "cell": "llama-70b/2016-xmp/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.112825,
+   "true_tps": 0.098557
+  },
+  {
+   "cell": "llama-70b/2016/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.026111,
+   "true_tps": 0.025265
+  },
+  {
+   "cell": "llama-70b/2016/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.111201,
+   "true_tps": 0.097315
+  },
+  {
+   "cell": "llama-70b/laptop-8gb/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.102253,
+   "true_tps": 0.090393
+  },
+  {
+   "cell": "llama-70b/laptop-8gb/ctx16384",
+   "upgrade": "NVMe SSD",
+   "bug_tps": 0.112559,
+   "true_tps": 0.098354
+  }
+ ],
+ "understated": [
+  {
+   "cell": "glm-air/gaming/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 5.143804,
+   "true_tps": 5.828268
+  },
+  {
+   "cell": "glm-air/rtx-3060/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 5.143804,
+   "true_tps": 5.828268
+  },
+  {
+   "cell": "llama-70b/gaming/ctx0",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 1.06409,
+   "true_tps": 1.301974
+  },
+  {
+   "cell": "llama-70b/gaming/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.285071,
+   "true_tps": 0.390196
+  },
+  {
+   "cell": "llama-70b/rtx-3060/ctx0",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 1.06409,
+   "true_tps": 1.301974
+  },
+  {
+   "cell": "llama-70b/rtx-3060/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_tps": 0.285071,
+   "true_tps": 0.390196
+  },
+  {
+   "cell": "qwen3-30b/2016/ctx16384",
+   "upgrade": "enable XMP (free)",
+   "bug_tps": 15.707461,
+   "true_tps": 16.794276
+  }
+ ],
+ "row_renamed": [
+  {
+   "cell": "glm-air/gaming/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_row": "hybrid: attention->VRAM, experts->RAM",
+   "true_row": "split experts: 15%->VRAM, rest->RAM"
+  },
+  {
+   "cell": "glm-air/rtx-3060/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_row": "hybrid: attention->VRAM, experts->RAM",
+   "true_row": "split experts: 15%->VRAM, rest->RAM"
+  },
+  {
+   "cell": "llama-70b/gaming/ctx0",
+   "upgrade": "+16 GB RAM",
+   "bug_row": "pure CPU (GPU idle)",
+   "true_row": "split: 17/80 layers->VRAM, rest->RAM"
+  },
+  {
+   "cell": "llama-70b/gaming/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_row": "stream from disk (cold experts)",
+   "true_row": "split: 15/80 layers->VRAM, rest->RAM"
+  },
+  {
+   "cell": "llama-70b/rtx-3060/ctx0",
+   "upgrade": "+16 GB RAM",
+   "bug_row": "pure CPU (GPU idle)",
+   "true_row": "split: 17/80 layers->VRAM, rest->RAM"
+  },
+  {
+   "cell": "llama-70b/rtx-3060/ctx16384",
+   "upgrade": "+16 GB RAM",
+   "bug_row": "stream from disk (cold experts)",
+   "true_row": "split: 15/80 layers->VRAM, rest->RAM"
+  },
+  {
+   "cell": "qwen3-30b/2016/ctx16384",
+   "upgrade": "enable XMP (free)",
+   "bug_row": "stream from disk (VRAM+RAM expert cache)",
+   "true_row": "split experts: 18%->VRAM, rest->RAM"
+  }
+ ]
+}

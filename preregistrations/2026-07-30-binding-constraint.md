@@ -68,7 +68,10 @@ then throws the decomposition away, returning only `1/T`. The change keeps it.
 
 `T_r` = sum of that resource's terms; `T` = Σ`T_r`; `share_r` = `T_r/T`. Rows are emitted with
 their terms attached; a row whose terms do not reconstruct its own tok/s to 1e-9 is a bug
-(smoke-tested, and K-2).
+(smoke-tested, and K-2). **The parenthetical was false when written** — see §8.5 D-5/D-6: the
+smoke grid missed a whole row family and priced a zero-byte KV cache, and the scorer did not check
+reconstruction at all. It is true now: 1527 rows per scoring run, all seven families in the smoke
+grid, non-zero KV.
 
 **R2 — the time-binding resource.** `bind = argmax_r T_r`. Ties break in the fixed order
 `io, ram_bw, vram_bw, cpu_compute` so the answer is deterministic.
@@ -130,10 +133,16 @@ python weights/exp54_binding_constraint.py --json     # machine-readable only
    four regimes would prove only that we can pick four cells.
 3. For each cell: run `evaluate`, take the winning row, classify it (§1), record class, shares,
    `margin_x`, `ceiling_x`, and the winner's name/tok/s/flags.
-4. **K-3 baseline:** load `git show HEAD:quantprobe/plan.py` as a separate module and run the
-   identical grid through it. Every cell's winning row name, tok/s (rel. diff ≤ 1e-9) and flags
-   must match. The classifier is a **reporting layer**: if any predicted number moves, the
-   implementation is wrong and is reverted.
+4. **K-3 baseline:** load `git show <pre-change ref>:quantprobe/plan.py` as a separate module and
+   run the identical grid through it. Every cell's winning row name, tok/s (rel. diff ≤ 1e-9) and
+   flags must match. The classifier is a **reporting layer**: if any predicted number moves, the
+   implementation is wrong and is reverted. **Two arms** (§8.5 D-9): the staked 340 cells, and the
+   same 340 preset pairs replayed with a pinned `true_size_gb` and a non-zero `codebook_share` —
+   the `--gguf` code paths every locked ladder row uses, which the staked arm never touches. A
+   cell whose row list goes empty on either side is a regression, not a cell to skip.
+4b. **K-2 reconstruction (§8.5 D-5):** every row of every cell — 1527 of them, winners and losers
+   alike — must satisfy `tok_s == eff / Σ terms` to 1e-9. Staked in §1 R1 and §5 K-2 from the
+   start; implemented only after the pre-run audit found it was scored nowhere.
 5. **P-3 probes** (the advice-changes test) run on the same grid plus two synthetic arms
    described in §4.
 6. **P-5** runs the external arm of §3 through the shipped `evaluate`.
@@ -235,6 +244,11 @@ script, not in shipped code** — disclosed, because it is not something the too
     with `--gguf`, from a **different model size** (the `4.5/bits` dense inflation the code's own
     comment says "wrongly evicted the all-in-VRAM row"). Its signature is one-directional: it can
     only ever **suppress** an upgrade that would genuinely help.
+    > **⚠ The staked part of P-3a held (31 cells) but the sentence immediately above is REFUTED —
+    > see §8.6.** It is left standing here because staked text is never rewritten. Measured
+    > direction: **30 upgrades INVENTED vs 3 suppressed**; the missing row menu suppresses, but
+    > `(n_layer or 32)` prices the counterfactual as a different (shallower) model than the
+    > baseline and manufactures gain, which is the larger and the more expensive error.
   * **(b)** ≥1 synthetic arm where the codebook/IQ-on-CPU warning's honest bounded gain is
     **< 5%** — i.e. the shipped text tells the user to re-download a whole model for a placement
     where the RAM weight term is a small share of the token. Bound (exact, from the shipped
@@ -292,6 +306,17 @@ Mechanically checkable, and each names the consequence, not just the verdict.
   resource the winning row does not use, or whose shares move the wrong way when a bandwidth
   moves, is worse than no classifier: it is confident and wrong. Also fires if any row's terms
   fail to reconstruct its own tok/s to 1e-9.
+
+  > **Corrected 2026-07-30 by the second adversarial review (§8.5, D-5/D-6).** That last sentence
+  > was staked here and in §1 R1 and then **scored nowhere**: the scoring script did not check it
+  > at all, and the smoke test §1 R1 points at ran a hand-picked six-config grid that never emitted
+  > the dense-split row — a winner on 8 of the 340 cells — and whose `ctx` entries carried no
+  > `kvp`, so every KV attribution term in every family was multiplied by zero. Reconstruction is
+  > now checked on **every row of every cell** (1527 rows) and counted, and the smoke grid covers
+  > all seven families with a non-zero KV cache and asserts that it does. Verified by fault
+  > injection: dropping the dead-simple `(1-g)·kv_gb/(ETA_KV·rb)` term from the dense split leaves
+  > every tok/s bit-identical and every other arm clean — it used to print PASS at exit 0, and now
+  > fires K-2 on 10 rows.
 * **K-3 — any predicted number moves ⇒ revert.** Across all 340 cells the winning row name,
   tok/s (rel. tol 1e-9) and emitted flags must be **identical** to the **pre-change** `plan.py`.
   The single permitted exception is the upgrade-advisor line under P-3(a), which is a disclosed
@@ -307,6 +332,15 @@ Mechanically checkable, and each names the consequence, not just the verdict.
   > **pre-change commit**, named explicitly; a baseline that already contains
   > `binding_constraint` is a **refusal** (exit 2), or with `--allow-vacuous-regression` an
   > **INCOMPLETE** verdict (exit 3) that records `K3: null`. It can never read as PASS again.
+  >
+  > **Extended 2026-07-30 by the second adversarial review (§8.5, D-9).** K-3's grid pins
+  > `true_size_gb=None` and `codebook_share=0.0`, and **every one of the 14 locked ladder rows is a
+  > `--gguf` run** — i.e. exactly the two inputs the grid never supplies. A second deterministic
+  > arm now replays the same 340 preset pairs with a pinned size and a codebook share. Verified by
+  > fault injection (`size = true_size_gb * 1.01`): the staked arm reports **0** cells moved while
+  > the new arm catches **124**. P-1's staked denominator is untouched. Separately (D-8), a run in
+  > which a *scored* kill rule fired now reads **FAIL (exit 1)**, not INCOMPLETE — the vacuous-K-3
+  > branch used to be tested first and could mask two dead rules behind exit 3.
 * **K-4 — the honesty gate.** A run in which any `all in VRAM` winner at bits < 4.5 is labelled
   bandwidth-bound **without** the R6 unpack caveat fails, regardless of every other result.
   Scored on **every all-in-VRAM winner in the 340-cell grid** (137 of them at 2.5 bits), each put
@@ -489,15 +523,119 @@ p4_min_frac_ceiling_lt_2_v2 = 0.00      # WITHDRAWN, not re-staked: 0.6% measure
 so it would have passed anyway; applying a kill rule retroactively to a result already scored
 would be indistinguishable from writing the rule to fit the outcome.
 
-### 8.4 What the review did NOT find
+### 8.4 What the first review did NOT find
 
 C-14 is not violated: nothing here touches the GPU or any machine state, every number is
 deterministic arithmetic over shipped preset tables, and the only cross-machine comparison is the
 disclosed external retrodiction against BigMoeOnEdge's published figure. Null results are reported
 at least as prominently as positives — P-4's miss gets eight lines of transcript and a permanent
-demotion note inside `binding_report` itself. K-2 is a genuinely live gate (508 real checks, and
-it counts its own checks so an unexecuted soundness pass cannot masquerade as a clean one); that
-counting discipline is what the K-4 fix generalised.
+demotion note inside `binding_report` itself.
+
+It also asserted that "K-2 is a genuinely live gate (508 real checks, and it counts its own checks
+so an unexecuted soundness pass cannot masquerade as a clean one)". **That was wrong, and §8.5 is
+where it is corrected**: K-2 has two staked clauses and the 508 checks covered one and a half of
+them. The counting discipline the sentence is proud of was applied to the clauses that were
+implemented and told us nothing about the clause that was not.
+
+### 8.5 SECOND ADVERSARIAL REVIEW — the pre-run audit
+
+**Added 2026-07-30, BEFORE this run was published**, by a second pass whose only brief was to
+*construct the concrete input that makes this experiment fail* and verify it does. Disclosed as
+post-hoc relative to §4 and §8.1, exactly as §8 is. **No threshold was moved, no staked number
+changed, and the verdict is unchanged (PASS).** Every defect below is in the *scoring or the
+regression tests*, never in `evaluate`'s arithmetic — K-3's own numbers were bit-identical before
+and after all five repairs.
+
+| # | defect | why it is fatal | fix | verified by |
+|---|---|---|---|---|
+| **D-5** | **K-2's SECOND staked clause was scored NOWHERE.** §5 K-2 reads "Also fires if any row's terms fail to reconstruct its own tok/s to 1e-9", and §1 R1 calls it "smoke-tested, and K-2". The scoring script never checked it; the smoke test that did ran a **hand-picked six-config grid** that emits six of the seven row families and **never the dense-split row** — three resources, KV split across two tiers, and a WINNER on **8 of the 340 cells**. | The exploit: drop `(1-g)·kv_gb/(ETA_KV·rb)` from that row's `ram_bw` attribution. tok/s is **bit-identical** so K-3 passes; no phantom or monotonicity check bites so K-2 passes; the script printed **VERDICT: PASS at exit 0** while the row reconstructed **4.94% off its own speed** and the **printed** binding share and ceiling moved 64.5%→67.7% and 2.82x→3.09x. A wrong number on the page, through a green gate. | Reconstruction now scored on **every row of every cell** (1527 rows), counted, and folded into P-2/K-2. The smoke grid is widened to all seven families and **asserts** the families are present. | injection ⇒ **10 failures, K-2 FIRED, exit 1**; clean tree ⇒ 0/1527 |
+| **D-6** | **The smoke grid's `ctx` entries carried no `kvp`**, so `kv_gb = ctx·kvp/1e9` was **identically zero** on every row that test has ever built. | Every KV attribution term was multiplied by zero, in *every* row family. The grid knob reads as "depth is covered" while the quantity it controls cannot vary — the #85 arms C/D shape. Dropping the KV term from the **hybrid** row was equally invisible. | `kvp` is explicit on every ctx entry, plus an assertion that some entry carries a non-zero `kv_gb`. | both KV drops (dense split, hybrid) now caught; both passed before |
+| **D-7** | **An abort left the previous run's result on disk as the apparent current one.** `die()` exits before anything is written and both outputs are written only at the end of `main()`. | After a refusal, `exp54_binding_constraint.json` still said `"verdict": "PASS"` from the last completed run, with nothing distinguishing "scored and passed" from "never scored". Every consumer reads that file. The docstring's "idempotent: re-running overwrites the same three files" was false on exactly the path where it mattered. Same shape as D-1, one file downstream. | `die()` overwrites both outputs with a `REFUSED` record and `K1..K5 = null` first. | bad `--baseline-ref` ⇒ JSON flips `FAIL` → `REFUSED`, exit 2 |
+| **D-8** | **A fired kill rule could be reported as INCOMPLETE rather than FAIL.** The verdict branch tested `k3_vacuous` first. | With a vacuous baseline, a run in which **K-1 and K-5 both fired** exited **3** — the code reserved for "a kill rule could not be evaluated" — so a wrapper treating 3 as "re-run with a proper baseline" would never surface the two rules that died. | FAIL takes precedence; INCOMPLETE is reserved for a run where every rule that *could* be scored held. | injection ⇒ exit **1** (was 3); clean tree + vacuous baseline still ⇒ exit 3 |
+| **D-9** | **K-3's grid never exercised the pinned-file-size or codebook paths.** `cell_kwargs` fixes `true_size_gb=None` and `codebook_share=0.0`. | **Every one of the 14 locked ladder rows is a `--gguf` run** — a real file size pinned (the input whose absence `evaluate`'s own comment says "wrongly evicted the all-in-VRAM row") and, for the IQ files, a non-zero codebook share. A regression that only bites when a size is pinned was invisible to K-3. | A second **deterministic** regression arm replays the identical 340 preset pairs with a pinned size (×0.8) and `codebook_share=0.5` — no GGUF, no machine state, no change to P-1's staked denominator. | injection `size = true_size_gb*1.01` ⇒ **arm 1 reports 0 moved, arm 2 catches 124** |
+
+Two smaller items, neither of which found a live defect: K-3 skipped the baseline comparison
+entirely for any cell whose row list was empty (`if res is None: continue` ran *before* the
+comparison), so the largest possible regression — every row for a cell deleted — was filed as
+`klass: null` and never compared; and `--json`, documented in §2, did nothing at all. Both fixed.
+
+**The 14 locked ladder rows were also checked directly, out of band**: all 14 predictions and all
+14 placements reproduce unchanged against `weights/data/ladder_state_locked.json` under the current
+tree. That check is *not* wired into the scoring script — it needs 14 local GGUFs and a calibration
+state, which would make the verdict machine-dependent and put a C-14 comparison inside a
+deterministic experiment. The deterministic arm-2 replay above covers the same **code paths**.
+
+**All five kill rules were individually fault-injected and each produced exit 1**: K-1 (constant
+`RESOURCE_CLASS`), K-2 (swapped `vram_bw`/`ram_bw` keys on the dense split — fires with K-3 clean,
+which is the true reporting-layer bug; and a `db`-dependent phantom term ⇒ 52 phantom failures),
+K-3 (`CPU_ATTN_S_PER_POS_LAYER` 1.55e-6 → 1.60e-6 ⇒ 53 cells), K-4 (row renamed to
+`all in VRAM (KV in VRAM)` ⇒ 137/137), K-5 (`ETA_R_MOE` 0.38 → 0.40).
+
+### 8.6 THIRD PASS — §4 P-3a's direction rationale is REFUTED (post-run, published here)
+
+**Added 2026-07-31**, by a pass whose brief was to re-derive P-3a's before/after independently
+instead of trusting it. **The staked part of P-3a held and its number is unchanged: 31 of 340
+cells.** What is refuted is the *rationale sentence* attached to it in §4 — an unstaked
+characterisation that nevertheless shipped, in this document, in `upgrade_advisor`'s docstring and
+in the L-23 register entry:
+
+> "Its signature is one-directional: it can only ever **suppress** an upgrade that would
+> genuinely help."
+
+**That is wrong, and the dominant direction is the opposite one.**
+
+**Why the original evidence could not see it.** `weights/exp54_binding_constraint.py` scores P-3a
+with `old_upgrade_lines()`, a *re-implementation* of the three pre-fix call sites. A reproduction
+can only ever agree with the reading that produced it, and it reports the *set of fired lines*,
+not their direction. The replay below instead injects the defect **into `run()` itself** — the two
+kwargs are dropped from `evaluate` for the duration of `upgrade_advisor` and for nothing else —
+and reads `upgrade_advisor`'s own return, so every disagreement is classifiable by sign. It
+reproduces **31 changed cells**, and independently confirms **0 of 340** winning rows and **0 of
+340** emitted commands move. Reproducible from the repo:
+`python weights/exp54_p3a_direction.py` → `weights/data/exp54_p3a_direction.json`. It is
+deterministic (no GPU, no machine state, nothing timed) and **refuses at exit 1 if 0 cells
+change**, so an injection that silently fails to reach the advisor cannot be read as "the claim
+held".
+
+| direction | count | what it means for the user |
+|---|---|---|
+| **INVENTED** (fires only with the bug) | **30** | the tool recommended hardware the fixed advisor retracts |
+| SUPPRESSED (fires only once fixed) | 3 | the tool hid an upgrade that genuinely helps |
+| overstated tok/s (same upgrade) | 14 | gain printed too high, worst **×2.16** |
+| understated tok/s (same upgrade) | 7 | gain printed too low |
+
+**Two mechanisms with opposite signs**, which is why "one-directional" was never available:
+
+* **the row menu suppresses.** A counterfactual with no `n_layer` has no split placements to win
+  with, so it can only be *slower*. All 3 suppressions are `enable XMP (free)` on the slow-RAM
+  `2016` box — `deepseek-16b` at ctx 0 **and** at 16384, `qwen3-30b` at ctx 0 — so suppression is
+  not confined to ctx = 0, it is confined to the machine where XMP is a live lever at all.
+* **the depth term invents.** `(n_layer or 32)` prices the counterfactual's CPU attention as a
+  32-layer model while the baseline pays for 80, so the "gain" is a comparison between two
+  **different models**, not two machines. All 30 inventions are at **ctx > 0**. The clearest is
+  `llama-70b` on `colibri` (128 GB RAM, no disk tier in play) at ctx 16384, where the bug printed
+  **`+16 GB RAM` and `NVMe SSD` at an identical ×1.70** — a RAM-capacity lever and an I/O lever
+  cannot honestly buy the same number, and the fixed advisor prints neither.
+
+**Why this correction is not cosmetic.** Suppressed advice costs a user speed they could have had.
+Invented advice costs them money — €40 of RAM, €100 of NVMe — on hardware that will not move their
+token. The second is the worse failure and it is precisely the one the shipped rationale asserted
+could not occur, on 30 cells against 3.
+
+**Consequence applied in the same commit, not argued away.** The sentence is withdrawn from
+`upgrade_advisor`'s docstring and from the L-23 register entry, replaced by the measured
+breakdown; and a smoke test now pins the **printed line** rather than the plumbing —
+`tests/smoke.py::t_p88_upgrade_advice_is_not_invented_by_a_depth_mismatch` asserts that the
+`colibri` cell fires **no** upgrade line while still *naming* both dead levers, and that the
+`deepseek-16b`/`2016` cell fires XMP on a split-experts row. It fails on the pre-fix tree in both
+directions. The pre-existing `t_p88_upgrade_counterfactual_shares_the_baseline_inputs` asserts only
+that the kwargs travel, which would still pass if `evaluate` ignored `n_layer` entirely.
+
+**No staked number moved and the verdict is unchanged (PASS).** §4 P-3a required ≥1 cell; 31 were
+found before this pass and 31 after. The 14 locked ladder rows (cal_id `a19aeee4`) were replayed
+through the defect-injected tree **and** the fixed tree: 14/14 reproduce prediction, placement and
+full emitted command in **both**, which is the expected result — the ladder's winners are chosen by
+`evaluate`, and P-3a lives entirely in the advice layer downstream of it.
 
 ---
 
@@ -506,3 +644,9 @@ counting discipline is what the K-4 fix generalised.
 the named `ETA_R_MOE` / `ETA_R_DENSE` constants that replace two inline literals so the external
 arm imports the number instead of copying it. No law changes, no constant *values* move, and K-3
 requires every predicted tok/s to be bit-identical to the version shipped before this document.
+
+**§8.5 touched no shipped code.** All five second-pass repairs live in
+`weights/exp54_binding_constraint.py` and `tests/smoke.py`; `quantprobe/plan.py` is byte-identical
+before and after them, and both K-3 arms report 0 cells moved. Independently of the gate, the 14
+rows of `weights/data/ladder_state_locked.json` were replayed through the current tree and every
+prediction and every placement reproduces unchanged.

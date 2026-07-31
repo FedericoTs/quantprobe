@@ -79,6 +79,34 @@ softer than they looked:
      value below 1.0, i.e. +-12% on n3_lomo_median = 0.0404, while the prereg claimed 0.5%.  Now
      genuinely relative.
   7. --offline silently bought a full publishable verdict for a run that never checked the source.
+
+ADVERSARIAL REVIEW 2026-07-30, SECOND PASS - three more, each with the failing input constructed
+and RUN rather than argued:
+  8. P0_ROWS and KPAIRS RE-TYPED numbers that already live in ROWS, and only ROWS was checked
+     against the transcription and the live README.  Constructed input: change the KPAIRS entry
+     for qwen3-30b-a3b from `165` to `156`, a digit transposition of a flash figure that IS
+     verified where it lives in ROWS.  Result: the published io-only bound moved 1.364 -> 1.442
+     and the N3 prediction 1.261 -> 1.292, every check passed including "all 23 staked values
+     reproduced to 0.5% relative", and the script exited 1 with an ordinary verdict.  Silent
+     corruption of a published table.  Both derived tables are now DERIVED AND CHECKED against
+     ROWS, and the pre-registration's premises about them ("ran with no cache at all"; "same
+     model, same cache, same overlap, only k changes") are asserted instead of merely written.
+  9. AN ABORT LEFT THE PREVIOUS RUN'S JSON ON DISK AS THE APPARENT CURRENT RESULT.  Constructed
+     input: change P0_ROWS' qwen3-30b-a3b counter 1051 -> 1151, i.e. our byte model missing their
+     engine by 9.10% against a 3% gate.  P-0 FAILED, verdict_n3_pass correctly fell to 0, the run
+     aborted at step [9] with exit 2 - and weights/data/exp53_two_resource_disk_tier.json was left
+     BYTE-IDENTICAL to the previous good run, still asserting P0.holds=true, gates.N3.PASS=true,
+     verdict "FAIL", publishable=true.  The one machine-readable artifact anyone downstream reads
+     said the shipping form had cleared a gate it had just lost.  Every exit path now replaces
+     that file: an abort writes an explicit abort record carrying NO verdict key.
+ 10. THE STAKE-REPRODUCTION GATE PRE-EMPTS THE KILL RULE - the shape of prereg #86's unreachable
+     rule (a 0.5% drift gate upstream of a 15% kill threshold).  Every operand of P-0 and K-1..K-4
+     is a staked value, and both verdicts are staked too, so in SCORE mode the block at step [10]
+     can only ever REPLAY the staked answer: any input that would flip a gate trips the abort at
+     step [9] first.  That refusal is correct and is NOT loosened here - but it was reported as
+     "the fresh computation no longer reproduces the staked numbers", an infrastructure-shaped
+     message for a scientific event.  A drift in a verdict-valued key is now diagnosed as such,
+     names the conjunct that flipped, and carries the fresh gate evaluation into the abort record.
 """
 from __future__ import annotations
 
@@ -180,7 +208,17 @@ KPAIRS = [
 KPAIR_TOL = 0.10                      # |pred/meas - 1| must be under this
 KPAIR_GATE_COUNT = 4                  # how many of the five must bracket AND land inside KPAIR_TOL
 
+# Their tables print tok/s to ONE decimal, so every k-pair's measured ratio carries a hard
+# rounding band before any physics: gpt-oss' 2.2/1.3 is anything from 2.15/1.35 to 2.25/1.25.
+# This is a property of the SOURCE, not a threshold - it moves no gate.  It is used only to report
+# whether each K-4 pass/fail is decided by the data or by their printing precision, because K-4
+# clears its gate at exactly 4 of 5 and the pre-registration calls it the softest of the four.
+TOKS_PRINT_HALF_STEP = 0.05
+
 ARMC_ABS_TOL = 0.10                   # absolute cache-hit error the modelled h must stay inside
+ARMC_BETA_STEPS = 2000                # beta grid 1/2000 .. 1.0; note that beta = 1.0 IS in it, and
+#                                       h = M/N (the "structural null") is exactly that member -
+#                                       see armc_null_disclosure() for what that costs the gate.
 
 # Literals used ONLY by the desktop disclosure arm (prereg section 6).  They are NOT in ROWS, so
 # until the 2026-07-30 adversarial review NOTHING checked them against the source - they reached
@@ -287,6 +325,68 @@ def verify_transcription(log):
         f"desktop literals present verbatim in {os.path.basename(TABLES)}")
     return dict(path=TABLES, rows=len(ROWS),
                 desktop_literals=DESKTOP_LITERALS + DESKTOP_PROSE)
+
+
+def verify_derived_rows(log):
+    """Tie P0_ROWS and KPAIRS back to ROWS - the ONLY table that is checked against the
+    transcription and against the live README.
+
+    Both derived tables re-typed numbers that already live in ROWS, joined to the verified copy by
+    nothing but the author's eyes.  The constructed failing input (module docstring, item 8) was a
+    one-digit change to a KPAIRS flash figure: it moved a published bound, passed every check
+    including the stake reproduction, and exited 1 with an ordinary verdict.
+
+    The pre-registration also states two premises about these rows that nothing enforced:
+      P-0  "for every row that ran with NO CACHE AT ALL, their Flash/token is the model's full
+            routed-expert read at that width" - so the anchor row must really have cache 0.
+      Arm B "the five clean k -> k' pairs (same model, same cache, same overlap, only k changes)"
+            - so both rows must exist, be unique, and share a cache size.
+    A premise that lives only in prose is a premise that can quietly stop being true.  Returns the
+    published tok/s behind each pair so Arm B can report its rounding band."""
+    for m, k, pub in P0_ROWS:
+        nocache = [r for r in ROWS if r[0] == "P" and r[1] == m and r[2] == k
+                   and not r[6] and r[7] is None]
+        if len(nocache) != 1:
+            raise Abort(f"P-0 anchor ({m}, k={k}) matches {len(nocache)} no-cache rows in ROWS, "
+                        "not exactly one.  P-0's whole premise is that the row ran with no cache "
+                        "at all, so its Flash/token IS the full routed read; without a unique "
+                        "no-cache row that premise is unverified and the anchor is void.")
+        if nocache[0][4] != pub:
+            raise Abort(f"P-0 anchor ({m}, k={k}) says {pub} MiB but the verified row "
+                        f"{nocache[0][8]!r} in ROWS says {nocache[0][4]} MiB.  P0_ROWS re-types a "
+                        "number that ROWS already carries and only ROWS is checked upstream; the "
+                        "two disagree, so one of them is a typo and no number may be emitted.")
+    kmeta = []
+    for (m, kh, kl, fh, fl, ov, meas) in KPAIRS:
+        if kh <= kl:
+            raise Abort(f"k-pair ({m}, {kh}->{kl}) is not a widening-to-narrowing pair.")
+        hi = [r for r in ROWS if r[0] == "P" and r[1] == m and r[2] == kh
+              and r[4] == fh and r[5] == ov]
+        lo = [r for r in ROWS if r[0] == "P" and r[1] == m and r[2] == kl
+              and r[4] == fl and r[5] == ov]
+        if len(hi) != 1 or len(lo) != 1:
+            raise Abort(f"k-pair ({m}, k{kh}->k{kl}, flash {fh}/{fl}, overlap {ov}) matches "
+                        f"{len(hi)} / {len(lo)} rows in ROWS instead of exactly one each.  Arm B "
+                        "is the only row-level arm with kill power and its inputs are re-typed "
+                        "from ROWS; a pair that cannot be located in the verified table is a "
+                        "transcription error, and this is the check whose absence let a "
+                        "165 -> 156 typo through silently.")
+        if hi[0][6] != lo[0][6]:
+            raise Abort(f"k-pair ({m}, k{kh}->k{kl}) is NOT clean: {hi[0][8]!r} ran at cache "
+                        f"{hi[0][6]} MiB and {lo[0][8]!r} at {lo[0][6]} MiB.  Section 2 of the "
+                        "pre-registration defines a clean pair as same model, same cache, same "
+                        "overlap, ONLY k changing; a cache change smuggles a second variable into "
+                        "the one ratio the motivating observation rests on.")
+        ratio = lo[0][3] / hi[0][3]
+        if abs(ratio / meas - 1.0) > 1e-9:
+            raise Abort(f"k-pair ({m}, k{kh}->k{kl}) states a measured speedup of {meas:.6f} but "
+                        f"the two verified rows publish {lo[0][3]} / {hi[0][3]} = {ratio:.6f}.")
+        kmeta.append(dict(tps_hi=hi[0][3], tps_lo=lo[0][3], cache_mib=hi[0][6],
+                          label_hi=hi[0][8], label_lo=lo[0][8]))
+    log(f"  derived rows     all {len(P0_ROWS)} P-0 anchors and {len(KPAIRS)} k-pairs resolve to "
+        "unique verified rows in ROWS (P-0 anchors are genuinely no-cache; every pair shares "
+        "cache and overlap and its speedup is the two rows' own tok/s)")
+    return kmeta
 
 
 def verify_source(sess, log, offline):
@@ -403,7 +503,7 @@ def t_pred(A, F, ov, sc, si, mode, phi):
     raise Abort(f"unknown model form {mode!r}")
 
 
-def bracket_forced(mode, ov):
+def bracket_forced(mode, ov, phi=0.0):
     """Is Arm B's `bracketed` test capable of failing for this (mode, row) at all?
 
     NO, if the form reduces to `C + I` on both rows of the pair.  t_hi/t_lo is then
@@ -418,7 +518,30 @@ def bracket_forced(mode, ov):
         return True
     if mode in ("M2", "M2b") and not ov:
         return True
+    # M2b degenerates to the additive form at phi = 0, and the fit is free to land there.  Without
+    # this branch a refit that chose phi = 0 would report a tautological bracket as informative -
+    # the exact mislabelling this function exists to prevent.  (Today phi fits to 0.180.)
+    if mode == "M2b" and ov and phi == 0.0:
+        return True
     return False
+
+
+def armc_null_disclosure(beta, steps):
+    """Arm C's conjunct (a) - "beat the structural null h = M/N" - is very nearly unfalsifiable.
+
+    The null is not an outside comparison: h = M/N is EXACTLY the beta = 1 member of the fitted
+    family h = (M/N)^beta, and beta = 1.0 is in the grid this fit minimises over.  So the fitted
+    median error is <= the null's by construction, and conjunct (a) can fail only on an exact tie
+    (beta = 1 being the unique argmin).  It is reported, not counted as evidence, and the
+    threshold is NOT moved: the informative half of the Arm C gate is (b), landing within 0.10
+    absolute on a majority of the 12 rows, which is an out-of-family test that can and does fail."""
+    return dict(null_is_member_of_fitted_family=True, null_beta=1.0,
+                null_beta_in_grid=True, fitted_beta=round(beta, 5), grid_steps=steps,
+                informative=False,
+                note="h = M/N is the beta=1 member of h = (M/N)^beta and beta=1.0 is in the "
+                     "1/%d grid, so 'beats the structural null' is guaranteed up to an exact tie. "
+                     "Only the within-%.2f-on-a-majority conjunct carries evidence." % (
+                         steps, ARMC_ABS_TOL))
 
 
 def tol_window(rows, gate):
@@ -552,6 +675,34 @@ def read_stake(path):
     return out
 
 
+def write_abort_record(path, args, reason, partial, log):
+    """Replace the mode's output JSON with an explicit abort record.
+
+    An abort must not leave the PREVIOUS run's result on disk as the apparent current one.  That
+    was not hypothetical: forcing P-0 to fail at 9.10% against its 3% gate aborted the run at the
+    stake-reproduction step and left weights/data/exp53_two_resource_disk_tier.json byte-identical
+    to the last good run - still reporting P0.holds=true, gates.N3.PASS=true, verdict "FAIL",
+    publishable=true.  The log said the truth; the machine-readable artifact, which is what
+    anything downstream reads, said the opposite.
+
+    The record deliberately carries NO `verdict` key, so a consumer keyed on the verdict path
+    reports a crashed run rather than reading a stale one, and `publishable` is false.  Whatever
+    the run managed to compute before it refused is preserved under `partial` - in particular the
+    fresh gate evaluation, so a lost gate is recorded rather than discarded with the run."""
+    rec = dict(experiment=53, mode="stake" if args.stake else "score",
+               when=time.strftime("%Y-%m-%dT%H:%M:%S"), aborted=True, publishable=False,
+               reason=reason, partial=partial,
+               note="This file REPLACES the previous run's result on purpose.  An aborted run "
+                    "produces no verdict; the absence of the `verdict` key is the signal.")
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(rec, f, indent=1)
+        log(f"  wrote an ABORT RECORD over {path} (no verdict key; the previous run's result must "
+            "not survive as the apparent current one)")
+    except OSError as exc:                                                     # noqa: BLE001
+        log(f"  COULD NOT replace {path} ({exc}).  TREAT ANY RESULT IN THAT FILE AS STALE.")
+
+
 # ---------------------------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
@@ -571,6 +722,15 @@ def main():
 
     os.makedirs(DATA, exist_ok=True)
     logpath = os.path.join(DATA, "exp53_two_resource_disk_tier.log")
+    # Every exit path writes THIS file.  Until the 2026-07-30 second review only the successful
+    # path did, so an abort left the previous run's JSON in place, timestamped and byte-identical,
+    # as the apparent current result - verified by construction: a run in which P-0 failed at
+    # 9.10% and the shipping form N3 lost its gate left behind a file asserting P0.holds=true and
+    # gates.N3.PASS=true.  The log was honest and the machine-readable artifact was not, and the
+    # artifact is what anything downstream reads.
+    out_json = os.path.join(DATA, "exp53_stake.json" if a.stake
+                            else "exp53_two_resource_disk_tier.json")
+    partial = {}
     lines = []
 
     def log(s=""):
@@ -594,6 +754,7 @@ def main():
         log("\n[1] preconditions")
         st = e51.selftest_mirror(a.gguf_dir, quant_sizes, quant_enum, log)
         tr = verify_transcription(log)
+        kmeta = verify_derived_rows(log)
         src = verify_source(sess, log, a.offline)
 
         log("\n[2] the four benchmarked models, from their own GGUF headers")
@@ -610,6 +771,8 @@ def main():
             log(f"  {m:16s} k={k}  ours {ours:8.1f} MiB   theirs {pub:5d} MiB   {err:+7.2%}")
         p0_max = max(abs(x["rel_error"]) for x in p0)
         p0_ok = p0_max < P0_GATE
+        partial["P0"] = dict(rows=p0, worst_abs_rel_error=round(p0_max, 5), gate=P0_GATE,
+                             holds=p0_ok)
         log(f"  P-0: worst |error| {p0_max:.2%}  gate {P0_GATE:.0%}  -> "
             f"{'HOLDS' if p0_ok else 'FAILS'}")
         # qwen35moe has no no-cache row; report the back-derived number as a disclosure only.
@@ -677,22 +840,37 @@ def main():
         armb = {}
         for mode in ("M2", "N3", "M2b"):
             r0 = prim[mode]
-            rowsb, npass = [], 0
-            for (m, kh, kl, fh, fl, ov, meas) in KPAIRS:
+            rowsb, npass, nfuzzy = [], 0, 0
+            for i, (m, kh, kl, fh, fl, ov, meas) in enumerate(KPAIRS):
                 Ah, Al = active_gb(specs[m], kh, "shipped"), active_gb(specs[m], kl, "shipped")
                 th = t_pred(Ah, fh * MiB / 1e9, ov, r0["S_c"], r0["S_i"], mode, r0["phi"])
                 tl = t_pred(Al, fl * MiB / 1e9, ov, r0["S_c"], r0["S_i"], mode, r0["phi"])
                 pred, lo, hi = th / tl, Ah / Al, fh / fl
                 brack = min(lo, hi) < pred < max(lo, hi)
-                forced = bracket_forced(mode, ov)
+                forced = bracket_forced(mode, ov, r0["phi"])
                 close = abs(pred / meas - 1.0) < KPAIR_TOL
+                # Their tok/s are printed to one decimal, so `meas` is an interval, not a point.
+                # The set of measured ratios that clear KPAIR_TOL is itself an interval, so
+                # checking both ends of the rounding band (plus the nominal value) decides exactly
+                # whether this pair's K-4 verdict is the data's or their printing precision's.
+                # No gate moves: `close` above is still evaluated at the published value.
+                h = TOKS_PRINT_HALF_STEP
+                mlo = (kmeta[i]["tps_lo"] - h) / (kmeta[i]["tps_hi"] + h)
+                mhi = (kmeta[i]["tps_lo"] + h) / (kmeta[i]["tps_hi"] - h)
+                ends = [abs(pred / x - 1.0) < KPAIR_TOL for x in (mlo, mhi)]
+                robust = (ends[0] == ends[1] == close)
+                nfuzzy += int(not robust)
                 npass += int(brack and close)
                 rowsb.append(dict(model=m, k_hi=kh, k_lo=kl, measured=round(meas, 4),
                                   predicted=round(pred, 4), compute_only_bound=round(lo, 4),
                                   io_only_bound=round(hi, 4), bracketed=brack,
                                   bracket_forced=forced, within_tol=close,
                                   rel_error=round(pred / meas - 1, 5),
-                                  abs_rel_error=abs(pred / meas - 1)))
+                                  abs_rel_error=abs(pred / meas - 1),
+                                  cache_mib=kmeta[i]["cache_mib"],
+                                  tok_s=[kmeta[i]["tps_hi"], kmeta[i]["tps_lo"]],
+                                  measured_rounding_band=[round(mlo, 4), round(mhi, 4)],
+                                  within_tol_robust_to_rounding=robust))
                 if mode == "M2" or mode == "N3":
                     log(f"    {mode:4s} {m:16s} k{kh}->k{kl}  measured {meas:.3f}  "
                         f"predicted {pred:.3f}  [compute-only {lo:.3f}, io-only {hi:.3f}]  "
@@ -702,7 +880,9 @@ def main():
             nforced = sum(1 for r in rowsb if r["bracket_forced"])
             win = tol_window(rowsb, KPAIR_GATE_COUNT)
             armb[mode] = dict(rows=rowsb, pass_count=npass, bracket_forced_count=nforced,
-                              bracket_informative_count=len(rowsb) - nforced, tol_window=win)
+                              bracket_informative_count=len(rowsb) - nforced, tol_window=win,
+                              tol_decided_by_their_rounding_count=nfuzzy,
+                              toks_print_half_step=TOKS_PRINT_HALF_STEP)
             log(f"    {mode:4s} -> {npass}/{len(KPAIRS)} pairs bracketed AND inside "
                 f"{KPAIR_TOL:.0%} (gate: {KPAIR_GATE_COUNT})")
             if nforced:
@@ -711,6 +891,9 @@ def main():
                     f"K-4 carries evidence on {len(rowsb) - nforced} pair(s); on the rest it "
                     "reduces to the 10% tolerance alone.")
             log(f"    {mode:4s}    threshold sensitivity: {win['note']}")
+            log(f"    {mode:4s}    their tok/s are printed to one decimal, so each measured ratio "
+                f"is a band, not a point.  The 10% verdict is decided by that printing precision "
+                f"rather than by the data on {nfuzzy}/{len(rowsb)} pair(s).")
 
         # One beta for every model, PHONE ONLY.  The prereg prose said "and both devices"; the
         # code has always filtered to dev == "P" and must keep doing so - the desktop row
@@ -733,8 +916,8 @@ def main():
                               frac=(cache * MiB / slot_b) / (s["n_layer"] * s["_n_exp"]),
                               slot_mib=slot_b / MiB, label=lab))
         best = None
-        for i in range(1, 2001):
-            beta = i / 2000.0
+        for i in range(1, ARMC_BETA_STEPS + 1):
+            beta = i / float(ARMC_BETA_STEPS)
             e = med([abs(c["frac"] ** beta - c["hit"]) for c in crows])
             if best is None or e < best[0]:
                 best = (e, beta)
@@ -756,6 +939,12 @@ def main():
         armc_ok = (armc_med < null_med) and (within * 2 > len(crows))
         log(f"    Arm C {'HOLDS' if armc_ok else 'FAILS'} "
             "(must beat the structural null AND land inside 0.10 on a majority of rows)")
+        armc_null = armc_null_disclosure(beta, ARMC_BETA_STEPS)
+        log("    DISCLOSURE: the 'structural null' h = M/N is EXACTLY the beta=1 member of the "
+            f"fitted family, and beta=1.0 is in the 1/{ARMC_BETA_STEPS} grid this fit minimises "
+            "over, so the first conjunct ('beats the null') is guaranteed up to an exact tie and "
+            f"CARRIES NO EVIDENCE.  Arm C's informative half is the second conjunct: within "
+            f"{ARMC_ABS_TOL:.2f} absolute on a majority, currently {within}/{len(crows)}.")
 
         log("\n[8] Desktop  DISCLOSURE ONLY - one usable row cannot support two device constants")
         d = [r for r in ROWS if r[0] == "D"][0]
@@ -857,12 +1046,19 @@ def main():
         g_n3 = gates("N3", "declared alternative", preselected_as_best=True)
         fresh["verdict_m2_pass"] = float(g_m2["PASS"])
         fresh["verdict_n3_pass"] = float(g_n3["PASS"])
+        partial["gates"] = dict(M2=g_m2, N3=g_n3)
+        partial["fresh"] = {k: round(v, 6) for k, v in fresh.items()}
 
         payload = dict(
             experiment=53, kind="external-retrodiction + model selection",
             when=time.strftime("%Y-%m-%dT%H:%M:%S"),
             source=dict(repo=SOURCE_REPO, readme=SOURCE_README, read=SOURCE_READ_DATE,
-                        transcription=tr, live_check=src),
+                        transcription=tr, live_check=src, derived_rows=kmeta,
+                        derived_rows_checked_against_ROWS=True),
+            # In score mode the stake-reproduction gate is upstream of every kill-rule operand, so
+            # section [10] replays the staked verdict instead of testing it.  Stated as a field so
+            # it is as machine-readable as the verdict itself.
+            score_mode_kill_rule_is_replay=(not a.stake),
             constants=dict(act_mult=ACT_MULT, attn_bit_floor=ATTN_BIT_FLOOR, eta_r_moe=ETA_R_MOE,
                            p0_gate=P0_GATE, kpair_tol=KPAIR_TOL,
                            kpair_gate_count=KPAIR_GATE_COUNT, armc_abs_tol=ARMC_ABS_TOL,
@@ -887,7 +1083,8 @@ def main():
                       for m, r in results[c].items()} for c in results},
             armB=armb, armC=dict(beta=round(beta, 5), rows=crows, within=within,
                                  n=len(crows), null_median=round(null_med, 5),
-                                 model_median=round(armc_med, 5), holds=armc_ok),
+                                 model_median=round(armc_med, 5), holds=armc_ok,
+                                 null_disclosure=armc_null),
             desktop=desktop, fresh=fresh, gates=dict(M2=g_m2, N3=g_n3),
         )
 
@@ -897,10 +1094,14 @@ def main():
             block = ["```stake"] + [f"{k:24s} = {fresh[k]:.4f}" for k in STAKE_KEYS] + ["```"]
             log("\n".join(block))
             payload["mode"] = "stake"
-            out = os.path.join(DATA, "exp53_stake.json")
-            with open(out, "w", encoding="utf-8") as f:
+            payload["publishable"] = bool(src.get("verified"))
+            if not payload["publishable"]:
+                log("\n  WARNING: --offline.  This stake block was never checked against the live "
+                    "source; it is marked publishable=false and must not be pasted into the "
+                    "pre-registration.")
+            with open(out_json, "w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=1)
-            log(f"\n  wrote {out}")
+            log(f"\n  wrote {out_json}")
             log(f"  elapsed {time.time() - t0:.1f}s")
             return 0
 
@@ -919,10 +1120,36 @@ def main():
                          tol=round(stake_tol(fresh[k]), 6)) for k in STAKE_KEYS
                  if abs(stake[k] - fresh[k]) > stake_tol(fresh[k])}
         if drift:
-            raise Abort("the fresh computation no longer reproduces the staked numbers "
+            # ADVERSARIAL REVIEW 2026-07-30 (second pass).  This gate sits UPSTREAM of the kill
+            # rule and every operand of P-0 and K-1..K-4 is a staked value, so in score mode the
+            # kill rule can only replay the staked answer: anything that would flip a gate lands
+            # here instead.  That is prereg #86's shape and the refusal is still correct - but a
+            # drift in a VERDICT-valued key is a scientific event, and reporting it in the same
+            # words as a transcription slip buries it.  The threshold is NOT changed; the
+            # diagnosis is, and the fresh gate evaluation goes into the abort record so a lost
+            # gate is machine-readable instead of vanishing with the run.
+            vdrift = {k: v for k, v in drift.items() if k.startswith("verdict_")}
+            partial["stake_drift"] = drift
+            flipped = []
+            for key, gmode in (("verdict_m2_pass", "M2"), ("verdict_n3_pass", "N3")):
+                if key in vdrift:
+                    g = partial["gates"][gmode]
+                    flipped.append(f"{gmode} " + ", ".join(
+                        f"{c}={g[c]}" for c in ("P0_byte_model", "K1_absolute",
+                                                "K2_beats_one_resource", "K3_best_at_its_cost",
+                                                "K4_kpair")))
+            head = ("A STAKED VERDICT CHANGED.  This is a scientific event, not a transcription "
+                    f"slip: {'; '.join(flipped)}.  The kill-rule block was NOT reached and "
+                    "nothing here may be published or wired in.  " if vdrift else "")
+            raise Abort(head + "the fresh computation no longer reproduces the staked numbers "
                         f"{drift}.  Either the code or the source moved after staking; the "
                         "comparison is void until the prereg is re-staked and re-dated.")
         log(f"  all {len(STAKE_KEYS)} staked values reproduced to 0.5% relative")
+        log("  DISCLOSURE: this gate is upstream of the kill rule and every operand of P-0 and "
+            "K-1..K-4 is a staked value, so in SCORE mode section [10] REPLAYS the staked verdict "
+            "rather than testing it - any input that would flip a gate aborts here at exit 2 "
+            "instead of printing a different answer.  The gates fired for real at stake time; "
+            "what this run establishes is that the staked answer still reproduces.")
 
         log("\n[10] THE KILL RULE")
         best1 = min(prim["N1"]["lomo_median"], prim["N2"]["lomo_median"])
@@ -999,10 +1226,9 @@ def main():
                     "section 5 demands, and inherits every caveat in sections 7 and 8.")
         log("-" * 100)
 
-        out = os.path.join(DATA, "exp53_two_resource_disk_tier.json")
-        with open(out, "w", encoding="utf-8") as f:
+        with open(out_json, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=1)
-        log(f"\n  wrote {out}")
+        log(f"\n  wrote {out_json}")
         log(f"  elapsed {time.time() - t0:.1f}s")
         return 0 if (g_m2["PASS"] and publishable) else 1
 
@@ -1011,6 +1237,17 @@ def main():
         log("!" * 100)
         log(f"ABORTED - precondition failed, NO number produced:\n  {e}")
         log("!" * 100)
+        write_abort_record(out_json, a, str(e), partial, log)
+        return 2
+    except Exception as e:                                                     # noqa: BLE001
+        import traceback
+        log("")
+        log("!" * 100)
+        log(f"CRASHED - {type(e).__name__}: {e}")
+        log(traceback.format_exc())
+        log("!" * 100)
+        # A crash used to propagate, leaving the previous run's JSON untouched and authoritative.
+        write_abort_record(out_json, a, f"{type(e).__name__}: {e}", partial, log)
         return 2
     finally:
         with open(logpath, "w", encoding="utf-8") as f:

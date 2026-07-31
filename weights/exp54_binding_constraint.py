@@ -57,6 +57,44 @@ section 8:
 The review also established something no fix can repair, and it is recorded rather than patched:
 K-1's 85% bar was never live.  A bit-width sweep (2.0-8.0) is now run and printed for exactly
 that reason -- see the P-1 headroom block.
+
+SECOND ADVERSARIAL PASS (2026-07-30, BEFORE this run was published).  A pre-run audit whose only
+brief was "construct the input that makes this experiment fail" found five more, all fixed here
+and disclosed in the prereg's section 8.5:
+
+  5. K-2's SECOND STAKED CLAUSE WAS NEVER SCORED.  Prereg section 5 K-2 reads "Also fires if any
+     row's terms fail to reconstruct its own tok/s to 1e-9", and section 1 R1 calls that
+     "smoke-tested, and K-2".  This script never checked it, and the smoke test that does
+     (t_p88_terms_reconstruct_every_row) runs a HAND-PICKED six-config grid which produces six of
+     the seven row families - it never emits the DENSE SPLIT row, the one with the most complex
+     decomposition (three resources, KV split across two tiers) and a WINNER on 8 of the 340
+     cells.  Verified by fault injection: dropping the CPU-tier KV term from that row's `ram_bw`
+     attribution leaves tok/s bit-identical (K-3 PASS), leaves the phantom and monotonicity arms
+     clean (K-2 PASS), and this script printed VERDICT: PASS / exit 0 while the row's terms
+     reconstructed 4.94% off its own speed and the PRINTED binding share and ceiling moved
+     (64.5% -> 67.7%, 2.82x -> 3.09x).  Reconstruction is now checked on EVERY row of EVERY cell,
+     the checks are counted, and an unexecuted pass cannot masquerade as a clean one.
+  6. AN ABORT LEFT THE PREVIOUS RUN'S RESULT ON DISK AS THE APPARENT CURRENT ONE.  `die()` exits
+     before anything is written, so after a refusal `exp54_binding_constraint.json` still said
+     whatever the last completed run said - PASS included - with nothing to distinguish "scored
+     and passed" from "refused to run".  The docstring's "idempotent: re-running overwrites the
+     same three files" was false on exactly the path where it mattered.  `die()` now overwrites
+     both outputs with a REFUSED record first.
+  7. K-3 SILENTLY SKIPPED ANY CELL WHOSE ROW LIST WENT EMPTY.  `if res is None: continue` returned
+     before the baseline was consulted, so a change that deleted every row for a cell - the
+     largest possible regression - was recorded as `klass: null` and never compared.  The baseline
+     is now consulted first and a vanished row list is a regression.
+  8. A FIRED KILL RULE COULD BE REPORTED AS "INCOMPLETE" RATHER THAN "FAIL".  With a vacuous
+     baseline the verdict branch tested `k3_vacuous` FIRST, so a run in which K-1 and K-5 both
+     fired exited 3 ("a kill rule could not be evaluated") instead of 1.  Verified by injection.
+     FAIL now takes precedence: INCOMPLETE is reserved for a run where everything scored held.
+  9. K-3's GRID NEVER EXERCISED THE PINNED-FILE-SIZE OR CODEBOOK PATHS.  `cell_kwargs` fixes
+     `true_size_gb=None` and `codebook_share=0.0`, but every one of the 14 locked ladder rows is a
+     `--gguf` run, i.e. a real file size pinned (the exact input whose absence this file's own
+     comment says "wrongly evicted the all-in-VRAM row") and, for the IQ files, a non-zero
+     codebook share.  A regression that only bites when a size is pinned was invisible to K-3.  A
+     second deterministic regression arm now replays the identical 340 preset pairs with a pinned
+     size and a codebook share, needing no GGUF and no machine state.
 """
 
 from __future__ import annotations
@@ -82,6 +120,22 @@ CTX_GRID = (0, 16384)
 BITS = 2.5                       # the tool's own default when --bits is omitted
 CLASSES = ("bandwidth-bound", "IO-bound", "capacity-bound", "compute-bound")
 
+# K-2's SECOND clause, staked in prereg section 5 ("Also fires if any row's terms fail to
+# reconstruct its own tok/s to 1e-9") and in section 1 R1. Not a new threshold: it is the prereg's
+# own number, in the prereg's own words, and it was simply never scored here until the second
+# adversarial pass. Applied to EVERY row of EVERY cell, not to the winner only - a mis-attributed
+# term on a losing row becomes a wrong printed share the moment that row wins on another machine.
+RECON_REL_TOL = 1e-9
+
+# K-3's second arm (second adversarial pass, item 9). The staked 340-cell grid pins
+# true_size_gb=None / codebook_share=0.0, so the `--gguf` code paths - which is what every one of
+# the 14 locked ladder rows uses - were never compared against the baseline at all. These two
+# values replay the same 340 preset pairs through those paths. 0.8 puts the pinned size BELOW the
+# bit-derived estimate, which is the prereg-#16 direction (a dense model over-estimated by 4.5/bits
+# and its all-in-VRAM row wrongly evicted); 0.5 is the same codebook share P-3b already uses.
+LOCKED_PATH_SIZE_SCALE = 0.8
+LOCKED_PATH_CODEBOOK_SHARE = 0.5
+
 # Reported, NOT scored. K-1's staked bar is "no class covers >85% of the grid". The adversarial
 # review asked the only question that matters about a threshold: was it ever close to firing?
 # This sweep answers it in the output rather than leaving a reader to assume. No threshold is
@@ -101,16 +155,40 @@ FORBIDDEN_MACHINE_KEYS = ("_gpu_ratio", "_cpu_ratio", "_cal_active", "_anchor_gp
                           "_anchor_cpu_act")
 
 _log_lines = []
+_quiet = False           # --json: the prereg section 2 documents it; it used to do nothing at all
 
 
 def say(msg=""):
-    print(msg)
-    _log_lines.append(msg)
+    if not _quiet:
+        print(msg)
+    _log_lines.append(msg)          # the .log transcript is written either way
 
 
 def die(msg):
-    """Refuse to run rather than produce a wrong number. A wrong number is worse than none."""
+    """Refuse to run rather than produce a wrong number. A wrong number is worse than none.
+
+    ADVERSARIAL FIX (second pass, item 6). `die()` used to exit before anything was written, and
+    the JSON and the log are only written at the END of main(). So after a refusal the two output
+    files still held the PREVIOUS run's result - `"verdict": "PASS"` included - with nothing on
+    disk or in the file to distinguish "this tree was scored and passed" from "this tree was never
+    scored at all". Every consumer of this experiment reads that JSON. A refusal must therefore
+    INVALIDATE the outputs, not leave them: the stale-result-after-abort failure is the same shape
+    as D-1 (a gate reporting a fact about nothing), one file further downstream.
+    """
     print(f"\nPRECONDITION NOT MET -- refusing to run.\n  {msg}\n", file=sys.stderr)
+    try:
+        os.makedirs(DATA, exist_ok=True)
+        with open(OUT_JSON, "w", encoding="utf-8") as fh:
+            json.dump(dict(prereg=os.path.relpath(PREREG, REPO), experiment=54, prereg_id=88,
+                           verdict="REFUSED", refusal=msg,
+                           kill_rules=dict(K1=None, K2=None, K3=None, K4=None, K5=None),
+                           note="Precondition not met; NOTHING was scored. This file replaced a "
+                                "previous result so that it cannot be read as the current one."),
+                      fh, indent=1)
+        with open(OUT_LOG, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("REFUSED -- precondition not met, nothing was scored.\n  " + msg + "\n")
+    except Exception as e:                                     # pragma: no cover - disk problem
+        print(f"  (could not invalidate the previous result on disk: {e})", file=sys.stderr)
     sys.exit(2)
 
 
@@ -263,6 +341,45 @@ def make_ev(planmod, kw):
     return ev
 
 
+def check_reconstruction(planmod, cell, rows):
+    """K-2, second staked clause: every row's terms must reproduce ITS OWN tok/s to 1e-9.
+
+    ADVERSARIAL FIX (second pass, item 5). This clause is staked twice in the prereg - section 1
+    R1 ("a row whose terms do not reconstruct its own tok/s to 1e-9 is a bug (smoke-tested, and
+    K-2)") and section 5 K-2 ("Also fires if any row's terms fail to reconstruct its own tok/s to
+    1e-9") - and it was scored NOWHERE. The smoke suite's version runs a hand-picked six-config
+    grid that emits six of the seven row families and never the dense-split row, which is the row
+    with the most complex decomposition and a WINNER on 8 of these 340 cells.
+
+    The concrete input that exploited the gap: drop `(1-g)*kv_gb/(ETA_KV*rb)` from that row's
+    `ram_bw` attribution. tok/s does not move (K-3 PASS), no phantom or monotonicity check bites
+    (K-2 PASS), and the run printed VERDICT: PASS at exit 0 - while the row reconstructed 4.94%
+    off its own speed and the PRINTED share and ceiling moved from 64.5%/2.82x to 67.7%/3.09x.
+
+    Scored on EVERY row, not the winner only: a mis-attributed term on a losing row here is a
+    wrong printed number on the machine where that row wins. Returns a list of failures.
+    """
+    bad = []
+    for row in rows:
+        tt = planmod.resource_times(row)
+        if not tt:
+            bad.append(dict(cell=cell, row=row[0], why="row carries no decomposition at all"))
+            continue
+        eff = getattr(row, "eff", None)
+        if eff is None:
+            bad.append(dict(cell=cell, row=row[0], why="row carries terms but no `eff` numerator"))
+            continue
+        total = sum(tt.values())
+        if total <= 0 or not row[1]:
+            bad.append(dict(cell=cell, row=row[0], why=f"degenerate: total={total}, tok_s={row[1]}"))
+            continue
+        recon = eff / total
+        rel = abs(recon / row[1] - 1)
+        if rel > RECON_REL_TOL:
+            bad.append(dict(cell=cell, row=row[0], tok_s=row[1], reconstructed=recon, rel=rel))
+    return bad
+
+
 def classify_cell(planmod, kw):
     size, act, rows = planmod.evaluate(**kw)
     if not rows:
@@ -399,6 +516,8 @@ def main():
                          "UNCHECKED and the verdict is INCOMPLETE (exit 3), never PASS.")
     ap.add_argument("--json", action="store_true", help="write the JSON only, no transcript")
     args = ap.parse_args()
+    if args.json:
+        globals()["_quiet"] = True
 
     stake = read_stake()
     planmod = load_plan()
@@ -438,35 +557,76 @@ def main():
 
     cells = []
     regressions = []
+    regressions_locked = []      # K-3's second arm: the pinned-size / codebook paths (item 9)
     upgrade_changes = []
     phantom_failures = []
     monotonic_failures = []
+    recon_failures = []          # K-2's second staked clause (item 5)
     # A soundness check that never ran reports "0 failures" and looks identical to a pass. Count
     # the checks so a vacuous P-2 cannot be mistaken for a real one.
-    checks = dict(phantom=0, monotonic=0)
+    checks = dict(phantom=0, monotonic=0, recon=0, locked_path=0)
     vram_winners = []            # K-4's real population: every all-in-VRAM WINNER on the grid
+
+    def compare_winner(cell, kwargs, bucket):
+        """One K-3 comparison: the new module's winner against the baseline's, on the same args.
+
+        Returns the new module's rows so callers can reuse them. A row list that went EMPTY on
+        either side is a regression, not a cell to skip - see item 7.
+        """
+        n_rows = planmod.evaluate(**kwargs)[2]
+        b_rows = basemod.evaluate(**kwargs)[2]
+        if not n_rows or not b_rows:
+            if n_rows or b_rows:
+                bucket.append(dict(cell=cell, why=f"row list vanished on one side: "
+                                                  f"baseline {len(b_rows)} rows, now {len(n_rows)}"))
+            return n_rows
+        n, b = n_rows[0], b_rows[0]
+        rel = abs(b[1] - n[1]) / b[1] if b[1] else 0.0
+        if b[0] != n[0] or b[3] != n[3] or rel > stake["regression_rel_tol"]:
+            bucket.append(dict(cell=cell, head=[b[0], b[1], b[3]], now=[n[0], n[1], n[3]], rel=rel))
+        return n_rows
 
     for ctx in CTX_GRID:
         for mk in models:
             for hk in machines:
+                cell = f"{mk}/{hk}/ctx{ctx}"
                 kw = cell_kwargs(planmod, mk, hk, ctx)
                 res = classify_cell(planmod, kw)
+
+                # ---- K-3: the numbers must not have moved -------------------------------------
+                # Run BEFORE the `res is None` bail-out. It used to run after, so a change that
+                # deleted every row for a cell - the largest regression there is - was filed as
+                # `klass: null` and never compared against the baseline at all (item 7).
+                n_rows = compare_winner(cell, kw, regressions)
+
+                # ---- K-2, second staked clause: terms must reconstruct their own tok/s ---------
+                these = check_reconstruction(planmod, cell, n_rows)
+                checks["recon"] += len(n_rows)
+                recon_failures.extend(these)
+
+                # ---- K-3, second arm: the `--gguf` code paths the staked grid never touched ----
+                # Every one of the 14 locked ladder rows pins a real file size, and the IQ ones
+                # carry a codebook share. `cell_kwargs` pins neither, so a regression that only
+                # bites on those paths was invisible to the staked arm. Deterministic: no GGUF,
+                # no machine state, same 340 preset pairs (item 9).
+                if res is not None:
+                    locked_kw = dict(kw,
+                                     true_size_gb=res["size_gb"] * LOCKED_PATH_SIZE_SCALE,
+                                     codebook_share=LOCKED_PATH_CODEBOOK_SHARE)
+                    l_rows = compare_winner(cell + "/pinned-size+codebook", locked_kw,
+                                            regressions_locked)
+                    # Same reconstruction clause on those rows: the codebook share divides eta_r,
+                    # so every RAM term is a DIFFERENT number here, and an attribution that only
+                    # adds up at codebook_share = 0 would otherwise never be caught.
+                    recon_failures.extend(check_reconstruction(
+                        planmod, cell + "/pinned-size+codebook", l_rows))
+                    checks["recon"] += len(l_rows)
+                    checks["locked_path"] += 1
+
                 if res is None:
                     cells.append(dict(model=mk, machine=hk, ctx=ctx, rows=0, klass=None))
                     continue
                 bc, best = res["bc"], res["best"]
-
-                # ---- K-3: the numbers must not have moved -------------------------------------
-                b_rows = basemod.evaluate(**kw)[2]
-                if not b_rows:
-                    regressions.append(dict(cell=f"{mk}/{hk}/ctx{ctx}", why="baseline has no rows"))
-                else:
-                    b = b_rows[0]
-                    rel = abs(b[1] - best[1]) / b[1] if b[1] else 0.0
-                    if b[0] != best[0] or b[3] != best[3] or rel > stake["regression_rel_tol"]:
-                        regressions.append(dict(cell=f"{mk}/{hk}/ctx{ctx}",
-                                                head=[b[0], b[1], b[3]],
-                                                now=[best[0], best[1], best[3]], rel=rel))
 
                 # ---- P-2a: no phantom sensitivity to a resource the row does not use ----------
                 if "io" not in (planmod.resource_times(best) or {}):
@@ -575,8 +735,12 @@ def main():
     # ------------------------------------------------------------------------------------------
     p1 = distinct >= int(stake["p1_min_distinct_classes"]) and modal_share <= stake["p1_max_modal_share"]
     # A soundness check with nothing to check is not a pass.
-    p2 = (not phantom_failures and not monotonic_failures
-          and checks["phantom"] > 0 and checks["monotonic"] > 0)
+    # A soundness check with nothing to check is not a pass - and neither is a soundness check that
+    # scores two of its three staked clauses. `recon_failures` is K-2's SECOND staked clause
+    # ("Also fires if any row's terms fail to reconstruct its own tok/s to 1e-9"), which this
+    # script did not score at all until the second adversarial pass (item 5).
+    p2 = (not phantom_failures and not monotonic_failures and not recon_failures
+          and checks["phantom"] > 0 and checks["monotonic"] > 0 and checks["recon"] > 0)
     p3a, p3b, p3c = bool(upgrade_changes), bool(oversold_codebook), bool(oversold_spec)
     p3 = p3a or p3b or p3c
     p4 = frac_ceil_lt2 >= stake["p4_min_frac_ceiling_lt_2"]
@@ -598,7 +762,10 @@ def main():
 
     k1 = p1
     k2 = p2
-    k3 = not regressions
+    # K-3 covers BOTH regression arms: the staked 340 preset cells, and the same 340 pairs replayed
+    # through the pinned-file-size / codebook paths every locked ladder row actually uses (item 9).
+    # Adding an arm can only make this gate stricter; no threshold moved.
+    k3 = not regressions and not regressions_locked
     k4, k4_n, k4_failures = check_k4(planmod, vram_winners)
     k5 = p5
 
@@ -614,6 +781,20 @@ def main():
     say(f"P-2  soundness            phantom-sensitivity {len(phantom_failures)} failures / "
         f"{checks['phantom']} checks | monotonicity {len(monotonic_failures)} failures / "
         f"{checks['monotonic']} checks   {'PASS' if p2 else 'MISS'}")
+    say(f"                          terms reconstruct their own tok/s to {RECON_REL_TOL:g}: "
+        f"{len(recon_failures)} failures / {checks['recon']} rows")
+    say(f"                              (K-2's SECOND staked clause, prereg section 5. It was "
+        f"scored NOWHERE before the")
+    say(f"                               second adversarial pass: the smoke suite's version runs a "
+        f"hand-picked six-config")
+    say(f"                               grid that never emits the dense-split row - a WINNER on 8 "
+        f"of these 340 cells.")
+    say(f"                               Fault injection: dropping that row's CPU-tier KV term left "
+        f"tok/s bit-identical,")
+    say(f"                               every other arm clean, and this script printed PASS at "
+        f"exit 0 while the row")
+    say(f"                               reconstructed 4.94% off and the PRINTED share/ceiling moved "
+        f"64.5%->67.7%, 2.82x->3.09x.)")
     say(f"     P-1 HEADROOM (reported, NOT scored - the adversarial question about any threshold "
         f"is whether it")
     say(f"     was ever close to firing). Modal share over the same 340-cell grid at other "
@@ -714,17 +895,29 @@ def main():
             f"<pre-change commit>.")
     else:
         say(f"  K-3 no predicted number moved            "
-            f"{f'PASS ({len(scored)}/{n_cells} identical)' if k3 else f'FIRED -> {len(regressions)} cells moved'}")
+            f"{f'PASS ({len(scored)}/{n_cells} identical)' if k3 else f'FIRED -> {len(regressions)} staked-grid cells moved, {len(regressions_locked)} pinned-size cells moved'}")
+    say(f"      arm 1 (staked, prereg section 2): {n_cells} preset cells, true_size_gb=None, "
+        f"codebook_share=0 -> {len(regressions)} moved")
+    say(f"      arm 2 (added by the second adversarial pass): the same "
+        f"{checks['locked_path']} pairs replayed with a")
+    say(f"      PINNED file size (x{LOCKED_PATH_SIZE_SCALE:g}) and codebook_share="
+        f"{LOCKED_PATH_CODEBOOK_SHARE:g} -> {len(regressions_locked)} moved. Every one of the 14")
+    say(f"      locked ladder rows is a `--gguf` run, i.e. exactly those two inputs; arm 1 pins "
+        f"neither, so a")
+    say(f"      regression that only bites when a real size is pinned was invisible to the staked "
+        f"arm.")
     say(f"  K-4 all-in-VRAM <4.5b carries the caveat  "
         f"{'PASS' if k4 else 'FIRED -> honesty gate'} "
         f"({k4_n} all-in-VRAM WINNERS on the grid checked through binding_report, plus the "
         f">4.5-bit negative control)")
     say(f"  K-5 agrees with the external ground truth {'PASS' if k5 else 'FIRED -> label is not a diagnosis'}")
 
-    for r in regressions[:5]:
+    for r in (regressions + regressions_locked)[:5]:
         say(f"    regression: {r}")
     for f in (phantom_failures + monotonic_failures)[:5]:
         say(f"    soundness failure: {f}")
+    for f in recon_failures[:5]:
+        say(f"    reconstruction failure (K-2 clause 2): {f}")
     for f in k4_failures[:5]:
         say(f"    K-4 failure: {f}")
     for u in upgrade_changes[:5]:
@@ -732,21 +925,30 @@ def main():
 
     # K-3 UNCHECKED is not K-3 PASS. `k3 or k3_vacuous` used to collapse the two, which turned the
     # regression gate into a no-op the moment the change was committed and still printed PASS.
-    scored_ok = all([k1, k2, k4, k5]) and (k3 if not k3_vacuous else True)
-    if k3_vacuous:
-        verdict_word, exit_code = "INCOMPLETE", 3
-    elif scored_ok:
-        verdict_word, exit_code = "PASS", 0
-    else:
+    #
+    # ADVERSARIAL FIX (second pass, item 8): FAIL now takes precedence over INCOMPLETE. This branch
+    # used to test `k3_vacuous` FIRST, so a run with a vacuous baseline in which K-1 and K-5 both
+    # FIRED exited 3 - the code the docstring reserves for "a kill rule could not be evaluated" -
+    # and a wrapper that treats 3 as "re-run with a proper baseline" would never have surfaced the
+    # two rules that died. Verified by injection: constant RESOURCE_CLASS + a vacuous baseline used
+    # to print K-1 FIRED, K-5 FIRED, exit 3. INCOMPLETE is now reserved for a run in which every
+    # rule that COULD be scored held, and the only thing missing is K-3.
+    scored_held = all([k1, k2, k4, k5]) and (k3 if not k3_vacuous else True)
+    if not scored_held:
         verdict_word, exit_code = "FAIL", 1
+    elif k3_vacuous:
+        verdict_word, exit_code = "INCOMPLETE", 3
+    else:
+        verdict_word, exit_code = "PASS", 0
     say("")
     say("=" * 96)
     if verdict_word == "PASS":
         tail = "every staked kill rule holds."
     elif verdict_word == "INCOMPLETE":
-        tail = ("K-3 could not be evaluated (see above). Four kill rules were scored and "
-                f"{'all held' if all([k1, k2, k4, k5]) else 'at least one fired'}, but a run with "
-                "an unchecked kill rule is NOT a pass and must not be cited as one.")
+        tail = ("K-3 could not be evaluated (see above). The other four kill rules were scored and "
+                "all held, but a run with an unchecked kill rule is NOT a pass and must not be "
+                "cited as one. (A run in which any SCORED rule fired now reads FAIL, not "
+                "INCOMPLETE - second adversarial pass, item 8.)")
     else:
         tail = ("at least one kill rule fired; see above. Per protocol the miss is published at "
                 "equal prominence to a hit and no constant is retuned to recover it.")
@@ -775,8 +977,16 @@ def main():
                          oversold_spec=[c["model"] + "/" + c["machine"] + f"/ctx{c['ctx']}"
                                         for c in oversold_spec],
                          n_oversold_spec_ungated=len(oversold_spec_ungated),
-                         regressions=regressions, phantom_failures=phantom_failures,
-                         monotonic_failures=monotonic_failures, external=ext),
+                         regressions=regressions,
+                         regressions_locked_path=regressions_locked,
+                         locked_path_arm=dict(size_scale=LOCKED_PATH_SIZE_SCALE,
+                                              codebook_share=LOCKED_PATH_CODEBOOK_SHARE,
+                                              cells=checks["locked_path"]),
+                         phantom_failures=phantom_failures,
+                         monotonic_failures=monotonic_failures,
+                         reconstruction_failures=recon_failures,
+                         reconstruction_rel_tol=RECON_REL_TOL,
+                         external=ext),
             predictions=dict(P1=p1, P2=p2, P3=p3, P3a=p3a, P3b=p3b, P3c=p3c, P4=p4, P5=p5),
             # K-3 UNCHECKED is recorded as null, NOT true. A consumer that reads this file must be
             # unable to mistake "not evaluated" for "held".
@@ -784,8 +994,12 @@ def main():
             kill_rule_notes=dict(
                 K1="bar not live on this grid - worst modal share over bits 2.0-8.0 was "
                    f"{worst_modal:.3f} against a staked 0.85; PASS is weak evidence",
+                K2="scores all three staked clauses: phantom sensitivity, share monotonicity, and "
+                   f"term reconstruction to {RECON_REL_TOL:g} on {checks['recon']} rows (the third "
+                   "was unscored until the second adversarial pass)",
                 K3=("UNCHECKED - baseline ref already contained the change" if k3_vacuous
-                    else "scored against the pre-change module"),
+                    else f"scored against the pre-change module on {n_cells} staked cells plus "
+                         f"{checks['locked_path']} pinned-size/codebook replays"),
                 K4=f"scored on {k4_n} all-in-VRAM winners from the grid, not on a synthetic row",
                 K5="reproduction check: section 3's arithmetic was done by hand before staking, "
                    "and the +/-15% band was chosen knowing the answer was -9.2%"),

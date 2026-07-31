@@ -1,7 +1,7 @@
 ====================================================================================================
 EXPERIMENT #53 - two-resource model for the streaming/disk tier
 held-out set: https://github.com/Helldez/BigMoeOnEdge README tables, read 2026-07-30
-mode: SCORE   2026-07-30 21:31:48
+mode: SCORE   2026-07-30 23:08:26
 ====================================================================================================
 
 [1] preconditions
@@ -10,6 +10,7 @@ mode: SCORE   2026-07-30 21:31:48
   self-test DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf              t=15.7065 a=2.4514 ne=1.1019 moe=True  untied=True  OK
   coverage         ['#76 tied (gather does not apply)', '#76 untied (gather applies)', 'moe'] over 3 local files
   transcription    all 19 rows + 4 desktop literals present verbatim in external_bigmoe_tables.md
+  derived rows     all 4 P-0 anchors and 5 k-pairs resolve to unique verified rows in ROWS (P-0 anchors are genuinely no-cache; every pair shares cache and overlap and its speedup is the two rows' own tok/s)
   source verify    all 19 rows still present verbatim upstream
 
 [2] the four benchmarked models, from their own GGUF headers
@@ -92,6 +93,7 @@ mode: SCORE   2026-07-30 21:31:48
     M2   -> 2/5 pairs bracketed AND inside 10% (gate: 4)
     M2      DISCLOSURE: on 2/5 of those pairs this form is additive, so `bracketed` is the mediant identity and CANNOT fail.  K-4 carries evidence on 3 pair(s); on the rest it reduces to the 10% tolerance alone.
     M2      threshold sensitivity: only 2 of 5 pairs are bracketed at all; a gate of 4 is UNREACHABLE at every tolerance
+    M2      their tok/s are printed to one decimal, so each measured ratio is a band, not a point.  The 10% verdict is decided by that printing precision rather than by the data on 0/5 pair(s).
     N3   qwen3-30b-a3b    k8->k6  measured 1.250  predicted 1.261  [compute-only 1.175, io-only 1.364]  bracketed True  (FORCED - see below) within-10% True 
     N3   gemma4-26b-a4b   k8->k6  measured 1.220  predicted 1.194  [compute-only 1.103, io-only 1.469]  bracketed True  (FORCED - see below) within-10% True 
     N3   qwen36-35b-a3b   k8->k6  measured 1.256  predicted 1.252  [compute-only 1.094, io-only 1.504]  bracketed True  (FORCED - see below) within-10% True 
@@ -100,9 +102,11 @@ mode: SCORE   2026-07-30 21:31:48
     N3   -> 4/5 pairs bracketed AND inside 10% (gate: 4)
     N3      DISCLOSURE: on 5/5 of those pairs this form is additive, so `bracketed` is the mediant identity and CANNOT fail.  K-4 carries evidence on 0 pair(s); on the rest it reduces to the 10% tolerance alone.
     N3      threshold sensitivity: pass_count stays 4 for any tolerance in (6.67%, 18.31%]
+    N3      their tok/s are printed to one decimal, so each measured ratio is a band, not a point.  The 10% verdict is decided by that printing precision rather than by the data on 0/5 pair(s).
     M2b  -> 4/5 pairs bracketed AND inside 10% (gate: 4)
     M2b     DISCLOSURE: on 2/5 of those pairs this form is additive, so `bracketed` is the mediant identity and CANNOT fail.  K-4 carries evidence on 3 pair(s); on the rest it reduces to the 10% tolerance alone.
     M2b     threshold sensitivity: pass_count stays 4 for any tolerance in (4.87%, 19.69%]
+    M2b     their tok/s are printed to one decimal, so each measured ratio is a band, not a point.  The 10% verdict is decided by that printing precision rather than by the data on 0/5 pair(s).
 
 [7] Arm C  cache hit as a MODELLED quantity: h = (M/N)^beta, one beta for every model, PHONE ONLY (pooling devices would violate C-14)
     gpt-oss-120b     k=2 cache  2000 MiB  expert slot  12.64 MiB  M/N 0.0343  modelled h 0.516  measured 0.32  |err| 0.196
@@ -119,6 +123,7 @@ mode: SCORE   2026-07-30 21:31:48
     gemma4-26b-a4b   k=6 cache  4000 MiB  expert slot   3.76 MiB  M/N 0.2772  modelled h 0.777  measured 0.83  |err| 0.053
     beta = 0.1965   median |err| 0.0478 vs structural null (h=M/N) 0.4962   within 0.10: 9/12
     Arm C HOLDS (must beat the structural null AND land inside 0.10 on a majority of rows)
+    DISCLOSURE: the 'structural null' h = M/N is EXACTLY the beta=1 member of the fitted family, and beta=1.0 is in the 1/2000 grid this fit minimises over, so the first conjunct ('beats the null') is guaranteed up to an exact tie and CARRIES NO EVIDENCE.  Arm C's informative half is the second conjunct: within 0.10 absolute on a majority, currently 9/12.
 
 [8] Desktop  DISCLOSURE ONLY - one usable row cannot support two device constants
     #51's staked compute term        112.1 ms/token (8.92 tok/s ceiling; their own prose says ~110 ms - '~0.11 s/token', verified in the transcription)
@@ -130,6 +135,7 @@ mode: SCORE   2026-07-30 21:31:48
 
 [9] re-read the staked pre-registration and check it still reproduces
   all 23 staked values reproduced to 0.5% relative
+  DISCLOSURE: this gate is upstream of the kill rule and every operand of P-0 and K-1..K-4 is a staked value, so in SCORE mode section [10] REPLAYS the staked verdict rather than testing it - any input that would flip a gate aborts here at exit 2 instead of printing a different answer.  The gates fired for real at stake time; what this run establishes is that the staked answer still reproduces.
 
 [10] THE KILL RULE
   M2 (STAKED)
@@ -161,4 +167,4 @@ mode: SCORE   2026-07-30 21:31:48
 ----------------------------------------------------------------------------------------------------
 
   wrote C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp53_two_resource_disk_tier.json
-  elapsed 32.0s
+  elapsed 32.6s

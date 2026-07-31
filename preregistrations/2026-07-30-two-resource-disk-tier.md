@@ -162,6 +162,13 @@ python weights/exp53_two_resource_disk_tier.py --stake     # freeze the numbers 
 python weights/exp53_two_resource_disk_tier.py             # score them against the kill rule
 ```
 
+0. **Derived tables are derived, not re-typed.** *[Added 2026-07-30 by the second adversarial
+   review.]* P-0's anchor list and Arm B's five k-pairs repeat numbers that already live in the
+   18-row table — and only that table is checked against the transcription and the live README.
+   The script now resolves every anchor and every pair back to a unique verified row and asserts
+   the premises this document states about them: a P-0 anchor must be a genuine no-cache row, and
+   a "clean" k-pair must be two rows of the same model at the same cache and the same overlap
+   whose published tok/s are the stated speedup. Any mismatch aborts.
 1. **Preconditions.** `requests`, `gguf`, `quantprobe` and `weights/exp51_external_retrodiction.py`
    must import. #53 deliberately does **not** re-implement the GGUF header parser or the
    `quantprobe.spec.from_gguf` mirror: it imports #51's, and runs #51's self-test, which proves
@@ -337,16 +344,41 @@ the pass, not discovered later:
 **No threshold is changed in response to any of this.** Retuning a gate after seeing the numbers
 is the failure this protocol exists to prevent; the correct repair is disclosure plus a
 sensitivity that the reader can check. That sensitivity, computed by the script and reported in
-the log and the JSON: **N3's K-4 verdict is unchanged for any tolerance in (6.64%, 18.32%]** — so
+the log and the JSON: **N3's K-4 pass count stays 4 for any tolerance in (6.67%, 18.31%]** — so
 the staked 10% is not knife-edge on tolerance, but it *is* exactly at the gate on count, 4 of 5,
 one row from failing. **M2's K-4 is unreachable at every tolerance**: only 2 of its 5 pairs are
 bracketed at all, so no choice of tolerance could have saved it. What survives as real evidence
 for N3 is K-1, K-2, and K-4's tolerance half.
 
+*[Corrected 2026-07-30 by the second adversarial review: this sentence read "(6.64%, 18.32%]",
+which is not what the script prints — the window is **(6.67%, 18.31%]**. The window is also a
+statement about the pass **count** staying exactly 4, not about the verdict, which survives any
+tolerance above 6.67%. Neither number is in the ```stake``` block, so nothing checked them; a
+prereg literal that the script contradicts is the same defect §6 already caught once.]*
+
+**Their tok/s are printed to one decimal, so K-4's measured ratios are bands, not points** — added
+in the same review, because K-4 clears its gate at exactly 4 of 5 and is declared the softest gate.
+`2.2 / 1.3` is anything from `2.15 / 1.35` to `2.25 / 1.25`, a −5.9%/+6.4% band before any physics.
+The script now computes each pair's band and reports how many pairs' 10% verdict is decided by
+their printing precision rather than by the data. **It is 0 of 5, for M2, N3 and M2b alike** — the
+one pair N3 misses (gpt-oss, +18.3%) misses across its whole band, and the marginal pair it clears
+(6.67%) clears across its whole band. This is a disclosure that came out in the model's favour and
+is reported for the same reason it would have been reported had it not.
+
 **Arm C gate (independent, does not gate the wiring of Arms A/B).** The modelled cache hit must
 (a) beat the structural null `h = M/N` on median absolute error and (b) land within **0.10
 absolute** on a **majority** of the 12 rows. Failing it means the model can only be used where
 the caller supplies a measured hit rate, and the register must say so.
+
+*[Disclosure added 2026-07-30 by the second adversarial review, threshold unchanged: **conjunct
+(a) is very nearly unfalsifiable.** The "structural null" `h = M/N` is not an outside comparison —
+it is exactly the `beta = 1` member of the fitted family `h = (M/N)^beta`, and `beta = 1.0` is in
+the 1/2000 grid the fit minimises over. The fitted median error is therefore `<=` the null's by
+construction, and (a) can fail only on an exact tie. It is the same defect class as K-3, found in
+the same place for the same reason: a gate scored against a rival the procedure was free to
+become. **Only conjunct (b) carries evidence** — landing within 0.10 on a majority is out-of-family
+and can fail; it currently holds 9 of 12. The script prints this beside the Arm C verdict and
+records `armC.null_disclosure.informative = false`.]*
 
 ---
 
@@ -435,6 +467,40 @@ different route.
     profiler run on a model too large for the card). **Fixed: the arm aborts unless the residual
     is positive and at least 5% of the token.** It currently sits at 46%.
 
+*Defects 12–14 added 2026-07-30 by a second adversarial review. Each was found by constructing the
+input that would exploit it and running it, not by reading the code.*
+
+12. **P-0's anchors and Arm B's k-pairs were re-typed copies of the 18-row table, and only the
+    18-row table was checked.** Constructed input: change one k-pair's flash figure from `165` to
+    `156` — a digit transposition of a number that *is* verified where it lives in the fitted
+    table. Result: the published io-only bound moved 1.364 → 1.442 and N3's prediction 1.261 →
+    1.292, the transcription check passed, the live-README check passed, "all 23 staked values
+    reproduced to 0.5% relative" printed, and the script exited 1 with an ordinary verdict. A
+    published table was silently wrong and nothing objected. **Fixed:** both derived tables now
+    resolve to unique verified rows, and §3 step 0's premises are asserted rather than written.
+13. **An abort left the previous run's JSON on disk as the apparent current result.** Constructed
+    input: make our routed-byte model wrong by 10%, the wrong-GGUF failure P-0 exists to catch.
+    Result: P-0 failed at 10.19% against its 3% gate, `verdict_n3_pass` correctly fell to 0, the
+    run aborted with exit 2 — and `weights/data/exp53_two_resource_disk_tier.json` was left
+    **byte-identical to the last good run**, still asserting `P0.holds = true`,
+    `gates.N3.PASS = true`, verdict `FAIL`, `publishable = true`. The log was honest; the
+    machine-readable artifact, which is what anything downstream reads, said the shipping form had
+    cleared a gate it had just lost. **Fixed:** every exit path writes that file. An abort writes
+    an abort record carrying no `verdict` key, `publishable = false`, and whatever the run computed
+    before refusing — including the fresh gate evaluation, so a lost gate is recorded rather than
+    discarded with the run.
+14. **In scoring mode the kill rule replays the staked verdict; it does not test it.** Every
+    operand of P-0 and K-1..K-4 is a staked value, both verdicts are staked, and the 0.5%-relative
+    reproduction gate is checked *before* §5's thresholds. So no input can make §5 print a
+    different answer: anything that would flip a gate aborts at the reproduction step instead.
+    That is prereg **#86**'s shape — a tight drift gate upstream of a loose kill threshold — and it
+    means `exit 0` is unreachable in scoring mode against this document. The refusal is correct and
+    is **not loosened**; the repair is that it stops being disguised. A drift in a verdict-valued
+    key is now diagnosed as "a staked verdict changed — a scientific event, not a transcription
+    slip", names the conjunct that flipped, and is carried into the abort record. The honest
+    reading of a passing scoring run is therefore *"the staked answer still reproduces"*, not
+    *"the gates fired again"*: they fired once, at stake time, and §4 is where they are on record.
+
 ---
 
 ## 8. What would REFUTE this, and what a PASS does not prove
@@ -461,7 +527,12 @@ header; a file's metadata not matching the staked architecture/E/k/L; the transc
 disagreeing with the scorer or with the live README — **including the desktop disclosure
 literals, which nothing checked before the 2026-07-30 review**; the fresh computation not
 reproducing §4; and the desktop arm being asked to divide by a residual that is negative or
-smaller than 5% of the token. **A wrong number is worse than no number.**
+smaller than 5% of the token; **a P-0 anchor or a k-pair that does not resolve to a unique verified
+row, or a k-pair whose two rows disagree on cache or overlap or whose stated speedup is not the two
+rows' own tok/s** (added in the second review, §7 defect 12). **A wrong number is worse than no
+number** — and, added in the same review, **an abort now replaces the output JSON with an abort
+record carrying no `verdict` key**, because the previous run's number surviving as the apparent
+current one is the same failure wearing a different coat (§7 defect 13).
 
 **Not publishable, as distinct from refuted:** a `--offline` scoring run. It skips the live source
 check, so the verdict is stamped `-UNVERIFIED-SOURCE` and the exit code is non-zero even if every
@@ -517,6 +588,21 @@ that actually leaves this experiment.
 | 9 | `--offline` bought a full publishable verdict for a run that never checked the source | medium | verdict stamped `-UNVERIFIED-SOURCE`, non-zero exit |
 | 10 | P-0's coverage is 3 of 4 models and the untested one is the one that would fail it; that disclosure existed only as a log line while every success went to JSON | medium | first-class JSON field; §7 defect 10 |
 | 11 | §3 claimed Arm C fits one beta across **both devices**; the code fits the phone only (and pooling would violate C-14) | low, prose-only | prose corrected to the code |
+
+**Second adversarial review, 2026-07-30 — same question, asked again of the repaired script.** The
+first review reasoned about the code; this one built the input that would exploit each hole and ran
+it. Three of the five findings below were only visible that way.
+
+| # | finding | how it was demonstrated | severity | disposition |
+|---|---|---|---|---|
+| 12 | P-0's anchors and Arm B's k-pairs **re-typed** numbers from the only table that is verified upstream | flash `165`→`156`: bound 1.364→1.442, prediction 1.261→1.292, **all checks passed, exit 1, ordinary verdict** | high | derived tables now resolve to unique verified rows; §3 step 0's premises asserted; threshold **not** changed |
+| 13 | an **abort left the previous run's JSON** on disk as the apparent current result | byte model wrong by 10% → P-0 fails 10.19% vs 3%, N3 loses its gate, exit 2, **JSON byte-identical**, still `P0.holds=true`, `gates.N3.PASS=true` | high | every exit path writes the file; abort record carries no `verdict` key and preserves the fresh gate evaluation |
+| 14 | the stake-reproduction gate **pre-empts the kill rule** — prereg #86's shape | a verdict-valued drift was reported in the same words as a transcription slip; `exit 0` is unreachable in scoring mode | medium | refusal **kept and not loosened**; verdict drift now diagnosed as a scientific event and names the flipped conjunct; `score_mode_kill_rule_is_replay` published |
+| 15 | Arm C's conjunct (a) is **near-unfalsifiable**: the null is the `beta=1` member of the fitted family and `beta=1.0` is in the grid | algebraic, plus the grid endpoint | medium | disclosed as `armC.null_disclosure.informative=false`; only conjunct (b) counted as evidence; threshold **not** changed |
+| 16 | K-4's measured ratios are **bands**, not points — their tok/s print to one decimal, and K-4 clears at exactly 4 of 5 | each pair's band computed against the fixed 10% | low | disclosed; **0 of 5** pairs' verdicts are decided by their rounding, for M2, N3 and M2b alike |
+
+**Again, no threshold was moved and no gate was loosened.** All 23 staked values in §4 reproduce
+unchanged after every repair above, and the staked verdicts are unchanged: M2 fails, N3 passes.
 
 **No threshold was moved, and no gate was loosened or tightened.** Every staked value in §4 is
 unchanged by this review, which is the test that the repairs are disclosure and refusal rather

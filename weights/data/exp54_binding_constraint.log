@@ -10,6 +10,13 @@ P-1  informativeness      distinct classes = 4 (>= 3), modal share = 52.4% (<= 8
        compute-bound        33 / 340  (9.7%)
        capacity-bound       30 / 340  (8.8%)
 P-2  soundness            phantom-sensitivity 0 failures / 228 checks | monotonicity 0 failures / 280 checks   PASS
+                          terms reconstruct their own tok/s to 1e-09: 0 failures / 1527 rows
+                              (K-2's SECOND staked clause, prereg section 5. It was scored NOWHERE before the
+                               second adversarial pass: the smoke suite's version runs a hand-picked six-config
+                               grid that never emits the dense-split row - a WINNER on 8 of these 340 cells.
+                               Fault injection: dropping that row's CPU-tier KV term left tok/s bit-identical,
+                               every other arm clean, and this script printed PASS at exit 0 while the row
+                               reconstructed 4.94% off and the PRINTED share/ceiling moved 64.5%->67.7%, 2.82x->3.09x.)
      P-1 HEADROOM (reported, NOT scored - the adversarial question about any threshold is whether it
      was ever close to firing). Modal share over the same 340-cell grid at other bit-widths:
        2b 55.9% (d4) | 2.5b 52.4% (d4) | 3.5b 50.9% (d4) | 4.5b 48.2% (d4) | 6b 43.2% (d4) | 8b 46.5% (d4)
@@ -57,6 +64,11 @@ KILL RULES
   K-1 label carries information            PASS
   K-2 classification is sound              PASS
   K-3 no predicted number moved            PASS (340/340 identical)
+      arm 1 (staked, prereg section 2): 340 preset cells, true_size_gb=None, codebook_share=0 -> 0 moved
+      arm 2 (added by the second adversarial pass): the same 340 pairs replayed with a
+      PINNED file size (x0.8) and codebook_share=0.5 -> 0 moved. Every one of the 14
+      locked ladder rows is a `--gguf` run, i.e. exactly those two inputs; arm 1 pins neither, so a
+      regression that only bites when a real size is pinned was invisible to the staked arm.
   K-4 all-in-VRAM <4.5b carries the caveat  PASS (137 all-in-VRAM WINNERS on the grid checked through binding_report, plus the >4.5-bit negative control)
   K-5 agrees with the external ground truth PASS
     upgrade advice changed: qwen3-30b/2016/ctx0  old=[]  new=[('enable XMP (free)', 23.446347)]

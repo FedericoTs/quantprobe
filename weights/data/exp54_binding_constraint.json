@@ -86,7 +86,9 @@
   "n_multi_resource_cells": 172,
   "soundness_checks_run": {
    "phantom": 228,
-   "monotonic": 280
+   "monotonic": 280,
+   "recon": 1527,
+   "locked_path": 340
   },
   "k4_vram_winners_checked": 137,
   "k4_failures": [],
@@ -742,8 +744,16 @@
   ],
   "n_oversold_spec_ungated": 35,
   "regressions": [],
+  "regressions_locked_path": [],
+  "locked_path_arm": {
+   "size_scale": 0.8,
+   "codebook_share": 0.5,
+   "cells": 340
+  },
   "phantom_failures": [],
   "monotonic_failures": [],
+  "reconstruction_failures": [],
+  "reconstruction_rel_tol": 1e-09,
   "external": {
    "hot_gb": 1.4281680374999999,
    "streamable_gb": 0.7445726749999997,
@@ -789,7 +799,8 @@
  },
  "kill_rule_notes": {
   "K1": "bar not live on this grid - worst modal share over bits 2.0-8.0 was 0.559 against a staked 0.85; PASS is weak evidence",
-  "K3": "scored against the pre-change module",
+  "K2": "scores all three staked clauses: phantom sensitivity, share monotonicity, and term reconstruction to 1e-09 on 1527 rows (the third was unscored until the second adversarial pass)",
+  "K3": "scored against the pre-change module on 340 staked cells plus 340 pinned-size/codebook replays",
   "K4": "scored on 137 all-in-VRAM winners from the grid, not on a synthetic row",
   "K5": "reproduction check: section 3's arithmetic was done by hand before staking, and the +/-15% band was chosen knowing the answer was -9.2%"
  },
