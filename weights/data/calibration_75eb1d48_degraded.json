@@ -1,0 +1,39 @@
+{
+ "ts": 1785468741.2438648,
+ "date": "2026-07-31",
+ "host": "DESKTOP-O4Q52TJ",
+ "tool_version": "1.23.0",
+ "ram_bw_measured": 22.58,
+ "gpu": {
+  "name": "NVIDIA GeForce GTX 1060 6GB",
+  "sm": 139,
+  "sm_max": 1911,
+  "mem": 405,
+  "temp": 30
+ },
+ "disk_bw_measured": 0.45,
+ "anchors": [
+  {
+   "placement": "pure CPU (-ngl 0)",
+   "metric": "tg32",
+   "tok_s": 6.32,
+   "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+   "model_gb": 4.683,
+   "sustained_sm": 1506,
+   "act_gb": 4.6963,
+   "fmt_bw": 104.7
+  },
+  {
+   "placement": "all-in-VRAM (-ngl 99)",
+   "metric": "tg128",
+   "tok_s": 22.92,
+   "model": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+   "model_gb": 4.683,
+   "sustained_sm": 1873,
+   "act_gb": 4.6963,
+   "fmt_bw": 104.7
+  }
+ ],
+ "boost_verdict": "healthy: sustained 1873 of 1911 MHz max [measured]",
+ "cal_id": "75eb1d48"
+}
