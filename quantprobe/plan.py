@@ -426,9 +426,16 @@ def depth_scope_warning(placement, moe, ctx):
             f"caveats: the constant is from ONE 4-thread CPU (a wider CPU pays less, so this "
             f"reads pessimistic there), and the honest fix is to avoid the regime - raise -ngl "
             f"until attention fits in VRAM, quantize the KV cache (-ctk q8_0 -ctv q8_0: +37% SPEED "
-            f"at depth measured - but we have NOT measured its quality cost, and an external "
-            f"report calls the quality difference large on niche-domain code at 100k+ context, so try it and judge the output yourself, E-10), or use a MoE model, whose splits keep attention on the GPU and "
-            f"are validated to 32k here.")
+            f"at d16384 measured, prereg #25; quality measured CLEAN at the deepest depth f16 even "
+            f"runs on our card - PPL ratio 1.00031 +/- 0.0188 at c7168 against a <=1.02 gate, "
+            f"prereg #91/L-24. Scope: wikitext at ~7k, and an external report calls the "
+            f"difference large on niche-domain code at 100k+ context, so judge your own domain, "
+            f"E-10), or use a MoE model, whose splits keep attention on the GPU and "
+            f"are validated to 32k here. Do NOT evict the KV cache to host RAM (-nkvo 1) to make "
+            f"room: at d16384 it measured 3.48 tok/s decode against 10.59 for q8_0 KV in VRAM - "
+            f"3.04x WORSE - for a prefill difference inside the error bar (382.17 vs 386.14 "
+            f"pp2048). Deep contexts (RAG, document QA) are exactly where -nkvo loses hardest; "
+            f"that advice is WITHDRAWN per prereg #25's pre-commitment (L-24).")
 
 
 def fits_in_vram_advice(placement, bits):
@@ -1683,6 +1690,10 @@ def run(args):
             print("  EQUAL tg to this -ot placement - three times, at degraded AND full clocks. The -ot")
             print("  advice earns its keep on PROMPT PROCESSING (2.2x measured), on keeping KV in VRAM,")
             print("  and on enabling the speculation numbers below - not on raw generation.")
+            print("  KV stays in VRAM at EVERY depth: evicting it (-nkvo 1) measured 3.48 vs 10.59")
+            print("  tok/s decode against q8_0 KV at d16384 - 3.04x WORSE, for a prefill difference")
+            print("  inside the error bar (prereg #25). Deep workloads (RAG at 50:1-200:1) are where")
+            print("  it loses hardest; that advice is WITHDRAWN per prereg #25's pre-commitment (L-24).")
             print("  IF YOUR NUMBERS SAG 25-30% after hours of GPU churn: the cause on our box was a")
             print("  STUCK BOOST STATE (SM 1506 vs 1835+ MHz at cool temps - diagnosed and confirmed by")
             print("  cold-boot A/B, preregs #60/#61). Check `nvidia-smi --query-gpu=clocks.sm` under")

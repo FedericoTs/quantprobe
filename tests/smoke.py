@@ -509,6 +509,62 @@ def t_frontier_rows_are_off_the_cliff():
     assert not any("-ub 2048" in f and "-nkvo" in f for _, _, _, f in MOE_FRONTIER),         "the v1.14.0 cliff configuration is back on the frontier"
 
 
+def t_nkvo_never_emitted_for_deep_context():
+    """-nkvo is WITHDRAWN from deep-workload advice, per prereg #25's own pre-commitment (L-24).
+
+    The measurement that pre-committed this: split placement, -fa 1, r=3, one session. tg32 at
+    d16384: q8_0 KV in VRAM 10.59 tok/s vs -nkvo 1 at 3.48 - 3.04x worse decode - for a prefill
+    difference inside the error bar (382.17 vs 386.14 pp2048). -nkvo exists to serve RAG and
+    document-QA at 50:1/200:1 prompt:generation ratios, which are exactly the deep contexts
+    where it loses hardest. So three invariants, each falsifiable by one line of output:
+
+      1. no frontier row (the source of every workload recommendation) carries -nkvo;
+      2. no placement `evaluate` emits at d16384 - any preset model on any preset machine -
+         carries -nkvo in its flags;
+      3. a deep-context `plan` never puts -nkvo in the run command, and if the flag appears in
+         prose at all it must be the withdrawal (accompanied by its measured 3.04x), never a
+         recommendation.
+
+    Failing inputs constructed when this test was written, each applied, observed to fail (exit
+    non-zero), and reverted: (A) '-nkvo 1' appended to a MOE_FRONTIER row's flags; (B) '-nkvo 1'
+    appended to evaluate()'s all-in-VRAM row flags; (C) the withdrawal print lines silently
+    deleted from the workload advice.
+    """
+    import itertools
+    from quantprobe.plan import (MOE_FRONTIER, MODELS, MACHINES, DEFAULT_KVP, evaluate)
+    for lab, _pp, _tg, fl in MOE_FRONTIER:
+        assert "-nkvo" not in fl, f"frontier row '{lab}' recommends -nkvo: {fl}"
+    for mn, hn in itertools.product(MODELS, MACHINES):
+        m, hw = MODELS[mn], MACHINES[hn]
+        _, _, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], 2.5,
+                              hw["vc"], hw["vb"], hw["rc"], hw["rb"], hw["db"],
+                              hw.get("geta", 0.45), gl=hw.get("gl"),
+                              ctx=16384, kvp=m.get("kvp", DEFAULT_KVP), n_layer=m.get("nl"))
+        for name, _tps, _warn, flags in cfgs:
+            assert "-nkvo" not in flags, (
+                f"{mn} on {hn} at d16384 emits -nkvo in '{name}': {flags}")
+    # MoE deep workload (the RAG case prereg #25 measured) and a dense deep split whose winning
+    # row FIRES the depth note (mistral-7b @4.5 bits on 2016-xmp -> split: 20/32 layers->VRAM):
+    # the emitted command is clean, and prose only ever mentions -nkvo to bury it.
+    for extra in (("--model", "qwen3-30b", "--machine", "2016-xmp"),
+                  ("--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5")):
+        rc, out = cli("plan", *extra, "--ctx", "16384")
+        assert rc == 0, out
+        runline = next(l for l in out.splitlines() if "run it:" in l)
+        assert "-nkvo" not in runline, f"deep-context run command emits -nkvo: {runline}"
+        if "-nkvo" in out:
+            assert "3.04x" in out and "WITHDRAWN" in out, (
+                f"-nkvo appears in deep-context output without its measured withdrawal "
+                f"(3.04x, prereg #25): {extra}")
+    # both deep cases must actually SHOW the withdrawal, not merely avoid the flag - silent
+    # removal would leave a user who read the old advice with no correction
+    rc, out = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--ctx", "16384")
+    assert "3.04x WORSE" in out and "WITHDRAWN" in out, "MoE deep advice lost the withdrawal"
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5",
+                  "--ctx", "16384")
+    assert "3.04x WORSE" in out and "WITHDRAWN" in out, "dense depth note lost the withdrawal"
+
+
 def t_ubatch_only_when_host_resident():
     """-ub is a prefill lever for HOST-resident weights only, and it is measured to hurt otherwise.
 
