@@ -1,4 +1,4 @@
-"""Prereg #92 - speculation x KV-quant interaction (2x2 + draft-KV disambiguation arm).
+"""Prereg #93 - speculation x KV-quant interaction (2x2 + draft-KV disambiguation arm).
 
 Staked design: preregistrations/2026-07-31-speculation-x-kvquant.md. Read it first; every
 gate below is a numbered kill rule there (K-1..K-7) and none is renegotiable at run time.

@@ -258,6 +258,12 @@ def run(a):
         from .detect import measure_disk
         cal["disk_bw_measured"] = round(measure_disk(model), 2)
         print(f"  disk: {cal['disk_bw_measured']:.2f} GB/s sequential on your file [measured]")
+        # C-17, still open: ONE sample, and repeats spread 2.1x on this box (0.38-0.80 GB/s over
+        # four probes of a 39.7 GB file). It is also only as cold as the page cache lets it be -
+        # calibrating on a model you have JUST downloaded or benchmarked measures the cache.
+        print("        (one sample; repeats span ~2x. If you just downloaded or benchmarked this "
+              "file, the\n         page cache is warm - re-run later, or expect an optimistic "
+              "disk number. C-17)")
         if not getattr(a, "skip_bench", False):
             cal["anchors"] = []
             print("  anchor: running llama-bench -ngl 0 tg32 on your file (1-10 min on big models)...")

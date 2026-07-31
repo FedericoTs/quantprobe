@@ -1,5 +1,118 @@
 # Changelog
 
+## 1.24.0 - 2026-07-31
+
+**Three defects that were live in 1.23.0, and the one number this release still cannot stand behind.**
+
+Every fix below is a correction to something we already shipped. Read the last section first.
+
+### The disk tier is still UNVALIDATED - and that is the headline
+
+We corrected the disk-bandwidth probe (see Fixed), and we have **not** shown the new number is
+right. Proving the old number wrong is not the same thing.
+
+The probe read a fixed 512 MB tail region jittered by at most 7 MB, so ~98.6% of it overlapped
+between calls, and `buffering=0` does **not** bypass the OS page cache. Measured on the reference
+box: cold 0.44 GB/s, then 2.99 and 2.99 GB/s on re-reads. The warm figure is RAM. It shipped as a
+disk-tier input, **6.8x too fast**.
+
+Why it survived: all 14 rows of our validation ladder are VRAM- or RAM-resident. **Zero read the
+disk tier.** A component no validation row touches can stay wrong indefinitely. That is the
+sharper form of C-17, and it is a coverage gap, not an accident.
+
+We tried to close it for this release and failed honestly. A disk-tier row was staked in writing
+first (predicted 0.331505 tok/s, 93% of it the disk term, band [0.265, 0.442]). The measurement
+came back at 0.34 - nominally 2.5% inside the band - **and we are not claiming it.** Two of our
+own kill rules fired:
+
+- **KR4 (steady state).** `llama-bench` reported `0.34 +/- 0.17` over 2 reps. For n=2 that implies
+  individual reps of ~0.22 and ~0.46, a **2.09x spread**, against a rule reading ">2x between reps
+  means no steady state and the mean is not the predicted quantity." Every rounding consistent
+  with the printed two decimals gives 2.02x-2.17x. It fires under all of them.
+- **C-14 (one machine state per comparison).** The primary run overlapped a concurrent ladder that
+  held ~13.7 GB of working set on a 16 GiB box. For a row whose entire premise is the page-cache
+  miss fraction, that is a first-order confound. A number landing near prediction under
+  contamination is worth less than no number.
+
+What we can say: the row genuinely streamed from disk rather than being served from cache. A
+recovered disk-counter trace shows D: read at mean 0.266 / median 0.227 / max 0.508 GB/s during
+the run. That is a **post-hoc diagnostic re-read, not a scored measurement**, and the competing job
+was also reading from D:, so an unknown share of it is not ours.
+
+**Do not quote the disk tier as validated.** The staked band remains open and the stake file is
+frozen so it can be scored later without renegotiation.
+
+### Also not validated in this release
+
+- **Whether 1.24.0 regresses the ladder median: UNMEASURED.** The final ladder run was contaminated
+  by the same overlap described above (rows 9-13 degrade, wall-clock balloons - a prediction error
+  cannot change how long a bench takes). An 11-row subset medians at 8.8%, and we are recording
+  that here **only so it cannot be quietly deployed later as a pass.** It is not evidence.
+  What *is* established, because it involves no timing at all: all 42 prediction fields (14 tok/s,
+  14 placements, 14 emitted commands) are bit-identical to the reference ladder. **1.24.0 changed
+  no shipped prediction.**
+- **L-26's "+4.3% prefill" is law-mediated, not a measured A/B.** 360.76 tok/s was measured at
+  pp4096; the 345.89 baseline is pp2048 - a different prompt length - and the like-for-like
+  pp4096-at-ub2048 control has never been run. Because `-ub` is a cap, the flag also cannot do
+  anything on prompts of 2048 tokens or fewer. The tool now says all of this itself.
+- **`measure_disk` is still a single sample** spanning ~2.1x on repeat. Making it a median is a
+  method change that needs its own stake, so for now it is disclosed rather than repriced.
+
+### Fixed
+
+- **The upgrade advisor could only ever suppress good upgrades, never invent bad ones** (C-19) - a
+  one-directional error, which is why it survived: every symptom looked like conservatism. The
+  counterfactual dropped `n_layer` and `true_size_gb`, so `evaluate()` re-derived them from presets
+  and priced *a different model with more RAM*. Affected **31 of 340** grid cells. Verified by a
+  staked 340-cell re-sweep: 0 invented pairs against a live population of 24 cells where the check
+  is not vacuous, 0 identity mismatches over 700 counterfactual calls, 0 arithmetic mismatches over
+  131 fired upgrades. The auditor was falsified first - re-injecting the defect makes it exit 1 and
+  reproduces the historical signature to six decimals.
+- **The speculation block printed a speedup the row could not reach** (C-20). Called without the
+  row, it quoted its constant headline regardless of the row's own ceiling. On the **17 of 127**
+  affected cells the true bound was 1.025x-1.229x against a printed 2.10x. Now prints "NOT
+  REACHABLE ON THIS ROW" with the bound. Scope worth knowing: all 22 qualified cells are the dense
+  2.10x headline; the 4.7x n-gram branch has synthetic-probe coverage only.
+- **The C-17 disk fix had shipped half-done.** `os.urandom(4)` capped the random offset at 4 GiB, so
+  on any larger file - precisely the size class the disk tier exists to model - the probe could
+  never read past the 4 GiB mark, and the reachable prefix is exactly what a partial download has
+  already warmed. Found by the new falsification test, not by inspection.
+- **A `+73%` prefill figure leaked onto every row it printed on**, including all-in-VRAM rows where
+  the same flag measured **-39%**. The scope footnote now names the CPU-expert MoE placement and
+  shows the opposite-sign control.
+- **The `-ub` prefill percentage ignored which ubatch was actually emitted.** A 3 GB card sized to
+  `-ub 1024`, where the sweep measured +38.7%, was told +73%. Each ubatch now selects its own
+  measured cell; a ubatch with no cell gets prose, not a borrowed number.
+- **Partial calibration printed the same "calibration applied" line as a complete one**, though
+  RAM-only calibration measures 12.5% median error against 8.8% for the fully-preset baseline -
+  worse than no calibration at all for the components you skipped. Unmeasured components are now
+  named at equal prominence, with the penalty and the command to finish.
+- **Two regression tests were decorative.** The guard for the 6.8x disk error was defined *below*
+  the runner block and had never executed on any commit; its only assertion was that repeated
+  timings agree, which a fully cached file satisfies perfectly. The channel-count guard - the one
+  protecting against a 2x RAM-bandwidth input error from an external replication - re-implemented
+  the rule in its own body and never touched `detect.py`; restoring the shipped bug left it green.
+  All 14 guards for the audited behaviour are now mutation-tested; none are unfalsifiable.
+- **`verify.py` layer 1 counted a skip as a pass**, contradicting the "a skip is not a pass"
+  doctrine layer 3 has enforced since 1.12. Skips now surface in the release gate.
+- **Two pre-registration documents both claimed #92**, so the "every staked prereg is cited" gate
+  was satisfied for both by a single citation, and prereg #92 was in fact cited by nothing. The
+  later document is renumbered #93 with a visible correction note (no stake or threshold changed,
+  nothing had run). `findings.validate()` now rejects duplicate numbers outright.
+- **A measurement harness reported "disk counter unreadable - NOT substituted with an estimate"**
+  while 83 populated rows sat in its log. The sampler emits an empty timestamp on this locale, so
+  rows arrived with two fields instead of three and the parser discarded all of them - then printed
+  a sentence that reads like scientific restraint. A silent fallback wearing a disclosure's clothes
+  is worse than a crash.
+
+### Added
+
+- `detect.ram_channels()` and `detect.probe_offset()` extracted so the rules are testable against
+  the shipping function rather than a copy.
+- `plan.calibration_gap_warning()` + `CAL_COMPONENTS`.
+- `weights/resweep340_audit.py`, re-runnable with `--inject upgrade` / `--inject spec` to prove it
+  can still fail.
+
 ## 1.23.0 - 2026-07-30
 
 **A feature we promised, tested, and did not ship - plus the finding that replaced it.**

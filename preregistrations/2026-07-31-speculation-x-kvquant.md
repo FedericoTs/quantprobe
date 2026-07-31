@@ -1,8 +1,16 @@
-# Pre-registration #92: speculation × KV-quant — two banked levers, same token, never measured together
+# Pre-registration #93: speculation × KV-quant — two banked levers, same token, never measured together
 
 **Author:** Federico Sciuca · **Date staked:** 2026-07-31, BEFORE any GPU run. **STAKED.**
 No benchmark for this prereg has been executed; only the harness self-test and the
 failing-input refusal check (both GPU-free) ran before this text was frozen.
+
+> **Renumbered #92 → #93 on 2026-07-31 (pre-release audit), before any arm was run.** This
+> document was staked at 03:34 with a number already taken by
+> `2026-07-31-per-shape-calibration.md` (staked 03:32). Nothing here changed except the number:
+> no kill rule, no stake, no threshold. The collision mattered because `findings.py` keys staked
+> pre-registrations by integer, so the second file silently overwrote the first and the
+> "every staked prereg is cited" gate could only ever see one of them. `findings.validate` now
+> refuses a duplicate number outright.
 
 ## Why this cell, and why it is not free
 

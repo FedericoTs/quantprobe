@@ -137,11 +137,23 @@ def ubatch_flags(placement, vram_resident_gb, vc):
         ub = safe_ubatch(vc * 0.90 - vram_resident_gb, cap=1024)
         return "-b %d -ub %d" % (ub, ub) if ub else None
     if "experts->RAM" in placement:
-        # L-26 (prereg #92 out-of-sample run): the CPU-expert placement (all routed experts in
-        # host RAM, attention+KV in VRAM) follows sec/token = A + X/C, validated with staked
-        # predictions at C=256 (-0.27%) and C=4096 (-8.2%, inside the 10% kill band) - so
-        # -b 4096 -ub 4096 is a MEASURED number here: 360.76 pp2048 vs 345.89 at ub 2048, +4.3%
-        # for one flag, ON THIS 6GB REFERENCE CARD. The generic half-budget margin below was
+        # L-26 (out-of-sample run; predictions staked in the header of
+        # weights/data/prereg92b_ub_oos.log BEFORE it ran - there is no prereg DOCUMENT for
+        # it, and the '92b' in that filename must not be read as prereg #92, which is a
+        # different, unrelated experiment): the CPU-expert
+        # placement (all routed experts in host RAM, attention+KV in VRAM) follows
+        # sec/token = A + X/C, validated with staked predictions at C=256 (-0.27%) and C=4096
+        # (-8.2%, inside the 10% kill band).
+        #
+        # WHAT THE ub-4096 ARM ACTUALLY MEASURED, stated precisely because the first write-up of
+        # it was not: 360.76 tok/s at **pp4096**, against prereg #19's 345.89 at **pp2048**/ub2048.
+        # Those are two different prompt lengths. The like-for-like control (pp4096 at ub 2048)
+        # was never run, and it CANNOT be inferred from #19 except through the very law under
+        # test - which missed by -8.2% at that same C. So "+4.3% for one flag" is a
+        # LAW-MEDIATED comparison, not a measured A/B, and it is quoted that way everywhere it
+        # is printed. Note also that -ub 4096 is a CAP: on a prompt of 2048 tokens or fewer it
+        # changes nothing at all, so whatever it is worth, it is worth it only past 2048 tokens.
+        # ON THIS 6GB REFERENCE CARD. The generic half-budget margin below was
         # calibrated on the SPLIT (#23), where resident experts compete with the compute buffer
         # for the same VRAM; on this placement nothing else grows, and the measured ub-4096
         # buffer (2406 MiB) ran clean at 51.5% of headroom - which the half rule rejects by
@@ -215,7 +227,7 @@ def safe_ubatch(headroom_gb, cap=2048, margin=0.5):
     half-budget rule above and no caller may weaken it casually: the single exception is the
     L-26 CPU-expert MoE branch of ubatch_flags, which passes margin=1.0 against a headroom it
     has ALREADY debited by UBATCH_HEADROOM_GB of absolute slack - grounded there by a direct
-    measurement of the ub-4096 buffer running clean on the reference card (prereg #92), not by
+    measurement of the ub-4096 buffer running clean on the reference card (the ub-OOS run above; staked in its log header, not in a prereg document), not by
     optimism about the cliff #23 mapped.
     """
     budget_mib = max(0.0, headroom_gb) * 1024 * margin
@@ -227,6 +239,12 @@ def safe_ubatch(headroom_gb, cap=2048, margin=0.5):
         n *= 2
     return ub
 
+
+# prereg #19 P-1, verbatim: pp2048 on the CPU-expert MoE placement (-ot exps=CPU), one session,
+# r=3, from weights/data/prereg19_ubatch.log. THREE CELLS - that is the whole sweep, and the
+# headline "+73%" is the 2048 one against the 512 baseline. There is no 4096 cell here: the
+# out-of-sample run measured 360.76 at pp4096, a different workload (see ubatch_flags).
+UB_SWEEP_PP2048 = {512: 199.90, 1024: 277.17, 2048: 345.89}
 
 SAFE_UBATCH_CAP = 4096      # reachable ONLY on the CPU-expert MoE branch of ubatch_flags: L-26
                             # validated sec/tok = A + X/C out of sample to C=4096 there (and the
@@ -364,10 +382,14 @@ def phase_advice(placement, rows, vram_resident_gb=None, vc=None):
         or "-b 2048 -ub 2048"
     tail = ""
     if "-ub 4096" in alt_ub:
-        tail = (" At -b 4096 -ub 4096 that placement measured 360.76 pp2048 out of sample "
-                "(+4.3% over ub 2048's 345.89; L-26, prereg #92); the prefill law "
-                "sec/tok = A + X/C is validated to C=4096 and NOT past it, so do not raise "
-                "the batch further.")
+        tail = (" At -b 4096 -ub 4096 that placement measured 360.76 tok/s AT pp4096 out of "
+                "sample (L-26; predictions staked in weights/data/prereg92b_ub_oos.log before the "
+                "run). The nearest published baseline is 345.89 at "
+                "pp2048/ub2048 (prereg #19) - a DIFFERENT prompt length, so the ~+4% between "
+                "them is what the prefill law sec/tok = A + X/C implies, not a measured A/B; "
+                "the pp4096-at-ub2048 control was never run. The law is validated to C=4096 and "
+                "NOT past it, so do not raise the batch further. -ub is a cap: below ~2048 "
+                "prompt tokens it changes nothing.")
     return ("this command is tuned for GENERATION. If your prompts are long - agent transcripts, "
             "RAG context, whole files - the other placement is far better at reading them: "
             "measured 349.6 vs 161.9 tok/s prompt processing (2.2x), for 8% less generation. "
@@ -1317,6 +1339,33 @@ def check_presets(args):
             "  or pass flags: --vram/--vram-bw/--ram/--ram-bw/--disk-bw   (no flags = auto-detect this box)" % (mac, ", ".join(sorted(MACHINES))))
 
 
+CAL_COMPONENTS = (("RAM stream", "ram_bw_measured"), ("disk", "disk_bw_measured"),
+                  ("decode anchors", "anchors"))
+
+
+def calibration_gap_warning(cal):
+    """C-17 defect (2): PARTIAL CALIBRATION IS WORSE THAN NONE for the components you skipped.
+
+    Five ladders on one idle box, same 14 rows, medians of |err|: full calibration 7.9%,
+    fully-preset baseline 8.8%, RAM-ONLY 12.5%, uncalibrated 27.2%. A RAM-only state scored
+    WORSE than either complete state - the presets are mutually consistent, and replacing one of
+    them breaks that consistency. Yet the tool printed the identical `calibration applied [...]`
+    line for a complete state and for a one-component state, so a user could not tell the 12.5%
+    case from the 7.9% one.
+
+    Returned as lines rather than printed so the property is testable without capturing stdout -
+    the shape the P-88 report block already uses. Empty list when every component is measured.
+    """
+    missing = [name for name, key in CAL_COMPONENTS if not cal.get(key)]
+    if not missing:
+        return []
+    return [f"[quantprobe] MIXED calibration state: {', '.join(missing)} still preset/spec-sheet, "
+            f"NOT measured on this box. Partial calibration measured WORSE than none on the "
+            f"components it skipped (RAM-only 12.5% median |err| vs 8.8% for the fully-preset "
+            f"baseline, C-17). Complete it with `quantprobe calibrate --model your.gguf`, or "
+            f"read the rows that lean on the missing component as uncalibrated."]
+
+
 def apply_calibration_overrides(hw, args):
     """MEASURED beats spec-sheet, on this machine only - the ONE place calibration and anchors
     touch the constants, shared by plan AND runtime.best_flags so the two commands can never
@@ -1352,6 +1401,8 @@ def apply_calibration_overrides(hw, args):
         _cid = cal.get("cal_id")
         print(f"[quantprobe] calibration applied [{'; '.join(applied)}] ({cal.get('date','?')}"
               + (f", state {_cid}" if _cid else "") + f"{stale})")
+        for _line in calibration_gap_warning(cal):
+            print(_line)
     if cal.get("boost_verdict") and "healthy" not in cal["boost_verdict"]:
         print(f"[quantprobe] GPU health at last calibration: {cal['boost_verdict']}")
     if not getattr(args, "no_anchors", False):
@@ -1650,9 +1701,15 @@ def binding_report(bc, bits=None, placement=None):
                      "number, and in this exact cell we measured the byte ordering REVERSED - Q2_K "
                      "is 36% smaller and 4% SLOWER than Q4_K_M, Q4_0 is +19% over Q4_K_M at equal "
                      "bytes. Read the label as 'the GPU memory path', not 'the bytes'.")
+    # The illustration used to name "+73%" flat, on EVERY row this block prints on - including
+    # the all-in-VRAM rows where the same flag MEASURED -39% (prereg #19 P-2). Same leak class as
+    # the one the v1.23 validation pass caught two paragraphs lower: a measured number keeps the
+    # placement it was measured on, even when it is only being used to make a point about decode.
     lines.append("  scope            DECODE only. Prefill has a different binding constraint "
-                 "(compute) which this classification does not model, which is why -ub 2048 can be "
-                 "worth +73% on prefill and 0% on decode.")
+                 "(compute) which this classification does not model: on the CPU-expert MoE "
+                 "placement -ub 2048 measured +73% on prefill and 0% on decode, while on an "
+                 "all-in-VRAM row the same flag measured -39% prefill (prereg #19). Neither "
+                 "number is a prediction for this row.")
     return lines
 
 
@@ -1838,22 +1895,45 @@ def run(args):
         # told "your experts sit in RAM" about a model with no experts. Same scope boundary as
         # the emission gate above (L-26): the claim travels only with the experts->RAM tier.
         if "experts->RAM" in best[0]:
-            print(f"\n  prompt speed: `{ub}` is worth **+73% prefill** on this placement (measured "
-                  f"199.9 -> 345.9 tok/s, pre-registration #19). It costs nothing on generation "
+            # THE NUMBER MUST MATCH THE UBATCH WE ARE ACTUALLY EMITTING. "+73%" is the ub-2048
+            # cell of prereg #19's sweep; the sizer often emits 1024 on a tight card, where the
+            # SAME sweep measured 277.17 (+38.7%), and this paragraph printed +73% anyway. That is
+            # the leak the v1.23 pass caught between placements, repeated one level down between
+            # cells of one sweep - so the emitted ubatch now selects its own measured cell, and a
+            # ubatch with no cell in the sweep gets prose instead of a borrowed number.
+            _ubn = int(ub.rsplit(" ", 1)[1])
+            _cell = UB_SWEEP_PP2048.get(_ubn)
+            if _cell:
+                _gain = _cell / UB_SWEEP_PP2048[512] - 1.0
+                _worth = (f"is worth **{_gain:+.0%} prefill** on this placement (measured "
+                          f"{UB_SWEEP_PP2048[512]:.1f} -> {_cell:.1f} pp2048 against the ub-512 "
+                          f"baseline, pre-registration #19)")
+            else:
+                _worth = ("is the sized safe batch for this card; prereg #19 swept this placement "
+                          "at ub 512/1024/2048 only (199.9 / 277.2 / 345.9 pp2048) and measured no "
+                          "cell at this ubatch, so no percentage is quoted for it")
+            print(f"\n  prompt speed: `{ub}` {_worth}. It costs nothing on generation "
                   f"(18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe "
                   f"once per batch instead of once per token. Do NOT set it when a model is fully in "
                   f"VRAM - measured there, the same flag LOSES 39%.")
             if "-ub 4096" in ub:
-                print(f"  L-26 (prereg #92, out of sample): at -b 4096 -ub 4096 this placement "
-                      f"measured 360.76 pp2048,\n  +4.3% over ub 2048's 345.89 - the prefill law "
-                      f"sec/tok = A + X/C held at C=256 (-0.27%) and\n  C=4096 (-8.2%, in band). It "
-                      f"is validated TO 4096 and not past it: the asymptote bends below\n  1/A, so do "
-                      f"not raise the batch further on this law's authority.")
+                print(f"  L-26 (out of sample; predictions staked in "
+                      f"weights/data/prereg92b_ub_oos.log before the run):\n  at "
+                      f"-b 4096 -ub 4096 this placement "
+                      f"measured 360.76 tok/s\n  AT pp4096. The prefill law sec/tok = A + X/C "
+                      f"held at C=256 (-0.27%) and C=4096 (-8.2%,\n  in band). READ THE COMPARISON "
+                      f"CAREFULLY: the published ub-2048 number, 345.89, is a\n  pp2048 "
+                      f"measurement (prereg #19) - a different prompt length - and the "
+                      f"pp4096-at-ub2048\n  control was never run, so the ~+4% between them is "
+                      f"what the law implies, not a measured\n  A/B. -ub is a CAP: on prompts of "
+                      f"2048 tokens or fewer this flag changes nothing. The law\n  is validated "
+                      f"TO C=4096 and not past it (the asymptote bends below 1/A), so do not "
+                      f"raise\n  the batch further on its authority.")
         else:
             print(f"\n  prompt speed: `{ub}` is the sized safe batch for this card (buffer-fit "
                   f"rule, prereg #23) - a bigger ubatch batches host-resident weights across "
                   f"PCIe, but the measured numbers behind this lever (+73%, 199.9 -> 345.9 "
-                  f"pp2048, prereg #19; +4.3% more at ub 4096, prereg #92) are from the "
+                  f"pp2048, prereg #19; 360.76 at pp4096/ub4096, L-26) are from the "
                   f"CPU-expert MoE placement (-ot exps=CPU) and are NOT a prediction for this "
                   f"row - the prefill law that licenses them is scoped to that tier (L-26; the "
                   f"dense control violates its form). Known boundary: fully in VRAM the same "

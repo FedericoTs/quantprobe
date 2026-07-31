@@ -18,13 +18,22 @@ from contextlib import redirect_stdout
 # deliberately and separately; layer 1 should test what the developer just edited.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-FAIL = []
+FAIL, SKIP = [], []
 
 
 def check(name, fn):
+    """A SKIP IS NOT A PASS - verify.py layer 3 has enforced that since v1.12, and this harness
+    did not. A test that returned a "skipped (...)" string printed `ok` and was counted in the
+    "N tests green" line, which is how t_c17_disk_probe_is_not_page_cache_contaminated - the
+    regression test for a disk number that shipped 6.8x too fast - read as green while measuring
+    nothing. Skips are now printed as skips and listed at the end. Return the string SKIP:<why>."""
     try:
-        fn()
-        print(f"  ok    {name}")
+        r = fn()
+        if isinstance(r, str) and r.startswith("SKIP:"):
+            SKIP.append((name, r[5:].strip()))
+            print(f"  SKIP  {name}: {r[5:].strip()}")
+        else:
+            print(f"  ok    {name}")
     except Exception as e:
         FAIL.append((name, e))
         print(f"  FAIL  {name}: {e}")
@@ -633,8 +642,18 @@ def t_l26_cpu_expert_moe_prefill_gets_ub4096():
     assert rc == 0, out
     assert "-b 4096 -ub 4096" in out, (
         "plan output no longer offers -b 4096 -ub 4096 for the CPU-expert MoE placement")
-    assert "360.76" in out and "#92" in out, (
-        "the L-26 flags must be quoted WITH their out-of-sample measurement and prereg citation")
+    # The flags must be quoted WITH their measurement AND an unambiguous citation. "#92" is not
+    # one: two different pre-registrations claimed that number, and this run is neither of them -
+    # its predictions were staked in the header of its own log, which is what we cite.
+    assert "360.76" in out, "the L-26 flags lost their out-of-sample measurement"
+    assert "prereg92b_ub_oos.log" in out, "the staked-before-the-run evidence is not cited"
+    # ...and the METRIC must be the one the log records. 360.76 is pp4096; the 345.89 baseline is
+    # pp2048 at ub2048 (prereg #19). The tool said "360.76 pp2048" for a run that never measured
+    # pp2048, and called the gap between two prompt lengths "+4.3% for one flag".
+    assert "pp4096" in out, "360.76 is a pp4096 measurement and must be labelled as one"
+    assert "360.76 pp2048" not in out, "the ub-4096 arm is mislabelled as a pp2048 measurement"
+    assert "control was never run" in out, \
+        "the missing like-for-like pp4096-at-ub2048 control must be disclosed"
 
 
 def t_l26_dense_rows_never_get_ub4096():
@@ -696,13 +715,28 @@ def t_l26_ub_prose_claims_track_the_measured_tier():
     assert "experts sit in RAM" not in out, \
         "dense split told 'your experts sit in RAM' about a model with no experts"
     assert "sized safe batch" in out, "dense split lost the sized-batch wording"
-    # the measured tier KEEPS its measured claim (hybrid wins when VRAM fits attention only)
+    # the measured tier KEEPS its measured claim - but the CELL must match the emitted ubatch.
+    # prereg #19 swept ub 512/1024/2048 = 199.90/277.17/345.89 pp2048, and "+73%" is the 2048
+    # cell. A 3 GB card is sized to -ub 1024, where the same sweep measured +38.7%; the tool
+    # printed +73% there anyway - the placement-level leak repeated between cells of one sweep.
+    from quantprobe.plan import UB_SWEEP_PP2048
     rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
                   "--bits", "2.95", "--vram", "3", "--vram-bw", "192", "--ram", "32",
                   "--ram-bw", "48", "--disk-bw", "2")
     assert rc == 0, out
-    assert "worth **+73% prefill** on this placement" in out, \
-        "the experts->RAM tier lost the claim that was measured on it (prereg #19)"
+    line = next(l for l in out.splitlines() if "prompt speed:" in l)
+    assert "-ub 1024" in line, f"fixture drifted, expected the ub-1024 cell: {line}"
+    assert "+39% prefill" in line and "277.2" in line, \
+        f"the ub-1024 command quotes a percentage measured at a different ubatch: {line}"
+    assert "+73%" not in line, "the ub-2048 cell's headline is printed on a ub-1024 command"
+    # ...and the 2048 cell keeps +73% where 2048 is what we emit
+    rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
+                  "--bits", "2.95", "--vram", "5", "--vram-bw", "192", "--ram", "32",
+                  "--ram-bw", "48", "--disk-bw", "2")
+    assert rc == 0, out
+    line = next(l for l in out.splitlines() if "prompt speed:" in l)
+    assert "-ub 2048" in line and "+73% prefill" in line, line
+    assert round(UB_SWEEP_PP2048[2048] / UB_SWEEP_PP2048[512] - 1, 2) == 0.73
 
 
 def t_disk_tier_kv_deficit_disclosed_not_clamped():
@@ -1539,25 +1573,88 @@ def t_calibrate_cli_registered():
 
 
 def t_moneroape_channel_count():
-    # THE 3.7x INPUT BUG from the first external replication: 4 DIMMs on consumer AM5 must be
-    # treated as DUAL channel, not 4-channel. HEDT names keep their width.
-    import quantprobe.detect as d, platform
-    orig = platform.processor
-    try:
-        platform.processor = lambda: "AMD Ryzen 5 8600G w/ Radeon"
-        # simulate the detect() channel logic directly: consumer + 4 sticks -> 2 channels
-        cpu = platform.processor().lower()
-        wide = any(w in cpu for w in ("threadripper", "epyc", "xeon w-3"))
-        assert not wide
-        platform.processor = lambda: "AMD Ryzen Threadripper 7970X"
-        cpu = platform.processor().lower()
-        assert "threadripper" in cpu
-    finally:
-        platform.processor = orig
-    # and the real detect() on THIS box must not crash and must mention calibrate in the RAM note
+    """THE 2x INPUT BUG from the first external replication: 4 DIMMs on consumer AM5 must be
+    treated as DUAL channel, not 4-channel (173 GB/s quoted where the platform delivers ~86).
+
+    This test used to RE-IMPLEMENT the wide-CPU check in its own body and assert on its own
+    copy, so it never touched detect.py at all - mutation-verified: restoring the shipped bug
+    `channels = max(1, min(sticks or 2, 8))` left it green. It now calls the shipping function.
+    """
+    import quantprobe.detect as d
+    # consumer platform: stick count must NOT become channel count, at any stick count
+    for sticks in (2, 4, 8):
+        n, src = d.ram_channels(sticks, "AMD Ryzen 5 8600G w/ Radeon Graphics")
+        assert n == 2, f"consumer AM5 with {sticks} sticks priced as {n}-channel: {src}"
+    assert d.ram_channels(1, "AMD Ryzen 5 8600G")[0] == 1        # one stick is one channel
+    assert d.ram_channels(None, "AMD Ryzen 5 8600G")[0] == 2     # unknown -> conservative 2
+    assert "does NOT mean" in d.ram_channels(4, "AMD Ryzen 5 8600G")[1], "the trap is not named"
+    # HEDT/server names keep their width
+    for cpu in ("AMD Ryzen Threadripper 7970X", "AMD EPYC 9554", "Intel(R) Xeon(R) w9-3495X"):
+        n, src = d.ram_channels(8, cpu)
+        assert n == 8 and "HEDT" in src, (cpu, n, src)
+    assert d.ram_channels(None, "AMD EPYC 9554")[0] == 4         # HEDT default, not 2
+    # the bandwidth this feeds must move with it, not with the stick count
+    assert round(d.ram_channels(4, "Ryzen 5 8600G")[0] * 5200 * 8 / 1000) == 83
+    # and the real detect() on THIS box must not crash; the RAM note must disclose that the
+    # DELIVERED stream is below peak and point at calibrate (no bare "typically ~55%" claim)
     _, notes = d.detect()
     ram_notes = [n for n in notes if n.startswith("RAM:")]
-    assert ram_notes and ("calibrate" in ram_notes[0] or "unknown" in ram_notes[0]), ram_notes
+    assert ram_notes, notes
+    assert "calibrate" in ram_notes[0] or "speed unknown" in ram_notes[0], ram_notes
+    assert "typically" not in ram_notes[0], (
+        "the stream-realism fraction is n=1 machine - it may not be quoted as a typical value")
+
+
+def t_p88_binding_scope_line_names_the_placement():
+    """The binding-constraint block's DECODE-only footnote used to illustrate itself with a bare
+    '-ub 2048 can be worth +73% on prefill', printed on EVERY row it fires on - including the
+    all-in-VRAM rows where prereg #19 P-2 measured the SAME flag at -39%. Same leak the v1.23
+    validation pass caught in the 'prompt speed:' paragraph, one block higher and on every
+    invocation. A measured number keeps its placement even when it is only making a point."""
+    from quantprobe.plan import binding_report, binding_constraint, Row
+    txt = "\n".join(binding_report(binding_constraint(
+        Row("all in VRAM", 20.0, None, "-ngl 99", {"vram_bw": 1.0})), bits=4.5,
+        placement="all in VRAM"))
+    assert "+73%" in txt, "the illustration was deleted rather than scoped"
+    assert "CPU-expert MoE" in txt, "the +73% is printed without the placement that measured it"
+    assert "-39%" in txt, "the opposite-sign control on THIS row's own placement is not shown"
+    assert "Neither number is a prediction for this row" in txt, txt
+    # and on the CLI, where an all-in-VRAM user actually reads it
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "rtx-4090", "--bits", "4.5")
+    assert rc == 0, out[:300]
+    scope = next(l for l in out.splitlines() if "scope" in l and "DECODE only" in l)
+    assert "CPU-expert MoE" in scope, scope
+
+
+def t_c17_mixed_calibration_is_disclosed():
+    """C-17 defect (2): partial calibration measured WORSE than none for the components it
+    skipped (RAM-only 12.5% median |err| vs 8.8% fully-preset), yet plan printed the identical
+    'calibration applied' line for a one-component state and a complete one. The gap must be
+    named at the same prominence as what WAS measured."""
+    from quantprobe.plan import calibration_gap_warning, CAL_COMPONENTS
+    full = {k: 1 for _, k in CAL_COMPONENTS}
+    assert calibration_gap_warning(full) == [], "a complete calibration must print no warning"
+    for name, key in CAL_COMPONENTS:
+        partial = {k: 1 for _, k in CAL_COMPONENTS if k != key}
+        w = calibration_gap_warning(partial)
+        assert len(w) == 1 and name in w[0], (key, w)
+        assert "MIXED" in w[0] and "12.5%" in w[0] and "C-17" in w[0], w
+    w = calibration_gap_warning({"ram_bw_measured": 24.4})
+    assert "disk" in w[0] and "decode anchors" in w[0], w
+
+
+def t_no_test_is_defined_after_the_runner():
+    """The runner reads globals() at the point `if __name__ == '__main__'` executes, so anything
+    defined BELOW it does not exist yet and never runs. That is not hypothetical: the C-17 disk
+    regression test sat below the runner from the commit that introduced it and was never
+    executed once. Nothing catches this - the suite just quietly gets smaller."""
+    import re
+    src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py"),
+                  encoding="utf-8").read()
+    i = src.rindex('if __name__ == "__main__":')      # rindex: this test quotes the string too
+    after = re.findall(r"^def (t_\w+)", src[i:], re.M)
+    assert not after, (f"{len(after)} test(s) defined after the runner and therefore never "
+                       f"collected: {after}")
 
 
 def t_moneroape_ubatch_cap():
@@ -2190,30 +2287,71 @@ def t_version():
     assert quantprobe.__version__
 
 
-if __name__ == "__main__":
-    print("quantprobe smoke suite")
-    for n, f in list(globals().items()):
-        if n.startswith("t_"):
-            check(n, f)
-    if FAIL:
-        sys.exit(f"\n{len(FAIL)} FAILURES")
-    print("\nall green")
-
-
-def t_c17_disk_probe_is_not_page_cache_contaminated():
-    """C-17: measure_disk read a fixed 512MB tail jittered by <=7MB, so ~98.6% of the span
+def t_c17_disk_probe_reads_the_whole_file_not_a_warm_tail():
+    """C-17: measure_disk read a fixed 512MB TAIL jittered by <=7MB, so ~98.6% of the span
     overlapped between calls and buffering=0 does not bypass the OS page cache. Measured:
     cold 0.44, then 2.99 / 2.99 GB/s - the warm number is RAM and it shipped as a disk-tier
-    input 6.8x too fast. Repeated probes must now agree: whole-file jitter lands on cold
-    regions because a GGUF worth streaming exceeds free page cache."""
+    input 6.8x too fast.
+
+    THREE DEFECTS IN THE FIRST VERSION OF THIS TEST, all fixed here:
+      1. it was defined BELOW the `if __name__ == "__main__"` runner, so the function did not
+         exist when the loop read globals() - it never ran once, on any commit;
+      2. it returned a bare "skipped" string without a >2GB fixture, and the harness printed a
+         returned value as `ok` - so even collected it would have counted as green;
+      3. its only assertion was that repeated TIMINGS AGREE, which a fully page-cached file
+         satisfies perfectly. It could not tell the fix from the failure it guards.
+
+    So the property is checked where it lives instead: the offset distribution. `probe_offset`
+    must be uniform over the WHOLE file. No fixture, no timing, no cache to contaminate - and it
+    fails by construction on the tail-jitter code (verified by mutation)."""
+    from quantprobe.detect import probe_offset
+    # 20 GB: a real disk-tier GGUF, and past 4 GiB - which is where a 32-bit random draw silently
+    # stops. The first version of this fix used os.urandom(4) and could not reach 80% of a file
+    # this size; the reachable prefix is exactly the part a partial download already warmed.
+    size, span = 20 * 1024**3, 64 * 1024**2
+    offs = [probe_offset(size, span) for _ in range(400)]
+    room = size - span
+    assert min(offs) < room * 0.05, (
+        f"probe never reads near the START of the file (min offset {min(offs)/room:.3f} of the "
+        f"range) - this is the fixed-tail probe C-17 measured 6.8x too fast")
+    assert max(offs) > room * 0.95, f"probe never reaches the END of the file: {max(offs)/room:.3f}"
+    # coverage, not just extremes: a 7 MB jitter would put every draw in one bucket
+    buckets = {int(o / room * 10) for o in offs}
+    assert len(buckets) >= 9, (
+        f"probe offsets cluster in {len(buckets)}/10 deciles - the span between calls overlaps, "
+        f"which is exactly how the second read measured RAM instead of the disk")
+    assert probe_offset(span, span) == 0 and probe_offset(10, 1 << 30) == 0   # degenerate sizes
+    # determinism seam: with the draw pinned, the offset is the arithmetic one
+    assert probe_offset(size, span, rnd=lambda: 0) == 0
+    assert probe_offset(size, span, rnd=lambda: room) == room
+
+
+def t_c17_disk_probe_timings_agree_on_a_real_file():
+    """The end-to-end half, when a real fixture is available. Kept SEPARATE from the offset test
+    above so that its absence cannot make the offset property look checked - and it now returns
+    a SKIP the harness prints as a skip rather than as `ok`."""
     import os
     from quantprobe.detect import measure_disk
     p = os.environ.get("QP_DISK_TEST_FILE")
     if not p or not os.path.exists(p):
-        return "skipped (set QP_DISK_TEST_FILE to a >2GB file)"
+        return "SKIP: set QP_DISK_TEST_FILE to a file larger than free page cache"
     runs = [measure_disk(p, mb=64) for _ in range(3)]
     lo, hi = min(runs), max(runs)
     assert hi / lo < 2.5, (
         f"disk probe drifts {hi/lo:.1f}x across repeats {runs} - page-cache contamination "
         "is back; the second read is measuring RAM, not the disk")
-    return f"ok: {[round(r, 2) for r in runs]} GB/s, spread {hi/lo:.2f}x"
+    return None
+
+
+if __name__ == "__main__":
+    print("quantprobe smoke suite")
+    for n, f in list(globals().items()):
+        if n.startswith("t_"):
+            check(n, f)
+    if SKIP:
+        print(f"\n{len(SKIP)} SKIPPED (a skip is not a pass):")
+        for n, why in SKIP:
+            print(f"  - {n}: {why}")
+    if FAIL:
+        sys.exit(f"\n{len(FAIL)} FAILURES")
+    print("\nall green")
