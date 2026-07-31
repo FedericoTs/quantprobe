@@ -2,6 +2,8 @@
   <img src="assets/quantprobe-wordmark.svg" width="360" alt="quantprobe — the q and p share one bar, coloured VRAM to RAM to disk">
 </p>
 
+<h1 align="center">quantprobe</h1>
+
 <p align="center"><em>the bar is the probe: one column through the memory tiers it prices — VRAM, RAM, disk.</em></p>
 
 Predicts how fast an LLM will run on your machine — **before you download it** — then hands you the exact llama.cpp command. If nothing fits well enough, it builds a quantization tuned to your specific model and hardware.
