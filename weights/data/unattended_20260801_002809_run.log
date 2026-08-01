@@ -1,0 +1,23 @@
+[00:28:09] ======================================================================
+[00:28:09] unattended SERIAL re-run  stamp=20260801_002809  pid=16200
+[00:28:09] cal_id=2dc97d41 (expected 2dc97d41)
+[00:28:09] addendum written -> unattended_20260801_002809_stake_addendum.json
+[00:28:09] --- PHASE 1/2: full 14-row ladder ---
+[00:29:22]   gate[ladder] OPEN: gpu 660 MiB, free RAM 14.1 GB, cpu mean 0.7% max 2.0%
+[00:29:22]   baseline backed up -> unattended_20260801_002809_ladder_baseline_backup.json
+[00:29:22]   ladder: starting (long - expect well over an hour)
+[00:37:25]   baseline restored - the new run is in *_ladder_result.json, NOT in the locked file
+[00:37:25]   ladder: done ok=True in 483.0s
+[00:37:25] --- PHASE 2/2: disk-tier row vs the frozen stake ---
+[00:37:25]   disk-tier: settling 300s after the ladder (page-cache state is this row's premise)
+[00:43:40]   gate[disktier] OPEN: gpu 734 MiB, free RAM 14.6 GB, cpu mean 0.2% max 2.0%
+[00:43:40]   bench KR3_control_7B_ngl0: -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -t 4 -n 64 -p 0 -r 2
+[00:44:11]   bench KR3_control_7B_ngl0: tok/s 7.570039 reps [7.5353, 7.6048] spread 1.009x wall 31.1s
+[00:44:11]   bench PRIMARY_laguna_tg64: -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 64 -p 0 -r 3
+[00:51:12]   bench PRIMARY_laguna_tg64: tok/s 0.476225 reps [0.5122, 0.4369, 0.4796] spread 1.172x wall 421.0s
+[00:51:12]   bench KR2_laguna_tg32: -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 32 -p 0 -r 3
+[00:54:57]   bench KR2_laguna_tg32: tok/s 0.449311 reps [0.5462, 0.395, 0.4067] spread 1.383x wall 225.0s
+[00:54:57] ======================================================================
+[00:54:57] RESULT -> unattended_20260801_002809_RESULT.json
+[00:54:57] disk-tier verdict: NOT VALIDATED - KR1_band=FAIL; KR2_pct_on_tg64=5.7; KR2_pct_on_tg32=6.0
+[00:54:57] ladder: compare *_ladder_result.json against the baseline BY HAND. Per C-18 the median has a +/-1 point noise floor - 'no regression outside 2 points' is the criterion, NOT 'the median improved'.

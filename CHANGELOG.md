@@ -6,51 +6,85 @@
 
 Every fix below is a correction to something we already shipped. Read the last section first.
 
-### The disk tier is still UNVALIDATED - and that is the headline
+### The disk tier is now MEASURED - and the law missed it by 30%
 
-We corrected the disk-bandwidth probe (see Fixed), and we have **not** shown the new number is
-right. Proving the old number wrong is not the same thing.
+We corrected the disk-bandwidth probe (see Fixed), then measured a real disk-tier row against a
+band staked in advance. **The prediction missed, and it missed upward: real hardware is 30%
+faster than the law says.**
 
-The probe read a fixed 512 MB tail region jittered by at most 7 MB, so ~98.6% of it overlapped
-between calls, and `buffering=0` does **not** bypass the OS page cache. Measured on the reference
-box: cold 0.44 GB/s, then 2.99 and 2.99 GB/s on re-reads. The warm figure is RAM. It shipped as a
-disk-tier input, **6.8x too fast**.
+| | |
+|---|---|
+| predicted | **0.331505 tok/s** (staked band [0.265204, 0.442007]) |
+| measured | **0.476225 tok/s** |
+| error | **−30.4% — OUTSIDE the band. KR1 FAIL.** |
 
-Why it survived: all 14 rows of our validation ladder are VRAM- or RAM-resident. **Zero read the
-disk tier.** A component no validation row touches can stay wrong indefinitely. That is the
-sharper form of C-17, and it is a coverage gap, not an accident.
+The miss is worth trusting because the three guard rules passed *first*, which is exactly what
+separates this run from the previous attempt: **KR3** the harness demonstrably varies (control
+7.570 tok/s against a 7.09 anchor), **KR4** steady state reached (rep spread 1.172×, against a
+2.09× failure the day before), **KR2** decode not load (5.7% / 6.0%, both denominators). One
+`cal_id` at both ends, gates open on the first attempt at 0.2% CPU.
 
-We tried to close it for this release and failed honestly. A disk-tier row was staked in writing
-first (predicted 0.331505 tok/s, 93% of it the disk term, band [0.265, 0.442]). The measurement
-came back at 0.34 - nominally 2.5% inside the band - **and we are not claiming it.** Two of our
-own kill rules fired:
+Inverting the term, the I/O component is **1.485× faster than modelled**. That is one of exactly
+two things, and this measurement cannot tell them apart:
 
-- **KR4 (steady state).** `llama-bench` reported `0.34 +/- 0.17` over 2 reps. For n=2 that implies
-  individual reps of ~0.22 and ~0.46, a **2.09x spread**, against a rule reading ">2x between reps
-  means no steady state and the mean is not the predicted quantity." Every rounding consistent
-  with the printed two decimals gives 2.02x-2.17x. It fires under all of them.
-- **C-14 (one machine state per comparison).** The primary run overlapped a concurrent ladder that
-  held ~13.7 GB of working set on a 16 GiB box. For a row whose entire premise is the page-cache
-  miss fraction, that is a first-order confound. A number landing near prediction under
-  contamination is worth less than no number.
+- effective bandwidth under llama.cpp's **sequential** streaming is ~0.70 GB/s, not the 0.47 GB/s
+  our random-offset cold probe reports — meaning the probe measures the wrong *access pattern*,
+  a different bug from the page-cache one below, or
+- the page-cache **miss fraction** is ~0.429, not the modelled 0.637 — which is what expert-usage
+  skew predicts if hot experts stay resident and never pay disk.
 
-What we can say: the row genuinely streamed from disk rather than being served from cache. A
-recovered disk-counter trace shows D: read at mean 0.266 / median 0.227 / max 0.508 GB/s during
-the run. That is a **post-hoc diagnostic re-read, not a scored measurement**, and the competing job
-was also reading from D:, so an unknown share of it is not ours.
+**We have not changed a coefficient.** One datapoint establishes direction, not a constant, and
+fitting to it would repeat the error C-02 exists to warn about. The discriminating experiment —
+sequential-vs-random read at matched size — is the next step.
 
-**Do not quote the disk tier as validated.** The staked band remains open and the stake file is
-frozen so it can be scored later without renegotiation.
+Why this went undetected until now: all 14 rows of our validation ladder are VRAM- or RAM-resident.
+**Zero read the disk tier.** A component no validation row touches can stay wrong indefinitely.
+
+Earlier context, retained because the correction is the point: the probe read a fixed 512 MB tail
+region jittered by at most 7 MB, so ~98.6% of it overlapped between calls, and `buffering=0` does
+**not** bypass the OS page cache. Cold 0.44 GB/s, then 2.99 and 2.99 on re-reads. The warm figure
+is RAM. It shipped as a disk-tier input, **6.8× too fast**.
+
+**The first attempt at this measurement was thrown away, and that is why the second one counts.**
+It returned 0.34 tok/s — nominally 2.5% *inside* the band, the most tempting number of the whole
+release. It was discarded because KR4 fired (`0.34 ± 0.17` over 2 reps implies reps of ~0.22 and
+~0.46, a 2.09× spread against a >2× rule) and because the run overlapped a concurrent ladder
+holding ~13.7 GB on a 16 GiB box, violating C-14 on a row whose entire premise is the page-cache
+miss fraction. A number landing near prediction under contamination is worth less than no number.
+Re-run serially on an idle box, the same row measured 0.476 and failed the band outright.
+
+### A ladder median can hold still while every row under it moves
+
+All 14 ladder rows measured **faster** than the reference pass taken under the same `cal_id` — not
+13 of 14, all of them. Median **+4.6%**, range +1.4% to +27.5%, prediction playing no part.
+
+The median |err| moved only 9.0% → 8.4%, because the errors carry mixed signs and a uniform
+speed-up improves the over-predicted rows while worsening the under-predicted ones. **The median
+was stable by cancellation, not because the machine was.** A median inside C-18's ±1 point noise
+floor is not evidence that the measurement basis held still; the per-row measured-vs-measured diff
+is the sensitive detector, and it is now printed alongside.
+
+Established independently of any of this, because it involves no timing at all: across both
+passes **every prediction field is bit-identical** — 14 tok/s, 14 placements, 14 emitted commands.
+**1.24.0 changed no shipped prediction.**
+
+Consequences we are acting on rather than noting:
+
+- The 8.4% median passes its staked band [6.8, 10.8] and is reported as **unchanged**, not as an
+  improvement. 0.6 points is inside the noise floor.
+- **Published headline speeds stay at the reproducible range, not the scrubbed-box ceiling.**
+  Qwen3-30B-A3B measured 22.94 tok/s on this pass, above the README's stated 20.4–22.2. The README
+  is unchanged: that pass required stopping services and closing everything, and a user with a
+  browser open cannot reproduce it. A number we can only obtain under lab conditions fails the
+  standard we set for ourselves.
+- **gemma4-12B has now returned 13.23, 12.25 and 15.62 tok/s across three passes** — a 27% spread.
+  That row is not measuring a stable quantity and its ladder entry should not be trusted until it is.
 
 ### Also not validated in this release
 
-- **Whether 1.24.0 regresses the ladder median: UNMEASURED.** The final ladder run was contaminated
-  by the same overlap described above (rows 9-13 degrade, wall-clock balloons - a prediction error
-  cannot change how long a bench takes). An 11-row subset medians at 8.8%, and we are recording
-  that here **only so it cannot be quietly deployed later as a pass.** It is not evidence.
-  What *is* established, because it involves no timing at all: all 42 prediction fields (14 tok/s,
-  14 placements, 14 emitted commands) are bit-identical to the reference ladder. **1.24.0 changed
-  no shipped prediction.**
+- **Which of the two mechanisms makes the disk tier 30% fast: UNDETERMINED.** Access pattern and
+  miss fraction both fit the single datapoint. The sequential-vs-random probe that separates them
+  has not been run, so no coefficient moves in this release.
 - **L-26's "+4.3% prefill" is law-mediated, not a measured A/B.** 360.76 tok/s was measured at
   pp4096; the 345.89 baseline is pp2048 - a different prompt length - and the like-for-like
   pp4096-at-ub2048 control has never been run. Because `-ub` is a cap, the flag also cannot do

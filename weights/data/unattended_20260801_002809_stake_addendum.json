@@ -1,0 +1,13 @@
+{
+ "addendum_to": "disktier_20260731_1857_staked.json",
+ "written_utc": "2026-07-31 22:28:09 UTC",
+ "written_before_any_new_number": true,
+ "KR2_denominator_resolved": "The frozen stake said 'tg32 and tg64 must agree within 25%' without naming a denominator: the 2026-07-31 numbers gave 29.4% on tg64 and 22.7% on tg32, i.e. fail or pass depending on a choice the stake never made. Resolved HERE, before any new number exists, to the STRICTER reading: FAIL if EITHER normalisation exceeds 25%. Chosen against our own interest so it cannot be a favourable reading picked after the fact.",
+ "reps_changed": "r=2 -> r=3, with per-rep tok/s READ from llama-bench JSON samples_ns rather than inferred from a printed sd. No threshold moves: KR4 already names rep-to-rep spread, and n=2 made the two reps unobservable.",
+ "unchanged": [
+  "KR1 band [0.265204, 0.442007] around predicted 0.331505",
+  "KR3 control > 3.0 tok/s",
+  "KR4 spread > 2x kills the mean",
+  "the VRAM+RAM expert-cache row stays UNMEASURABLE on this box"
+ ]
+}
