@@ -1,0 +1,64 @@
+{
+ "utc": "2026-08-01 16:29:11 UTC",
+ "model": "D:/evo-compress-data/gguf/Qwen3-Coder-30B-A3B-Instruct-Q3_K_M.gguf",
+ "page_bytes": 4096,
+ "runs": [
+  {
+   "tag": "run0_cold",
+   "tok_s": 1.299739,
+   "window_s": 33.6,
+   "net_gbs": 0.2172,
+   "t_token_s": 0.76939,
+   "disk_gb_per_token": 0.16708,
+   "faults": 40791
+  },
+  {
+   "tag": "run1",
+   "tok_s": 9.094947,
+   "window_s": 6.3,
+   "net_gbs": 0.0,
+   "t_token_s": 0.10995,
+   "disk_gb_per_token": 0.0,
+   "faults": 0
+  },
+  {
+   "tag": "run2",
+   "tok_s": 9.554703,
+   "window_s": 6.3,
+   "net_gbs": 0.0,
+   "t_token_s": 0.10466,
+   "disk_gb_per_token": 0.0,
+   "faults": 0
+  },
+  {
+   "tag": "run3",
+   "tok_s": 9.691852,
+   "window_s": 6.3,
+   "net_gbs": 0.0,
+   "t_token_s": 0.10318,
+   "disk_gb_per_token": 0.0,
+   "faults": 0
+  },
+  {
+   "tag": "run4",
+   "tok_s": 10.004611,
+   "window_s": 4.7,
+   "net_gbs": 0.0,
+   "t_token_s": 0.09995,
+   "disk_gb_per_token": 0.0,
+   "faults": 0
+  }
+ ],
+ "baseline_gbs": 0.0044,
+ "fault_spread_x": "inf",
+ "holdout_resident": {
+  "faults": 0,
+  "t_token_s": 0.10995
+ },
+ "lambda_us_per_fault": 16.347,
+ "intercept_s": 0.1026,
+ "r2": 1.0,
+ "predicted_resident_t_token_s": 0.1026,
+ "KR_E_rel_error": 0.0669,
+ "verdict": "H4 SUPPORTED - lambda 16.35 us/fault (r2 1.000), fault count varied infx, and the fit predicts a held-out resident measurement to 6.7%. Law 4's disk tier charges nothing per fault and needs a latency term. lambda is an UPPER bound (contention)."
+}

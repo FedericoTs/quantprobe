@@ -1,0 +1,65 @@
+{
+ "utc": "2026-08-01 16:21:40 UTC",
+ "bw_gbs": 0.455,
+ "ram_s": 0.19973,
+ "page_bytes": 4096,
+ "runs": [
+  {
+   "i": 0,
+   "tok_s": 0.462455,
+   "window_s": 79.0,
+   "read_gbs": 0.1971,
+   "net_gbs": 0.1971,
+   "t_token_s": 2.0543,
+   "disk_gb_per_token": 0.4262,
+   "faults": 104053,
+   "bw_term_s": 0.9367,
+   "missing_s": 0.9179,
+   "latency_us": 8.821
+  },
+  {
+   "i": 1,
+   "tok_s": 0.493968,
+   "window_s": 75.5,
+   "read_gbs": 0.1846,
+   "net_gbs": 0.1846,
+   "t_token_s": 1.9232,
+   "disk_gb_per_token": 0.3737,
+   "faults": 91235,
+   "bw_term_s": 0.8213,
+   "missing_s": 0.9022,
+   "latency_us": 9.889
+  },
+  {
+   "i": 2,
+   "tok_s": 0.503886,
+   "window_s": 72.7,
+   "read_gbs": 0.1824,
+   "net_gbs": 0.1823,
+   "t_token_s": 1.8853,
+   "disk_gb_per_token": 0.3619,
+   "faults": 88354,
+   "bw_term_s": 0.7954,
+   "missing_s": 0.8902,
+   "latency_us": 10.075
+  },
+  {
+   "i": 3,
+   "tok_s": 0.517767,
+   "window_s": 70.4,
+   "read_gbs": 0.1897,
+   "net_gbs": 0.1896,
+   "t_token_s": 1.8348,
+   "disk_gb_per_token": 0.3663,
+   "faults": 89429,
+   "bw_term_s": 0.8051,
+   "missing_s": 0.83,
+   "latency_us": 9.281
+  }
+ ],
+ "baseline_gbs": 0.0,
+ "disk_bytes_spread_x": 1.178,
+ "latency_spread_x": 1.142,
+ "missing_spread_x": 1.106,
+ "verdict": "UNINFORMATIVE - KR-A cannot-vary fired: disk bytes/token spread only 1.18x (< 1.5). The cache did not warm enough to separate a per-fault cost from a per-token one; both hypotheses are trivially satisfiable and neither may be claimed."
+}
