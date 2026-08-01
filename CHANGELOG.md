@@ -101,6 +101,37 @@ Consequences we are acting on rather than noting:
 - **gemma4-12B has now returned 13.23, 12.25 and 15.62 tok/s across three passes** — a 27% spread.
   That row is not measuring a stable quantity and its ladder entry should not be trusted until it is.
 
+### The disk probe no longer asks you to spot its own bad readings
+
+`measure_disk()` took **one** timed read, and its docstring told *you* to "treat a single number
+above ~1.5 GB/s as evidence of a warm cache rather than a fast disk." That is a defect wearing a
+disclosure's clothes - the check belongs in the code. Hours after that sentence was written our
+own release gate caught it: reads of `[0.413, 3.171, 0.415]` GB/s on one file, because an
+experiment had streamed 15 GB of it minutes earlier.
+
+Measured, 8 draws per arm on a 13.7 GB GGUF:
+
+- **73% of the file deliberately warmed:** 6 of 8 single draws returned >1.5 GB/s, max **2.854** -
+  RAM reported as disk, a **6.3x error**.
+- **After evicting 16 GB of an unrelated file:** *still* 1 of 8 draws at **2.092**, a 4.7x error.
+- **Minimum over the draws:** 0.4499 and 0.4537 - both correct against the independent raw-read
+  baseline, and 0.8% apart despite wildly different cache states.
+
+That second line is the one that matters: a cold read cannot be *guaranteed* on this machine at
+all, so single-sample probing is structurally unreliable, not merely unlucky after a download.
+`measure_disk` now returns the **minimum over N disjoint random regions** - nothing reads faster
+than the device except cache. `calibrate` and `hw --measure` print the individual draws.
+
+**One staked prediction was refuted and is published here at the same size.** We expected a
+`max/min > 2.0` spread test to flag warm files and stay silent on cold ones. It fired on *both*
+arms - correctly, since neither arm was truly cold. The warm *fraction* does discriminate (1/8 vs
+7/8), but that criterion was chosen after seeing the numbers; it is shown to you, labelled
+post-hoc, and never used to alter the estimate.
+
+We also did **not** nudge this probe toward the ~0.25 GB/s llama.cpp actually achieves while
+streaming. That gap is a runtime inefficiency and belongs in the law, not in a probe whose job is
+to measure the device. Two errors that cancel are still two errors.
+
 ### Also not validated in this release
 
 - **Expert-usage skew is inferred, never observed.** The miss fraction survives only because its

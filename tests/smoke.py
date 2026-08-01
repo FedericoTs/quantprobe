@@ -2335,11 +2335,42 @@ def t_c17_disk_probe_timings_agree_on_a_real_file():
     p = os.environ.get("QP_DISK_TEST_FILE")
     if not p or not os.path.exists(p):
         return "SKIP: set QP_DISK_TEST_FILE to a file larger than free page cache"
-    runs = [measure_disk(p, mb=64) for _ in range(3)]
+    runs = [measure_disk(p, mb=64, samples=3) for _ in range(3)]
     lo, hi = min(runs), max(runs)
     assert hi / lo < 2.5, (
         f"disk probe drifts {hi/lo:.1f}x across repeats {runs} - page-cache contamination "
-        "is back; the second read is measuring RAM, not the disk")
+        "is back; the minimum-of-N estimator is not holding (#97)")
+    return None
+
+
+def t_p97_disk_probe_returns_the_cold_draw_not_the_warm_one():
+    """prereg #97: a single warm draw must not become the reported disk bandwidth.
+
+    Fixture-free and deterministic - `_one_read` is replaced by a scripted sequence, so this
+    tests the ESTIMATOR rather than the weather. Against the pre-#97 single-sample code this
+    fails by construction: that version returned whatever one draw it happened to take, and
+    measured reality supplied the failing input (6 of 8 draws on a warmed 13.7 GB file came
+    back >1.5 GB/s, max 2.854 - RAM reported as disk, a 6.3x error).
+    """
+    from quantprobe import detect
+    real = detect._one_read
+    try:
+        # one genuinely cold region, the rest served from page cache
+        seq = [2.85, 0.45, 2.78, 2.83, 2.44]
+        it = iter(seq)
+        detect._one_read = lambda path, mb: next(it)
+        bw, info = detect.measure_disk("ignored", samples=len(seq), detail=True)
+        assert abs(bw - 0.45) < 1e-9, (
+            f"reported {bw} GB/s from draws {seq}: a cached read is being shipped as disk "
+            f"bandwidth. The minimum is the only draw that can be the device.")
+        assert info["warm_draws"] == 4, f"expected 4 warm draws flagged, got {info['warm_draws']}"
+        # and the all-cold case must not invent a warning
+        it2 = iter([0.45, 0.46, 0.44])
+        detect._one_read = lambda path, mb: next(it2)
+        _, info2 = detect.measure_disk("ignored", samples=3, detail=True)
+        assert info2["warm_draws"] == 0, "warning fires on a consistent set - it would be noise"
+    finally:
+        detect._one_read = real
     return None
 
 

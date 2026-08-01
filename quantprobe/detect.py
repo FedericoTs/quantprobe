@@ -185,16 +185,8 @@ def probe_offset(size, span, rnd=None):
     return r % (room + 1)
 
 
-def measure_disk(path, mb=512):
-    """Sequential read of a real file region, GB/s.
-
-    COLDNESS IS NOT GUARANTEED, only made likely: `probe_offset` picks a random region of the
-    whole file because a GGUF worth streaming is far larger than free page cache. It cannot help
-    when the CALLER has just written or read the whole file - `quantprobe calibrate --model X`
-    immediately after `fetch` downloaded X measures the page cache, not the disk. One sample,
-    no cold-read verification: treat a single number above ~1.5 GB/s on a SATA-class device as
-    evidence of a warm cache rather than a fast disk (C-17, still open).
-    """
+def _one_read(path, mb):
+    """One timed read of one random region. GB/s."""
     import time
     size = os.path.getsize(path)
     span = min(mb * 1024 * 1024, size)
@@ -212,6 +204,50 @@ def measure_disk(path, mb=512):
     return (span - left) / 1e9 / dt
 
 
+def measure_disk(path, mb=512, samples=5, detail=False):
+    """Disk read bandwidth, GB/s: the MINIMUM over `samples` disjoint random regions.
+
+    WHY THE MINIMUM AND NOT ONE SAMPLE (prereg #97, measured 2026-08-01). The previous version
+    took a single sample and told the USER, in this docstring, to "treat a single number above
+    ~1.5 GB/s as evidence of a warm cache rather than a fast disk." Asking the caller to perform
+    the check the code should do is not a guard. Hours after that text was written, verify.py
+    caught it live: reads of [0.413, 3.171, 0.415] GB/s on one file, because an experiment had
+    streamed 15 GB of it minutes earlier. A single draw can BE that middle sample.
+
+    Measured, 8 draws per arm on a 13.7 GB GGUF:
+      file with 73% deliberately warmed : 6 of 8 draws returned >1.5 GB/s, max 2.854 - RAM
+                                          reported as disk, a 6.3x error
+      file after deliberate eviction    : still 1 of 8 draws at 2.092 - a 4.7x error
+      minimum over the draws            : 0.4499 and 0.4537 - both correct against the
+                                          independent raw-read baseline of 0.452-0.459 (D-28)
+
+    The second line is the one that matters: on this box a cold read cannot be *guaranteed* even
+    after evicting 16 GB of an unrelated file, so single-sample probing is structurally
+    unreliable rather than merely unlucky-after-a-download. Nothing reads FASTER than the device
+    except cache, so the minimum is the estimator; a warm region can only push a sample up.
+
+    NOT DONE HERE, deliberately: this does not nudge the number toward the ~0.25 GB/s that
+    llama.cpp actually achieves while streaming (C-23). That gap is a RUNTIME inefficiency and
+    belongs in the law, not in a probe whose job is to measure the DEVICE. Letting a
+    mis-measured probe cancel an unmodelled runtime cost is the mutually-consistent-presets trap
+    C-17 exists to warn about - two errors that cancel are still two errors.
+
+    Cost: `samples` x `mb` of reading (default ~2.5 GB, a few seconds) on a once-per-machine
+    calibration path. `detail=True` also returns the individual draws and how many look warm.
+    """
+    reads = [_one_read(path, mb) for _ in range(max(1, samples))]
+    lo = min(reads)
+    # POST-HOC (labelled as such): the staked spread test max/min > 2.0 was REFUTED - it fired
+    # on both arms, because neither arm was truly cold. The warm FRACTION does discriminate
+    # (1/8 evicted vs 7/8 warmed), but it was chosen after seeing those numbers and has not
+    # been confirmed on an independent run. It is reported, never used to alter the estimate.
+    warm = sum(1 for r in reads if r > 2.0 * lo)
+    if detail:
+        return lo, {"draws": [round(r, 4) for r in reads], "disk_gbs": round(lo, 4),
+                    "warm_draws": warm, "samples": len(reads)}
+    return lo
+
+
 def run(a):
     hw, notes = detect()
     print("quantprobe hw - this machine, as the law sees it\n")
@@ -220,16 +256,17 @@ def run(a):
     if getattr(a, "measure", None):
         p = a.measure
         if os.path.isfile(p):
-            bw = measure_disk(p)
+            bw, info = measure_disk(p, detail=True)
             hw["disk_bw"] = round(bw, 2)
             print(f"  disk MEASURED on {os.path.basename(p)}: {bw:.2f} GB/s sequential [measured]")
-            print("    ONE sample from a random region, and repeats of it are not tight: four "
-                  "back-to-back probes\n    of a 39.7 GB GGUF on this box returned 0.38 / 0.64 / "
-                  "0.75 / 0.80 GB/s - a 2.1x spread from\n    readahead and platter position "
-                  "alone. Read this as the order of magnitude, not the number,\n    and re-run it "
-                  "if it disagrees with your drive's spec by more than that. If it comes back "
-                  "near\n    RAM speed on a SATA-class drive, the file was in page cache and the "
-                  "probe measured that (C-17).")
+            print(f"    minimum of {info['samples']} probes at random offsets: {info['draws']}")
+            if info["warm_draws"]:
+                print(f"    {info['warm_draws']} of {info['samples']} draws returned >2x the "
+                      f"minimum - page cache, not disk. The minimum is\n    used and is the "
+                      f"right number. Measured on a deliberately warmed 13.7 GB file, 6 of 8 "
+                      f"single\n    draws came back above 1.5 GB/s (max 2.854, a 6.3x error) "
+                      f"while the minimum stayed correct;\n    even after evicting 16 GB, 1 in 8 "
+                      f"draws still hit cache. One sample was never safe. (#97)")
         else:
             print(f"  --measure: file not found: {p}")
     flags = (f"--vram {hw['vram']:g} --vram-bw {hw['vram_bw']:g} --ram {hw['ram']:g} "
