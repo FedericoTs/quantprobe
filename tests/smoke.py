@@ -19,12 +19,22 @@ from contextlib import redirect_stdout
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 FAIL = []
+SKIP = []
 
 
 def check(name, fn):
+    """A SKIP IS NOT A PASS - verify.py layer 3 has enforced that since v1.12, and this harness
+    did not. A test that returned a "skipped (...)" string printed `ok` and was counted in the
+    "N tests green" line, which is how t_c17_disk_probe_is_not_page_cache_contaminated - the
+    regression test for a disk number that shipped 6.8x too fast - read as green while measuring
+    nothing. Skips are now printed as skips and listed at the end. Return the string SKIP:<why>."""
     try:
-        fn()
-        print(f"  ok    {name}")
+        r = fn()
+        if isinstance(r, str) and r.startswith("SKIP:"):
+            SKIP.append((name, r[5:].strip()))
+            print(f"  SKIP  {name}: {r[5:].strip()}")
+        else:
+            print(f"  ok    {name}")
     except Exception as e:
         FAIL.append((name, e))
         print(f"  FAIL  {name}: {e}")
@@ -1312,25 +1322,36 @@ def t_calibrate_cli_registered():
 
 
 def t_moneroape_channel_count():
-    # THE 3.7x INPUT BUG from the first external replication: 4 DIMMs on consumer AM5 must be
-    # treated as DUAL channel, not 4-channel. HEDT names keep their width.
-    import quantprobe.detect as d, platform
-    orig = platform.processor
-    try:
-        platform.processor = lambda: "AMD Ryzen 5 8600G w/ Radeon"
-        # simulate the detect() channel logic directly: consumer + 4 sticks -> 2 channels
-        cpu = platform.processor().lower()
-        wide = any(w in cpu for w in ("threadripper", "epyc", "xeon w-3"))
-        assert not wide
-        platform.processor = lambda: "AMD Ryzen Threadripper 7970X"
-        cpu = platform.processor().lower()
-        assert "threadripper" in cpu
-    finally:
-        platform.processor = orig
-    # and the real detect() on THIS box must not crash and must mention calibrate in the RAM note
+    """THE 2x INPUT BUG from the first external replication: 4 DIMMs on consumer AM5 must be
+    treated as DUAL channel, not 4-channel (173 GB/s quoted where the platform delivers ~86).
+
+    This test used to RE-IMPLEMENT the wide-CPU check in its own body and assert on its own
+    copy, so it never touched detect.py at all - mutation-verified: restoring the shipped bug
+    `channels = max(1, min(sticks or 2, 8))` left it green. It now calls the shipping function.
+    """
+    import quantprobe.detect as d
+    # consumer platform: stick count must NOT become channel count, at any stick count
+    for sticks in (2, 4, 8):
+        n, src = d.ram_channels(sticks, "AMD Ryzen 5 8600G w/ Radeon Graphics")
+        assert n == 2, f"consumer AM5 with {sticks} sticks priced as {n}-channel: {src}"
+    assert d.ram_channels(1, "AMD Ryzen 5 8600G")[0] == 1        # one stick is one channel
+    assert d.ram_channels(None, "AMD Ryzen 5 8600G")[0] == 2     # unknown -> conservative 2
+    assert "does NOT mean" in d.ram_channels(4, "AMD Ryzen 5 8600G")[1], "the trap is not named"
+    # HEDT/server names keep their width
+    for cpu in ("AMD Ryzen Threadripper 7970X", "AMD EPYC 9554", "Intel(R) Xeon(R) w9-3495X"):
+        n, src = d.ram_channels(8, cpu)
+        assert n == 8 and "HEDT" in src, (cpu, n, src)
+    assert d.ram_channels(None, "AMD EPYC 9554")[0] == 4         # HEDT default, not 2
+    # the bandwidth this feeds must move with it, not with the stick count
+    assert round(d.ram_channels(4, "Ryzen 5 8600G")[0] * 5200 * 8 / 1000) == 83
+    # and the real detect() on THIS box must not crash; the RAM note must disclose that the
+    # DELIVERED stream is below peak and point at calibrate (no bare "typically ~55%" claim)
     _, notes = d.detect()
     ram_notes = [n for n in notes if n.startswith("RAM:")]
-    assert ram_notes and ("calibrate" in ram_notes[0] or "unknown" in ram_notes[0]), ram_notes
+    assert ram_notes, notes
+    assert "calibrate" in ram_notes[0] or "speed unknown" in ram_notes[0], ram_notes
+    assert "typically" not in ram_notes[0], (
+        "the stream-realism fraction is n=1 machine - it may not be quoted as a typical value")
 
 
 def t_moneroape_ubatch_cap():
@@ -1504,11 +1525,117 @@ def t_version():
     assert quantprobe.__version__
 
 
+
+def t_c17_disk_probe_reads_the_whole_file_not_a_warm_tail():
+    """C-17: measure_disk read a fixed 512MB TAIL jittered by <=7MB, so ~98.6% of the span
+    overlapped between calls and buffering=0 does not bypass the OS page cache. Measured:
+    cold 0.44, then 2.99 / 2.99 GB/s - the warm number is RAM and it shipped as a disk-tier
+    input 6.8x too fast.
+
+    THREE DEFECTS IN THE FIRST VERSION OF THIS TEST, all fixed here:
+      1. it was defined BELOW the `if __name__ == "__main__"` runner, so the function did not
+         exist when the loop read globals() - it never ran once, on any commit;
+      2. it returned a bare "skipped" string without a >2GB fixture, and the harness printed a
+         returned value as `ok` - so even collected it would have counted as green;
+      3. its only assertion was that repeated TIMINGS AGREE, which a fully page-cached file
+         satisfies perfectly. It could not tell the fix from the failure it guards.
+
+    So the property is checked where it lives instead: the offset distribution. `probe_offset`
+    must be uniform over the WHOLE file. No fixture, no timing, no cache to contaminate - and it
+    fails by construction on the tail-jitter code (verified by mutation)."""
+    from quantprobe.detect import probe_offset
+    # 20 GB: a real disk-tier GGUF, and past 4 GiB - which is where a 32-bit random draw silently
+    # stops. The first version of this fix used os.urandom(4) and could not reach 80% of a file
+    # this size; the reachable prefix is exactly the part a partial download already warmed.
+    size, span = 20 * 1024**3, 64 * 1024**2
+    offs = [probe_offset(size, span) for _ in range(400)]
+    room = size - span
+    assert min(offs) < room * 0.05, (
+        f"probe never reads near the START of the file (min offset {min(offs)/room:.3f} of the "
+        f"range) - this is the fixed-tail probe C-17 measured 6.8x too fast")
+    assert max(offs) > room * 0.95, f"probe never reaches the END of the file: {max(offs)/room:.3f}"
+    # coverage, not just extremes: a 7 MB jitter would put every draw in one bucket
+    buckets = {int(o / room * 10) for o in offs}
+    assert len(buckets) >= 9, (
+        f"probe offsets cluster in {len(buckets)}/10 deciles - the span between calls overlaps, "
+        f"which is exactly how the second read measured RAM instead of the disk")
+    assert probe_offset(span, span) == 0 and probe_offset(10, 1 << 30) == 0   # degenerate sizes
+    # determinism seam: with the draw pinned, the offset is the arithmetic one
+    assert probe_offset(size, span, rnd=lambda: 0) == 0
+    assert probe_offset(size, span, rnd=lambda: room) == room
+
+
+def t_c17_disk_probe_timings_agree_on_a_real_file():
+    """The end-to-end half, when a real fixture is available. Kept SEPARATE from the offset test
+    above so that its absence cannot make the offset property look checked - and it now returns
+    a SKIP the harness prints as a skip rather than as `ok`."""
+    import os
+    from quantprobe.detect import measure_disk
+    p = os.environ.get("QP_DISK_TEST_FILE")
+    if not p or not os.path.exists(p):
+        return "SKIP: set QP_DISK_TEST_FILE to a file larger than free page cache"
+    runs = [measure_disk(p, mb=64, samples=3) for _ in range(3)]
+    lo, hi = min(runs), max(runs)
+    assert hi / lo < 2.5, (
+        f"disk probe drifts {hi/lo:.1f}x across repeats {runs} - page-cache contamination "
+        "is back; the minimum-of-N estimator is not holding (#97)")
+    return None
+
+
+def t_p97_disk_probe_returns_the_cold_draw_not_the_warm_one():
+    """prereg #97: a single warm draw must not become the reported disk bandwidth.
+
+    Fixture-free and deterministic - `_one_read` is replaced by a scripted sequence, so this
+    tests the ESTIMATOR rather than the weather. Against the pre-#97 single-sample code this
+    fails by construction: that version returned whatever one draw it happened to take, and
+    measured reality supplied the failing input (6 of 8 draws on a warmed 13.7 GB file came
+    back >1.5 GB/s, max 2.854 - RAM reported as disk, a 6.3x error).
+    """
+    from quantprobe import detect
+    real = detect._one_read
+    try:
+        # one genuinely cold region, the rest served from page cache
+        seq = [2.85, 0.45, 2.78, 2.83, 2.44]
+        it = iter(seq)
+        detect._one_read = lambda path, mb: next(it)
+        bw, info = detect.measure_disk("ignored", samples=len(seq), detail=True)
+        assert abs(bw - 0.45) < 1e-9, (
+            f"reported {bw} GB/s from draws {seq}: a cached read is being shipped as disk "
+            f"bandwidth. The minimum is the only draw that can be the device.")
+        assert info["warm_draws"] == 4, f"expected 4 warm draws flagged, got {info['warm_draws']}"
+        # and the all-cold case must not invent a warning
+        it2 = iter([0.45, 0.46, 0.44])
+        detect._one_read = lambda path, mb: next(it2)
+        _, info2 = detect.measure_disk("ignored", samples=3, detail=True)
+        assert info2["warm_draws"] == 0, "warning fires on a consistent set - it would be noise"
+    finally:
+        detect._one_read = real
+    return None
+
+
+def t_no_test_is_defined_after_the_runner():
+    """The runner reads globals() at the point `if __name__ == '__main__'` executes, so anything
+    defined BELOW it does not exist yet and never runs. That is not hypothetical: the C-17 disk
+    regression test sat below the runner from the commit that introduced it and was never
+    executed once. Nothing catches this - the suite just quietly gets smaller."""
+    import re
+    src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py"),
+                  encoding="utf-8").read()
+    i = src.rindex('if __name__ == "__main__":')      # rindex: this test quotes the string too
+    after = re.findall(r"^def (t_\w+)", src[i:], re.M)
+    assert not after, (f"{len(after)} test(s) defined after the runner and therefore never "
+                       f"collected: {after}")
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
         if n.startswith("t_"):
             check(n, f)
+    if SKIP:
+        print(f"\n{len(SKIP)} SKIPPED (a skip is not a pass):")
+        for n, why in SKIP:
+            print(f"  - {n}: {why}")
     if FAIL:
         sys.exit(f"\n{len(FAIL)} FAILURES")
     print("\nall green")

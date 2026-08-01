@@ -73,6 +73,36 @@ def ram_windows():
     return None, None, None
 
 
+WIDE_CPU = ("threadripper", "epyc", "xeon w-3", "xeon(r) w9", "xeon(r) w7", "xeon gold",
+            "xeon platinum", "xeon silver")
+
+
+def ram_channels(sticks, cpu_name):
+    """(channels, provenance) - CHANNEL COUNT IS NOT STICK COUNT.
+
+    The first external replication (RTX 3090 + Ryzen 8600G, 4 DIMMs on dual-channel AM5) hit
+    exactly this: `min(sticks, 8)` assumed 4-channel and quoted 173 GB/s where the platform
+    delivers ~86 peak - a 2x input error that a correct Law 4 turned into a 2x wrong prediction.
+    Consumer desktop platforms (AM4/AM5, LGA17xx/18xx) are DUAL-channel regardless of stick
+    count; only HEDT/server parts go wider, and those we recognise by CPU name. When in doubt:
+    2, plus a note - `quantprobe calibrate` measures the real stream and overrides all of this.
+
+    THIS IS A FUNCTION so the rule can be tested. Before v1.24.0 the same logic was inline in
+    `detect()` and its guard test re-implemented the WIDE list in the test body, which meant the
+    test stayed green with the 2x bug restored (verified by mutation). A regression test that
+    cannot see the code it guards is not a regression test.
+    """
+    cpu = (cpu_name or "").lower()
+    if any(w in cpu for w in WIDE_CPU):
+        n = max(1, min(sticks or 4, 8))
+        return n, f"assumes {n}-channel [HEDT/server CPU detected]"
+    n = min(sticks, 2) if sticks else 2
+    if sticks and sticks > 2:
+        return n, (f"dual-channel [consumer platform; {sticks} sticks does NOT mean {sticks} "
+                   f"channels]")
+    return n, f"assumes {n}-channel"
+
+
 def detect():
     """Return the machine as quantprobe hardware kwargs + a provenance report."""
     sysname = platform.system()
@@ -96,27 +126,13 @@ def detect():
         total, mts, sticks = kb / 2**20, None, None
     if total is None:
         total = 16.0; notes.append("RAM capacity: 16 GB [default - detection failed]")
-    # CHANNEL COUNT IS NOT STICK COUNT. The first external replication (RTX 3090 + Ryzen 8600G,
-    # 4 DIMMs on dual-channel AM5) hit exactly this: min(sticks, 8) assumed 4-channel and quoted
-    # 173 GB/s where the platform delivers ~86 peak - a 2x input error that a correct Law 4
-    # turned into a 2x wrong prediction. Consumer desktop platforms (AM4/AM5, LGA17xx/18xx) are
-    # DUAL-channel regardless of stick count; only HEDT/server parts go wider, and those we can
-    # recognize by CPU name. When in doubt: 2, plus a note - `quantprobe calibrate` measures the
-    # real stream and overrides all of this.
-    cpu_name = platform.processor().lower() if platform.processor() else ""
-    WIDE = ("threadripper", "epyc", "xeon w-3", "xeon(r) w9", "xeon(r) w7", "xeon gold",
-            "xeon platinum", "xeon silver")
-    if any(w in cpu_name for w in WIDE):
-        channels = max(1, min(sticks or 4, 8))
-        chan_src = f"assumes {channels}-channel [HEDT/server CPU detected]"
-    else:
-        channels = min(sticks, 2) if sticks else 2
-        chan_src = (f"dual-channel [consumer platform; {sticks} sticks does NOT mean {sticks} "
-                    f"channels]" if sticks and sticks > 2 else f"assumes {channels}-channel")
+    channels, chan_src = ram_channels(sticks, platform.processor())
     if mts:
         ram_bw = round(channels * mts * 8 / 1000)   # theoretical peak, preset convention
         notes.append(f"RAM: {total:.0f} GB, {sticks} stick(s) @ {mts:.0f} MT/s [os] -> {ram_bw} GB/s peak "
-                     f"({chan_src}); real stream is typically ~55% of this - run `quantprobe calibrate` to measure yours")
+                     f"({chan_src}); the DELIVERED stream is far below peak - the one box we have "
+                     f"measured ran 26.1 of a 48 GB/s peak (0.544; n=1 machine, so this is a "
+                     f"datapoint, not a population). Run `quantprobe calibrate` to measure yours")
     else:
         ram_bw = 48
         notes.append(f"RAM: {total:.0f} GB [os]; speed unknown -> 48 GB/s [default: DDR4-3000 dual, pass --ram-bw]")
@@ -143,12 +159,38 @@ def detect():
     return hw, notes
 
 
-def measure_disk(path, mb=512):
-    """Sequential read of a real file region, uncached-ish: the streaming pattern that matters."""
+def probe_offset(size, span, rnd=None):
+    """Where the next disk probe reads from. Uniform over the WHOLE file, not the tail.
+
+    C-17: the old probe read a fixed 512 MB TAIL region jittered by at most 7 MB, so ~98.6% of
+    the span overlapped between calls, and `buffering=0` does NOT bypass the OS page cache.
+    Measured on this box: cold 0.44 GB/s, then 2.99 / 2.99 GB/s on re-reads - the warm number is
+    RAM, not disk, and it shipped as a disk-tier input 6.8x too fast.
+
+    Split out of `measure_disk` so the property can be tested WITHOUT a multi-gigabyte file and
+    without timing anything: draw N offsets and check they span the file. The previous regression
+    test needed a >2 GB fixture, silently skipped without one, and asserted only that repeated
+    timings AGREE - which a fully page-cached file also satisfies, so it could not tell "fixed"
+    from "warm every time". This one fails on the tail-jitter code by construction.
+    """
+    room = max(0, size - span)
+    if room <= 0:
+        return 0
+    # 8 bytes, not 4. `os.urandom(4)` caps the draw at 2**32-1, so on any file larger than 4 GiB
+    # the probe could never read past the 4 GiB mark: on a 20 GB GGUF - exactly the size class
+    # the disk tier exists to model - 80% of the file was unreachable, and the reachable prefix
+    # is the part a partial download or a header read has already warmed. The C-17 fix shipped
+    # half-done and this is the other half; caught by the offset test in tests/smoke.py.
+    r = rnd() if rnd else int.from_bytes(os.urandom(8), "big")
+    return r % (room + 1)
+
+
+def _one_read(path, mb):
+    """One timed read of one random region. GB/s."""
     import time
     size = os.path.getsize(path)
     span = min(mb * 1024 * 1024, size)
-    off = max(0, size - span - (os.urandom(1)[0] % 7) * 1024 * 1024)  # tail region, jittered
+    off = probe_offset(size, span)
     t0 = time.perf_counter()
     with open(path, "rb", buffering=0) as f:
         f.seek(off)
@@ -162,6 +204,50 @@ def measure_disk(path, mb=512):
     return (span - left) / 1e9 / dt
 
 
+def measure_disk(path, mb=512, samples=5, detail=False):
+    """Disk read bandwidth, GB/s: the MINIMUM over `samples` disjoint random regions.
+
+    WHY THE MINIMUM AND NOT ONE SAMPLE (prereg #97, measured 2026-08-01). The previous version
+    took a single sample and told the USER, in this docstring, to "treat a single number above
+    ~1.5 GB/s as evidence of a warm cache rather than a fast disk." Asking the caller to perform
+    the check the code should do is not a guard. Hours after that text was written, verify.py
+    caught it live: reads of [0.413, 3.171, 0.415] GB/s on one file, because an experiment had
+    streamed 15 GB of it minutes earlier. A single draw can BE that middle sample.
+
+    Measured, 8 draws per arm on a 13.7 GB GGUF:
+      file with 73% deliberately warmed : 6 of 8 draws returned >1.5 GB/s, max 2.854 - RAM
+                                          reported as disk, a 6.3x error
+      file after deliberate eviction    : still 1 of 8 draws at 2.092 - a 4.7x error
+      minimum over the draws            : 0.4499 and 0.4537 - both correct against the
+                                          independent raw-read baseline of 0.452-0.459 (D-28)
+
+    The second line is the one that matters: on this box a cold read cannot be *guaranteed* even
+    after evicting 16 GB of an unrelated file, so single-sample probing is structurally
+    unreliable rather than merely unlucky-after-a-download. Nothing reads FASTER than the device
+    except cache, so the minimum is the estimator; a warm region can only push a sample up.
+
+    NOT DONE HERE, deliberately: this does not nudge the number toward the ~0.25 GB/s that
+    llama.cpp actually achieves while streaming (C-23). That gap is a RUNTIME inefficiency and
+    belongs in the law, not in a probe whose job is to measure the DEVICE. Letting a
+    mis-measured probe cancel an unmodelled runtime cost is the mutually-consistent-presets trap
+    C-17 exists to warn about - two errors that cancel are still two errors.
+
+    Cost: `samples` x `mb` of reading (default ~2.5 GB, a few seconds) on a once-per-machine
+    calibration path. `detail=True` also returns the individual draws and how many look warm.
+    """
+    reads = [_one_read(path, mb) for _ in range(max(1, samples))]
+    lo = min(reads)
+    # POST-HOC (labelled as such): the staked spread test max/min > 2.0 was REFUTED - it fired
+    # on both arms, because neither arm was truly cold. The warm FRACTION does discriminate
+    # (1/8 evicted vs 7/8 warmed), but it was chosen after seeing those numbers and has not
+    # been confirmed on an independent run. It is reported, never used to alter the estimate.
+    warm = sum(1 for r in reads if r > 2.0 * lo)
+    if detail:
+        return lo, {"draws": [round(r, 4) for r in reads], "disk_gbs": round(lo, 4),
+                    "warm_draws": warm, "samples": len(reads)}
+    return lo
+
+
 def run(a):
     hw, notes = detect()
     print("quantprobe hw - this machine, as the law sees it\n")
@@ -170,9 +256,17 @@ def run(a):
     if getattr(a, "measure", None):
         p = a.measure
         if os.path.isfile(p):
-            bw = measure_disk(p)
+            bw, info = measure_disk(p, detail=True)
             hw["disk_bw"] = round(bw, 2)
             print(f"  disk MEASURED on {os.path.basename(p)}: {bw:.2f} GB/s sequential [measured]")
+            print(f"    minimum of {info['samples']} probes at random offsets: {info['draws']}")
+            if info["warm_draws"]:
+                print(f"    {info['warm_draws']} of {info['samples']} draws returned >2x the "
+                      f"minimum - page cache, not disk. The minimum is\n    used and is the "
+                      f"right number. Measured on a deliberately warmed 13.7 GB file, 6 of 8 "
+                      f"single\n    draws came back above 1.5 GB/s (max 2.854, a 6.3x error) "
+                      f"while the minimum stayed correct;\n    even after evicting 16 GB, 1 in 8 "
+                      f"draws still hit cache. One sample was never safe. (#97)")
         else:
             print(f"  --measure: file not found: {p}")
     flags = (f"--vram {hw['vram']:g} --vram-bw {hw['vram_bw']:g} --ram {hw['ram']:g} "
