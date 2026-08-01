@@ -65,7 +65,13 @@ def validate(reg):
 
     # Every scored pre-registration must appear somewhere in the register. This is the check that
     # would have caught a measured result never reaching the code.
-    staked = {}
+    # NUMBERS MUST BE UNIQUE. This dict is keyed by integer, so before 2026-07-31 a second file
+    # claiming a taken number silently OVERWROTE the first - and the "every staked prereg is
+    # cited" check below then passed for both on one citation. Two documents both called #92
+    # shipped that way (per-shape calibration and speculation x KV-quant, staked two minutes
+    # apart), while a third artefact cited as "#92b" belonged to neither. A citation that
+    # resolves to the wrong experiment is the same defect class as no citation at all.
+    staked, dupes = {}, []
     if os.path.isdir(PREREG):
         for fn in sorted(os.listdir(PREREG)):
             if not fn.endswith(".md"):
@@ -74,7 +80,13 @@ def validate(reg):
                 head = f.read(4000)
             m = re.search(r"[Pp]re-registration #(\d+)", head)
             if m:
-                staked[int(m.group(1))] = fn
+                n = int(m.group(1))
+                if n in staked:
+                    dupes.append(f"pre-registration #{n} is claimed by TWO documents "
+                                 f"({staked[n]} and {fn}) - every citation of #{n} is ambiguous. "
+                                 f"Renumber the later stake.")
+                staked[n] = fn
+    problems += dupes
     cited = set()
     for _, e in entries:
         for field in ("evidence", "why_it_is_promising", "what_the_data_rules_out", "magnitude"):

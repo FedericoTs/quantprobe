@@ -1,5 +1,205 @@
 # Changelog
 
+## 1.24.0 - 2026-08-02
+
+**Three defects that were live in 1.23.0, and the one number this release still cannot stand behind.**
+
+Every fix below is a correction to something we already shipped. Read the last section first.
+
+### The disk tier is now MEASURED - and the law missed it by 30%
+
+We corrected the disk-bandwidth probe (see Fixed), then measured a real disk-tier row against a
+band staked in advance. **The prediction missed, and it missed upward: real hardware is 30%
+faster than the law says.**
+
+| | |
+|---|---|
+| predicted | **0.331505 tok/s** (staked band [0.265204, 0.442007]) |
+| measured | **0.476225 tok/s** |
+| error | **−30.4% — OUTSIDE the band. KR1 FAIL.** |
+
+The miss is worth trusting because the three guard rules passed *first*, which is exactly what
+separates this run from the previous attempt: **KR3** the harness demonstrably varies (control
+7.570 tok/s against a 7.09 anchor), **KR4** steady state reached (rep spread 1.172×, against a
+2.09× failure the day before), **KR2** decode not load (5.7% / 6.0%, both denominators). One
+`cal_id` at both ends, gates open on the first attempt at 0.2% CPU.
+
+Inverting the term, the I/O component is **1.485× faster than modelled**. That was one of exactly
+two things — a wrong *access pattern* in our probe, or a wrong *miss fraction* in the law. We
+staked the discriminator before running it, with the inconclusive band declared in advance so the
+answer could not be chosen for convenience, and **it came back decisive.**
+
+### The disk calibration is now confirmed correct — the residency model is what's wrong
+
+Prereg #94, same drive, disjoint cold regions:
+
+| arm | result |
+|---|---|
+| scattered — 8 × 512 MB at random offsets | **0.452 GB/s** |
+| contiguous — one 4 GB sequential read | **0.459 GB/s** |
+| ratio | **1.015× — access-pattern hypothesis REFUTED** |
+| warm re-read (cannot-vary guard, must exceed 2.0) | 2.802 GB/s — **guard passed** |
+
+This drive does not care about access pattern at this size. Two consequences, and the second
+matters more than the first:
+
+1. `measure_disk()` needs no change. The probe was measuring the right thing.
+2. **Both arms land within 4% of the 0.47 GB/s that `calibrate` reports.** The C-17-corrected
+   disk figure is independently confirmed by a probe carrying a working falsifier. Yesterday this
+   changelog said *"proving the old number wrong is not the same as proving the new one right"* —
+   the new one is now right.
+
+By elimination the 30% miss belongs to the **miss fraction**: the law assumes 0.637 of each
+token's bytes are re-read from disk; the measurement implies **~0.429**. That is exactly what
+expert-usage skew predicts — if MoE routing concentrates on a hot subset, those experts stay
+page-cached permanently and never pay disk at all.
+
+**We still have not changed a coefficient**, and won't until skew is measured directly. Elimination
+is not evidence: H2 stands because its only rival is dead, not because anyone has watched the
+routing. That measurement is owed, and **0.429 is the number it has to hit.**
+
+Why this went undetected until now: all 14 rows of our validation ladder are VRAM- or RAM-resident.
+**Zero read the disk tier.** A component no validation row touches can stay wrong indefinitely.
+
+Earlier context, retained because the correction is the point: the probe read a fixed 512 MB tail
+region jittered by at most 7 MB, so ~98.6% of it overlapped between calls, and `buffering=0` does
+**not** bypass the OS page cache. Cold 0.44 GB/s, then 2.99 and 2.99 on re-reads. The warm figure
+is RAM. It shipped as a disk-tier input, **6.8× too fast**.
+
+**The first attempt at this measurement was thrown away, and that is why the second one counts.**
+It returned 0.34 tok/s — nominally 2.5% *inside* the band, the most tempting number of the whole
+release. It was discarded because KR4 fired (`0.34 ± 0.17` over 2 reps implies reps of ~0.22 and
+~0.46, a 2.09× spread against a >2× rule) and because the run overlapped a concurrent ladder
+holding ~13.7 GB on a 16 GiB box, violating C-14 on a row whose entire premise is the page-cache
+miss fraction. A number landing near prediction under contamination is worth less than no number.
+Re-run serially on an idle box, the same row measured 0.476 and failed the band outright.
+
+### A ladder median can hold still while every row under it moves
+
+All 14 ladder rows measured **faster** than the reference pass taken under the same `cal_id` — not
+13 of 14, all of them. Median **+4.6%**, range +1.4% to +27.5%, prediction playing no part.
+
+The median |err| moved only 9.0% → 8.4%, because the errors carry mixed signs and a uniform
+speed-up improves the over-predicted rows while worsening the under-predicted ones. **The median
+was stable by cancellation, not because the machine was.** A median inside C-18's ±1 point noise
+floor is not evidence that the measurement basis held still; the per-row measured-vs-measured diff
+is the sensitive detector, and it is now printed alongside.
+
+Established independently of any of this, because it involves no timing at all: across both
+passes **every prediction field is bit-identical** — 14 tok/s, 14 placements, 14 emitted commands.
+**1.24.0 changed no shipped prediction.**
+
+Consequences we are acting on rather than noting:
+
+- The 8.4% median passes its staked band [6.8, 10.8] and is reported as **unchanged**, not as an
+  improvement. 0.6 points is inside the noise floor.
+- **Published headline speeds stay at the reproducible range, not the scrubbed-box ceiling.**
+  Qwen3-30B-A3B measured 22.94 tok/s on this pass, above the README's stated 20.4–22.2. The README
+  is unchanged: that pass required stopping services and closing everything, and a user with a
+  browser open cannot reproduce it. A number we can only obtain under lab conditions fails the
+  standard we set for ourselves.
+- **gemma4-12B has now returned 13.23, 12.25 and 15.62 tok/s across three passes** — a 27% spread.
+  That row is not measuring a stable quantity and its ladder entry should not be trusted until it is.
+
+### The disk probe no longer asks you to spot its own bad readings
+
+`measure_disk()` took **one** timed read, and its docstring told *you* to "treat a single number
+above ~1.5 GB/s as evidence of a warm cache rather than a fast disk." That is a defect wearing a
+disclosure's clothes - the check belongs in the code. Hours after that sentence was written our
+own release gate caught it: reads of `[0.413, 3.171, 0.415]` GB/s on one file, because an
+experiment had streamed 15 GB of it minutes earlier.
+
+Measured, 8 draws per arm on a 13.7 GB GGUF:
+
+- **73% of the file deliberately warmed:** 6 of 8 single draws returned >1.5 GB/s, max **2.854** -
+  RAM reported as disk, a **6.3x error**.
+- **After evicting 16 GB of an unrelated file:** *still* 1 of 8 draws at **2.092**, a 4.7x error.
+- **Minimum over the draws:** 0.4499 and 0.4537 - both correct against the independent raw-read
+  baseline, and 0.8% apart despite wildly different cache states.
+
+That second line is the one that matters: a cold read cannot be *guaranteed* on this machine at
+all, so single-sample probing is structurally unreliable, not merely unlucky after a download.
+`measure_disk` now returns the **minimum over N disjoint random regions** - nothing reads faster
+than the device except cache. `calibrate` and `hw --measure` print the individual draws.
+
+**One staked prediction was refuted and is published here at the same size.** We expected a
+`max/min > 2.0` spread test to flag warm files and stay silent on cold ones. It fired on *both*
+arms - correctly, since neither arm was truly cold. The warm *fraction* does discriminate (1/8 vs
+7/8), but that criterion was chosen after seeing the numbers; it is shown to you, labelled
+post-hoc, and never used to alter the estimate.
+
+We also did **not** nudge this probe toward the ~0.25 GB/s llama.cpp actually achieves while
+streaming. That gap is a runtime inefficiency and belongs in the law, not in a probe whose job is
+to measure the device. Two errors that cancel are still two errors.
+
+### Also not validated in this release
+
+- **Expert-usage skew is inferred, never observed.** The miss fraction survives only because its
+  rival is dead — nobody has watched MoE routing to confirm that a hot subset stays resident. Until
+  that is measured against the 0.429 target, the disk-tier term keeps under-predicting and the
+  mechanism behind it is a hypothesis with one competitor eliminated, not a finding.
+- **L-26's "+4.3% prefill" is law-mediated, not a measured A/B.** 360.76 tok/s was measured at
+  pp4096; the 345.89 baseline is pp2048 - a different prompt length - and the like-for-like
+  pp4096-at-ub2048 control has never been run. Because `-ub` is a cap, the flag also cannot do
+  anything on prompts of 2048 tokens or fewer. The tool now says all of this itself.
+- **`measure_disk` is still a single sample** spanning ~2.1x on repeat. Making it a median is a
+  method change that needs its own stake, so for now it is disclosed rather than repriced.
+
+### Fixed
+
+- **The upgrade advisor could only ever suppress good upgrades, never invent bad ones** (C-19) - a
+  one-directional error, which is why it survived: every symptom looked like conservatism. The
+  counterfactual dropped `n_layer` and `true_size_gb`, so `evaluate()` re-derived them from presets
+  and priced *a different model with more RAM*. Affected **31 of 340** grid cells. Verified by a
+  staked 340-cell re-sweep: 0 invented pairs against a live population of 24 cells where the check
+  is not vacuous, 0 identity mismatches over 700 counterfactual calls, 0 arithmetic mismatches over
+  131 fired upgrades. The auditor was falsified first - re-injecting the defect makes it exit 1 and
+  reproduces the historical signature to six decimals.
+- **The speculation block printed a speedup the row could not reach** (C-20). Called without the
+  row, it quoted its constant headline regardless of the row's own ceiling. On the **17 of 127**
+  affected cells the true bound was 1.025x-1.229x against a printed 2.10x. Now prints "NOT
+  REACHABLE ON THIS ROW" with the bound. Scope worth knowing: all 22 qualified cells are the dense
+  2.10x headline; the 4.7x n-gram branch has synthetic-probe coverage only.
+- **The C-17 disk fix had shipped half-done.** `os.urandom(4)` capped the random offset at 4 GiB, so
+  on any larger file - precisely the size class the disk tier exists to model - the probe could
+  never read past the 4 GiB mark, and the reachable prefix is exactly what a partial download has
+  already warmed. Found by the new falsification test, not by inspection.
+- **A `+73%` prefill figure leaked onto every row it printed on**, including all-in-VRAM rows where
+  the same flag measured **-39%**. The scope footnote now names the CPU-expert MoE placement and
+  shows the opposite-sign control.
+- **The `-ub` prefill percentage ignored which ubatch was actually emitted.** A 3 GB card sized to
+  `-ub 1024`, where the sweep measured +38.7%, was told +73%. Each ubatch now selects its own
+  measured cell; a ubatch with no cell gets prose, not a borrowed number.
+- **Partial calibration printed the same "calibration applied" line as a complete one**, though
+  RAM-only calibration measures 12.5% median error against 8.8% for the fully-preset baseline -
+  worse than no calibration at all for the components you skipped. Unmeasured components are now
+  named at equal prominence, with the penalty and the command to finish.
+- **Two regression tests were decorative.** The guard for the 6.8x disk error was defined *below*
+  the runner block and had never executed on any commit; its only assertion was that repeated
+  timings agree, which a fully cached file satisfies perfectly. The channel-count guard - the one
+  protecting against a 2x RAM-bandwidth input error from an external replication - re-implemented
+  the rule in its own body and never touched `detect.py`; restoring the shipped bug left it green.
+  All 14 guards for the audited behaviour are now mutation-tested; none are unfalsifiable.
+- **`verify.py` layer 1 counted a skip as a pass**, contradicting the "a skip is not a pass"
+  doctrine layer 3 has enforced since 1.12. Skips now surface in the release gate.
+- **Two pre-registration documents both claimed #92**, so the "every staked prereg is cited" gate
+  was satisfied for both by a single citation, and prereg #92 was in fact cited by nothing. The
+  later document is renumbered #93 with a visible correction note (no stake or threshold changed,
+  nothing had run). `findings.validate()` now rejects duplicate numbers outright.
+- **A measurement harness reported "disk counter unreadable - NOT substituted with an estimate"**
+  while 83 populated rows sat in its log. The sampler emits an empty timestamp on this locale, so
+  rows arrived with two fields instead of three and the parser discarded all of them - then printed
+  a sentence that reads like scientific restraint. A silent fallback wearing a disclosure's clothes
+  is worse than a crash.
+
+### Added
+
+- `detect.ram_channels()` and `detect.probe_offset()` extracted so the rules are testable against
+  the shipping function rather than a copy.
+- `plan.calibration_gap_warning()` + `CAL_COMPONENTS`.
+- `weights/resweep340_audit.py`, re-runnable with `--inject upgrade` / `--inject spec` to prove it
+  can still fail.
+
 ## 1.23.0 - 2026-07-30
 
 **A feature we promised, tested, and did not ship - plus the finding that replaced it.**

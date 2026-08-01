@@ -105,6 +105,34 @@ Copyability is the whole mechanism: code answers repeat their input, prose inven
 | Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |
 | GLM-4.5-Air **110B** from a SATA drive, 16 GB RAM | **0.19 tok/s** (capacity demo, not usable inference) |
 | RAM overclock (XMP, 2133→3000) | dense **+52%** |
+| 14-row ladder, median absolute error | **8.4%** (2026-08-01, clean conditions) |
+| Disk-tier row, 117B MoE streamed from SATA | predicted 0.332, **measured 0.476 tok/s — we were 30% pessimistic** |
+
+<details>
+<summary><b>What "clean conditions" means, and why we say it</b></summary>
+
+The 8.4% ladder above was measured on a **deliberately quiesced machine**: no browser, no coding
+agent, background services stopped, verified by gate before each phase at **CPU 0.7% mean / 2.0%
+max** with 14.1 GB RAM free. One `cal_id` throughout, benches strictly serial.
+
+That is not your machine on a normal day, and we will not pretend otherwise:
+
+- **All 14 rows measured faster than the previous pass** — not 13, all of them. Median **+4.6%**,
+  up to +27.5%. The scrubbed box is a **ceiling**, not a typical result.
+- Because of that, **the published headline speeds above are unchanged.** Qwen3-30B-A3B measured
+  **22.94 tok/s** on this pass, above the 20.4–22.2 we quote. We did not raise it. A number you
+  can only get by stopping services is not a number you can reproduce, and reproducibility is the
+  only thing that makes these figures worth reading.
+- The median moved 9.0% → 8.4%, which is **inside our own ±1 point noise floor**, so we report it
+  as *unchanged* rather than improved — even though the smaller number is the flattering one.
+- One row is flagged untrustworthy: **gemma4-12B** has returned 13.23, 12.25 and 15.62 tok/s across
+  three passes, a 27% spread. It is not measuring a stable quantity.
+
+The disk-tier row is the first disk-tier measurement this project has ever taken, and **it failed
+its own staked band.** We publish it at the same size as the wins. Details, including the two
+mechanisms we tested and the one that survived: [CHANGELOG](CHANGELOG.md).
+
+</details>
 
 <p align="center"><img src="weights/data/validation_19tok/live_run_20tps.png" width="880" alt="One frame: Task Manager showing 16 GB DDR4-3000 and the GTX 1060 6GB beside llama.cpp chatting Qwen3-30B-A3B live at 20.4 tok/s generation"></p>
 <p align="center"><em>One frame, no cuts: Qwen3-30B-A3B at <b>20.4 tok/s</b> on a 2016 desktop — GTX 1060 6 GB · 16 GB DDR4 · SATA SSD. Raw logs + GGUF SHA256: <a href="weights/data/validation_19tok/EVIDENCE.txt">EVIDENCE.txt</a>.</em></p>

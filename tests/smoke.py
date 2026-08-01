@@ -18,8 +18,7 @@ from contextlib import redirect_stdout
 # deliberately and separately; layer 1 should test what the developer just edited.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-FAIL = []
-SKIP = []
+FAIL, SKIP = [], []
 
 
 def check(name, fn):
@@ -519,6 +518,62 @@ def t_frontier_rows_are_off_the_cliff():
     assert not any("-ub 2048" in f and "-nkvo" in f for _, _, _, f in MOE_FRONTIER),         "the v1.14.0 cliff configuration is back on the frontier"
 
 
+def t_nkvo_never_emitted_for_deep_context():
+    """-nkvo is WITHDRAWN from deep-workload advice, per prereg #25's own pre-commitment (L-24).
+
+    The measurement that pre-committed this: split placement, -fa 1, r=3, one session. tg32 at
+    d16384: q8_0 KV in VRAM 10.59 tok/s vs -nkvo 1 at 3.48 - 3.04x worse decode - for a prefill
+    difference inside the error bar (382.17 vs 386.14 pp2048). -nkvo exists to serve RAG and
+    document-QA at 50:1/200:1 prompt:generation ratios, which are exactly the deep contexts
+    where it loses hardest. So three invariants, each falsifiable by one line of output:
+
+      1. no frontier row (the source of every workload recommendation) carries -nkvo;
+      2. no placement `evaluate` emits at d16384 - any preset model on any preset machine -
+         carries -nkvo in its flags;
+      3. a deep-context `plan` never puts -nkvo in the run command, and if the flag appears in
+         prose at all it must be the withdrawal (accompanied by its measured 3.04x), never a
+         recommendation.
+
+    Failing inputs constructed when this test was written, each applied, observed to fail (exit
+    non-zero), and reverted: (A) '-nkvo 1' appended to a MOE_FRONTIER row's flags; (B) '-nkvo 1'
+    appended to evaluate()'s all-in-VRAM row flags; (C) the withdrawal print lines silently
+    deleted from the workload advice.
+    """
+    import itertools
+    from quantprobe.plan import (MOE_FRONTIER, MODELS, MACHINES, DEFAULT_KVP, evaluate)
+    for lab, _pp, _tg, fl in MOE_FRONTIER:
+        assert "-nkvo" not in fl, f"frontier row '{lab}' recommends -nkvo: {fl}"
+    for mn, hn in itertools.product(MODELS, MACHINES):
+        m, hw = MODELS[mn], MACHINES[hn]
+        _, _, cfgs = evaluate(m["t"], m["a"], m["ne"], m["moe"], 2.5,
+                              hw["vc"], hw["vb"], hw["rc"], hw["rb"], hw["db"],
+                              hw.get("geta", 0.45), gl=hw.get("gl"),
+                              ctx=16384, kvp=m.get("kvp", DEFAULT_KVP), n_layer=m.get("nl"))
+        for name, _tps, _warn, flags in cfgs:
+            assert "-nkvo" not in flags, (
+                f"{mn} on {hn} at d16384 emits -nkvo in '{name}': {flags}")
+    # MoE deep workload (the RAG case prereg #25 measured) and a dense deep split whose winning
+    # row FIRES the depth note (mistral-7b @4.5 bits on 2016-xmp -> split: 20/32 layers->VRAM):
+    # the emitted command is clean, and prose only ever mentions -nkvo to bury it.
+    for extra in (("--model", "qwen3-30b", "--machine", "2016-xmp"),
+                  ("--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5")):
+        rc, out = cli("plan", *extra, "--ctx", "16384")
+        assert rc == 0, out
+        runline = next(l for l in out.splitlines() if "run it:" in l)
+        assert "-nkvo" not in runline, f"deep-context run command emits -nkvo: {runline}"
+        if "-nkvo" in out:
+            assert "3.04x" in out and "WITHDRAWN" in out, (
+                f"-nkvo appears in deep-context output without its measured withdrawal "
+                f"(3.04x, prereg #25): {extra}")
+    # both deep cases must actually SHOW the withdrawal, not merely avoid the flag - silent
+    # removal would leave a user who read the old advice with no correction
+    rc, out = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp", "--ctx", "16384")
+    assert "3.04x WORSE" in out and "WITHDRAWN" in out, "MoE deep advice lost the withdrawal"
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5",
+                  "--ctx", "16384")
+    assert "3.04x WORSE" in out and "WITHDRAWN" in out, "dense depth note lost the withdrawal"
+
+
 def t_ubatch_only_when_host_resident():
     """-ub is a prefill lever for HOST-resident weights only, and it is measured to hurt otherwise.
 
@@ -549,6 +604,180 @@ def t_ubatch_only_when_host_resident():
         "ubatch offered with no VRAM headroom for the larger compute buffer"
     # no GPU at all -> nothing to amortise a transfer to
     assert ubatch_flags("pure CPU (GPU idle)", 0, 0) is None, "ubatch offered with no GPU"
+
+
+def t_l26_cpu_expert_moe_prefill_gets_ub4096():
+    """L-26 (prereg #92): the CPU-expert MoE placement must emit -b 4096 -ub 4096.
+
+    The prefill law sec/token = A + X/C was validated OUT OF SAMPLE on this exact placement
+    (Qwen3-30B-A3B, exps=CPU, this box) with predictions staked before running: C=256 -0.27%,
+    C=4096 -8.2%, both inside the 10% kill band - and ub 4096 is a BANKED number, 360.76 pp2048
+    vs 345.89 at ub 2048 (+4.3% for one flag). Before this wiring the tool sized the same
+    placement to ub 2048 on the reference card: the half-budget margin (calibrated on the SPLIT,
+    #23, where resident experts compete with the compute buffer) rejected by 15 MiB a buffer
+    L-26 measured running clean at 51.5% of headroom.
+
+    Also pins the cap: the fit's asymptote bends below 1/A, so extrapolation past C=4096 is not
+    licensed and no headroom, however large, may raise the batch further.
+
+    FAILS on the pre-fix tree (verified by reverting quantprobe/plan.py in a scratch copy):
+    the reference-box hybrid geometry returned '-b 2048 -ub 2048' and the plan output quoted
+    the pre-L-26 hardcoded '-b 2048 -ub 2048' for the long-prompt alternative.
+    """
+    from quantprobe.plan import ubatch_flags, MODELS
+    # the reference-box geometry L-26 was measured on: qwen3-30b hybrid, attention resident
+    res = MODELS["qwen3-30b"]["ne"] * 4.5 / 8 * 1.08
+    fl = ubatch_flags("hybrid: attention->VRAM, experts->RAM", res, 6)
+    assert fl == "-b 4096 -ub 4096", (
+        f"CPU-expert MoE placement must carry the measured -b 4096 -ub 4096 (L-26): {fl}")
+    # the cap is a law boundary, not a budget artifact: a 48 GB card gets the SAME 4096
+    big = ubatch_flags("hybrid: attention->VRAM, experts->RAM", res, 48)
+    assert big == "-b 4096 -ub 4096", (
+        f"extrapolation past C=4096 is not licensed (asymptote bends below 1/A): {big}")
+    # a tight card still steps DOWN - the flag is sized, never pinned
+    tight = ubatch_flags("hybrid: attention->VRAM, experts->RAM", 6 * 0.9 - 1.6, 6)
+    assert tight and "4096" not in tight, f"tight card must not be handed the 4096 buffer: {tight}"
+    # and the flag reaches the USER: the long-prompt alternative in plan's own output
+    rc, out = cli("plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp")
+    assert rc == 0, out
+    assert "-b 4096 -ub 4096" in out, (
+        "plan output no longer offers -b 4096 -ub 4096 for the CPU-expert MoE placement")
+    # The flags must be quoted WITH their measurement AND an unambiguous citation. "#92" is not
+    # one: two different pre-registrations claimed that number, and this run is neither of them -
+    # its predictions were staked in the header of its own log, which is what we cite.
+    assert "360.76" in out, "the L-26 flags lost their out-of-sample measurement"
+    assert "prereg92b_ub_oos.log" in out, "the staked-before-the-run evidence is not cited"
+    # ...and the METRIC must be the one the log records. 360.76 is pp4096; the 345.89 baseline is
+    # pp2048 at ub2048 (prereg #19). The tool said "360.76 pp2048" for a run that never measured
+    # pp2048, and called the gap between two prompt lengths "+4.3% for one flag".
+    assert "pp4096" in out, "360.76 is a pp4096 measurement and must be labelled as one"
+    assert "360.76 pp2048" not in out, "the ub-4096 arm is mislabelled as a pp2048 measurement"
+    assert "control was never run" in out, \
+        "the missing like-for-like pp4096-at-ub2048 control must be disclosed"
+
+
+def t_l26_dense_rows_never_get_ub4096():
+    """L-26 scope: dense rows must NOT get -b 4096 -ub 4096 - the dense control VIOLATES the form.
+
+    Prereg #19 P-2 measured the dense-in-VRAM control COLLAPSING at ub 2048 (-39%), so the
+    prefill law that licenses 4096 is scoped to the CPU-expert MoE tier only. Before this gate a
+    dense layer-split with room to spare was quietly handed -ub 4096 on the authority of a MoE
+    datapoint (the 3090/117B external replication) - the locked ladder's Qwen2.5-14B row shipped
+    with it. Dense host-resident rows keep the sized ubatch at the 2048 cap the half-budget rule
+    was measured with; the fully-in-VRAM row keeps getting nothing at all.
+
+    FAILS on the pre-fix tree (verified by reverting quantprobe/plan.py in a scratch copy): the
+    dense layer-split at 6 GB and 24 GB headroom both returned '-b 4096 -ub 4096', and the deep
+    dense-split plan command carried -ub 4096.
+    """
+    from quantprobe.plan import ubatch_flags
+    # the measured -39% control: fully in VRAM gets NO batch flag, ever
+    assert ubatch_flags("all in VRAM", 4.36, 6) is None, \
+        "ubatch offered for an all-in-VRAM placement - measured there it LOSES 39% (prereg #19 P-2)"
+    # dense layer-splits are host-resident and keep a SIZED ubatch - but never the MoE-only 4096
+    for vc in (6, 24):
+        fl = ubatch_flags("split: 21/48 layers->VRAM, rest->RAM", 0.0, vc)
+        assert fl and "4096" not in fl, (
+            f"dense split at vc={vc} got a batch the dense control measured collapsing: {fl}")
+    # pure CPU and disk rows: same scope boundary
+    for placement in ("pure CPU (GPU idle)", "stream from disk (cold experts)"):
+        fl = ubatch_flags(placement, 0.0, 24)
+        assert fl and "4096" not in fl, f"{placement} exceeded the L-26 scope: {fl}"
+    # and the command a dense-split user is actually handed is clean of it
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5",
+                  "--ctx", "16384")
+    assert rc == 0, out
+    runline = next(l for l in out.splitlines() if "run it:" in l)
+    assert "-ub 4096" not in runline, f"dense split run command carries the MoE-only flag: {runline}"
+    assert "-b 2048 -ub 2048" in runline, f"dense split lost its sized ubatch entirely: {runline}"
+
+
+def t_l26_ub_prose_claims_track_the_measured_tier():
+    """The +73% prefill claim may be printed as a property of THIS placement only on the
+    experts->RAM tier it was measured on (-ot exps=CPU, prereg #19). Caught on the v1.23
+    validation pass, live in the tool's own output: the winning split-experts row claimed
+    '+73% on this placement' for its sized command two paragraphs after the tool itself printed
+    that placement's measured 161.9 pp2048, and a dense split (and a disk-stream row) were told
+    'your experts sit in RAM' - one about a model with no experts, the other about experts it
+    streams from disk. Same boundary as the emission gate (L-26): a measured claim travels with
+    the tier that measured it; every other row gets the sized-safe-batch wording that names
+    where the numbers come from and why they do not transfer."""
+    # split-experts winner (reference box): sized flags, no borrowed measured claim
+    rc, out = cli("plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp")
+    assert rc == 0, out
+    assert "sized safe batch" in out, "split-experts row lost its honest sized-batch wording"
+    assert "worth **+73% prefill** on this placement" not in out, \
+        "the hybrid tier's +73% claim leaked onto the split-experts row again"
+    # dense split: no experts, so no expert-mechanism story at all
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--bits", "4.5",
+                  "--ctx", "16384")
+    assert rc == 0, out
+    assert "experts sit in RAM" not in out, \
+        "dense split told 'your experts sit in RAM' about a model with no experts"
+    assert "sized safe batch" in out, "dense split lost the sized-batch wording"
+    # the measured tier KEEPS its measured claim - but the CELL must match the emitted ubatch.
+    # prereg #19 swept ub 512/1024/2048 = 199.90/277.17/345.89 pp2048, and "+73%" is the 2048
+    # cell. A 3 GB card is sized to -ub 1024, where the same sweep measured +38.7%; the tool
+    # printed +73% there anyway - the placement-level leak repeated between cells of one sweep.
+    from quantprobe.plan import UB_SWEEP_PP2048
+    rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
+                  "--bits", "2.95", "--vram", "3", "--vram-bw", "192", "--ram", "32",
+                  "--ram-bw", "48", "--disk-bw", "2")
+    assert rc == 0, out
+    line = next(l for l in out.splitlines() if "prompt speed:" in l)
+    assert "-ub 1024" in line, f"fixture drifted, expected the ub-1024 cell: {line}"
+    assert "+39% prefill" in line and "277.2" in line, \
+        f"the ub-1024 command quotes a percentage measured at a different ubatch: {line}"
+    assert "+73%" not in line, "the ub-2048 cell's headline is printed on a ub-1024 command"
+    # ...and the 2048 cell keeps +73% where 2048 is what we emit
+    rc, out = cli("plan", "--total", "30.5", "--active", "3.3", "--always-active", "1.2",
+                  "--bits", "2.95", "--vram", "5", "--vram-bw", "192", "--ram", "32",
+                  "--ram-bw", "48", "--disk-bw", "2")
+    assert rc == 0, out
+    line = next(l for l in out.splitlines() if "prompt speed:" in l)
+    assert "-ub 2048" in line and "+73% prefill" in line, line
+    assert round(UB_SWEEP_PP2048[2048] / UB_SWEEP_PP2048[512] - 1, 2) == 0.73
+
+
+def t_disk_tier_kv_deficit_disclosed_not_clamped():
+    """When KV alone crowds RAM below the 1 GB expert-cache floor, the disk-stream row must SAY so.
+
+    The row prices every KV read at RAM bandwidth - it ASSUMES host-RAM KV residency. Before this
+    fix, a config whose KV cache did not fit (ra_eff clamped at the 1 GB floor) kept that pricing
+    silently: the deficit was absorbed into a number that looked like a prediction. The fix is
+    DISCLOSURE, not refusal and not repricing - no disk-tier anchor was ever measured with paging
+    KV, so a repriced number would be invented. The row stays, its arithmetic stays (the eff/terms
+    reconstruction check in t_binding_* keeps guaranteeing that), and the warn must name the
+    shortfall in GB and the consequence (the printed tok/s is an upper bound).
+    """
+    from quantprobe.plan import evaluate
+    # oversized on purpose: rc=8 -> ra=4 GB budget; ctx 65536 x kvp 98304 -> kv_gb ~ 6.44 GB.
+    # KV + the 1 GB floor overshoot RAM by ~3.4 GB while the 100B file streams from disk.
+    _, _, rows = evaluate(100, 10, 2, True, 2.5, 0, 0, 8, 40, 2, 0.5,
+                          ctx=65536, kvp=98304.0, n_layer=48)
+    disk = [r for r in rows if r[0] == "stream from disk (cold experts)"]
+    assert disk, "oversized config lost its disk-stream row - the fix must disclose, never refuse"
+    warn = disk[0][2] or ""
+    assert "KV DEFICIT" in warn and "UPPER BOUND" in warn, \
+        f"KV residency deficit silently absorbed again (the 1 GB ra_eff clamp): {warn!r}"
+    kv_gb = 65536 * 98304.0 / 1e9
+    assert f"{kv_gb + 1.0 - 4.0:.1f} GB" in warn, \
+        f"disclosure must print the actual shortfall ({kv_gb + 1.0 - 4.0:.1f} GB): {warn!r}"
+    # control: same machine, shallow ctx -> KV fits beside the floor, no deficit text
+    _, _, rows2 = evaluate(100, 10, 2, True, 2.5, 0, 0, 8, 40, 2, 0.5,
+                           ctx=2048, kvp=98304.0, n_layer=48)
+    disk2 = [r for r in rows2 if r[0] == "stream from disk (cold experts)"]
+    assert disk2 and "KV DEFICIT" not in (disk2[0][2] or ""), \
+        f"deficit disclosed where there is none: {disk2[0][2]!r}"
+    # and the disclosure must survive to the PRINTED row, not just the Row object
+    rc, out = cli("plan", "--total", "100", "--active", "10", "--always-active", "2",
+                  "--bits", "2.5", "--vram", "0", "--ram", "8", "--ram-bw", "40",
+                  "--disk-bw", "2", "--ctx", "65536")
+    assert rc == 0, out
+    row_line = next((l for l in out.splitlines()
+                     if "stream from disk (cold experts)" in l), "")
+    assert "KV DEFICIT" in row_line and "UPPER BOUND" in row_line, \
+        f"deficit disclosure did not reach the printed row: {row_line!r}"
 
 
 def t_dense_split_ngl_is_a_layer_count():
@@ -950,6 +1179,28 @@ def t_auto_dry_picks_a_file():
 def t_auto_unknown_target_graceful():
     rc, out = cli("auto", "not-a-real-preset-or-repo", "--dry")
     assert rc != 0 and ("not a preset" in out or "could not list" in out)
+
+def t_auto_gated_repo_sends_token_and_hints():
+    """A gated HF repo must not dead-end `auto`. Two halves, both from a live failure (unsloth
+    gated their Mistral repo and `auto mistral-7b` died on the LISTING with a bare 401): the
+    tree listing now sends the same token `fetch` sends one step later (it was anonymous-only),
+    and a tokenless 401/403 carries the gated-repo hint instead of a bare 'Unauthorized'."""
+    import io, json as _json, urllib.request
+    from unittest import mock
+    from quantprobe import auto as automod
+    seen = {}
+    def fake_urlopen(req, timeout=None):
+        seen["auth"] = req.get_header("Authorization")
+        return io.BytesIO(_json.dumps([]).encode())
+    with mock.patch.object(urllib.request, "urlopen", fake_urlopen), \
+         mock.patch.dict(os.environ, {"HF_TOKEN": "hf_test_token"}):
+        files = automod.list_ggufs("some/gated-repo")
+    assert files == [] and seen["auth"] == "Bearer hf_test_token", seen
+    # the hint half: 401/403 get the actionable suffix, other errors stay bare
+    assert "gated or private" in automod.gated_hint(Exception("HTTP Error 401: Unauthorized"))
+    assert "HF_TOKEN" in automod.gated_hint(Exception("HTTP Error 403: Forbidden"))
+    assert automod.gated_hint(Exception("HTTP Error 404: Not Found")) == ""
+
 
 def t_auto_custom_dry():
     rc, out = cli("auto", "qwen3-30b", "--machine", "2016-xmp", "--custom", "--dry")
@@ -1354,6 +1605,58 @@ def t_moneroape_channel_count():
         "the stream-realism fraction is n=1 machine - it may not be quoted as a typical value")
 
 
+def t_p88_binding_scope_line_names_the_placement():
+    """The binding-constraint block's DECODE-only footnote used to illustrate itself with a bare
+    '-ub 2048 can be worth +73% on prefill', printed on EVERY row it fires on - including the
+    all-in-VRAM rows where prereg #19 P-2 measured the SAME flag at -39%. Same leak the v1.23
+    validation pass caught in the 'prompt speed:' paragraph, one block higher and on every
+    invocation. A measured number keeps its placement even when it is only making a point."""
+    from quantprobe.plan import binding_report, binding_constraint, Row
+    txt = "\n".join(binding_report(binding_constraint(
+        Row("all in VRAM", 20.0, None, "-ngl 99", {"vram_bw": 1.0})), bits=4.5,
+        placement="all in VRAM"))
+    assert "+73%" in txt, "the illustration was deleted rather than scoped"
+    assert "CPU-expert MoE" in txt, "the +73% is printed without the placement that measured it"
+    assert "-39%" in txt, "the opposite-sign control on THIS row's own placement is not shown"
+    assert "Neither number is a prediction for this row" in txt, txt
+    # and on the CLI, where an all-in-VRAM user actually reads it
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "rtx-4090", "--bits", "4.5")
+    assert rc == 0, out[:300]
+    scope = next(l for l in out.splitlines() if "scope" in l and "DECODE only" in l)
+    assert "CPU-expert MoE" in scope, scope
+
+
+def t_c17_mixed_calibration_is_disclosed():
+    """C-17 defect (2): partial calibration measured WORSE than none for the components it
+    skipped (RAM-only 12.5% median |err| vs 8.8% fully-preset), yet plan printed the identical
+    'calibration applied' line for a one-component state and a complete one. The gap must be
+    named at the same prominence as what WAS measured."""
+    from quantprobe.plan import calibration_gap_warning, CAL_COMPONENTS
+    full = {k: 1 for _, k in CAL_COMPONENTS}
+    assert calibration_gap_warning(full) == [], "a complete calibration must print no warning"
+    for name, key in CAL_COMPONENTS:
+        partial = {k: 1 for _, k in CAL_COMPONENTS if k != key}
+        w = calibration_gap_warning(partial)
+        assert len(w) == 1 and name in w[0], (key, w)
+        assert "MIXED" in w[0] and "12.5%" in w[0] and "C-17" in w[0], w
+    w = calibration_gap_warning({"ram_bw_measured": 24.4})
+    assert "disk" in w[0] and "decode anchors" in w[0], w
+
+
+def t_no_test_is_defined_after_the_runner():
+    """The runner reads globals() at the point `if __name__ == '__main__'` executes, so anything
+    defined BELOW it does not exist yet and never runs. That is not hypothetical: the C-17 disk
+    regression test sat below the runner from the commit that introduced it and was never
+    executed once. Nothing catches this - the suite just quietly gets smaller."""
+    import re
+    src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py"),
+                  encoding="utf-8").read()
+    i = src.rindex('if __name__ == "__main__":')      # rindex: this test quotes the string too
+    after = re.findall(r"^def (t_\w+)", src[i:], re.M)
+    assert not after, (f"{len(after)} test(s) defined after the runner and therefore never "
+                       f"collected: {after}")
+
+
 def t_moneroape_ubatch_cap():
     # cap raised for big-VRAM cards (external 3090/4090 datapoint), buffer math still gates
     from quantprobe.plan import safe_ubatch, SAFE_UBATCH_CAP
@@ -1520,10 +1823,468 @@ def t_c14_machine_state_identity():
     assert cal_id(None) is None
 
 
+# ---------------------------------------------------------------------------------------------
+# prereg #88 / experiment #54 - WHICH RESOURCE BINDS
+# ---------------------------------------------------------------------------------------------
+
+def _plan_rows(**kw):
+    from quantprobe.plan import evaluate
+    base = dict(t=30.5, a=3.3, ne=1.2, moe=True, bits=2.5, vc=6, vb=192, rc=16, rb=48,
+                db=0.45, geta=0.35, gl=0.04, n_layer=48)
+    base.update(kw)
+    return evaluate(**base)[2]
+
+
+def t_p88_terms_reconstruct_every_row():
+    """K-2: every row's terms must reproduce ITS OWN tok/s to 1e-9. A decomposition that does not
+    add up is not a diagnosis, it is a confident guess - and it would be invisible without this.
+
+    ADVERSARIAL FIX (pre-run audit of experiment #54). This grid used to be six configurations
+    that produced SIX of the seven row families, and the one it never emitted was the DENSE SPLIT
+    (`split: N/M layers->VRAM`) - the row with the most complex decomposition (three resources,
+    with the KV read split across two tiers) and a WINNER on 8 of prereg #88's 340 preset cells.
+    A hand-picked grid that misses a family is the same defect as prereg #88's own D-2: a check
+    whose population excludes the case it exists to catch.
+
+    Demonstrated: dropping `(1-g)*kv_gb/(ETA_KV*rb)` from that row's `ram_bw` attribution left
+    tok/s bit-identical, this test PASSED, and the scoring script printed VERDICT: PASS at exit 0
+    while the row reconstructed 4.94% off its own speed and the PRINTED binding share and ceiling
+    moved (64.5% -> 67.7%, 2.82x -> 3.09x). The grid now covers all seven families and ASSERTS
+    that it does, so a family cannot silently drop out of the population again.
+    """
+    from quantprobe.plan import resource_times
+    # `kvp` is EXPLICIT on every ctx entry. `_plan_rows` does not set it and evaluate defaults it
+    # to 0.0, so `kv_gb = ctx*kvp/1e9` was ZERO on every row this test has ever built - including
+    # the ones that pass ctx=16384. Every KV attribution term was therefore multiplied by zero and
+    # a KV mis-attribution in ANY row family was invisible, not just in the dense split. A grid
+    # knob that reads as "depth is covered" while the quantity it controls is identically zero is
+    # the "measurement that cannot vary" class (prereg #85 arms C/D). Found by the pre-run audit of
+    # experiment #54.
+    KVP = 98304                                   # DEFAULT_KVP; the Qwen3-30B-class GQA value
+    grids = [dict(), dict(ctx=16384, kvp=KVP), dict(vc=0, vb=0),
+             dict(t=1058.6, a=32, ne=6, rc=16),
+             dict(moe=False, a=30.5, ne=30.5, ctx=16384, kvp=KVP),
+             dict(bits=4.5, t=7.2, a=7.2, ne=7.2),
+             # dense, too big for the 6 GB card but small enough for VRAM+RAM -> the dense split.
+             dict(moe=False, t=14.0, a=14.0, ne=14.0, n_layer=48),
+             dict(moe=False, t=14.0, a=14.0, ne=14.0, n_layer=48, ctx=16384, kvp=KVP),
+             dict(ctx=16384, kvp=KVP, rc=16, t=1058.6, a=32, ne=6)]
+    seen = 0
+    families = set()
+    for g in grids:
+        for row in _plan_rows(**g):
+            tt = resource_times(row)
+            assert tt, f"row carries no decomposition: {row[0]}"
+            recon = row.eff / sum(tt.values())
+            assert abs(recon / row[1] - 1) < 1e-9, f"{row[0]}: {recon} != {row[1]}"
+            assert set(tt) <= {"vram_bw", "ram_bw", "io", "cpu_compute"}, tt
+            families.add(row[0].split(":")[0])
+            seen += 1
+    assert seen >= 12, f"grid degenerated to {seen} rows"
+    # A grid where every ctx entry silently prices a zero-byte KV cache is a grid that cannot see a
+    # KV mis-attribution. Assert the term is actually non-zero somewhere.
+    assert any(16384 * g.get("kvp", 0) > 0 for g in grids), \
+        "no grid entry carries a non-zero kv_gb - every KV attribution term is multiplied by zero"
+    want = {"all in VRAM", "hybrid", "split experts", "split", "pure CPU (GPU idle)",
+            "stream from disk (cold experts)", "stream from disk (VRAM+RAM expert cache)"}
+    assert want <= families, (
+        "the reconstruction grid stopped emitting row families " + str(sorted(want - families)) +
+        " - a term attribution error in a family this test never builds is invisible to it, "
+        "which is exactly how the dense-split hole was found. Extend the grid, do not drop the "
+        "assertion.")
+
+
+def t_p88_row_is_still_a_four_tuple():
+    """Six modules unpack these rows. The decomposition must be invisible to all of them."""
+    from quantprobe.plan import Row
+    r = Row("x", 2.0, None, "-ngl 99", {"vram_bw": 0.5})
+    name, tps, warn, flags = r                       # the unpack every caller does
+    assert (name, tps, warn, flags) == ("x", 2.0, None, "-ngl 99") and len(r) == 4
+    assert isinstance(r, tuple) and r[1] == 2.0
+    assert sorted([Row("a", 1.0, None, "f"), r], key=lambda x: -x[1])[0][0] == "x"
+
+
+def t_p88_four_classes_are_reachable():
+    """P-1's precondition: the label must be able to say four different things."""
+    from quantprobe.plan import binding_constraint, Row
+    def klass(terms, cap=None):
+        return binding_constraint(Row("r", 1.0, None, "f", terms), capacity=cap)["klass"]
+    assert klass({"ram_bw": 1.0, "io": 0.1}) == "bandwidth-bound"
+    assert klass({"vram_bw": 1.0, "ram_bw": 0.1}) == "bandwidth-bound"
+    assert klass({"io": 1.0, "ram_bw": 0.9}) == "IO-bound"
+    assert klass({"cpu_compute": 1.0, "ram_bw": 0.9}) == "compute-bound"
+    cap = dict(tier="VRAM", gap_gb=1.0, lever="x", shave_tps=9.0, lift_tps=9.0,
+               gain_shave=2.0, gain_lift=2.0, need_gb=8.0)
+    assert klass({"ram_bw": 1.0}, cap) == "capacity-bound"
+
+
+def t_p88_margin_and_ceiling_arithmetic():
+    from quantprobe.plan import binding_constraint, Row
+    bc = binding_constraint(Row("r", 1.0, None, "f", {"ram_bw": 0.75, "io": 0.25}))
+    assert abs(bc["share"] - 0.75) < 1e-12
+    assert abs(bc["margin_x"] - 3.0) < 1e-12          # 0.75 / 0.25
+    assert abs(bc["ceiling_x"] - 4.0) < 1e-12         # 1 / (1 - 0.75)
+    assert bc["next_resource"] == "io"
+    assert abs(bc["lever_ceiling"]["io"] - (1 / 0.75)) < 1e-12
+    # a single-resource row has no second constraint and must say so rather than divide by zero
+    solo = binding_constraint(Row("r", 1.0, None, "f", {"ram_bw": 1.0}))
+    assert solo["margin_x"] is None and solo["ceiling_x"] is None
+    # ties resolve deterministically, by the order fixed in the prereg
+    tie = binding_constraint(Row("r", 1.0, None, "f", {"ram_bw": 0.5, "io": 0.5}))
+    assert tie["resource"] == "io"
+    assert binding_constraint(("plain", 1.0, None, "f")) is None       # no terms -> no guess
+
+
+def t_p88_no_phantom_disk_sensitivity():
+    """P-2a: a diagnosis that moves when an IRRELEVANT resource moves is not a diagnosis.
+    Every row without an io term must be bit-identical at db 0.45 and db 5.0."""
+    from quantprobe.plan import binding_constraint, resource_times
+    for g in (dict(), dict(ctx=16384), dict(moe=False, a=30.5, ne=30.5, ctx=8192)):
+        slow = {r[0]: r for r in _plan_rows(db=0.45, **g)}
+        fast = {r[0]: r for r in _plan_rows(db=5.0, **g)}
+        for name in set(slow) & set(fast):
+            if "io" in (resource_times(slow[name]) or {}):
+                continue
+            a, b = binding_constraint(slow[name]), binding_constraint(fast[name])
+            assert a["resource"] == b["resource"] and a["klass"] == b["klass"], name
+            assert abs(a["share"] - b["share"]) < 1e-12, name
+            assert (a["margin_x"] or 0) - (b["margin_x"] or 0) == 0, name
+
+
+def t_p88_bandwidth_shares_move_the_right_way():
+    """P-2b: for a FIXED placement, doubling a bandwidth must strictly SHRINK that pool's share.
+    Forced by the model, so this tests the wiring - which is exactly what a copy-paste breaks.
+
+    Refinement of the prereg's wording, disclosed rather than quietly applied: a row with only ONE
+    live resource holds share 1.0 by definition and cannot shrink. Those rows are checked for the
+    weaker property (still exactly one resource) so the skip cannot hide a mis-wiring."""
+    from quantprobe.plan import binding_constraint
+    # Two fixtures, because no single one carries all three pools: the MoE split/hybrid rows are
+    # the VRAM+RAM case, the deep dense case is the RAM+compute one.
+    for res, kw, fix in (("ram_bw", dict(rb=96), dict()),
+                         ("vram_bw", dict(vb=384), dict()),
+                         ("ram_bw", dict(rb=96), dict(ctx=16384, moe=False, a=30.5, ne=30.5))):
+        base = {r[0]: r for r in _plan_rows(**fix)}
+        faster = {r[0]: r for r in _plan_rows(**dict(fix, **kw))}
+        checked = 0
+        for name in set(base) & set(faster):
+            b0, b1 = binding_constraint(base[name]), binding_constraint(faster[name])
+            s0, s1 = b0["shares"].get(res, 0.0), b1["shares"].get(res, 0.0)
+            if s0 <= 0:
+                continue
+            if len(b0["shares"]) == 1:
+                assert s0 == 1.0 and len(b1["shares"]) == 1 and s1 == 1.0, name
+                continue
+            assert s1 < s0, f"{name}: {res} share {s0} -> {s1} after doubling its bandwidth"
+            checked += 1
+        assert checked, f"no row exercised {res} in {fix}"
+
+
+def t_p88_l19_and_the_class_agree():
+    """The compute regime already had a warning (L-19). The classifier must not contradict it:
+    where CPU attention is the biggest term, the class is compute-bound AND the warning fires."""
+    from quantprobe.plan import binding_constraint, depth_scope_warning
+    rows = _plan_rows(moe=False, t=7.2, a=7.2, ne=7.2, n_layer=32, ctx=32768, kvp=131072)
+    split = [r for r in rows if "layers->VRAM" in r[0]]
+    assert split, "the dense split row vanished - the fixture no longer tests the regime"
+    bc = binding_constraint(split[0])
+    assert bc["klass"] == "compute-bound" and bc["resource"] == "cpu_compute", bc["klass"]
+    assert depth_scope_warning(split[0][0], False, 32768), "L-19 must fire on the same row"
+
+
+def t_p88_capacity_uses_only_shipped_thresholds():
+    """No new numeric threshold may enter the classification rule (prereg #88 §1)."""
+    from quantprobe import plan
+    assert plan.CAP_PROMOTION_MIN == 1.15 and plan.CAP_SHAVE_MAX_SHARE == 0.30
+    assert plan.UPGRADE_MIN_GAIN == 1.08
+    src = open(plan.__file__, encoding="utf-8").read()
+    assert "CAP_PROMOTION_MIN" in src and "1.15" in src
+
+
+def t_p88_capacity_probe_and_tier_advisor_agree():
+    """R4: 'the advisor fired' and 'the classifier says capacity-bound' must be ONE event."""
+    from quantprobe.plan import capacity_probe, evaluate
+    kw = dict(t=11.9, a=11.9, ne=11.9, moe=False, bits=2.5, vc=8, vb=256, rc=32, rb=45,
+              db=2, geta=0.45, gl=0.28)
+    def ev(**over):
+        k = dict(kw)
+        if "rc_delta" in over:
+            k["rc"] = k["rc"] + over.pop("rc_delta")
+        over.pop("true_size_gb_scale", None)
+        k.update(over)
+        return evaluate(**k)[2]
+    size, _, rows = evaluate(**kw)
+    find = capacity_probe(ev, rows[0][1], size, 0.0, kw["vc"], kw["rc"])
+    assert find and find["tier"] == "VRAM", find
+    assert max(find["gain_shave"], find["gain_lift"]) >= 1.15
+    assert find["gap_gb"] <= size * 0.30
+    rc, out = cli("plan", "--model", "gemma-12b", "--machine", "laptop-8gb")
+    assert rc == 0 and "CAPACITY-BOUND" in out and "tier-boundary advisor" in out
+
+
+def _kv_ev(kw):
+    """run()'s ev closure for the KV-lever tests, INCLUDING the kvp_scale override the L-24
+    capacity probe emits - a mirror that silently dropped it would measure f16 KV and call it
+    q8_0."""
+    from quantprobe.plan import evaluate
+    def ev(**over):
+        k = dict(kw)
+        if "rc_delta" in over:
+            k["rc"] = k["rc"] + over.pop("rc_delta")
+        if "kvp_scale" in over:
+            k["kvp"] = k["kvp"] * over.pop("kvp_scale")
+        over.pop("true_size_gb_scale", None)
+        k.update(over)
+        return evaluate(**k)[2]
+    return ev
+
+
+def t_l24_capacity_probe_offers_q8_kv_lever_at_depth():
+    """L-24/L-25 wiring, direction 1: when a deep-context config misses the boundary by less
+    than the f16-vs-q8_0 KV difference, the capacity finding must OFFER the KV lever and the
+    report must PREFER it over dropping a weight quant tier - the quality half is MEASURED
+    (PPL ratio 1.00031 +/- 0.0188 at d7168, prereg #91) where a quant-tier drop below ~3 bits
+    is not free (Laws 1-2). Before this wiring, capacity_probe shaved weights only - the exact
+    gap L-25's audit reported."""
+    from quantprobe.plan import (capacity_probe, binding_constraint, binding_report, evaluate,
+                                 KV_Q8_BYTES_PER_F16_BYTE)
+    kw = dict(t=11.9, a=11.9, ne=11.9, moe=False, bits=2.5, vc=9, vb=300, rc=32, rb=45,
+              db=2, geta=0.45, gl=0.28, ctx=16384, kvp=73728)
+    size, _, rows = evaluate(**kw)
+    kv_gb = kw["ctx"] * kw["kvp"] / 1e9
+    cap = kw["vc"] * 0.90
+    assert size + kv_gb > cap, "fixture drifted: config no longer misses the VRAM boundary"
+    assert size + kv_gb * KV_Q8_BYTES_PER_F16_BYTE <= cap, \
+        "fixture drifted: q8_0 KV no longer closes the gap alone"
+    find = capacity_probe(_kv_ev(kw), rows[0][1], size, kv_gb, kw["vc"], kw["rc"])
+    assert find and find["tier"] == "VRAM", find
+    assert find.get("kv_closes") and find["kv_tps"] > 0 and find["kv_gain"] > 1.15, find
+    assert abs(find["kv_saved_gb"] - kv_gb * (1 - KV_Q8_BYTES_PER_F16_BYTE)) < 1e-9, find
+    text = "\n".join(binding_report(binding_constraint(rows[0], capacity=find), bits=2.5,
+                                    placement=rows[0][0]))
+    assert "-ctk q8_0 -ctv q8_0" in text and "PREFER" in text, text
+    assert "1.00031" in text and "d7168" in text, text     # quality half cited (prereg #91)
+    assert "+37%" in text and "#25" in text, text          # speed half cited too (prereg #25)
+    assert "E-10" in text, text                            # niche-domain caveat is permanent
+    # the same event on the CLI surface: the tier-boundary advisor offers the same lever
+    rc, out = cli("plan", "--total", "11.9", "--active", "11.9", "--vram", "9",
+                  "--vram-bw", "300", "--ram", "32", "--ram-bw", "45", "--disk-bw", "2",
+                  "--ctx", "16384", "--kv-per-pos", "72")
+    assert rc == 0 and "CAPACITY-BOUND" in out, out[:400]
+    assert "-ctk q8_0 -ctv q8_0" in out and "instead of dropping a quant tier" in out, out
+    head, _, tail = out.partition("tier-boundary advisor")
+    assert "+37%" in head and "+37%" in tail, \
+        "the measured speed half (prereg #25) must reach BOTH CLI surfaces (report + advisor)"
+
+
+def t_l24_capacity_kv_lever_is_additive_and_silent_without_kv():
+    """Direction 2: at ctx 0 the finding must carry NO KV fields and the report must print no
+    -ctk advice - the lever may never fire on a config with nothing to quantize. And the KV
+    wiring must be ADDITIVE: every weight-lever number in the finding is byte-identical to a
+    probe that never saw KV fields (prereg #88's thresholds untouched). When KV exists but
+    cannot close the gap alone, the report says 'partial' and never PREFER."""
+    from quantprobe.plan import capacity_probe, binding_constraint, binding_report, evaluate
+    kw = dict(t=11.9, a=11.9, ne=11.9, moe=False, bits=2.5, vc=8, vb=256, rc=32, rb=45,
+              db=2, geta=0.45, gl=0.28)
+    size, _, rows = evaluate(**kw)
+    find = capacity_probe(_kv_ev(kw), rows[0][1], size, 0.0, kw["vc"], kw["rc"])
+    assert find and not any(k.startswith("kv") for k in find), find
+    text = "\n".join(binding_report(binding_constraint(rows[0], capacity=find), bits=2.5,
+                                    placement=rows[0][0]))
+    assert "q8_0" not in text and "KV lever" not in text, text
+    # partial direction: shallow KV cannot close a mostly-weights gap; offered as a pairing,
+    # never as the preferred lever
+    kw2 = dict(kw, ctx=16384, kvp=8192)
+    size2, _, rows2 = evaluate(**kw2)
+    kv2 = kw2["ctx"] * kw2["kvp"] / 1e9
+    find2 = capacity_probe(_kv_ev(kw2), rows2[0][1], size2, kv2, kw2["vc"], kw2["rc"])
+    assert find2 and find2.get("kv_closes") is False, find2
+    assert "kv_tps" not in find2, "no counterfactual speed may be quoted for a lever that does not fit"
+    # additive check: weight levers identical whether or not the probe saw the KV fields
+    for key in ("tier", "gap_gb", "lever", "shave_tps", "lift_tps", "gain_shave", "gain_lift",
+                "need_gb"):
+        assert key in find2, find2
+    text2 = "\n".join(binding_report(binding_constraint(rows2[0], capacity=find2), bits=2.5,
+                                     placement=rows2[0][0]))
+    assert "partial:" in text2 and "-ctk q8_0 -ctv q8_0" in text2 and "PREFER" not in text2, text2
+
+
+def t_p88_speculation_ceiling_bounds_the_headline():
+    """P-3c: a verify batch amortizes weight READS. CPU attention is paid per drafted position,
+    so on a compute-bound row the 4.7x/2.10x headlines are arithmetically out of reach."""
+    from quantprobe.plan import spec_ceiling, Row
+    assert abs(spec_ceiling(Row("r", 1.0, None, "f", {"ram_bw": 1.0}), k=2) - 3.0) < 1e-12
+    assert abs(spec_ceiling(Row("r", 1.0, None, "f", {"cpu_compute": 1.0}), k=2) - 1.0) < 1e-12
+    mixed = spec_ceiling(Row("r", 1.0, None, "f", {"ram_bw": 0.15, "cpu_compute": 0.85}), k=2)
+    assert 1.0 < mixed < 1.15, mixed
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--ctx", "32768")
+    assert rc == 0 and "BUT NOT ON THIS ROW" in out and "does NOT amortize" in out
+
+
+def t_c15_speculation_headline_is_reachable_on_the_row_it_prints_on():
+    """C-15: the block printed a MEASURED multiplier as a headline on every row its branch fired
+    on - 4.7x on MoE split-expert rows, 2.10x on dense rows - and both were measured where the
+    token is ~100% weight bandwidth. A verify batch amortizes weight READS; CPU attention over
+    the KV cache is paid once per DRAFTED POSITION and does not amortize at all. So on a row that
+    spends most of its token there, the headline is not pessimistic-but-plausible, it is
+    ARITHMETICALLY out of reach - and #54 counted 17 shipped grid cells (of 127 that print) where
+    the row's own decomposition caps speculation below 1.5x while 2.10x was on the page.
+
+    D-01 killed a 1.335x lever of ours on evidence. Printing an unreachable multiplier is that
+    error with the sign flipped, and this test is the failing input for it: the CLI check below
+    fails on the pre-fix tool, which prints '**2.10x decode**' on a row that is 85% CPU attention.
+    """
+    # (1) END-TO-END, and deliberately first: no new symbol is needed to see the bug, so a
+    #     pre-fix run fails HERE, on printed output, rather than on an import.
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "2016-xmp", "--ctx", "32768")
+    assert rc == 0, out[:400]
+    assert "**2.10x decode**" not in out, \
+        "the measured 2.10x headline is printed on a row whose own terms cannot reach it"
+    assert "NOT REACHABLE ON THIS ROW" in out and "does not amortize" in out
+    # (2) the bound itself: equals the measurement at zero CPU share, 1.0 when the token is all
+    #     CPU attention, and is monotone in between. No fitted constant - R is the measurement.
+    from quantprobe.plan import (Row, speculation_advice, spec_reachable_x, spec_headline_x,
+                                 cpu_attention_share, SPEC_X_NGRAM_TUNED, SPEC_X_NGRAM_DENSE)
+    bw = Row("all in VRAM", 20.0, None, "-ngl 99", {"vram_bw": 1.0})
+    allcpu = Row("pure CPU (GPU idle)", 3.0, None, "-ngl 0", {"cpu_compute": 1.0})
+    assert abs(spec_reachable_x(bw, SPEC_X_NGRAM_TUNED) - SPEC_X_NGRAM_TUNED) < 1e-12
+    assert abs(spec_reachable_x(allcpu, SPEC_X_NGRAM_DENSE) - 1.0) < 1e-12
+    prev = SPEC_X_NGRAM_TUNED + 1
+    for c in (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0):
+        r = spec_reachable_x(Row("r", 1.0, None, "f", {"ram_bw": 1 - c, "cpu_compute": c}),
+                             SPEC_X_NGRAM_TUNED)
+        assert r < prev, (c, r, prev)                       # strictly monotone down in CPU share
+        prev = r
+    # (3) the headline is REPLACED, not merely footnoted, on a row that cannot reach it.
+    hot = Row("pure CPU (GPU idle)", 3.0, None, "-ngl 0",
+              {"ram_bw": 0.15, "cpu_compute": 0.85})
+    reach = spec_reachable_x(hot, SPEC_X_NGRAM_DENSE)
+    assert reach < 1.15, reach
+    txt = speculation_advice(False, "pure CPU (GPU idle)", row=hot)
+    assert "**2.10x decode**" not in txt and f"**{reach:.2f}x**" in txt, txt[:300]
+    assert cpu_attention_share(hot) == 0.85
+    # (4) and it is NOT replaced where it is reachable: a bandwidth-only row keeps the measured
+    #     text byte-for-byte, so this correction can only ever fire where the arithmetic forbids
+    #     the number. (Same call with no row at all = the pre-fix string.)
+    assert speculation_advice(False, "all in VRAM", row=bw) == \
+        speculation_advice(False, "all in VRAM")
+    assert "**2.10x decode**" in speculation_advice(False, "all in VRAM", row=bw)
+    split = Row("split experts: 32%->VRAM, rest->RAM", 19.5, None, "-ngl 99",
+                {"vram_bw": 0.02, "ram_bw": 0.03})
+    assert speculation_advice(True, "split experts: 32%->VRAM, rest->RAM", row=split) == \
+        speculation_advice(True, "split experts: 32%->VRAM, rest->RAM")
+    assert spec_headline_x(True, "split experts: 32%->VRAM, rest->RAM") == SPEC_X_NGRAM_TUNED
+    assert spec_headline_x(True, 'exps=CPU') is None        # that branch quotes no multiplier
+    # (5) the two bounds are about two DIFFERENT drafters and must be labelled as such: K=2 is the
+    #     draft-model config (3 tokens per weight read, capped at 3x), which is BELOW the 4.7x
+    #     ngram headline it used to be printed under as if it bounded it.
+    rc, out = cli("plan", "--model", "qwen3-30b", "--machine", "2016-xmp")
+    assert rc == 0 and "**4.7x decode at ~3-bit**" in out
+    assert "3.00x for a DRAFT" in out and "4.63x for the ngram drafter" in out, \
+        "the 4.7x headline must be printed next to the ngram drafter's own bound, not a K=2 one"
+
+
+def t_p88_codebook_warning_is_bounded_not_absolute():
+    """P-3b: '~2.7x slower' is a property of the RAM weight read, not of the token. The warning
+    must price itself against THIS row or it sends users to re-download 20 GB for nothing."""
+    from quantprobe.plan import codebook_bounded_gain, Row, IQ_CPU_TG_PENALTY
+    all_ram = codebook_bounded_gain(Row("r", 1.0, None, "f", {"ram_bw": 1.0}), 1.0)
+    assert abs(all_ram - (1 + IQ_CPU_TG_PENALTY)) < 1e-9        # whole token -> full penalty back
+    tiny = codebook_bounded_gain(Row("r", 1.0, None, "f",
+                                     {"ram_bw": 0.05, "cpu_compute": 0.95}), 1.0)
+    assert tiny is not None and tiny < 1.02, tiny               # the "re-download" advice is dead
+    assert codebook_bounded_gain(Row("r", 1.0, None, "f", {"ram_bw": 1.0}), 0.0) is None
+
+
+def t_p88_all_in_vram_low_bits_carries_the_unpack_caveat():
+    """K-4: our geta fuses bandwidth with unpack ALU, and below 4.5 bits we have MEASURED the
+    byte ordering reversed. A bare 'bandwidth-bound' there contradicts our own evidence."""
+    from quantprobe.plan import binding_constraint, binding_report, Row
+    bc = binding_constraint(Row("all in VRAM", 20.0, None, "-ngl 99", {"vram_bw": 0.05}))
+    low = "\n".join(binding_report(bc, bits=2.5, placement="all in VRAM"))
+    high = "\n".join(binding_report(bc, bits=6.5, placement="all in VRAM"))
+    assert "CAVEAT (#16/#52)" in low and "SLOWER" in low
+    assert "CAVEAT" not in high
+    assert "DECODE only" in low and "DECODE only" in high        # scope always stated
+    rc, out = cli("plan", "--model", "mistral-7b", "--machine", "rtx-4090", "--bits", "2.5")
+    assert rc == 0 and "CAVEAT (#16/#52)" in out
+
+
+def t_p88_upgrade_counterfactual_shares_the_baseline_inputs():
+    """P-3a, the defect this experiment found by reading: the three upgrade call sites passed
+    neither n_layer nor true_size_gb, so every counterfactual was drawn from a smaller row menu,
+    a re-estimated model size, and (at ctx>0) a 32-layer CPU-attention term for an 80-layer
+    model. Assert the arguments now travel with the baseline."""
+    from quantprobe import plan
+    seen = []
+    real = plan.evaluate
+    try:
+        plan.evaluate = lambda *a, **k: (seen.append(k), real(*a, **k))[1]
+        import argparse
+        args = argparse.Namespace(model="llama-70b", machine="2016-xmp", bits=2.5, ctx=16384,
+                                  total=None, active=None, always_active=None, vram=None,
+                                  vram_bw=None, ram=None, ram_bw=None, disk_bw=None,
+                                  kv_per_pos=None, n_layer=None, gguf=None)
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            plan.run(args)
+    finally:
+        plan.evaluate = real
+    assert len(seen) >= 3, f"only {len(seen)} evaluate calls - the advisor stopped running"
+    nl = {k.get("n_layer") for k in seen}
+    assert nl == {80}, f"counterfactuals disagree with the baseline on n_layer: {nl}"
+    assert {k.get("ctx") for k in seen} == {16384}
+    assert all("true_size_gb" in k for k in seen), "true_size_gb must travel with every call"
+    # the counterfactuals must actually differ from the baseline in ONE resource each
+    assert {k["rc"] for k in seen} == {16, 32}, "the +16 GB RAM probe did not run"
+    assert {k["db"] for k in seen} == {0.45, 3.5}, "the NVMe probe did not run"
+
+
+def t_p88_upgrade_advice_is_not_invented_by_a_depth_mismatch():
+    """The USER-VISIBLE half of P-3a, on the two cells that pin BOTH signs of the defect.
+
+    The sibling test above asserts the plumbing (the kwargs travel). Plumbing is not advice: it
+    would still pass if `evaluate` ignored `n_layer` entirely. This one asserts the printed line,
+    through the real CLI, on the two cells that a defect replay shows moving in OPPOSITE
+    directions - which is also why the "one-directional" rationale that shipped in
+    `upgrade_advisor`'s docstring had to be withdrawn (prereg #88 §8.6).
+
+    INVENTION arm - llama-70b (80 layers) on `colibri` at ctx 16384. Strip `n_layer` from the
+    counterfactual and it is priced as a 32-layer model against an 80-layer baseline, so BOTH
+    `+16 GB RAM` and `NVMe SSD` print at an identical x1.70 on a 128 GB box where neither
+    resource is reachable. Two different levers cannot honestly buy the same number; the fixed
+    advisor prints neither. This is the direction that costs a user money.
+
+    SUPPRESSION arm - deepseek-16b on `2016` at ctx 0. Without `n_layer` the counterfactual has
+    no split-experts row to win with, so free XMP - worth x1.12 here - was never offered.
+
+    FAILS on the pre-fix tree in both directions: with the three call sites' arguments dropped the
+    first assertion sees the invented pair and the second sees no XMP line at all.
+    """
+    rc, out = cli("plan", "--model", "llama-70b", "--machine", "colibri",
+                  "--bits", "2.5", "--ctx", "16384")
+    assert rc == 0, out
+    fired = [l.strip() for l in out.splitlines()
+             if l.strip().startswith("upgrade advisor:")]
+    assert not fired, (
+        "upgrade advice INVENTED by a baseline/counterfactual depth mismatch - a 128 GB box "
+        f"cannot be helped by +16 GB RAM: {fired}")
+    dead = [l for l in out.splitlines() if "WON'T HELP HERE" in l]
+    assert dead and "+16 GB RAM" in dead[0] and "NVMe SSD" in dead[0], (
+        f"both dead levers must still be NAMED, not silently dropped: {dead}")
+
+    rc, out = cli("plan", "--model", "deepseek-16b", "--machine", "2016", "--bits", "2.5")
+    assert rc == 0, out
+    xmp = [l.strip() for l in out.splitlines()
+           if l.strip().startswith("upgrade advisor:") and "enable XMP (free) ->" in l]
+    assert len(xmp) == 1, f"free upgrade SUPPRESSED by a smaller counterfactual row menu: {out}"
+    assert "split experts:" in xmp[0], (
+        f"the winning counterfactual row needs n_layer to exist at all: {xmp[0]}")
+
+
 def t_version():
     import quantprobe
     assert quantprobe.__version__
-
 
 
 def t_c17_disk_probe_reads_the_whole_file_not_a_warm_tail():
@@ -1613,20 +2374,6 @@ def t_p97_disk_probe_returns_the_cold_draw_not_the_warm_one():
     return None
 
 
-def t_no_test_is_defined_after_the_runner():
-    """The runner reads globals() at the point `if __name__ == '__main__'` executes, so anything
-    defined BELOW it does not exist yet and never runs. That is not hypothetical: the C-17 disk
-    regression test sat below the runner from the commit that introduced it and was never
-    executed once. Nothing catches this - the suite just quietly gets smaller."""
-    import re
-    src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py"),
-                  encoding="utf-8").read()
-    i = src.rindex('if __name__ == "__main__":')      # rindex: this test quotes the string too
-    after = re.findall(r"^def (t_\w+)", src[i:], re.M)
-    assert not after, (f"{len(after)} test(s) defined after the runner and therefore never "
-                       f"collected: {after}")
-
-
 def t_p98_kld_parses_and_never_falls_back_to_perplexity():
     """prereg #98: the KL block parses, and its ABSENCE returns UNMEASURED rather than
     quietly becoming a perplexity number. Fixture-free - parses a captured real output.
@@ -1653,6 +2400,57 @@ def t_p98_kld_parses_and_never_falls_back_to_perplexity():
     assert parse_kld(ppl_only) == {}, (
         "a perplexity-only output produced a KLD reading - the metric is being invented from "
         "a run that never computed it")
+    return None
+
+
+def t_e11_layer_by_layer_reads_the_whole_model_not_just_active():
+    """E-11: the layer-by-layer row must price ALL weights per token, not the active set.
+
+    This is the ONE thing that makes the placement different from every other row in the menu,
+    and it is the thing a reader is most likely to get wrong: airllm visits every layer, so a
+    235B MoE with 22B active moves all 235B. If this row ever prices `act` it will outrank the
+    expert-offload rows on MoE and recommend a placement that is an order of magnitude slower.
+    """
+    from quantprobe.plan import evaluate
+    size, act, rows = evaluate(t=235, a=22, ne=22, moe=True, bits=4, vc=4, vb=200, rc=64,
+                               rb=25, db=3.5, geta=0.5, n_layer=94)
+    ll = [r for r in rows if "layer-by-layer" in r[0]]
+    assert ll, "layer-by-layer row not emitted for a 128 GB MoE on a 4 GB card"
+    row = ll[0]
+    # terms must reconstruct size/bw, not act/bw
+    moved = row.terms["io"] * 3.5 + row.terms["ram_bw"] * (25 * 0.55)   # approx eta_r*rb
+    assert moved > act * 2, (
+        f"layer-by-layer moves only ~{moved:.0f} GB of weights per token against an active set "
+        f"of {act:.1f} GB and a model of {size:.1f} GB - it is pricing the ACTIVE set, which is "
+        f"the whole point of this placement being different")
+    best = rows[0]
+    assert "layer-by-layer" not in best[0], (
+        f"layer-by-layer won on a MoE at {row[1]:.4f} vs {best[1]:.4f} - it reads every expert "
+        f"every token and must never beat expert offload here")
+    assert "MoE PENALTY" in (row[2] or ""), "MoE row must name the all-experts penalty"
+    return None
+
+
+def t_e11_layer_by_layer_fits_a_card_the_model_cannot():
+    """E-11: emitted exactly when the MODEL does not fit VRAM but one LAYER does - that is the
+    claim ("70B on a 4 GB card") and the only reason the placement exists. Also asserts the two
+    unpriced costs are disclosed on the row, since the printed number is an upper bound."""
+    from quantprobe.plan import evaluate
+    k = dict(t=70, a=70, ne=70, moe=False, bits=16, vb=200, rc=128, rb=50, db=3.5,
+             geta=0.5, n_layer=80)
+    _, _, small = evaluate(vc=4, **k)                 # 151 GB model, 1.9 GB layer -> emit
+    ll = [r for r in small if "layer-by-layer" in r[0]]
+    assert ll, "70B fp16 on a 4 GB card must emit the layer-by-layer row"
+    w = ll[0][2] or ""
+    assert "PCIe" in w and "C-23" in w, (
+        f"row must disclose BOTH unpriced costs (PCIe transfer, C-23 streaming gap); got: {w}")
+    assert "UPPER BOUND" in w, "row must say the printed speed is an upper bound"
+    _, _, tiny = evaluate(vc=1, **k)                  # 1 GB card cannot hold a 1.9 GB layer
+    assert not [r for r in tiny if "layer-by-layer" in r[0]], (
+        "a 1 GB card cannot hold a 1.9 GB layer - the row must not be emitted")
+    _, _, huge = evaluate(vc=200, **k)                # model fits entirely: row is pointless
+    assert not [r for r in huge if "layer-by-layer" in r[0]], (
+        "the model fits in VRAM - streaming layer by layer must not be offered")
     return None
 
 

@@ -38,10 +38,20 @@ MODEL_REPOS = {
 def list_ggufs(repo):
     """[(path, size_bytes)] for a HF repo, via the public tree API (recursive: big repos
     keep quants in subfolders). Split multi-part files (-00001-of-000NN) are grouped into
-    ONE logical entry: path = first part, size = sum of parts - so effective-bits stays honest."""
+    ONE logical entry: path = first part, size = sum of parts - so effective-bits stays honest.
+
+    Sends the same HF token `fetch` sends: this listing used to be anonymous-only, so a GATED
+    repo 401'd `auto` even for a user whose token would have downloaded the files fine one step
+    later (caught live when unsloth gated their Mistral repo: `auto mistral-7b` died on the
+    listing while `fetch` would have succeeded)."""
     import re
+    from . import fetch as fetchmod
+    headers = {"User-Agent": "quantprobe-auto"}
+    tok = fetchmod.token()
+    if tok:
+        headers["Authorization"] = f"Bearer {tok}"
     req = urllib.request.Request(f"https://huggingface.co/api/models/{repo}/tree/main?recursive=true",
-                                 headers={"User-Agent": "quantprobe-auto"})
+                                 headers=headers)
     with urllib.request.urlopen(req, timeout=30) as r:
         raw = [(f["path"], f.get("size", 0)) for f in json.load(r)
                if f["path"].endswith(".gguf") and f.get("size", 0) > 1e8
@@ -60,6 +70,17 @@ def list_ggufs(repo):
         if g["first"]:
             singles.append((g["first"], g["total"]))
     return singles
+
+
+def gated_hint(e):
+    """Actionable suffix for a 401/403 from the HF tree API - a bare 'Unauthorized' on a repo the
+    user can see in a browser reads like a quantprobe bug, when it is a gated repo waiting for a
+    token (or for the access request the repo page gates downloads behind)."""
+    if any(code in str(e) for code in ("401", "403")):
+        return ("\n  That repo is gated or private on Hugging Face. Request access on its page if "
+                "you have not,\n  then authenticate: set HF_TOKEN, or `huggingface-cli login` "
+                "(quantprobe reads the same\n  cached token). Or pick another preset/repo.")
+    return ""
 
 
 def split_parts(first_part):
@@ -185,7 +206,7 @@ def run(a):
     try:
         files = list_ggufs(repo)
     except Exception as e:
-        raise SystemExit(f"could not list {repo}: {e}")
+        raise SystemExit(f"could not list {repo}: {e}{gated_hint(e)}")
     if not files:
         raise SystemExit(f"no GGUF files found in {repo}")
     scored = []

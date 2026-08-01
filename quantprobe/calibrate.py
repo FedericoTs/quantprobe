@@ -256,8 +256,22 @@ def run(a):
     model = getattr(a, "model", None)
     if model and os.path.isfile(model):
         from .detect import measure_disk
-        cal["disk_bw_measured"] = round(measure_disk(model), 2)
+        bw, info = measure_disk(model, detail=True)
+        cal["disk_bw_measured"] = round(bw, 2)
+        cal["disk_probe"] = info
         print(f"  disk: {cal['disk_bw_measured']:.2f} GB/s sequential on your file [measured]")
+        # prereg #97: no longer one sample, and no longer your job to spot the warm one. The
+        # minimum over disjoint regions is the estimate, because nothing reads faster than the
+        # device except cache. Measured: 6 of 8 single draws on a 73%-warm file returned
+        # >1.5 GB/s (max 2.854, a 6.3x error) while the minimum stayed correct.
+        print(f"        (minimum of {info['samples']} probes at random offsets: "
+              f"{info['draws']})")
+        if info["warm_draws"]:
+            print(f"        {info['warm_draws']} of {info['samples']} draws came back >2x the "
+                  f"minimum - those regions were served from page cache,\n         not disk. The "
+                  f"minimum above is used and is the right number; this line is only telling you "
+                  f"why\n         the draws disagree. A single-sample probe could have shipped "
+                  f"one of the fast ones. (C-17/#97)")
         if not getattr(a, "skip_bench", False):
             cal["anchors"] = []
             print("  anchor: running llama-bench -ngl 0 tg32 on your file (1-10 min on big models)...")

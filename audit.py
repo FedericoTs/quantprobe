@@ -40,6 +40,17 @@ UNMEASURED_PLACEMENTS = {
         "dense partial offload - never measured; needs a dense model that overflows this 6 GB card",
     "stream from disk (VRAM+RAM expert cache)":
         "needs an expert-caching runtime (ktransformers/colibri-class); stock llama.cpp cannot run it",
+    "layer-by-layer streaming (one layer resident)":
+        "E-11, added 2026-08-01 from the airllm placement. UNMEASURED and doubly so: no "
+        "layer-streaming runtime is installed here, and the number is an explicit UPPER BOUND "
+        "with two named unpriced terms - host-to-device PCIe transfer of every layer every "
+        "token (no measured PCIe anchor exists and inventing one is refused), and the "
+        "streaming-efficiency gap C-23 put at 1.82x on llama.cpp. It is marked runnable=False "
+        "so it can never be the printed winner over a row a user can actually execute. What "
+        "makes it worth shipping anyway: it is the only row that prices a placement whose VRAM "
+        "cost scales with LAYER size instead of model size, and third-party airllm reports "
+        "(0.5-2 tok/s RAM-resident, <0.1 disk-bound) fall inside what it predicts - "
+        "encouraging, unscored, and no stake was placed before those numbers were read.",
 }
 
 

@@ -47,6 +47,14 @@ def layer1_tests():
     assert "all green" in out, "smoke suite not green:\n" + "\n".join(
         l for l in out.splitlines() if "FAIL" in l)
     print(f"  {sum(1 for l in out.splitlines() if l.strip().startswith('ok'))} tests green")
+    # A skip is not a pass - layer 3 has enforced that since v1.12 and layer 1 never reported it.
+    # The smoke harness used to print a skipped test as `ok`, which is how the disk-probe
+    # regression test read as green while measuring nothing (C-17).
+    skipped = [l.strip() for l in out.splitlines() if l.strip().startswith("SKIP")]
+    for s in skipped:
+        SKIP.append("layer1: " + s[5:].strip())
+    if skipped:
+        print(f"  {len(skipped)} test(s) SKIPPED (not run, not passed) - see the skip list below")
 
 
 def layer2_installed_artifact():
