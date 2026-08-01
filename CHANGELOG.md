@@ -24,18 +24,39 @@ separates this run from the previous attempt: **KR3** the harness demonstrably v
 2.09× failure the day before), **KR2** decode not load (5.7% / 6.0%, both denominators). One
 `cal_id` at both ends, gates open on the first attempt at 0.2% CPU.
 
-Inverting the term, the I/O component is **1.485× faster than modelled**. That is one of exactly
-two things, and this measurement cannot tell them apart:
+Inverting the term, the I/O component is **1.485× faster than modelled**. That was one of exactly
+two things — a wrong *access pattern* in our probe, or a wrong *miss fraction* in the law. We
+staked the discriminator before running it, with the inconclusive band declared in advance so the
+answer could not be chosen for convenience, and **it came back decisive.**
 
-- effective bandwidth under llama.cpp's **sequential** streaming is ~0.70 GB/s, not the 0.47 GB/s
-  our random-offset cold probe reports — meaning the probe measures the wrong *access pattern*,
-  a different bug from the page-cache one below, or
-- the page-cache **miss fraction** is ~0.429, not the modelled 0.637 — which is what expert-usage
-  skew predicts if hot experts stay resident and never pay disk.
+### The disk calibration is now confirmed correct — the residency model is what's wrong
 
-**We have not changed a coefficient.** One datapoint establishes direction, not a constant, and
-fitting to it would repeat the error C-02 exists to warn about. The discriminating experiment —
-sequential-vs-random read at matched size — is the next step.
+Prereg #94, same drive, disjoint cold regions:
+
+| arm | result |
+|---|---|
+| scattered — 8 × 512 MB at random offsets | **0.452 GB/s** |
+| contiguous — one 4 GB sequential read | **0.459 GB/s** |
+| ratio | **1.015× — access-pattern hypothesis REFUTED** |
+| warm re-read (cannot-vary guard, must exceed 2.0) | 2.802 GB/s — **guard passed** |
+
+This drive does not care about access pattern at this size. Two consequences, and the second
+matters more than the first:
+
+1. `measure_disk()` needs no change. The probe was measuring the right thing.
+2. **Both arms land within 4% of the 0.47 GB/s that `calibrate` reports.** The C-17-corrected
+   disk figure is independently confirmed by a probe carrying a working falsifier. Yesterday this
+   changelog said *"proving the old number wrong is not the same as proving the new one right"* —
+   the new one is now right.
+
+By elimination the 30% miss belongs to the **miss fraction**: the law assumes 0.637 of each
+token's bytes are re-read from disk; the measurement implies **~0.429**. That is exactly what
+expert-usage skew predicts — if MoE routing concentrates on a hot subset, those experts stay
+page-cached permanently and never pay disk at all.
+
+**We still have not changed a coefficient**, and won't until skew is measured directly. Elimination
+is not evidence: H2 stands because its only rival is dead, not because anyone has watched the
+routing. That measurement is owed, and **0.429 is the number it has to hit.**
 
 Why this went undetected until now: all 14 rows of our validation ladder are VRAM- or RAM-resident.
 **Zero read the disk tier.** A component no validation row touches can stay wrong indefinitely.
@@ -82,9 +103,10 @@ Consequences we are acting on rather than noting:
 
 ### Also not validated in this release
 
-- **Which of the two mechanisms makes the disk tier 30% fast: UNDETERMINED.** Access pattern and
-  miss fraction both fit the single datapoint. The sequential-vs-random probe that separates them
-  has not been run, so no coefficient moves in this release.
+- **Expert-usage skew is inferred, never observed.** The miss fraction survives only because its
+  rival is dead — nobody has watched MoE routing to confirm that a hot subset stays resident. Until
+  that is measured against the 0.429 target, the disk-tier term keeps under-predicting and the
+  mechanism behind it is a hypothesis with one competitor eliminated, not a finding.
 - **L-26's "+4.3% prefill" is law-mediated, not a measured A/B.** 360.76 tok/s was measured at
   pp4096; the 345.89 baseline is pp2048 - a different prompt length - and the like-for-like
   pp4096-at-ub2048 control has never been run. Because `-ub` is a cap, the flag also cannot do
