@@ -890,10 +890,18 @@ class Row(tuple):
     # No __slots__: a subclass of a variable-length built-in cannot declare them. The two
     # attributes live in a per-instance dict, which costs nothing at the handful of rows we build.
 
-    def __new__(cls, name, tok_s, warn, flags, terms=None, eff=1.0):
+    def __new__(cls, name, tok_s, warn, flags, terms=None, eff=1.0, runnable=True):
         r = super().__new__(cls, (name, tok_s, warn, flags))
         r.terms = dict(terms or {})
         r.eff = eff
+        # `runnable`: can a user execute this row from the emitted command TODAY? A row whose
+        # speed is an UPPER BOUND with named unpriced terms is not comparable to a fully priced
+        # one, and a row needing a runtime they do not have is worse than useless as a winner -
+        # `plan` prints ONE `run it:` line, so an unrunnable winner emits a non-command. That is
+        # the trap the disk-tier stake caught for the expert-cache row; adding a second such row
+        # made it live. These rows are still SHOWN - the capacity claim is their whole point -
+        # but they sort below every runnable row instead of competing on tok/s.
+        r.runnable = runnable
         return r
 
 
@@ -1312,8 +1320,53 @@ def evaluate(t, a, ne, moe, bits, vc, vb, rc, rb, db, geta, act_scale=1.0, gl=No
                             "ram_bw": hit * (1 - vshare) / (eta_r * rb),
                             "vram_bw": (hit * vshare / (geta * vb) + hot / (geta * vb)
                                         + kv_gb / (ETA_KV * vb))},
-                           eff=0.95))
-    out.sort(key=lambda x: -x[1])
+                           eff=0.95, runnable=False))
+    # LAYER-BY-LAYER STREAMING (E-11, the airllm placement). One transformer layer resident on
+    # the GPU at a time; the rest of the model streams past it. VRAM stops scaling with model
+    # size and starts scaling with LAYER size, which is what makes "70B on a 4 GB card" true.
+    #
+    # THE DEFINING TERM IS `size`, NOT `act`. Every other row in this menu reads only the weights
+    # a token activates. This one visits every layer, so it reads the WHOLE model per token. For a
+    # dense model that is nearly the same thing; for a MoE it is catastrophically not - a 235B MoE
+    # with 22B active reads all 235B here, roughly 10x the traffic of the expert-offload rows
+    # above. That is why the warn says so on the row rather than leaving it to be discovered.
+    nl = n_layer or 32
+    layer_gb = size / nl
+    # Gate on the SINGLE-buffered requirement: one layer plus KV plus working space. Prefetch
+    # (overlapping the next layer's fetch with this layer's compute) needs 2x layer_gb and is
+    # what airllm's docs price at ~10% - a real but optional bonus, so requiring room for it
+    # would wrongly suppress the row on exactly the tiny cards the placement exists for. A 70B
+    # fp16 layer is 1.9 GB: single-buffered it fits a 4 GB card, double-buffered it does not,
+    # and "70B on 4 GB" is the claim being modelled.
+    v_need = layer_gb + kv_gb + 0.5
+    if vc > 0 and size + kv_gb > vc * 0.90 and v_need <= vc * 0.90:
+        cache_ll = max(0.0, ra * 0.9 - kv_gb)
+        miss_ll = max(0.0, 1 - cache_ll / size)
+        t_ll = (size * miss_ll / db                        # the part that must come off disk
+                + size * (1 - miss_ll) / (eta_r * rb)      # the part host RAM can hold
+                + kv_gb / (ETA_KV * vb))                   # KV stays on the GPU with the layer
+        warn = (f"one layer resident ({layer_gb:.2f} GB of {size:.1f} GB); needs a "
+                f"layer-streaming runtime (airllm/accelerate-class) - llama.cpp has no such mode")
+        if layer_gb * 2 + kv_gb + 0.5 > vc * 0.90:
+            warn += (f"; no room to PREFETCH (needs {layer_gb*2+kv_gb+0.5:.1f} GB for "
+                     f"double-buffering, you have {vc*0.90:.1f}) - the ~10% overlap gain is off")
+        if moe:
+            warn += ("; MoE PENALTY: this reads ALL experts every token, not just the active "
+                     "ones - the expert-offload rows above move far fewer bytes and this row "
+                     "should not be preferred on a MoE unless VRAM genuinely cannot hold their "
+                     "resident set")
+        # UPPER BOUND, and the two reasons are named rather than absorbed. This is the same
+        # treatment the KV-deficit disclosure gets above: keep the arithmetic, say what it omits.
+        warn += ("; UPPER BOUND - two costs are unpriced: host-to-device PCIe transfer of every "
+                 "layer every token (we have no measured PCIe anchor and will not invent one), "
+                 "and the streaming-efficiency gap C-23 measured at 1.82x on llama.cpp "
+                 "(0.2505 GB/s achieved against 0.452-0.459 raw). Expect materially slower")
+        out.append(Row("layer-by-layer streaming (one layer resident)", 0.95 / t_ll, warn,
+                       "runtime-managed layer streaming (not a llama.cpp flag)",
+                       {"io": size * miss_ll / db,
+                        "ram_bw": size * (1 - miss_ll) / (eta_r * rb),
+                        "vram_bw": kv_gb / (ETA_KV * vb)}, eff=0.95, runnable=False))
+    out.sort(key=lambda x: (not getattr(x, 'runnable', True), -x[1]))
     return size, act, out
 
 

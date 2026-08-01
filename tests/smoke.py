@@ -2374,6 +2374,57 @@ def t_p97_disk_probe_returns_the_cold_draw_not_the_warm_one():
     return None
 
 
+def t_e11_layer_by_layer_reads_the_whole_model_not_just_active():
+    """E-11: the layer-by-layer row must price ALL weights per token, not the active set.
+
+    This is the ONE thing that makes the placement different from every other row in the menu,
+    and it is the thing a reader is most likely to get wrong: airllm visits every layer, so a
+    235B MoE with 22B active moves all 235B. If this row ever prices `act` it will outrank the
+    expert-offload rows on MoE and recommend a placement that is an order of magnitude slower.
+    """
+    from quantprobe.plan import evaluate
+    size, act, rows = evaluate(t=235, a=22, ne=22, moe=True, bits=4, vc=4, vb=200, rc=64,
+                               rb=25, db=3.5, geta=0.5, n_layer=94)
+    ll = [r for r in rows if "layer-by-layer" in r[0]]
+    assert ll, "layer-by-layer row not emitted for a 128 GB MoE on a 4 GB card"
+    row = ll[0]
+    # terms must reconstruct size/bw, not act/bw
+    moved = row.terms["io"] * 3.5 + row.terms["ram_bw"] * (25 * 0.55)   # approx eta_r*rb
+    assert moved > act * 2, (
+        f"layer-by-layer moves only ~{moved:.0f} GB of weights per token against an active set "
+        f"of {act:.1f} GB and a model of {size:.1f} GB - it is pricing the ACTIVE set, which is "
+        f"the whole point of this placement being different")
+    best = rows[0]
+    assert "layer-by-layer" not in best[0], (
+        f"layer-by-layer won on a MoE at {row[1]:.4f} vs {best[1]:.4f} - it reads every expert "
+        f"every token and must never beat expert offload here")
+    assert "MoE PENALTY" in (row[2] or ""), "MoE row must name the all-experts penalty"
+    return None
+
+
+def t_e11_layer_by_layer_fits_a_card_the_model_cannot():
+    """E-11: emitted exactly when the MODEL does not fit VRAM but one LAYER does - that is the
+    claim ("70B on a 4 GB card") and the only reason the placement exists. Also asserts the two
+    unpriced costs are disclosed on the row, since the printed number is an upper bound."""
+    from quantprobe.plan import evaluate
+    k = dict(t=70, a=70, ne=70, moe=False, bits=16, vb=200, rc=128, rb=50, db=3.5,
+             geta=0.5, n_layer=80)
+    _, _, small = evaluate(vc=4, **k)                 # 151 GB model, 1.9 GB layer -> emit
+    ll = [r for r in small if "layer-by-layer" in r[0]]
+    assert ll, "70B fp16 on a 4 GB card must emit the layer-by-layer row"
+    w = ll[0][2] or ""
+    assert "PCIe" in w and "C-23" in w, (
+        f"row must disclose BOTH unpriced costs (PCIe transfer, C-23 streaming gap); got: {w}")
+    assert "UPPER BOUND" in w, "row must say the printed speed is an upper bound"
+    _, _, tiny = evaluate(vc=1, **k)                  # 1 GB card cannot hold a 1.9 GB layer
+    assert not [r for r in tiny if "layer-by-layer" in r[0]], (
+        "a 1 GB card cannot hold a 1.9 GB layer - the row must not be emitted")
+    _, _, huge = evaluate(vc=200, **k)                # model fits entirely: row is pointless
+    assert not [r for r in huge if "layer-by-layer" in r[0]], (
+        "the model fits in VRAM - streaming layer by layer must not be offered")
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
