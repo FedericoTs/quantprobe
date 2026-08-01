@@ -518,7 +518,7 @@ code at all — and §8 explains why its most likely verdict is that it does not
 **Reproduce:**
 
 ```
-cd C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill
+cd <repo>
 python weights\exp55_cache_aware_dropping.py
 ```
 

@@ -10,7 +10,7 @@
   corpus prose_B   119,800 B  sha256=5fb4087ab6b5c048...  PINNED OK
 
 ## preflight
-  binary   C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe
+  binary   <repo>\tools\llamacpp-b10098\llama-imatrix.exe
            sha256=0f9eb11e7307b0d9ea546d485c385f6c461f1e181ff8573046077d364302da56
   model    qwen3-30b-a3b-q2k      D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf  (11,258,610,240 B)
   model    q35-A-shexp            D:\evo-compress-data\gguf\q35-A-shexp.gguf  (13,360,683,648 B)
@@ -37,13 +37,13 @@
   CONTROLS: PASS
 
 ## arm qwen3-30b-a3b-q2k
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__code__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f <repo>\weights\data\exp52_corpus_code_A.txt -o <repo>\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__code__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] qwen3-30b-a3b-q2k__code__A.imatrix.gguf in 140.6s
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__code__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f <repo>\weights\data\exp52_corpus_code_B.txt -o <repo>\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__code__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] qwen3-30b-a3b-q2k__code__B.imatrix.gguf in 79.4s
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__prose__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f <repo>\weights\data\exp52_corpus_prose_A.txt -o <repo>\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__prose__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] qwen3-30b-a3b-q2k__prose__A.imatrix.gguf in 53.7s
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__prose__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\Qwen3-30B-A3B-Q2_K.gguf -f <repo>\weights\data\exp52_corpus_prose_B.txt -o <repo>\weights\data\exp52_imatrix\qwen3-30b-a3b-q2k__prose__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] qwen3-30b-a3b-q2k__prose__B.imatrix.gguf in 46.4s
   parsed: 48 MoE layers x 128 experts | chunks=8 x 512 tok | projections=down,gate,up
 
@@ -69,13 +69,13 @@
   ARM VERDICT: FAIL
 
 ## arm q35-A-shexp
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__code__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f <repo>\weights\data\exp52_corpus_code_A.txt -o <repo>\weights\data\exp52_imatrix\q35-A-shexp__code__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] q35-A-shexp__code__A.imatrix.gguf in 271.9s
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_code_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__code__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f <repo>\weights\data\exp52_corpus_code_B.txt -o <repo>\weights\data\exp52_imatrix\q35-A-shexp__code__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] q35-A-shexp__code__B.imatrix.gguf in 352.7s
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_A.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__prose__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f <repo>\weights\data\exp52_corpus_prose_A.txt -o <repo>\weights\data\exp52_imatrix\q35-A-shexp__prose__A.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] q35-A-shexp__prose__A.imatrix.gguf in 287.5s
-  [run ] C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_corpus_prose_B.txt -o C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_imatrix\q35-A-shexp__prose__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
+  [run ] <repo>\tools\llamacpp-b10098\llama-imatrix.exe -m D:\evo-compress-data\gguf\q35-A-shexp.gguf -f <repo>\weights\data\exp52_corpus_prose_B.txt -o <repo>\weights\data\exp52_imatrix\q35-A-shexp__prose__B.imatrix.gguf.partial --output-format gguf -c 512 --chunks 8 -ngl 0
   [done] q35-A-shexp__prose__B.imatrix.gguf in 215.4s
   parsed: 40 MoE layers x 256 experts | chunks=8 x 512 tok | projections=down,gate,up
 
@@ -108,5 +108,5 @@
   REFUTED for our models at this budget: keep the static -ot regex, and
   task #55 (cache-aware dropping) loses the gate it was waiting on.
 
-  raw -> C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_expert_usage_skew.json
-  log -> C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp52_expert_usage_skew.log
+  raw -> <repo>\weights\data\exp52_expert_usage_skew.json
+  log -> <repo>\weights\data\exp52_expert_usage_skew.log

@@ -166,5 +166,5 @@ mode: SCORE   2026-07-30 23:08:26
       - Wiring N3 in therefore still requires the separate commit prereg section 5 demands, and inherits every caveat in sections 7 and 8.
 ----------------------------------------------------------------------------------------------------
 
-  wrote C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp53_two_resource_disk_tier.json
+  wrote <repo>\weights\data\exp53_two_resource_disk_tier.json
   elapsed 32.6s

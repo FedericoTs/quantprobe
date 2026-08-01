@@ -3,7 +3,7 @@
 # Round 2: probe the deepest -c that f16 KV fits (8192 OOMs, 4096 fits), then run
 # both arms with 12 chunks so the error bar can actually resolve the 2% gate.
 set -u
-BIN="/c/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-perplexity.exe"
+BIN="<repo>/tools/llamacpp-b10098/llama-perplexity.exe"
 M="D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q2_K.gguf"
 F="weights/data/wikitext2_test.txt"
 OT='blk\.(16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31)\.ffn_.*_exps\.=CPU'

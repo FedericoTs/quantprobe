@@ -14,7 +14,7 @@ REM ============================================================
 setlocal
 set LLAMA=D:\evo-compress-data\llamacpp
 set GGUF=D:\evo-compress-data\gguf\DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf
-set OUT=C:\Users\Federico\Documents\evo-compress\weights\data\tokps_result.log
+set OUT=<repo>\weights\data\tokps_result.log
 
 echo ===== tok/s benchmark (run with Claude/apps CLOSED) =====> "%OUT%"
 echo.>> "%OUT%"

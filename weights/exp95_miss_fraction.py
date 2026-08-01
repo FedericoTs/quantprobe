@@ -46,7 +46,7 @@ import json, os, re, subprocess, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
-BIN = r"C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-bench.exe"
+BIN = r"<repo>\tools\llamacpp-b10098\llama-bench.exe"
 MODEL = "D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf"
 OUT = os.path.join(DATA, "exp95_miss_fraction.json")
 PRED_GB_PER_TOK = 1.2530          # frozen stake: io 2.66599 s x 0.47 GB/s

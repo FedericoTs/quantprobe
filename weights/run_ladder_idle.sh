@@ -2,7 +2,7 @@
 # Idle-state ladder rerun. New guard: CPU idleness gate (the 2026-07-31 ladder was
 # contaminated by ambient CPU load - every CPU-participating row fell 10-20% while
 # GPU-only rows held; we gated GPU idleness but never CPU).
-cd "C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill" || exit 1
+cd "<repo>" || exit 1
 TS=$(date +%Y%m%d_%H%M)
 LOG="weights/data/ladder_idle_${TS}.log"
 

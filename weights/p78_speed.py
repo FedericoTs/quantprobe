@@ -3,7 +3,7 @@ binary, same session - only the tool's advice changed."""
 import json, os, re, subprocess
 
 D = "D:/evo-compress-data/gguf/"
-BIN = r"C:\Users\Federico\Documents\evo-compress\tools\llama.cpp-pristine\build\bin\llama-bench.exe"
+BIN = r"<repo>\tools\llama.cpp-pristine\build\bin\llama-bench.exe"
 CUDA = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin"
 rows = json.load(open("weights/data/full_ladder_v124.json", encoding="utf-8"))
 env = dict(os.environ, PATH=CUDA + os.pathsep + os.environ["PATH"])

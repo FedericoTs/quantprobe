@@ -214,7 +214,7 @@ fails" would be indistinguishable, and a FAIL on the real arms would carry no in
 **Reproduce:**
 
 ```
-cd C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill
+cd <repo>
 python weights\exp52_expert_usage_skew.py --selftest   # controls only; no model, no GPU
 python weights\exp52_expert_usage_skew.py              # the staked run (controls run first)
 ```

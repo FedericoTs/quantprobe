@@ -119,7 +119,7 @@ PROSE_SRC = r"D:\evo-compress-data\eval\wiki.test.raw"
 PROSE_SRC_SHA256 = "173c87a53759e0201f33e0ccf978e510c2042d7f2cb78229d9a50d79b9e7dd08"
 PROSE_SHARD_BYTES = 120_000
 
-DEFAULT_IMATRIX_BIN = r"C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-imatrix.exe"
+DEFAULT_IMATRIX_BIN = r"<repo>\tools\llamacpp-b10098\llama-imatrix.exe"
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, "weights", "data")

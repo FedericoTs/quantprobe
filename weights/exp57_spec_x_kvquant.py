@@ -34,7 +34,7 @@ import sys
 import tempfile
 import time
 
-TOOLS = "C:/Users/Federico/Documents/evo-compress/tools"
+TOOLS = "<repo>/tools"
 BENCH = TOOLS + "/llama.cpp-pristine/build/bin/llama-bench.exe"
 SPEC = TOOLS + "/llama.cpp-pristine/build/bin/llama-speculative.exe"
 TOKENIZE = TOOLS + "/llamacpp-b10098/llama-tokenize.exe"

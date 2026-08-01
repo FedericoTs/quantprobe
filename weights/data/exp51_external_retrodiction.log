@@ -27,7 +27,7 @@ mode: SCORE   2026-07-30 21:18:00
   selected         bartowski/Qwen_Qwen3.6-35B-A3B-GGUF/Qwen_Qwen3.6-35B-A3B-Q4_K_M.gguf  22,285,080,192 B (22.285 GB)
 
 [3] fetch and validate the GGUF header (Range request, not the 22 GB file)
-  header cache HIT  C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp51_gguf_header.bin (10,990,692 B) - pass --refetch to redo
+  header cache HIT  <repo>\weights\data\exp51_gguf_header.bin (10,990,692 B) - pass --refetch to redo
   parsed           753 tensors, 49 metadata keys
   byte accounting  header 10,990,692 + pad 28 + tensors 22,274,089,472 = 22,285,080,192 vs remote 22,285,080,192 (slack 0)
   file identity    {'arch': 'qwen35moe', 'expert_count': 256, 'expert_used_count': 8, 'block_count': 41}
@@ -98,5 +98,5 @@ mode: SCORE   2026-07-30 21:18:00
   ...and it is a PASS on a run that could not have failed. Weigh it as a reproduction of a retrodiction, not as a test.
 ----------------------------------------------------------------------------------------
 
-  wrote C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp51_external_retrodiction.json
+  wrote <repo>\weights\data\exp51_external_retrodiction.json
   elapsed 15.9s

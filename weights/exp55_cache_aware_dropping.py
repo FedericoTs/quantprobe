@@ -179,7 +179,7 @@ BW_GPU_EFF = 130e9      # GTX 1060 6GB, effective
 BW_CPU_EFF = 15.3e9     # DDR4-3200 at the CPU-tier eta
 GPU_EXPERT_SHARE = 0.32  # g: share of expert layers the shipped -ot regex keeps resident
 
-DEFAULT_PPL_BIN = r"C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-perplexity.exe"
+DEFAULT_PPL_BIN = r"<repo>\tools\llamacpp-b10098\llama-perplexity.exe"
 DEFAULT_LOGITS_DIR = r"D:\evo-compress-data\exp55_logits"
 
 # The build the prereg stakes.  Any other binary is a DIFFERENT INSTRUMENT and the run stops

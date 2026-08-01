@@ -106,7 +106,7 @@ REGISTER = os.path.join(REPO, "findings", "REGISTER.json")
 # The llama.cpp build the GPU-adjacent experiments stake.  NOTE it lives in the MAIN
 # checkout, not in this worktree -- both exp52 and exp55 hard-code this path and
 # (post-review) REFUSE to fall back to PATH, so the runner checks the same path they do.
-STAKED_LLAMA_DIR = r"C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098"
+STAKED_LLAMA_DIR = r"<repo>\tools\llamacpp-b10098"
 
 # Process names we are willing to kill as orphans.  Deliberately narrow: only
 # llama.cpp workers and known local-inference servers.  Never the shell, never

@@ -52,7 +52,7 @@ import json, os, subprocess, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
-BIN = r"C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-bench.exe"
+BIN = r"<repo>\tools\llamacpp-b10098\llama-bench.exe"
 MODEL = "D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf"
 OUT = os.path.join(DATA, "exp96_fault_latency.json")
 BW, RAM_S, PAGE, RUNS, NGEN = 0.455, 0.19973, 4096, 4, 32

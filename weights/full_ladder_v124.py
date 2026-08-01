@@ -13,7 +13,7 @@ import sys
 import time
 
 D = "D:/evo-compress-data/gguf"
-BIN = r"C:\Users\Federico\Documents\evo-compress\tools\llama.cpp-pristine\build\bin\llama-bench.exe"
+BIN = r"<repo>\tools\llama.cpp-pristine\build\bin\llama-bench.exe"
 CUDA = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9\bin"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ladder_state_locked.json")
 

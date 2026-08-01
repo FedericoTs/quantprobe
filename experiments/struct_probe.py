@@ -7,7 +7,7 @@ Q4 kurtosis by tensor type (statistical niches).
 import numpy as np
 from safetensors import safe_open
 
-WP = "C:/Users/Federico/Documents/evo-compress/weights/data/qwen/base.safetensors"
+WP = "<repo>/weights/data/qwen/base.safetensors"
 G = 128
 
 def get(f, name):
