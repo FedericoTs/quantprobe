@@ -1,0 +1,49 @@
+{
+ "staked_pred_gb_per_token": 1.253,
+ "model": "D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf",
+ "utc": "2026-08-01 16:08:21 UTC",
+ "baseline": {
+  "tag": "idle_baseline",
+  "span_s": 31.1,
+  "samples": 16,
+  "drives": {
+   "0 C:": {
+    "mean_bps": 32551.375,
+    "n": 16
+   },
+   "1 D:": {
+    "mean_bps": 0.0,
+    "n": 16
+   }
+  }
+ },
+ "bench_window": {
+  "tag": "bench_window",
+  "span_s": 342.2,
+  "samples": 196,
+  "drives": {
+   "0 C:": {
+    "mean_bps": 957523.3265306122,
+    "n": 196
+   },
+   "1 D:": {
+    "mean_bps": 181665620.8112245,
+    "n": 196
+   }
+  }
+ },
+ "reps_tok_s": [
+  0.4494,
+  0.3438
+ ],
+ "tok_s": 0.396638,
+ "drive": "1 D:",
+ "bench_read_gbs": 0.1817,
+ "baseline_read_gbs": 0.0,
+ "net_read_gbs": 0.1817,
+ "background_share": 0.0,
+ "observed_gb_per_token": 0.458,
+ "ratio_R": 0.3655,
+ "implied_vs_quantitative_target": 0.543,
+ "verdict": "H2 SUPPORTED - R 0.366 <= 0.80. Fewer bytes move than the law budgets, consistent with a resident hot-expert subset. Quantitative target for explaining the WHOLE speed-up was R ~ 0.673; this run sits 0.54x from it. Contention can only push R up, so this is a lower bound on the effect."
+}
