@@ -2374,6 +2374,35 @@ def t_p97_disk_probe_returns_the_cold_draw_not_the_warm_one():
     return None
 
 
+def t_p98_kld_parses_and_never_falls_back_to_perplexity():
+    """prereg #98: the KL block parses, and its ABSENCE returns UNMEASURED rather than
+    quietly becoming a perplexity number. Fixture-free - parses a captured real output.
+
+    The second half is the load-bearing one. `--kl-divergence` REPLACES the perplexity report
+    rather than adding to it, which is exactly how the first run of #98 produced a half-empty
+    result; the kill rule caught it. A silent fallback here would answer a different question
+    than the caller asked while looking like an answer.
+    """
+    from quantprobe.probe import parse_kld
+    real = (
+        "Maximum KLD:   1.461354\n"
+        "99.9%   KLD:   2.900000\n"
+        "99.0%   KLD:   1.461354\n"
+        "95.0%   KLD:   0.700000\n"
+        "90.0%   KLD:   0.450000\n"
+        "Median  KLD:   0.182194\n"
+        "Same top p: 72.614 +/- 0.500 %\n")
+    r = parse_kld(real)
+    assert r["99.0%"] == 1.461354 and r["Median"] == 0.182194, f"KLD percentiles mis-parsed: {r}"
+    assert r["same_top_p"] == 72.614, f"same-top-p mis-parsed: {r}"
+    # a perplexity-only run carries NO KLD block: must come back empty, not fabricated
+    ppl_only = "Final estimate: PPL = 17.7733 +/- 1.20000\n"
+    assert parse_kld(ppl_only) == {}, (
+        "a perplexity-only output produced a KLD reading - the metric is being invented from "
+        "a run that never computed it")
+    return None
+
+
 def t_e11_layer_by_layer_reads_the_whole_model_not_just_active():
     """E-11: the layer-by-layer row must price ALL weights per token, not the active set.
 

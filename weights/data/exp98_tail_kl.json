@@ -1,0 +1,34 @@
+{
+ "utc": "2026-08-01 20:15:27 UTC",
+ "reference": "D:/evo-compress-data/gguf/Qwen2.5-0.5B-Instruct-Q8_0.gguf",
+ "chunks": 6,
+ "arms": {
+  "q4km": {
+   "Maximum": 1.013819,
+   "99.9%": 0.420363,
+   "99.0%": 0.218237,
+   "95.0%": 0.09345,
+   "90.0%": 0.064052,
+   "Median": 0.023446,
+   "same_top_p": 90.0,
+   "ppl": 14.487,
+   "mean_kld": 0.03325
+  },
+  "q2k": {
+   "Maximum": 3.737667,
+   "99.9%": 3.224552,
+   "99.0%": 1.461354,
+   "95.0%": 0.736315,
+   "90.0%": 0.512203,
+   "Median": 0.182194,
+   "same_top_p": 72.614,
+   "ppl": 17.7733,
+   "mean_kld": 0.255902
+  }
+ },
+ "R_ppl": 1.2268,
+ "R_p99": 6.6962,
+ "ratio_of_ratios": 5.458,
+ "asymmetry_q2k": 8.02,
+ "verdict": "P1 CONFIRMED - the tail moved 5.46x more than the mean (R_p99 6.70 vs R_ppl 1.23, threshold 1.5x). Tail KL carries information perplexity does not, and it is free - llama.cpp already computes it on the passes we were already running."
+}

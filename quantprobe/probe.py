@@ -98,6 +98,70 @@ def _ppl_once(perp, gguf, eval_file, chunks, ngl):
     return (float(m.group(1)) if m else None), out
 
 
+KLD_KEYS = ("Maximum", "99.9%", "99.0%", "95.0%", "90.0%", "Median")
+
+
+def parse_kld(out):
+    """Pull llama.cpp's KL-divergence block out of a --kl-divergence run.
+
+    Returns {} when the block is absent. Callers must treat {} as UNMEASURED and must NOT
+    fall back to perplexity: the two answer different questions and substituting one for the
+    other is how a quality claim silently becomes a different quality claim.
+    """
+    r = {}
+    for k in KLD_KEYS:
+        m = re.search(re.escape(k) + r"\s+KLD:\s*(-?[0-9.]+)", out)
+        if m:
+            r[k] = float(m.group(1))
+    m = re.search(r"Same top p:\s*([0-9.]+)", out)
+    if m:
+        r["same_top_p"] = float(m.group(1))
+    return r
+
+
+def kld(perp, gguf, ref_logits, eval_file, chunks, ngl, dry):
+    """Quality DELTA against a reference model's logits, measured 2026-08-01 (prereg #98).
+
+    WHY THIS EXISTS ALONGSIDE PERPLEXITY, and why it is the sharper instrument. On one
+    graded pair (Qwen2.5-0.5B Q4_K_M vs Q2_K, wikitext2, 6 chunks, Q8_0 reference):
+
+        perplexity   14.49 -> 17.77    1.23x     "23% worse"
+        KLD median    0.023 ->  0.182   7.77x
+        KLD p99       0.218 ->  1.461   6.70x
+        same top p   90.0%  -> 72.6%
+
+    Perplexity calls that a 23% regression. The model actually picks a DIFFERENT TOKEN on
+    27.4% of positions. Perplexity is a mean over a distribution that quantization reshapes;
+    it is not wrong, it is blunt.
+
+    A CORRECTION TO OUR OWN HYPOTHESIS, kept here because the framing matters: this was staked
+    as "damage hides in the TAIL, so look at p99". The tail is not special - KLD MEDIAN moved
+    7.77x while p99 moved 6.70x, so the whole distribution shifts together and the percentile
+    choice barely matters for comparing quants. The real finding is KL-vs-PERPLEXITY, not
+    tail-vs-mean. The percentiles are still reported (the distribution IS heavy-tailed:
+    p99/median is 8-9x within a single arm), but no claim rests on the tail being privileged.
+
+    `same_top_p` is the number to put in front of a human. "Changes the chosen token on 27% of
+    positions" needs no calibration to interpret; a KLD of 0.18 does.
+
+    Scope: ONE model pair, ONE corpus, 6 chunks, and a Q8_0 reference rather than fp16 (we have
+    no fp16 source on this box, so the arms are requantized from Q8_0 - real graded damage, not
+    a release-quality quant). Direction is solid; the magnitudes are one datapoint.
+    """
+    if dry:
+        return {}
+    print(f"  measuring KL divergence vs the reference on {chunks} chunks...", flush=True)
+    p = subprocess.run([perp, "-m", gguf, "-f", eval_file, "--chunks", str(chunks),
+                        "-ngl", str(ngl), "--kl-divergence",
+                        "--kl-divergence-base", ref_logits],
+                       capture_output=True, text=True, errors="replace")
+    r = parse_kld(p.stdout + p.stderr)
+    if not r:
+        print("  KL divergence produced no parseable block - reporting UNMEASURED, "
+              "NOT substituting perplexity.", flush=True)
+    return r
+
+
 def ppl(perp, gguf, eval_file, chunks, ngl, dry):
     print(f"  measuring perplexity on {chunks} chunks (this can take 1-3 min; llama.cpp is quiet while it works)...", flush=True)
     if dry:
