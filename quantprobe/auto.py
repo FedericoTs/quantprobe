@@ -189,6 +189,45 @@ def apply_to(spec, a):
     return spec
 
 
+
+def local_spec_or_none(local, expected_size, n_parts):
+    """Read a downloaded GGUF's header - but ONLY if the file is actually complete.
+
+    Returns (spec_or_None, note_or_None). Split out of `run` so the decision is testable
+    against a real truncated file rather than asserted on by reading source text - the first
+    guard written for this was a source-inspection test, and disabling the size check left it
+    green, which is the decorative-test pattern this suite exists to catch.
+
+    "Already on disk" is not "complete". An interrupted `fetch` leaves a partial GGUF at exactly
+    the path `auto` probes, and there are two failure modes:
+
+      LOUD  from_gguf RAISES. Reproduced: a 200 KB slice of a 531 MB GGUF gives ValueError out
+            of the tensor-shape reader. Unguarded, that killed the whole `auto` command with a
+            traceback instead of falling back to the estimate it had already computed.
+      QUIET from_gguf SUCCEEDS on a truncated file and returns a plausible-but-wrong spec, so
+            `auto` prints a confident number for a model that is not there. This is the worse
+            one, and only the size check catches it. A crash is recoverable; a confident wrong
+            answer is the defect class this project exists to remove.
+    """
+    if not os.path.isfile(local):
+        return None, None
+    have = os.path.getsize(local)
+    # multi-part repos: `expected_size` is the total while `local` is one shard, so the
+    # comparison does not apply and is skipped rather than made to look meaningful.
+    if n_parts == 1 and expected_size and have != expected_size:
+        return None, (f"{os.path.basename(local)} is on disk but INCOMPLETE - {have/1e9:.2f} GB "
+                      f"of {expected_size/1e9:.2f} GB ({have/expected_size*100:.1f}%). Its header "
+                      f"is not trusted; using the pre-download estimate instead. Finish it with "
+                      f"`quantprobe fetch --force` before quoting a number from this file.")
+    from . import spec as specmod
+    try:
+        return specmod.from_gguf(local), None
+    except Exception as e:
+        return None, (f"{os.path.basename(local)} is on disk but its header could not be read "
+                      f"({type(e).__name__}). Falling back to the pre-download estimate. If the "
+                      f"download was interrupted, `quantprobe fetch --force` will replace it.")
+
+
 def run(a):
     if a.target is None:
         _wizard(a)
@@ -302,10 +341,20 @@ def run(a):
     # Measured divergence on the flagship: auto 26.2 vs plan 19.5 for the SAME file. If the file
     # is already on disk, use the real thing; otherwise say plainly that it is a pre-download
     # estimate and which command is authoritative.
+    # "already on disk" is not the same as "complete". An interrupted `fetch` leaves a partial
+    # file at exactly this path, and there are TWO failure modes, the quieter one being worse:
+    #   (a) from_gguf RAISES - reproduced on a 200 KB slice of a 531 MB GGUF, ValueError out of
+    #       the tensor-shape reader. Unguarded, that killed the whole `auto` command with a
+    #       traceback instead of falling back to the estimate it had already computed.
+    #   (b) from_gguf SUCCEEDS on a truncated file and returns a plausible-but-wrong spec, so
+    #       `auto` confidently prints a number derived from a model that is not there. A crash
+    #       is recoverable; a confident wrong answer is the defect class this project exists to
+    #       remove. The size check below is what catches (b), and it is the more important half.
     _local = os.path.join(getattr(a, "dir", None) or "./models", os.path.basename(path))
-    if os.path.isfile(_local):
-        from . import spec as specmod
-        _s = specmod.from_gguf(_local)
+    _s, _why = local_spec_or_none(_local, size, len(parts))
+    if _why:
+        print("  NOTE: " + _why)
+    if _s:
         _, _, _c = planmod.evaluate(_s["t"], _s["a"], _s["ne"], _s["moe"], _s["bits"], vc, vb,
                                     rc, rb, db, geta, 1.0, gl, ctx=ctx, kvp=_s["kvp"],
                                     n_layer=_s["n_layer"], true_size_gb=size / 1e9,

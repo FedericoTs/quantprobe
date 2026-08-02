@@ -2454,6 +2454,45 @@ def t_e11_layer_by_layer_fits_a_card_the_model_cannot():
     return None
 
 
+
+def t_auto_never_trusts_an_incomplete_local_gguf():
+    """`auto` must not read a partial download's header, and must not die on one.
+
+    BEHAVIOURAL, and fixture-free: the size check short-circuits before from_gguf, so a tiny
+    dummy file exercises it without a real multi-GB GGUF. The FIRST version of this guard
+    inspected auto.py SOURCE for the strings "try:" and "getsize"; disabling the size check
+    left it GREEN. That is the decorative-test pattern this suite exists to catch, written
+    here by the same person who spent the week removing it.
+
+    Two failure modes, the quiet one worse:
+      LOUD  from_gguf raises on a truncated file (reproduced: 200 KB of a 531 MB GGUF gives
+            ValueError from the tensor-shape reader) and killed the whole `auto` command.
+      QUIET from_gguf succeeds on a truncated file and returns a plausible-but-wrong spec, so
+            `auto` prints a confident number for a model that is not there. Only the size
+            check catches this one, and it is the reason the check exists.
+    """
+    import os, tempfile
+    from quantprobe.auto import local_spec_or_none
+    with tempfile.TemporaryDirectory() as d:
+        f = os.path.join(d, "model.gguf")
+        with open(f, "wb") as h:
+            h.write(b"GGUF" + bytes(4096))
+
+        spec, note = local_spec_or_none(f, expected_size=531068480, n_parts=1)
+        assert spec is None, "a 4 KB file was accepted as a 531 MB model"
+        assert note and "INCOMPLETE" in note, f"incomplete file not reported: {note}"
+
+        spec, note = local_spec_or_none(f, expected_size=os.path.getsize(f), n_parts=1)
+        assert spec is None, "garbage header produced a spec"
+        assert note and "could not be read" in note, f"unreadable header not reported: {note}"
+
+        spec, note = local_spec_or_none(f, expected_size=531068480, n_parts=8)
+        assert note is None or "INCOMPLETE" not in note, (
+            "size check applied to a multi-part download, where it is meaningless")
+
+        assert local_spec_or_none(os.path.join(d, "nope.gguf"), 123, 1) == (None, None)
+    return None
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
