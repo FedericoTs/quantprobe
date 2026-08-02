@@ -1,0 +1,19 @@
+{
+ "utc": "2026-08-02 01:52:28 UTC",
+ "file": "Laguna-S-2.1-UD-Q2_K_XL.gguf",
+ "size_gb": 37.0,
+ "span_gb": 2.0,
+ "page": 4096,
+ "arms": {
+  "A_read_seq": 0.5501,
+  "C_read_scattered": 0.03,
+  "B_mmap_seq": 0.3962,
+  "D_mmap_scattered": 0.0107,
+  "WARM_mmap": 25.7539
+ },
+ "B_over_A": 1.388,
+ "C_over_A": 18.337,
+ "D_over_A": 51.411,
+ "c23_target_gbs": 0.2505,
+ "verdict": "P1 SUPPORTED - sequential mmap is 1.388x slower than sequential read() on the same file and drive. Page-fault overhead is real, so C-23's gap is a property of HOW llama.cpp reads, a runtime fix is possible, and Law 4 should keep pricing device bandwidth."
+}
