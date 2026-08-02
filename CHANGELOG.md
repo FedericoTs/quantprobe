@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.24.0 - 2026-08-02
+## 1.24.0 - 2026-07-31
 
 **Three defects that were live in 1.23.0, and the one number this release still cannot stand behind.**
 
@@ -98,8 +98,14 @@ Consequences we are acting on rather than noting:
   is unchanged: that pass required stopping services and closing everything, and a user with a
   browser open cannot reproduce it. A number we can only obtain under lab conditions fails the
   standard we set for ourselves.
-- **gemma4-12B has now returned 13.23, 12.25 and 15.62 tok/s across three passes** — a 27% spread.
-  That row is not measuring a stable quantity and its ladder entry should not be trusted until it is.
+- **gemma4-12B: one anomalous reading, not an unstable row — a correction to what this changelog
+  said first.** The original text called it "a 27% spread… not measuring a stable quantity," from
+  three readings. There are seven. Six of them — across partial-disk, idle pre-reboot, post-reboot
+  stale, RAM-only, uncalibrated and locked calibrations — span **12.17–13.23 tok/s, a 1.087×
+  spread**, which makes it one of the *steadiest* rows we have. Only the scrubbed-box run's 15.62
+  sits outside, 1.18× above the cluster. That run is also where all 14 rows sped up and gemma moved
+  most (+27.5%); a dense 12B split across VRAM and RAM has the most to gain from page-cache
+  residency, which is what U-37 predicts. Possibly the same effect from another angle, not a defect.
 
 ### The disk probe no longer asks you to spot its own bad readings
 
