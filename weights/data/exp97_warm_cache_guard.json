@@ -1,0 +1,38 @@
+{
+ "utc": "2026-08-01 18:06:07 UTC",
+ "after_fix": false,
+ "file": "D:/evo-compress-data/gguf/Qwen3-Coder-30B-A3B-Instruct-Q3_K_M.gguf",
+ "cold_draws": [
+  0.4507,
+  0.4501,
+  0.4529,
+  0.4511,
+  0.4517,
+  0.4499,
+  0.4523,
+  2.0922
+ ],
+ "cold_min": 0.4499,
+ "cold_max": 2.0922,
+ "cold_spread_x": 4.65,
+ "warm_draws": [
+  0.4537,
+  2.7788,
+  2.8348,
+  2.8154,
+  2.772,
+  0.9138,
+  2.8538,
+  2.4338
+ ],
+ "warm_min": 0.4537,
+ "warm_max": 2.8538,
+ "warm_spread_x": 6.29,
+ "cold_median": 0.4514,
+ "P1_min_vs_median_cold": 0.0033,
+ "P1": "PASS",
+ "P2_warm_draws_over_1p5": 6,
+ "P2": "PASS - 6/8 single draws returned >1.5 GB/s (max 2.854, i.e. RAM shipped as disk) while min-of-N held at 0.454.",
+ "P3": "FAIL - warm fires True, cold fires True; a guard must discriminate, not always fire",
+ "verdict": "see individual predictions"
+}

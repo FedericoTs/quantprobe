@@ -1,0 +1,66 @@
+0.00 minutes
+
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Î”p RMS            Same top p
+   1      10.9354 Â±    2.0188       0.13628 Â±    0.06258       0.24070 Â±    0.02124    14.682 Â±  1.458 %    71.373 Â±  2.836 %
+   2      15.7417 Â±    2.2273       0.16256 Â±    0.04122       0.23742 Â±    0.01392    13.396 Â±  0.983 %    74.118 Â±  1.941 %
+   3      16.2567 Â±    1.8030       0.19272 Â±    0.03278       0.24514 Â±    0.01150    13.660 Â±  0.881 %    75.033 Â±  1.566 %
+   4      16.5090 Â±    1.5356       0.21484 Â±    0.02730       0.24759 Â±    0.00999    13.313 Â±  0.733 %    74.608 Â±  1.363 %
+   5      16.8960 Â±    1.3918       0.22834 Â±    0.02439       0.25656 Â±    0.00916    13.252 Â±  0.620 %    73.020 Â±  1.244 %
+   6      17.7733 Â±    1.3234       0.24232 Â±    0.02199       0.25590 Â±    0.00799    12.918 Â±  0.557 %    72.614 Â±  1.140 %
+
+====== Perplexity statistics ======
+Mean PPL(Q)                   :  17.773321 Â±   1.323388
+Mean PPL(base)                :  13.948558 Â±   1.021308
+Cor(ln(PPL(Q)), ln(PPL(base))):  95.58%
+Mean ln(PPL(Q)/PPL(base))     :   0.242322 Â±   0.021989
+Mean PPL(Q)/PPL(base)         :   1.274205 Â±   0.028019
+Mean PPL(Q)-PPL(base)         :   3.824763 Â±   0.459066
+
+====== KL divergence statistics ======
+Mean    KLD:   0.255902 Â±   0.007993
+Maximum KLD:   3.737667
+99.9%   KLD:   3.224552
+99.0%   KLD:   1.461354
+95.0%   KLD:   0.736315
+90.0%   KLD:   0.512203
+Median  KLD:   0.182194
+10.0%   KLD:   0.019548
+ 5.0%   KLD:   0.004625
+ 1.0%   KLD:   0.000389
+ 0.1%   KLD:   0.000103
+Minimum KLD:   0.000070
+
+====== Token probability statistics ======
+Mean    Î”p: -3.642 Â± 0.317 %
+Maximum Î”p: 36.536%
+99.9%   Î”p: 36.260%
+99.0%   Î”p: 25.483%
+95.0%   Î”p: 11.155%
+90.0%   Î”p:  5.430%
+75.0%   Î”p:  0.298%
+Median  Î”p: -0.378%
+25.0%   Î”p: -6.059%
+10.0%   Î”p: -16.690%
+ 5.0%   Î”p: -26.246%
+ 1.0%   Î”p: -53.075%
+ 0.1%   Î”p: -85.653%
+Minimum Î”p: -87.952%
+RMS Î”p    : 12.918 Â± 0.557 %
+Same top p: 72.614 Â± 1.140 %
+
+0.00.743.921 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.01.087.997 I 
+0.01.088.028 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.01.098.105 I kl_divergence: computing over 6 chunks, n_ctx=512, batch_size=2048, n_seq=4
+0.01.697.533 I kl_divergence: 0.60 seconds per pass - ETA 
+===== PPL PASS =====
+0.00 minutes
+[1]10.9354,[2]15.7417,[3]16.2567,[4]16.5090,[5]16.8960,[6]17.7733,
+
+0.00.761.722 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.01.112.961 I 
+0.01.113.021 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.01.113.042 I perplexity: tokenizing the input ..
+0.01.583.174 I perplexity: tokenization took 470.144 ms
+0.01.583.564 I perplexity: calculating perplexity over 6 chunks, n_ctx=512, batch_size=2048, n_seq=4
+0.02.175.730 I perplexity: 0.59 seconds per pass - ETA 0.02.826.537 I Final estimate: PPL = 17.7733 +/- 1.32339

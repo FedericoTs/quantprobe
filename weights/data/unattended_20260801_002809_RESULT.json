@@ -1,0 +1,89 @@
+{
+ "stamp": "20260801_002809",
+ "cal_id_at_start": "2dc97d41",
+ "only": null,
+ "started_utc": "2026-07-31 22:28:09 UTC",
+ "ladder": {
+  "gate": {
+   "gpu_mib": 660,
+   "free_ram_gb": 14.11,
+   "cpu_mean": 0.7,
+   "cpu_max": 2.0,
+   "attempts": 1
+  },
+  "ok": true,
+  "wall_s": 483.0,
+  "result_json": "unattended_20260801_002809_ladder_result.json",
+  "cal_id_after": "2dc97d41"
+ },
+ "disktier": {
+  "gate": {
+   "gpu_mib": 734,
+   "free_ram_gb": 14.61,
+   "cpu_mean": 0.2,
+   "cpu_max": 2.0,
+   "attempts": 1
+  },
+  "runs": {
+   "KR3_control_7B_ngl0": {
+    "tag": "KR3_control_7B_ngl0",
+    "cmd": "-m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -t 4 -n 64 -p 0 -r 2",
+    "wall_s": 31.1,
+    "error": null,
+    "tok_s": 7.570039,
+    "sd": 0.049148,
+    "reps_tok_s": [
+     7.5353,
+     7.6048
+    ],
+    "rep_spread_x": 1.009
+   },
+   "PRIMARY_laguna_tg64": {
+    "tag": "PRIMARY_laguna_tg64",
+    "cmd": "-m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 64 -p 0 -r 3",
+    "wall_s": 421.0,
+    "error": null,
+    "tok_s": 0.476225,
+    "sd": 0.037747,
+    "reps_tok_s": [
+     0.5122,
+     0.4369,
+     0.4796
+    ],
+    "rep_spread_x": 1.172
+   },
+   "KR2_laguna_tg32": {
+    "tag": "KR2_laguna_tg32",
+    "cmd": "-m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 32 -p 0 -r 3",
+    "wall_s": 225.0,
+    "error": null,
+    "tok_s": 0.449311,
+    "sd": 0.084146,
+    "reps_tok_s": [
+     0.5462,
+     0.395,
+     0.4067
+    ],
+    "rep_spread_x": 1.383
+   }
+  },
+  "cal_id_after": "2dc97d41"
+ },
+ "finished_utc": "2026-07-31 22:54:57 UTC",
+ "cal_id_at_end": "2dc97d41",
+ "disktier_score": {
+  "predicted_tok_s": 0.331505,
+  "band": [
+   0.265204,
+   0.442007
+  ],
+  "KR3_harness_can_vary": "PASS",
+  "KR4_steady_state": "PASS",
+  "err_pct": -30.39,
+  "KR1_band": "FAIL",
+  "KR2_pct_on_tg64": 5.7,
+  "KR2_pct_on_tg32": 6.0,
+  "KR2_load_vs_decode": "PASS",
+  "VERDICT": "NOT VALIDATED - KR1_band=FAIL; KR2_pct_on_tg64=5.7; KR2_pct_on_tg32=6.0"
+ }
+}

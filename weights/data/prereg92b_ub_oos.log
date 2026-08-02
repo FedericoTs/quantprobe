@@ -1,0 +1,3 @@
+=== prereg #92b: staked BEFORE run: ub256 -> 127.9 tok/s, ub4096 -> 392.9 tok/s, kill >10% either ===
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |      256 | exps=CPU              |          pp2048 |       127.56 ± 10.02 |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.48 GiB |    30.53 B | CUDA       |  99 |    4096 |     4096 | exps=CPU              |          pp4096 |        360.76 ± 9.13 |

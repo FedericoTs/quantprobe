@@ -1,0 +1,23 @@
+{
+ "file": "D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf",
+ "size_gb": 36.96,
+ "arms": {
+  "RND_scattered_512MB_x8": {
+   "gb": 4.295,
+   "s": 9.51,
+   "gbs": 0.452
+  },
+  "SEQ_contiguous_4GB": {
+   "gb": 4.295,
+   "s": 9.35,
+   "gbs": 0.459
+  },
+  "WARM_recache_512MB": {
+   "gb": 0.537,
+   "s": 0.19,
+   "gbs": 2.802
+  }
+ },
+ "ratio_seq_over_rnd": 1.015,
+ "verdict": "H1 REFUTED - SEQ/RND 1.015x <= 1.10. The drive does not care about the pattern at this size, the probe is sound, and C-21's 30% miss belongs to H2 (miss fraction / expert skew, task #52)."
+}

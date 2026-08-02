@@ -28,7 +28,7 @@ Two audits, both of which failed the night they were written:
     python verify.py           # runs this as layer 5 of the release gate
 """
 from __future__ import annotations
-import glob, io, os, re, sys
+import glob, io, json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -208,6 +208,57 @@ def audit_single_source_of_truth():
     return problems
 
 
+def audit_evidence_is_reachable():
+    """D. Every file the register cites as EVIDENCE must actually be in the repo.
+
+    This gate exists because it was missing and something got through it. On 2026-08-02, after
+    v1.24.0 shipped, the published register cited 109 evidence paths and 38 of them were not in
+    the repository - the frozen disk-tier stake, the exp94-exp98 results, the calibration
+    artifacts. The register said "measured 0.476225 tok/s, evidence:
+    weights/data/disktier_20260731_1857_staked.json" and a reader who went to check that got
+    nothing. Layers A-C all passed: A checks `wired_into` targets, B checks placements, C checks
+    duplicated constants. Nobody checked that the evidence was there.
+
+    For a project whose entire claim is that every number was written down first and can be
+    re-derived, an unverifiable citation is the worst defect class available - it looks like
+    rigour and is not, the same way a test that cannot fail looks like coverage.
+
+    Deliberately narrow: only paths INSIDE the repo are checked. External URLs, upstream
+    filenames quoted from other projects, and paths under doc/ that name someone else's tree are
+    skipped - we cannot vouch for those and pretending to would be the same error inverted.
+    """
+    reg = json.load(io.open(os.path.join(HERE, "findings", "REGISTER.json"), encoding="utf-8"))
+    cited, problems = {}, []
+    for key, entries in reg.items():
+        if not isinstance(entries, list):
+            continue
+        for e in entries:
+            for field in ("evidence", "wired_into"):
+                text = e.get(field) or ""
+                for m in re.finditer(r"[\w./-]+\.(?:json|log|md|py|sh|cmd|csv|txt)", text):
+                    p = m.group(0)
+                    # repo-relative only: must live under a directory we actually own
+                    if p.split("/")[0] not in ("weights", "preregistrations", "findings",
+                                               "tests", "quantprobe", "tools", "docs",
+                                               "experiments"):
+                        continue
+                    # ...and must not be a path inside SOMEONE ELSE'S repo. U-34 cites
+                    # "github.com/Helldez/BigMoeOnEdge docs/expert-prediction.md" - a real
+                    # file, in their tree, which we cannot and should not vouch for. The
+                    # first version of this gate flagged it as missing: a false positive on
+                    # its very first run. A gate that cries wolf erodes exactly the trust it
+                    # exists to build, so external references are skipped explicitly.
+                    lead = text[max(0, m.start() - 60):m.start()]
+                    if "github.com" in lead or "://" in lead or "huggingface.co" in lead:
+                        continue
+                    cited.setdefault(p, set()).add(e["id"])
+    for p, ids in sorted(cited.items()):
+        if not os.path.exists(os.path.join(HERE, p)):
+            problems.append(f"{p} is cited as evidence by {', '.join(sorted(ids))} "
+                            f"but is not in the repository")
+    return len(cited), problems
+
+
 def main():
     print("\n=== A. do measured findings reach the code? ===")
     n, pa = audit_findings_reach_code()
@@ -234,7 +285,15 @@ def main():
     if not pc:
         print("  the layer-count resolver is used everywhere; simulator tables agree with Python")
 
-    problems = pa + pb + pc
+    print("\n=== D. can a reader actually reach the evidence we cite? ===")
+    ncited, pd = audit_evidence_is_reachable()
+    print(f"  {ncited} repo-relative evidence paths cited by the register")
+    for p in pd:
+        print("  UNREACHABLE  " + p)
+    if not pd:
+        print("  every cited evidence file is in the repository")
+
+    problems = pa + pb + pc + pd
     print("\n" + "=" * 60)
     if problems:
         print(f"{len(problems)} audit finding(s). These are not test failures - they are places")

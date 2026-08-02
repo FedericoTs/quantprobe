@@ -1,0 +1,82 @@
+{
+ "item": "disk-tier-row",
+ "staked_utc": "2026-07-31 16:57:07 UTC",
+ "staked_before_any_bench": true,
+ "why": "v1.24.0 corrected a disk-bandwidth probe that was 6.8x too fast (warm page cache: cold 0.44 vs warm 2.99 GB/s). The OLD number was proven wrong; the NEW one has never been shown right, because all 14 ladder rows are VRAM- or RAM-resident and none reads the disk tier. This row closes that coverage gap.",
+
+ "machine_state": {
+  "cal_id": "2dc97d41",
+  "cal_date": "2026-07-31",
+  "cal_age_h_at_stake": 0.11,
+  "ram_bw_measured_gbs": 24.4,
+  "disk_bw_measured_gbs": 0.47,
+  "gpu": "NVIDIA GeForce GTX 1060 6GB, sustained 1847 / 1911 MHz (healthy)",
+  "ram_total_bytes": 17122660352,
+  "ram_total_gb_detected_by_tool": 16,
+  "note_on_ram": "The task brief said 32 GB RAM. wmic reports 17,122,660,352 B = 16 GiB. The tool auto-detects 16. 39.7 GB still vastly exceeds it either way, so the disk tier is genuinely exercised; recording the discrepancy rather than silently accepting the brief.",
+  "C14": "one cal_id for prediction AND measurement; if cal_id drifts before the bench, the stake is void"
+ },
+
+ "model": {
+  "file": "D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf",
+  "bytes": 39684584480,
+  "size_gb": 39.685,
+  "read_from_gguf": "117.5619776B total, 8.140974848B active, 3.705498368B always-active, 2.7 effective bits, 48 layers, KV 192 KB/pos, 92.6% I-quant tensors",
+  "active_gb_per_token": 4.1185
+ },
+
+ "predictions_from_quantprobe_plan": {
+  "command": "python -m quantprobe plan --gguf D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf",
+  "printed_winner": {
+   "placement": "stream from disk (VRAM+RAM expert cache)",
+   "tok_s_exact": 0.367424,
+   "tok_s_printed": 0.4,
+   "flags": "-ngl 99 + runtime-managed expert cache",
+   "terms_s": {"io": 2.48611, "ram_bw": 0.03266, "vram_bw": 0.06681},
+   "MEASURABLE_HERE": false,
+   "why_not": "The row's own warn says it needs an expert-caching runtime (ktransformers/colibri-class); stock llama.cpp b10098 cannot LRU experts in VRAM. Its 'flags' string is not a runnable llama.cpp command. This row is DECLARED UNMEASURABLE on this box and is NOT scored. No substitute estimate is offered."
+  },
+  "row_under_test": {
+   "placement": "stream from disk (cold experts)",
+   "tok_s_exact": 0.331505,
+   "s_per_token": 3.0165,
+   "flags": "-ngl 0",
+   "warn": "exceeds RAM - capacity demo",
+   "terms_s": {"io": 2.66599, "ram_bw": 0.19973, "cpu_compute": 0.0},
+   "shares": {"io": "93.0%", "ram_bw": "7.0%", "cpu_compute": "0.0%"},
+   "eff_numerator": 0.95,
+   "why_this_row": "The winner row's own warn names this as the row stock llama.cpp actually gets. It is the only disk-tier row the installed runtime can execute, and 93% of its predicted token is the disk-bandwidth term the v1.24.0 correction changed. It is therefore the row that tests the corrected number."
+  },
+  "binding_constraint_printed": "IO-BOUND (disk I/O) - 96% of every decode token",
+  "steady_state_assumption": "The row's miss term is miss = 1 - (0.9 x RAM_eff)/size = 1 - 14.4/39.685 = 0.6371. The model therefore predicts a PARTIALLY WARM steady state in which ~36% of the model is page-cached in RAM and ~64% is re-read from disk every token. It does NOT predict a first-touch cold pass. Scoring must use steady-state repetitions, not the warmup."
+ },
+
+ "emitted_command_trap_recorded_before_benching": {
+  "problem": "`plan` prints ONE 'run it:' line, for the winner row. Here that is '-ngl 99 + runtime-managed expert cache'. The ladder's flags_from_emit() would parse '-ngl 99' out of it and try to put a 39.7 GB model on a 6 GB card.",
+  "decision": "Bench the row_under_test's own flags (-ngl 0) plus the emitted -b 2048 -ub 2048 --threads 4, which the plan prints for this machine. Recording this here, before measuring, so the choice is not a post-hoc convenience."
+ },
+
+ "bench_protocol": {
+  "bin": "C:\\Users\\Federico\\Documents\\evo-compress\\tools\\llamacpp-b10098\\llama-bench.exe",
+  "primary_cmd": "llama-bench -m Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 64 -p 0 -r 2",
+  "primary_metric": "tg64, same metric and r=2 the 14-row ladder uses",
+  "gates": "kill orphan llama-server/llama-bench; GPU < 1500 MiB; 3 consecutive CPU samples <= 25%",
+  "mmap": "left ON (default). A 39.7 GB file with --no-mmap on a 16 GB box cannot be allocated; mmap IS the disk-streaming mechanism under test."
+ },
+
+ "KILL_RULES": {
+  "KR1_band": "PASS iff measured tg64 lies inside the tool's own printed +/-25% estimate band around the staked 0.331505 tok/s. Convention err_pct = (predicted - measured)/measured*100, identical to the locked ladder. |err_pct| <= 25 => measured in [0.265204, 0.442007] tok/s. Outside that interval is a FAIL, published at equal prominence, and the changelog must then disclose the disk-tier path as unvalidated.",
+  "KR1_band_lo": 0.265204,
+  "KR1_band_hi": 0.442007,
+  "KR2_load_time_contamination": "The number must be DECODE, not load. Falsifier: run the identical harness at -n 32 as well as -n 64. llama-bench excludes model load from tg timing, so tok_s(32) and tok_s(64) must agree within 25%. If tok_s(32) is materially BELOW tok_s(64), fixed per-run overhead is leaking into the timing and the primary number is REPORTED AS DOMINATED BY LOAD, not scored.",
+  "KR3_harness_can_vary": "Before trusting the harness, construct the input that makes it fail. Run the SAME parse/harness on Qwen2.5-7B-Instruct-Q4_K_M.gguf at -ngl 0 (fits in RAM, no disk tier). It MUST report > 3.0 tok/s (the calibration pure-CPU anchor is 7.09). If it returns anything near 0.3, the harness is emitting a constant and NO verdict may be issued from it.",
+  "KR4_cold_vs_warm": "Report rep-to-rep spread. If rep 1 and rep 2 differ by more than 2x, say so: the row is not in a steady state and the single mean is not the quantity the model predicts.",
+  "no_renegotiation": "These rules are final as of the staked_utc above. A miss is published, not re-banded."
+ },
+
+ "explicitly_not_measured": [
+  "the VRAM+RAM expert-cache row (0.367 tok/s) - needs a runtime this box does not have",
+  "any disk-tier row at nonzero context depth - the KV-deficit disclosure in plan.py is untested here because this bench runs at ctx=0 (tg64, KV ~12 MB)",
+  "cold first-touch throughput as a standalone number - the model does not predict it"
+ ]
+}
