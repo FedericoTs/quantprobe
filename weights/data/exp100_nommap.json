@@ -1,0 +1,34 @@
+{
+ "utc": "2026-08-02 02:35:09 UTC",
+ "model": "Qwen3-Coder-30B-A3B-Instruct-Q3_K_M.gguf",
+ "arms": {
+  "cold_mmap": {
+   "wall_s": 24.06,
+   "tok_s": 0.544789,
+   "oom": false,
+   "rc": 0
+  },
+  "cold_nommap": {
+   "wall_s": 59.02,
+   "tok_s": 0.691343,
+   "oom": false,
+   "rc": 0
+  },
+  "warm_mmap": {
+   "wall_s": 23.88,
+   "tok_s": 0.547169,
+   "oom": false,
+   "rc": 0
+  },
+  "warm_nommap": {
+   "wall_s": 43.07,
+   "tok_s": 0.927439,
+   "oom": false,
+   "rc": 0
+  }
+ },
+ "ratio_cold_mmap_over_nommap": 0.408,
+ "cold_over_warm_mmap": 1.008,
+ "warm_agreement": 1.804,
+ "verdict": "UNINFORMATIVE - KR-A: cold is only 1.008x warm, so eviction did not work and both arms read from cache. No bytes moved; the comparison means nothing."
+}

@@ -1,0 +1,36 @@
+{
+ "utc": "2026-08-02 02:40:24 UTC",
+ "arms": {
+  "big_mmap": {
+   "tok_s": 3.938699,
+   "rep_spread": 1.855,
+   "free_ram_before_gb": 14.48,
+   "oom": false,
+   "rc": 0
+  },
+  "big_nommap": {
+   "tok_s": 6.535961,
+   "rep_spread": 2.572,
+   "free_ram_before_gb": 14.53,
+   "oom": false,
+   "rc": 0
+  },
+  "small_mmap": {
+   "tok_s": 6.8753,
+   "rep_spread": 1.039,
+   "free_ram_before_gb": 13.83,
+   "oom": false,
+   "rc": 0
+  },
+  "small_nommap": {
+   "tok_s": 6.563763,
+   "rep_spread": 1.005,
+   "free_ram_before_gb": 14.86,
+   "oom": false,
+   "rc": 0
+  }
+ },
+ "R_big": 1.659,
+ "R_small": 0.955,
+ "verdict": "UNINFORMATIVE - KR-A: no steady state in ['big_mmap', 'big_nommap'] (rep spread > 1.5x). Those arms are not scored."
+}
