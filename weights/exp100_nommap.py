@@ -45,9 +45,27 @@ for a clear signal and small enough to fit 16 GiB so --no-mmap can allocate it a
 from __future__ import annotations
 import json, os, subprocess, time
 
-B = os.environ.get("QP_LLAMACPP") or os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "tools", "llamacpp-b10098")
+def _find_llamacpp():
+    """Walk UP for tools/llamacpp-b10098 instead of counting directories. A fixed level count
+    is wrong depending on where you run from - tools/ is 2 levels above weights/ in the main
+    checkout but 5 above it inside a git worktree. This default was previously dead code that
+    only ever worked because QP_LLAMACPP was set on the command line."""
+    env = os.environ.get("QP_LLAMACPP")
+    if env:
+        return env
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(8):
+        cand = os.path.join(d, "tools", "llamacpp-b10098")
+        if os.path.isdir(cand):
+            return cand
+        nd = os.path.dirname(d)
+        if nd == d:
+            break
+        d = nd
+    return os.path.join(d, "tools", "llamacpp-b10098")
+
+
+B = _find_llamacpp()
 BENCH = os.path.join(B, "llama-bench.exe")
 MODEL = "D:/evo-compress-data/gguf/Qwen3-Coder-30B-A3B-Instruct-Q3_K_M.gguf"
 EVICTOR = "D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf"

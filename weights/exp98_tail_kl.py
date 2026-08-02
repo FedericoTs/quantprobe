@@ -52,9 +52,27 @@ import json, os, re, subprocess, sys, time
 # Resolved at RUNTIME. The privacy scrub (61d8068) forbids a hardcoded machine path, and a
 # "<repo>" placeholder is not a runnable one - a scrubbed script that silently cannot find its
 # binary is a worse outcome than either. Override with QP_LLAMACPP.
-B = os.environ.get("QP_LLAMACPP") or os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "tools", "llamacpp-b10098")
+def _find_llamacpp():
+    """Walk UP for tools/llamacpp-b10098 instead of counting directories. A fixed level count
+    is wrong depending on where you run from - tools/ is 2 levels above weights/ in the main
+    checkout but 5 above it inside a git worktree. This default was previously dead code that
+    only ever worked because QP_LLAMACPP was set on the command line."""
+    env = os.environ.get("QP_LLAMACPP")
+    if env:
+        return env
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(8):
+        cand = os.path.join(d, "tools", "llamacpp-b10098")
+        if os.path.isdir(cand):
+            return cand
+        nd = os.path.dirname(d)
+        if nd == d:
+            break
+        d = nd
+    return os.path.join(d, "tools", "llamacpp-b10098")
+
+
+B = _find_llamacpp()
 PERP = os.path.join(B, "llama-perplexity.exe")
 QUANT = os.path.join(B, "llama-quantize.exe")
 SRC = "D:/evo-compress-data/gguf/Qwen2.5-0.5B-Instruct-Q8_0.gguf"
