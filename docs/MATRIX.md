@@ -69,3 +69,40 @@ model: most likely batched throughput, prompt processing, or an MoE mislabelled 
 dense. This is the sort of claim Law 4 is *for* - you do not need the machine to know
 the number is impossible, only the bandwidth and the bytes.
 
+## And one that was reported honestly, then relayed wrong
+
+[kimi-k3-in-c](https://github.com/FareedKhan-dev/kimi-k3-in-c) reached us as "running
+Kimi at 10 tok/s". Its README says no such thing - it reports **seconds per token**:
+`~32 s/token` on the laptop preset, `~19-21 s/token` on the server, and a run line
+reading *8 tokens in 261.5 s*. That is 0.03-0.05 tok/s. The claim as it travelled was
+the reciprocal, off by 200-320x. We made the same slip on first read.
+
+Its four presets are a genuine out-of-sample test, and they **discriminate**. Kimi K3
+routes 16 of 896 experts per token; solving the 1.56 TB checkpoint for the expert/trunk
+split gives a 1.33 TB expert store, so **23.8 GB moves per token** and it moves from
+disk in every preset:
+
+| preset | RSS | reported | implied effective read BW |
+|---|---|---|---|
+| laptop | 8.2 GB | 32.69 s/tok | 0.73 GB/s |
+| desktop | 31.9 GB | ~29.5 s/tok | 0.81 GB/s |
+| workstation | 95.5 GB | ~24 s/tok | 0.99 GB/s |
+| server | ~128 GB | ~20 s/tok | 1.19 GB/s |
+
+**Law 4 predicts** bytes/token is constant across all four, because which 16 of 896
+experts a token needs changes every token - the working set over a generation is the
+whole 1.33 TB, and no preset caches a meaningful slice of it. So adding RAM should buy
+almost nothing. **The obvious rival model** - *it is slow because it does not fit,
+add RAM* - predicts speed tracks resident set: 8.2 GB to 128 GB is 15.6x.
+
+**Measured: 1.63x.** Far nearer "nearly nothing" than 15.6x. That is the tiered model's
+whole point - when the binding resource is streaming bandwidth against a store you
+cannot cache, memory *capacity* is not the lever. (The implied bandwidths above are
+derived from the measurements, so that column is a consistency check with one free
+parameter per row; the 1.63x-vs-15.6x discrimination uses none, and is the real result.)
+
+To actually hit the 10 tok/s the relay claimed you need 238 GB/s sustained against a
+1.33 TB store. A Spark has the bandwidth and 8.6% of the store; an H100 has 3350 GB/s
+and 6.0%. You need ~16x H100 before the store is resident - at which point the C is
+irrelevant. No single box gets there.
+
