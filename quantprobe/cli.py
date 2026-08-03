@@ -78,6 +78,12 @@ def main():
     d.add_argument("--port", type=int, default=8077); d.add_argument("--server-port", type=int, default=8090)
     d.add_argument("--no-open", action="store_true")
 
+    o = sub.add_parser("audit-ollama", help="price the models already in your ollama store, on this machine")
+    hwargs(o)
+    o.add_argument("--store", default=None, help="ollama models dir (default: $OLLAMA_MODELS or ~/.ollama/models)")
+    o.add_argument("--measure", action="store_true",
+                   help="also RUN ollama and report its measured eval rate beside the prediction")
+
     g = sub.add_parser("target", help="INVERSE planning: give a tok/s target, get the smartest feasible model + the speed-intelligence ladder")
     g.add_argument("--tps", type=float, required=True, help="minimum tok/s you need")
     hwargs(g)
@@ -172,6 +178,9 @@ def main():
     elif a.cmd == "quantize":
         from . import probe
         probe.quantize(a)
+    elif a.cmd == "audit-ollama":
+        from . import ollama as ollamamod
+        ollamamod.run(a)
     else:
         from . import fetch
         fetch.run(a)

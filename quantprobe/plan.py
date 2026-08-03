@@ -1766,6 +1766,46 @@ def binding_report(bc, bits=None, placement=None):
     return lines
 
 
+
+def resolve_hw(args, announce=True):
+    """The one place hardware inputs are resolved: preset -> auto-detect -> calibration -> flags.
+
+    Extracted from `run` so `audit-ollama` cannot drift from `plan`. Two commands quoting
+    different tok/s for the same file on the same box would be worse than either being wrong,
+    because a user would have no way to tell which to believe - the C-15 auto-vs-plan
+    divergence (26.2 vs 19.5 on one model) is exactly that failure, and it took a measurement
+    to notice. Returns the same tuple `run` used to build inline, plus the hw dict for its hint.
+
+    `announce=False` suppresses the auto-detect banner for callers that print their own header.
+    """
+    hw = dict(MACHINES[args.machine]) if getattr(args, "machine", None) in MACHINES else {}
+    if not hw and all(getattr(args, k, None) is None
+                      for k in ("vram", "vram_bw", "ram", "ram_bw", "disk_bw")):
+        from . import detect as detmod
+        auto, _ = detmod.detect()
+        hw = dict(vc=auto["vram"], vb=auto["vram_bw"], rc=auto["ram"], rb=auto["ram_bw"],
+                  db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"),
+                  hint="THIS machine [auto-detected - run `quantprobe hw` for details]")
+        if announce:
+            print("[quantprobe] no hardware flags: auto-detected this machine "
+                  f"(vram {hw['vc']:g}GB@{hw['vb']:g} | ram {hw['rc']:g}GB@{hw['rb']:g} | "
+                  f"disk {hw['db']:g} GB/s). Pass --machine/flags to estimate a different box.")
+        apply_calibration_overrides(hw, args)
+    vc = hw.get("vc", getattr(args, "vram", None)); vb = hw.get("vb", getattr(args, "vram_bw", None))
+    rc = hw.get("rc", getattr(args, "ram", None)); rb = hw.get("rb", getattr(args, "ram_bw", None))
+    db = hw.get("db", getattr(args, "disk_bw", None))
+    geta = hw.get("geta", 0.45); gl = hw.get("gl", None)
+    if getattr(args, "vram", None) is not None: vc = args.vram
+    if getattr(args, "vram_bw", None) is not None: vb = args.vram_bw
+    if getattr(args, "ram", None) is not None: rc = args.ram
+    if getattr(args, "ram_bw", None) is not None: rb = args.ram_bw
+    if getattr(args, "disk_bw", None) is not None: db = args.disk_bw
+    vc = agg_cap(vc) or 0; vb = agg_bw(vb, 0.85) or 0
+    rc = rc or 16; rb = rb or 40
+    db = agg_bw(db, 0.75) or 0.5
+    return vc, vb, rc, rb, db, geta, gl, hw
+
+
 def run(args):
     from . import spec as specmod
     specmod.apply(args)
@@ -1777,28 +1817,7 @@ def run(args):
     a = args.active or m.get("a") or t
     ne = args.always_active or m.get("ne") or (a if a >= t * 0.9 else a * 0.35)
     moe = m.get("moe", a < t * 0.9)
-    hw = dict(MACHINES[args.machine]) if args.machine in MACHINES else {}
-    if not hw and all(getattr(args, k, None) is None for k in ("vram", "vram_bw", "ram", "ram_bw", "disk_bw")):
-        from . import detect as detmod
-        auto, _ = detmod.detect()
-        hw = dict(vc=auto["vram"], vb=auto["vram_bw"], rc=auto["ram"], rb=auto["ram_bw"],
-                  db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"),
-                  hint="THIS machine [auto-detected - run `quantprobe hw` for details]")
-        print("[quantprobe] no hardware flags: auto-detected this machine "
-              f"(vram {hw['vc']:g}GB@{hw['vb']:g} | ram {hw['rc']:g}GB@{hw['rb']:g} | disk {hw['db']:g} GB/s). "
-              "Pass --machine/flags to estimate a different box.")
-        apply_calibration_overrides(hw, args)
-    vc = hw.get("vc", args.vram); vb = hw.get("vb", args.vram_bw)
-    rc = hw.get("rc", args.ram);  rb = hw.get("rb", args.ram_bw)
-    db = hw.get("db", args.disk_bw); geta = hw.get("geta", 0.45); gl = hw.get("gl", None)
-    if args.vram is not None: vc = args.vram
-    if args.vram_bw is not None: vb = args.vram_bw
-    if args.ram is not None: rc = args.ram
-    if args.ram_bw is not None: rb = args.ram_bw
-    if args.disk_bw is not None: db = args.disk_bw
-    vc = agg_cap(vc) or 0; vb = agg_bw(vb, 0.85) or 0
-    rc = rc or 16; rb = rb or 40
-    db = agg_bw(db, 0.75) or 0.5
+    vc, vb, rc, rb, db, geta, gl, hw = resolve_hw(args)
     ctx = getattr(args, "ctx", 0) or 0
     kvp = (args.kv_per_pos * 1024 if getattr(args, "kv_per_pos", None)
            else m.get("kvp", DEFAULT_KVP))

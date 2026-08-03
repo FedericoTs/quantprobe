@@ -2493,6 +2493,34 @@ def t_auto_never_trusts_an_incomplete_local_gguf():
         assert local_spec_or_none(os.path.join(d, "nope.gguf"), 123, 1) == (None, None)
     return None
 
+def t_ollama_eval_rate_is_generation_not_prompt():
+    """audit-ollama must never read the PROMPT rate as the generation rate.
+
+    ollama --verbose prints "prompt eval rate:" BEFORE "eval rate:", so a bare re.search for
+    "eval rate" takes the wrong one. Measured on real output: 186.59 (prompt) against 19.92
+    (generation) - a 9x error that does not look wrong, because it is still a plausible tok/s.
+    It made audit-ollama report ollama at 205.6 tok/s and conclude nothing was worth
+    recommending. Fixture is verbatim ollama output, so this fails on the old regex by
+    construction.
+    """
+    from quantprobe.ollama import _parse_rate
+    real = ("total duration:       1.4859158s" + "\n"
+            "load duration:        214.1493ms" + "\n"
+            "prompt eval count:    31 token(s)" + "\n"
+            "prompt eval rate:     186.59 tokens/s" + "\n"
+            "eval count:           11 token(s)" + "\n"
+            "eval duration:        552.199ms" + "\n"
+            "eval rate:            19.92 tokens/s" + "\n")
+    got = _parse_rate(real)
+    assert got is not None and abs(got - 19.92) < 0.01, (
+        f"read {got} tok/s - 186.59 is the PROMPT rate and must never be returned")
+    fb = _parse_rate("eval count:           40 token(s)" + "\n" +
+                     "eval duration:        2 s" + "\n")
+    assert fb is not None and abs(fb - 20.0) < 0.01, f"count/duration fallback wrong: {fb}"
+    assert _parse_rate("total duration: 1s" + "\n") is None, "invented a rate from nothing"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
