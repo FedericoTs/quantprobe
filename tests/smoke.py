@@ -2741,6 +2741,43 @@ def t_business_a_truncated_answer_is_not_a_wrong_answer():
     return None
 
 
+def t_business_no_verdict_from_an_empty_staked_set():
+    """0/0 is not 0%. A tier-only results file has no staked tasks; scoring one printed
+    "KILL RULE FIRED (0.0%)" over an empty denominator - a confident verdict about evidence
+    that does not exist. And a task that got no answer for a HARNESS reason (HTTP timeout,
+    dead server) must be excluded, not scored as a wrong answer."""
+    bt = _business_tasks_mod()
+    if bt is None:
+        return "weights/business_tasks.py absent"
+    import io, json, contextlib, tempfile as tf
+    rows = [{"cluster": "tier4", "id": "t4a1", "kind": "auto", "prompt": "", "output": "",
+             "seconds": 900.0, "think_words": 0, "gen_tokens": 0, "finish_reason": "",
+             "truncated": False, "error": "timed out", "passed": None,
+             "checks": [], "rubric": None},
+            {"cluster": "tier3", "id": "t3a1", "kind": "auto", "prompt": "", "output": "1646.35",
+             "seconds": 100.0, "think_words": 10, "gen_tokens": 200, "finish_reason": "stop",
+             "truncated": False, "error": None, "passed": True,
+             "checks": [["answer is 1646.35", True]], "rubric": None}]
+    path = os.path.join(tf.gettempdir(), "qp_bt_tieronly_guard.json")
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump({"model": "m", "args": "", "results": rows}, fh)
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            bt.score(path)
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    out = buf.getvalue()
+    assert "KILL RULE" not in out, f"kill rule fired on an empty staked set:\n{out}"
+    assert "not applicable" in out, f"missing the explicit not-applicable statement:\n{out}"
+    assert "HARNESS reason" in out, f"harness-timeout exclusion not disclosed:\n{out}"
+    assert "t4a1" in out, f"the errored task is not named:\n{out}"
+    return None
+
+
 def t_business_never_scores_a_run_that_did_not_happen():
     """A verdict from a run that produced nothing is worse than no verdict.
 

@@ -828,7 +828,12 @@ def ask_server(url, prompt, npredict):
                        "stream": False}).encode()
     req = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=body,
                                  headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=900) as fh:
+    # The TOKEN BUDGET is the fair cross-model bound - a wall clock is not, because
+    # the same budget takes 10x longer on a 2016 card than on a 4090. The HTTP timeout
+    # exists only so a dead server cannot hang the run; it must be generous enough that
+    # the budget always binds first (15000 tok at ~12 tok/s ~= 21 min; 900s fired first
+    # on three T4 tasks and manufactured three "failures" that were really "cut off").
+    with urllib.request.urlopen(req, timeout=2400) as fh:
         d = json.loads(fh.read().decode("utf-8", "replace"))
     choice = d["choices"][0]
     msg = choice["message"]
@@ -907,7 +912,7 @@ def run(model, binary, extra_args, out_path, limit=None, npredict=3072, server=N
         cluster, tid, kind, prompt = t[0], t[1], t[2], t[3]
         print(f"  [{i:2d}/{len(tasks)}] {cluster}/{tid} ({kind})", flush=True)
         started = time.time()
-        think_words, gen_tokens, finish = 0, 0, ""
+        think_words, gen_tokens, finish, err = 0, 0, "", None
         if server:
             # The model is loaded ONCE and stays warm. This is also the honest way to time it:
             # llama-cli would reload 11.3 GB per task and charge that to the task.
@@ -915,6 +920,7 @@ def run(model, binary, extra_args, out_path, limit=None, npredict=3072, server=N
                 text, think_words, gen_tokens, finish = ask_server(server, prompt, npredict)
             except Exception as exc:
                 text = ""
+                err = str(exc)[:200]
                 print(f"       SERVER ERROR: {exc}", flush=True)
         else:
             cmd = [binary, "-m", model, "-p", prompt, "-n", str(npredict), "-no-cnv",
@@ -940,6 +946,11 @@ def run(model, binary, extra_args, out_path, limit=None, npredict=3072, server=N
         ok, detail = check_output(t, text)
         if truncated:
             ok = None
+        if err and not text.strip():
+            # No answer BECAUSE THE HARNESS GAVE UP (HTTP timeout, dead server) is not a wrong
+            # answer. Three T4 tasks were scored FAIL at gen=0 this way. Quarantine like
+            # truncation, visibly.
+            ok = None
         if kind == "auto":
             verdict = "TRUNC" if truncated else ("PASS" if ok else "FAIL")
             note = (f"  budget exhausted at {gen_tokens} tokens, {think_words} words of "
@@ -949,7 +960,7 @@ def run(model, binary, extra_args, out_path, limit=None, npredict=3072, server=N
         results.append({"cluster": cluster, "id": tid, "kind": kind, "prompt": prompt,
                         "output": text, "seconds": round(elapsed, 1),
                         "think_words": think_words, "gen_tokens": gen_tokens,
-                        "finish_reason": finish, "truncated": truncated,
+                        "finish_reason": finish, "truncated": truncated, "error": err,
                         "passed": ok, "checks": [[n, o] for n, o in detail],
                         "rubric": t[4] if kind == "rubric" else None})
         with open(out_path, "w", encoding="utf-8") as fh:
@@ -1014,6 +1025,10 @@ def score(path):
         return 1
     trunc = [r for r in every if r.get("truncated")]
     rerun = [r for r in every if r.get("needs_rerun") and not r.get("truncated")]
+    errored = [r for r in every if r.get("error") and r["passed"] is None
+               and not r.get("truncated")]
+    errored = [r for r in every
+               if r.get("error") and r["passed"] is None and not r.get("truncated")]
     scorable = [r for r in every
                 if not r.get("truncated") and not r.get("needs_rerun")
                 and r["passed"] is not None]
@@ -1026,9 +1041,12 @@ def score(path):
     pct = 100.0 * passed / len(auto) if auto else 0.0
     print(f"\nMODEL: {data.get('model')}")
     print(f"ARGS : {data.get('args')}\n")
-    print(f"STAKED SET: {passed}/{len(auto)} pass = {pct:.1f}%"
-          + (f"   (+{len(ext)} extension tasks reported below, outside the staked bar)"
-             if ext else "") + "\n")
+    if auto:
+        print(f"STAKED SET: {passed}/{len(auto)} pass = {pct:.1f}%"
+              + (f"   (+{len(ext)} extension tasks reported below, outside the staked bar)"
+                 if ext else "") + "\n")
+    else:
+        print(f"STAKED SET: none in this file ({len(ext)} extension tasks below)\n")
     if trunc:
         # Do NOT bury this. Quarantining shrinks the denominator, and a shrinking denominator is
         # exactly how a headline gets flattered. State the count and the worst case out loud.
@@ -1044,6 +1062,12 @@ def score(path):
         print(f"     stored answer replies to a different question and cannot be graded:")
         print(f"     " + ", ".join(f"{r['cluster']}/{r['id']}" for r in rerun))
         print("     These are excluded and must be re-run.\n")
+    if errored:
+        print(f"  !! {len(errored)} task(s) got NO ANSWER for a HARNESS reason (HTTP timeout /")
+        print(f"     server error) and are excluded - neither passes nor failures:")
+        for r in errored:
+            print(f"       {r['cluster']}/{r['id']}: {(r.get('error') or '')[:70]}")
+        print("     Re-run with a live server / longer harness timeout before judging them.\n")
     by = {}
     for r in auto:
         by.setdefault(r["cluster"], []).append(r["passed"])
@@ -1079,7 +1103,12 @@ def score(path):
             why = ", ".join(n for n, o in r["checks"] if not o)
             print(f"    {r['cluster']}/{r['id']:4} {why}")
     print()
-    if pct >= 80:
+    if not auto:
+        # A tier-only or empty file has NO staked tasks. 0/0 is not 0% - an earlier version
+        # printed "KILL RULE FIRED (0.0%)" over an empty denominator, a confident verdict
+        # about evidence that does not exist.
+        print("  STAKED VERDICT: not applicable - this file contains no staked-set tasks.")
+    elif pct >= 80:
         print(f"  VERDICT: P1 CONFIRMED ({pct:.1f}% >= 80%) - business-useful.")
     elif pct < 60:
         print(f"  VERDICT: KILL RULE FIRED ({pct:.1f}% < 60%). This config is NOT")
