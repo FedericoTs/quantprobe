@@ -1,0 +1,18 @@
+[06:40:17] ==================================================================
+[06:40:17] U-37 quiet-box re-run  stamp=20260803_064017  reps=5  n=64
+[06:41:30]   gate OPEN: cpu mean 1.7% max 10.0%, free RAM 13.49 GB
+[06:41:30] pre-warming (the load path is not under test)
+[06:42:07] BIG 13.7 GB (~86% of RAM):
+[06:43:09]   big_mmap       median 12.1374 tok/s  spread 6.266x  free RAM 13.49-13.73 GB
+[06:47:16]   big_nommap     median 4.6434 tok/s  spread 3.563x  free RAM 10.75-13.89 GB
+[06:47:16] SMALL 4.4 GB (~28% of RAM) - the control:
+[06:48:16]   small_mmap     median 7.5317 tok/s  spread 1.011x  free RAM 15.48-15.56 GB
+[06:49:12]   small_nommap   median 7.5031 tok/s  spread 1.014x  free RAM 15.37-15.48 GB
+[06:49:12] 
+[06:49:12]   K-1 R_big   0.383  (>=1.20) FAIL
+[06:49:12]   K-2 R_small 0.996  (<=1.10) PASS
+[06:49:12]   K-3 spread big 6.266 vs control 1.011 (big must EXCEED) PASS
+[06:49:12]   K-4 min free RAM during big 13.49 GB (<=4.0) FAIL
+[06:49:12] 
+[06:49:12] UNINFORMATIVE - K-4: the big arm never ran near capacity (min free RAM 13.49 GB). The premise is absent; no ratio may be claimed.
+[06:49:12] wrote C:\Users\Federico\Documents\evo-compress\weights\data\u37_nommap_20260803_064017.json

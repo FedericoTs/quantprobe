@@ -1,0 +1,93 @@
+{
+ "stamp": "20260803_064017",
+ "reps": 5,
+ "n_gen": 64,
+ "arms": {
+  "big_mmap": {
+   "tag": "big_mmap",
+   "tok": [
+    2.1004,
+    11.6351,
+    12.1374,
+    12.4779,
+    13.1608
+   ],
+   "free_ram_gb": [
+    13.49,
+    13.73,
+    13.73,
+    13.69,
+    13.69
+   ],
+   "oom": false,
+   "median": 12.1374,
+   "spread": 6.266
+  },
+  "big_nommap": {
+   "tag": "big_nommap",
+   "tok": [
+    3.7213,
+    4.6434,
+    3.9933,
+    4.971,
+    13.2592
+   ],
+   "free_ram_gb": [
+    13.69,
+    10.75,
+    12.94,
+    11.61,
+    13.89
+   ],
+   "oom": false,
+   "median": 4.6434,
+   "spread": 3.563
+  },
+  "small_mmap": {
+   "tag": "small_mmap",
+   "tok": [
+    7.4802,
+    7.5445,
+    7.5405,
+    7.4657,
+    7.5317
+   ],
+   "free_ram_gb": [
+    15.56,
+    15.49,
+    15.49,
+    15.49,
+    15.48
+   ],
+   "oom": false,
+   "median": 7.5317,
+   "spread": 1.011
+  },
+  "small_nommap": {
+   "tag": "small_nommap",
+   "tok": [
+    7.5518,
+    7.4889,
+    7.464,
+    7.5031,
+    7.5722
+   ],
+   "free_ram_gb": [
+    15.48,
+    15.42,
+    15.41,
+    15.37,
+    15.4
+   ],
+   "oom": false,
+   "median": 7.5031,
+   "spread": 1.014
+  }
+ },
+ "K1_R_big": 0.383,
+ "K2_R_small": 0.996,
+ "K3_big_spread": 6.266,
+ "K3_control_spread": 1.011,
+ "K4_min_free_ram_big": 13.49,
+ "verdict": "UNINFORMATIVE - K-4: the big arm never ran near capacity (min free RAM 13.49 GB). The premise is absent; no ratio may be claimed."
+}
