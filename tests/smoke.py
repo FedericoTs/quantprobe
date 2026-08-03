@@ -45,6 +45,27 @@ def cli(*args):
     return r.returncode, r.stdout + r.stderr
 
 
+def hf_unreachable(out):
+    """True when the Hugging Face listing failed for reasons that are not our code.
+
+    Five `auto` tests need a live HF tree API. When it is rate-limited or down they were
+    failing HARD, reporting quantprobe as broken because someone else's server said 429 -
+    which is how commit c3c1982 came back green and red six seconds apart on 2026-08-03.
+
+    DELIBERATELY NARROW. It matches ONLY the message `auto` raises when the listing itself
+    failed ("could not list <repo>: ..."), plus explicit transport errors. A traceback, a wrong
+    pick, a bad prediction or any other non-zero exit is still a FAILURE - this must never
+    become a way for real breakage to go quiet, which is the obvious way a helper like this
+    rots. Skips are surfaced by the runner and by verify.py layer 1, so a permanently
+    unreachable HF shows up as a suite that stopped checking, not as a green one.
+    """
+    if "could not list" in out:
+        return True
+    return any(sig in out for sig in ("HTTP Error 429", "HTTP Error 5", "URLError",
+                                      "Temporary failure in name resolution",
+                                      "Connection reset", "timed out"))
+
+
 def t_help():
     rc, out = cli("--help")
     assert rc == 0 and all(k in out for k in ["probe", "plan", "run", "bench", "dashboard", "target", "fetch"])
@@ -1227,6 +1248,9 @@ def t_auto_custom_machine_gate():
     # (Laws 1-2: the fragile-band fix only pays below ~3 bits) and fetch standard instead
     rc, out = cli("auto", "qwen3-30b", "--custom", "--dry", "--vram", "24", "--vram-bw", "936",
                   "--ram", "64", "--ram-bw", "86", "--disk-bw", "3")
+    if hf_unreachable(out):
+        return "SKIP: Hugging Face listing unavailable (rate limit or outage) - not a quantprobe failure"
+
     assert rc == 0 and "doesn't need the surgery" in out and "closest file" in out, \
         f"custom gate broken: rc={rc} {out[:300]}"
 
@@ -1234,12 +1258,18 @@ def t_auto_force_custom():
     # --force-custom overrides the gate: the source pick must happen
     rc, out = cli("auto", "qwen3-30b", "--custom", "--force-custom", "--dry", "--vram", "24",
                   "--vram-bw", "936", "--ram", "64", "--ram-bw", "86", "--disk-bw", "3")
+    if hf_unreachable(out):
+        return "SKIP: Hugging Face listing unavailable (rate limit or outage) - not a quantprobe failure"
+
     assert rc == 0 and "source:" in out and "surgery" not in out, \
         f"force-custom broken: rc={rc} {out[:300]}"
 
 def t_auto_wizard_dry():
     # no model argument -> interactive wizard: answers piped, --dry keeps it offline-light
     rc, out = cli_in("qwen3-30b\n1\nn\n", "auto", "--dry", "--machine", "2016-xmp")
+    if hf_unreachable(out):
+        return "SKIP: Hugging Face listing unavailable (rate limit or outage) - not a quantprobe failure"
+
     assert rc == 0 and "interactive" in out and "closest file" in out, \
         f"wizard broken: rc={rc} {out[:300]}"
 
@@ -1283,6 +1313,9 @@ def t_auto_744b_preset_dry():
     # explained cleanly - never a traceback, never a silent wrong pick.
     rc, out = cli("auto", "glm-744b", "--dry", "--vram", "96", "--vram-bw", "1800",
                   "--ram", "512", "--ram-bw", "300", "--disk-bw", "7")
+    if hf_unreachable(out):
+        return "SKIP: Hugging Face listing unavailable (rate limit or outage) - not a quantprobe failure"
+
     assert "Traceback" not in out and "GLM-5.2-GGUF" in out, f"744b preset broken: rc={rc} {out[:300]}"
     assert (rc == 0 and "closest file" in out) or "no ready-to-run quant" in out,         f"neither pick nor clean explanation: rc={rc} {out[:300]}"
 
@@ -1291,6 +1324,9 @@ def t_auto_bf16_only_graceful():
     # explanation (with the --custom tip), not a bare error; when quants land, it just works
     rc, out = cli("auto", "kimi-k2.6", "--dry", "--vram", "96", "--vram-bw", "1800",
                   "--ram", "768", "--ram-bw", "300", "--disk-bw", "7")
+    if hf_unreachable(out):
+        return "SKIP: Hugging Face listing unavailable (rate limit or outage) - not a quantprobe failure"
+
     assert "Traceback" not in out, f"kimi traceback: {out[:300]}"
     assert (rc == 0 and "closest file" in out) or "no ready-to-run quant" in out,         f"BF16-only repo not graceful: rc={rc} {out[:300]}"
 

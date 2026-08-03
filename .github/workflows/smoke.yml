@@ -1,5 +1,15 @@
 name: smoke
 on: [push, pull_request]
+
+# Pushing master and then a tag fires TWO runs of the same commit within seconds. On
+# 2026-08-03 they raced each other on the HuggingFace tree API, rate-limited each other, and
+# c3c1982 came back both green (13:53:28) and red (13:53:34) - identical code, six seconds
+# apart. A suite whose colour depends on which of our own jobs got there first is worse than
+# a slow one. Group by SHA so one commit runs once, whatever triggered it.
+concurrency:
+  group: smoke-${{ github.sha }}
+  cancel-in-progress: false
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
