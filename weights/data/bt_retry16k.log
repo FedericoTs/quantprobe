@@ -1,0 +1,36 @@
+self-test: 40 auto tasks, boilerplate answer passes 0
+self-test: 5 known-good answers all accepted
+self-test PASS - checks discriminate in both directions
+
+preflight OK - endpoint returns instruction-following output ('ACKNOWLEDGED')
+
+  [ 1/6] arithmetic/a2 (auto)
+       PASS  (476s)
+  [ 2/6] instruction/i3 (auto)
+       PASS  (293s)
+  [ 3/6] code/p1 (auto)
+       PASS  (156s)
+  [ 4/6] code/p4 (auto)
+       PASS  (167s)
+  [ 5/6] code/p5 (auto)
+       PASS  (195s)
+  [ 6/6] analysis/n1 (auto)
+       PASS  (697s)
+
+wrote weights/data/bt_retry16k.json  (1985s total)
+
+MODEL: Qwen3-30B-A3B-Q2_K RETRY at 16k context
+ARGS : same placement; context 4096 -> 16384 to test reasoning-loop vs context-limit
+
+AUTO TASKS: 6/6 pass = 100.0%
+
+  per cluster:
+    arithmetic        1/ 1  100.0%
+    instruction       1/ 1  100.0%
+    code              3/ 3  100.0%
+    analysis          1/ 1  100.0%
+
+
+  VERDICT: P1 CONFIRMED (100.0% >= 80%) - business-useful.
+
+  (0 rubric tasks captured for separate human review - NOT counted above)

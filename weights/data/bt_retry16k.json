@@ -1,0 +1,130 @@
+{
+ "model": "Qwen3-30B-A3B-Q2_K RETRY at 16k context",
+ "args": "same placement; context 4096 -> 16384 to test reasoning-loop vs context-limit",
+ "results": [
+  {
+   "cluster": "arithmetic",
+   "id": "a2",
+   "kind": "auto",
+   "prompt": "Monthly churn is 3.1%. Starting from 4,000 customers and no new signups, how many customers remain after 3 months? Round to the nearest whole customer. Give the number only.",
+   "output": "To determine how many customers remain after 3 months with a monthly churn rate of 3.1%, starting from 4,000 customers and no new signups, we use the formula for exponential decay:\n\n$$\n\\text{Remaining customers} = \\text{Initial customers} \\times (1 - \\text{churn rate})^{\\text{number of months}}\n$$\n\nGiven:\n- Initial customers = 4,000\n- Monthly churn rate = 3.1% = 0.031\n- Number of months = 3\n\nWe calculate:\n\n$$\n\\text{Remaining customers} = 4000 \\times (1 - 0.031)^3 = 4000 \\times (0.969)^3\n$$\n\nFirst, compute $0.969^3$:\n\n$$\n0.969 \\times 0.969 = 0.938961\n$$\n$$\n0.938961 \\times 0.969 = 0.909853209\n$$\n\nNow, multiply by the initial number of customers:\n\n$$\n4000 \\times 0.909853209 = 3639.412836\n$$\n\nRounding to the nearest whole number:\n\n$$\n3639\n$$\n\nThus, the number of customers remaining after 3 months is:\n\n$$\n\\boxed{3639}\n$$",
+   "seconds": 476.4,
+   "think_words": 1750,
+   "gen_tokens": 5275,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 3639",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i3",
+   "kind": "auto",
+   "prompt": "Write a product tagline of at most 8 words that does not contain the letter 'e'.",
+   "output": "\"Win Fast Sharp\"",
+   "seconds": 292.8,
+   "think_words": 1747,
+   "gen_tokens": 3291,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "<= 8 words",
+     true
+    ],
+    [
+     "avoids 'e'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p1",
+   "kind": "auto",
+   "prompt": "Write a Python function `vat_gross(net, rate)` returning the gross amount rounded to 2 decimals, where rate is a decimal fraction (0.23 means 23%). Reply with only the code.",
+   "output": "def vat_gross(net, rate):\n    return round(net * (1 + rate), 2)",
+   "seconds": 156.5,
+   "think_words": 1007,
+   "gen_tokens": 1749,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p4",
+   "kind": "auto",
+   "prompt": "Write a Python function `cac_payback(cac, monthly_gp)` returning months rounded UP to a whole number. Reply with only the code.",
+   "output": "import math\n\ndef cac_payback(cac, monthly_gp):\n    return int(math.ceil(cac / monthly_gp))",
+   "seconds": 166.9,
+   "think_words": 1258,
+   "gen_tokens": 1860,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p5",
+   "kind": "auto",
+   "prompt": "Write a Python function `valid_email(s)` returning True/False. Reply with only the code.",
+   "output": "import re\n\ndef valid_email(s):\n    return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$', s))",
+   "seconds": 194.7,
+   "think_words": 1181,
+   "gen_tokens": 2041,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n1",
+   "kind": "auto",
+   "prompt": "Given monthly churn 3.1%, what is the implied annual retention as a percentage to 1 decimal? Give the number only.",
+   "output": "68.5",
+   "seconds": 697.4,
+   "think_words": 2302,
+   "gen_tokens": 7417,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 68.5",
+     true
+    ]
+   ],
+   "rubric": null
+  }
+ ]
+}

@@ -1,0 +1,127 @@
+self-test: 40 auto tasks, boilerplate answer passes 0
+self-test: 5 known-good answers all accepted
+self-test PASS - checks discriminate in both directions
+
+preflight OK - endpoint returns instruction-following output ('ACKNOWLEDGED')
+
+  [ 1/48] extraction/e1 (auto)
+       PASS  (15s)
+  [ 2/48] extraction/e2 (auto)
+       PASS  (29s)
+  [ 3/48] extraction/e3 (auto)
+       PASS  (14s)
+  [ 4/48] extraction/e4 (auto)
+       PASS  (25s)
+  [ 5/48] extraction/e5 (auto)
+       PASS  (17s)
+  [ 6/48] arithmetic/a1 (auto)
+       PASS  (78s)
+  [ 7/48] arithmetic/a2 (auto)
+       TRUNC  (151s)  budget exhausted at 3072 tokens, 1077 words of reasoning, no answer emitted
+  [ 8/48] arithmetic/a3 (auto)
+       PASS  (75s)
+  [ 9/48] arithmetic/a4 (auto)
+       PASS  (53s)
+  [10/48] arithmetic/a5 (auto)
+       PASS  (63s)
+  [11/48] arithmetic/a6 (auto)
+       PASS  (44s)
+  [12/48] classification/k1 (auto)
+       PASS  (6s)
+  [13/48] classification/k2 (auto)
+       PASS  (11s)
+  [14/48] classification/k3 (auto)
+       PASS  (13s)
+  [15/48] classification/k4 (auto)
+       PASS  (11s)
+  [16/48] classification/k5 (auto)
+       PASS  (11s)
+  [17/48] classification/k6 (auto)
+       PASS  (11s)
+  [18/48] summarisation/s1 (auto)
+       PASS  (57s)
+  [19/48] summarisation/s2 (auto)
+       PASS  (23s)
+  [20/48] summarisation/s3 (auto)
+       PASS  (24s)
+  [21/48] summarisation/s4 (auto)
+       FAIL  (19s)  failed: invents no numbers
+  [22/48] instruction/i1 (auto)
+       PASS  (4s)
+  [23/48] instruction/i2 (auto)
+       PASS  (8s)
+  [24/48] instruction/i3 (auto)
+       TRUNC  (148s)  budget exhausted at 3072 tokens, 1626 words of reasoning, no answer emitted
+  [25/48] instruction/i4 (auto)
+       PASS  (14s)
+  [26/48] instruction/i5 (auto)
+       FAIL  (18s)  failed: invents no numbers
+  [27/48] instruction/i6 (auto)
+       PASS  (4s)
+  [28/48] code/p1 (auto)
+       FAIL  (81s)  failed: code runs and passes assertions
+  [29/48] code/p2 (auto)
+       PASS  (96s)
+  [30/48] code/p3 (auto)
+       PASS  (97s)
+  [31/48] code/p4 (auto)
+       TRUNC  (149s)  budget exhausted at 3072 tokens, 1604 words of reasoning, no answer emitted
+  [32/48] code/p5 (auto)
+       TRUNC  (148s)  budget exhausted at 3072 tokens, 1907 words of reasoning, no answer emitted
+  [33/48] analysis/n1 (auto)
+       TRUNC  (149s)  budget exhausted at 3072 tokens, 1173 words of reasoning, no answer emitted
+  [34/48] analysis/n2 (auto)
+       PASS  (37s)
+  [35/48] analysis/n3 (auto)
+       PASS  (84s)
+  [36/48] analysis/n4 (auto)
+       FAIL  (82s)  failed: mentions 'yes'
+  [37/48] multilingual/m1 (auto)
+       PASS  (18s)
+  [38/48] multilingual/m2 (auto)
+       PASS  (10s)
+  [39/48] multilingual/m3 (auto)
+       PASS  (16s)
+  [40/48] multilingual/m4 (auto)
+       PASS  (29s)
+  [41/48] correspondence/c1 (rubric)
+  [42/48] correspondence/c2 (rubric)
+  [43/48] correspondence/c3 (rubric)
+  [44/48] correspondence/c4 (rubric)
+  [45/48] judgement/j1 (rubric)
+  [46/48] judgement/j2 (rubric)
+  [47/48] longform/l1 (rubric)
+  [48/48] longform/l2 (rubric)
+
+wrote weights/data/bt_20260803_2228_qwen30b_q2k.json  (2272s total)
+
+MODEL: Qwen3-30B-A3B-Q2_K (2.95 effective bits, 11.3 GB)
+ARGS : llama-server -ngl 99 -ot blk.(15-47).ffn_*_exps=CPU --no-mmap -b 1024 -ub 1024 --threads 4 -c 4096 -np 1 | GTX 1060 6GB + 16GB DDR4 | 22.69 tok/s | thinking on, 3072 budget
+
+AUTO TASKS: 31/35 pass = 88.6%
+
+  !! 5 of 40 tasks TRUNCATED (budget exhausted before an
+     answer was emitted) and are excluded from the 88.6% above.
+     If every truncated task were counted as a failure the score would be
+     77.5%. Truncated: arithmetic/a2, instruction/i3, code/p4, code/p5, analysis/n1
+     Raise --npredict and re-run before quoting either number.
+
+  per cluster:
+    code              2/ 3   66.7%
+    analysis          2/ 3   66.7%
+    summarisation     3/ 4   75.0%
+    instruction       4/ 5   80.0%
+    extraction        5/ 5  100.0%
+    arithmetic        5/ 5  100.0%
+    classification    6/ 6  100.0%
+    multilingual      4/ 4  100.0%
+
+  failures:
+    summarisation/s4   invents no numbers
+    instruction/i5   invents no numbers
+    code/p1   code runs and passes assertions
+    analysis/n4   mentions 'yes'
+
+  VERDICT: P1 CONFIRMED (88.6% >= 80%) - business-useful.
+
+  (8 rubric tasks captured for separate human review - NOT counted above)

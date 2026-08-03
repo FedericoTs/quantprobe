@@ -1,5 +1,162 @@
 # Changelog
 
+## Unreleased
+
+**A claim that inverted, and five harness bugs caught before any of them became a finding.**
+
+### E-12: the Kimi K3 number is a unit error, and the repo's own data tests our law
+
+[kimi-k3-in-c](https://github.com/FareedKhan-dev/kimi-k3-in-c) reached us as "running Kimi at
+10 tok/s". Its README reports **seconds per token** - `~32 s/token` laptop, `~19-21 s/token`
+server, and a run line reading *8 tokens in 261.5 s*. That is 0.03-0.05 tok/s: the claim as
+relayed is the reciprocal, off by 200-320x. **We made the same slip on first read** and called
+the preset ladder "backwards" because speed appeared to fall as RAM rose. Under the correct
+units it rises, which is the expected direction.
+
+The four presets are an out-of-sample test that **discriminates**, with no free parameter. Kimi
+routes 16 of 896 experts; solving the 1.56 TB checkpoint for the expert/trunk split gives a
+1.33 TB expert store, so 23.8 GB moves per token, from disk, in every preset.
+
+| model | predicts | |
+|---|---|---|
+| Law 4 - bytes/token constant, store uncacheable | **~1x** | |
+| "it does not fit, add RAM" - speed tracks resident set | **15.6x** | |
+| measured, 8.2 GB -> 128 GB | **1.63x** | Law 4 |
+
+Which 16 of 896 a token needs changes every token, so the working set over a generation is the
+whole store and no preset caches a meaningful slice. Capacity is not the lever. Reaching the
+claimed 10 tok/s needs 238 GB/s against 1.33 TB - roughly 16x H100 before the store is
+resident, at which point the C implementation is beside the point.
+
+The per-preset implied bandwidths (0.73-1.19 GB/s) are *derived* from the measurements, so that
+column is a consistency check with one free parameter per row and is disclosed as such. The
+1.63x-vs-15.6x discrimination is the load-bearing result.
+
+### Business tasks: the instrument was rebuilt before it was allowed to produce a number
+
+The old set graded against prose ("sendable with at most a name edit"), which cannot compare two
+models - it puts a human who already knows which model wrote the output back in the loop. Now
+**40 auto-scored tasks with executable predicates** (JSON shape and exact values, exact
+arithmetic, single-label classification, code that must run and pass assertions, word and
+sentence caps) plus `nonums`, a deterministic hallucination check that fails any number not
+present in the source. 8 rubric tasks are retained and never enter the headline.
+
+### The worst bug: the hallucination detector was inventing the hallucinations
+
+Two tasks were reported as failures for "inventing numbers". Both models outputs were correct.
+
+| output | what the checker claimed | why |
+|---|---|---|
+| `Q3 revenue rose, up YoY but below plan.` | contains the number **3** | pulled the digit out of the quarter label `Q3` |
+| `EMEA,Q3,1200000` (a byte-perfect CSV) | contains **31200000** | matched across the field separator as `3,1200000`, then stripped the comma |
+
+A detector that manufactures the thing it detects is the worst failure this harness can have: it
+publishes a confident verdict against a model that did the work correctly. Two rules fix it - a
+number may not begin immediately after a word character or a dot (so the `3` in `Q3` and the `24`
+in `v1.24.0` are not numbers), and a comma groups digits only in threes (`47,500` is one number,
+`Q3,1200000` is not). Guarded by a test built from those exact two strings.
+
+A third "failure" was also ours. `analysis/n4` asks whether 3.1% monthly churn loses more than a
+third of a cohort in 12 months. `1 - 0.969^12 = 31.47%`, against a third at `33.33%` - the answer
+is **NO**, the model answered **NO**, and the staked key said YES. The key is corrected. Changing
+a key after seeing outputs is normally forbidden; it is allowed here only because the arithmetic
+is objectively wrong and the correction makes the task *harder* to pass, not easier.
+
+A fourth, `code/p1`, was an ambiguous spec rather than a wrong answer: the prompt said "rate"
+without stating whether `0.23` or `23` was meant, and the model chose the other convention. The
+prompt now states it, so that task is excluded from this run and must be re-run - a stored answer
+to a different question cannot be graded.
+
+**Because scoring is deterministic and outputs are stored, the whole run was re-graded with the
+corrected checks without touching the model** (`--rescore`). That is the payoff of executable
+predicates: when a check turns out to be wrong, every past run can be re-scored consistently
+instead of re-generated or quietly dropped.
+
+### Five more defects found while standing it up - each would have published a confident wrong answer
+
+- **No chat template.** The raw `/completion` endpoint applies none: asked to reply
+  `ACKNOWLEDGED`, the model answered *"I am a student who is struggling with my homework"*.
+  All 40 tasks would have failed and the verdict would have read *"2.5-bit cannot do business
+  work"*. Fixed to `/v1/chat/completions`, plus a preflight canary using that exact prompt -
+  the run refuses to start unless the endpoint proves it follows instructions.
+- **A truncated answer scored as a wrong answer.** Qwen3 is a reasoning model; the token budget
+  covers thinking. At 1024 the arithmetic tasks burned the whole budget mid-thought and returned
+  empty content, scoring as five confident failures. Truncation is now detected, quarantined,
+  and the shrunken denominator is stated out loud along with the worst case - because quietly
+  dropping the hard tasks is how a headline flatters itself.
+- **Two runners, one results file.** A kill that did not take left an older run alive writing
+  the same path as a new one. The merge looked like a finished 40-task run at the wrong token
+  budget, with nothing in the output saying so. The runner now refuses to start if its output
+  was touched in the last 180s, and results go to timestamped filenames.
+- **A verdict from a run that never happened.** After the preflight aborted, `score()` still
+  read the results *file* and printed "KILL RULE FIRED (33.3%)" from stale data. An empty run
+  is no longer scored.
+- **Two of eight arithmetic answer keys were wrong** (a1, a2), caught by recomputing every key
+  before the run. A wrong key invalidates the task for every model that ever runs it.
+
+Four new guards cover these, each mutation-tested: re-injecting its defect fails that guard and
+only that guard. Suite at 144 tests.
+
+### The verdict on the staked set - and what the five truncations turned out to be
+
+On the corrected instrument the recommended config - Qwen3-30B-A3B Q2_K on the GTX 1060 at the
+planner's own placement - scored **34/34 = 100% of gradeable staked tasks**, against a bar of
+>=80% staked before any output existed. The honest floor: with all 5 truncated tasks counted as
+failures the score is **85.0%**, still above the bar, so **P1 is confirmed under either
+reading**.
+
+The truncations themselves resolved cleanly: they were the CONTEXT WINDOW, not the model. All
+five had burned the full budget reasoning at `-c 4096` (the stop at 4044 tokens gave it away -
+that is the window minus the prompt, not our `--npredict`). Re-run at `-c 16384`, **all five
+pass, plus the re-specified code task: 6/6** (`bt_retry16k.json`). The token counts show why 4k
+could never work: the annual-retention question used 7,417 tokens end to end, the churn
+projection 5,275 - a reasoning model's budget is thinking plus answer, and the thinking alone
+overflows a 4k window on genuinely multi-step arithmetic. So the complete picture for the
+staked set is **40/40 tasks correct** once the harness stopped standing in the way - every
+earlier deficit traced to the instrument (wrong keys, missing chat template, false-positive
+hallucination regex, context window), not the 2.5-bit model.
+
+Cost of the bigger window on a 6 GB card, measured in passing: decode fell from 22.69 tok/s at
+`-c 4096` to ~11.7 at `-c 16384` - the KV cache displaces expert weights out of VRAM, exactly
+the trade the planner's depth term prices. Practical advice that falls out: run the 30B at 4k
+for interactive work and open the window only for jobs that need long chains.
+
+### A difficulty ladder, up to a deliberate ceiling (tiers, 2026-08-03)
+
+The staked set measures "can the cheap quant do routine business work" - it cannot rank models
+that all pass it. Every auto task now carries a difficulty tier, and the set gains 12 new tasks:
+
+- **T1 routine / T2 standard** - the original 40, unchanged. The staked 80%/60% bar is computed
+  over these and only these, forever; folding new tasks into a staked bar would move the
+  goalpost in whichever direction they score.
+- **T3 hard (6 tasks)** - ledger reconciliation to exact deltas, NPV to the cent, amortization
+  code against exact assertions, a brute-force-verified logic puzzle, compound format
+  constraints, and a hallucination-capture task where inventing one ticket ID fails exactly.
+- **T4 ceiling (6 tasks)** - designed so today's best models fail while staying 100%
+  machine-checkable: exact 9x9-digit multiplication, 96-month amortization interest to the
+  cent, a 45-word lipogram with mandatory vocabulary, a 5-house logic puzzle, ISO-8601 week
+  numbers implemented with no imports, and an exact string transformation. **0/6 is the
+  expected score for every model that exists today.** The tier is there so the first model to
+  score above zero does it against a bar that predates it.
+
+Validity is enforced mechanically, because two of the original eight arithmetic keys were wrong
+when first written and a wrong key at T4 would be invisible forever: the self-test *recomputes
+every tier key* (the multiplication, the NPV, the amortization chain, the ISO weeks against
+`datetime`, the string transform) and *brute-forces both logic puzzles*, refusing to run unless
+each has exactly one solution equal to the staked key. It also caught the author's own T4
+sample containing a forbidden letter - the checks discriminate against the person who wrote
+them, which is the point.
+
+The 30B has not yet been scored on T3/T4; that run is queued. The tiers ship with the
+instrument so any model anyone runs lands on the same ladder.
+
+### Also
+
+- `docs/MATRIX.md` gains the Kimi section beside the existing "70B Q4 at 35-45 tok/s on a Spark
+  is physically impossible" callout - one claim that was wrong, one that was right and got
+  relayed wrong.
+- 22.69 tok/s re-confirmed for the recommended 30B placement on a quiet box.
+
 ## 1.25.0 - 2026-08-03
 
 **A new command that found two bugs in itself before it found anything about your setup.**

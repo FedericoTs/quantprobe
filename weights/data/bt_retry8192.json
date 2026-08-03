@@ -1,0 +1,50 @@
+{
+ "model": "Qwen3-30B-A3B-Q2_K RETRY of the 5 truncated, budget 3072 -> 8192",
+ "args": "same placement; sole change is the token budget",
+ "results": [
+  {
+   "cluster": "arithmetic",
+   "id": "a2",
+   "kind": "auto",
+   "prompt": "Monthly churn is 3.1%. Starting from 4,000 customers and no new signups, how many customers remain after 3 months? Round to the nearest whole customer. Give the number only.",
+   "output": "",
+   "seconds": 217.3,
+   "think_words": 1452,
+   "gen_tokens": 4044,
+   "finish_reason": "length",
+   "truncated": true,
+   "passed": null,
+   "checks": [
+    [
+     "answer is 3639",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i3",
+   "kind": "auto",
+   "prompt": "Write a product tagline of at most 8 words that does not contain the letter 'e'.",
+   "output": "\"Win Fast Sharp\"",
+   "seconds": 184.5,
+   "think_words": 1747,
+   "gen_tokens": 3291,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "<= 8 words",
+     true
+    ],
+    [
+     "avoids 'e'",
+     true
+    ]
+   ],
+   "rubric": null
+  }
+ ]
+}

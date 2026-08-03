@@ -2599,6 +2599,176 @@ def t_ollama_store_reader_survives_a_broken_store():
     return None
 
 
+def _business_tasks_mod():
+    import importlib.util
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    p = os.path.join(root, "weights", "business_tasks.py")
+    if not os.path.exists(p):
+        return None
+    spec = importlib.util.spec_from_file_location("business_tasks", p)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def t_business_checks_reject_the_answer_that_sounds_right():
+    """The whole point of executable checks is that a confident wrong answer scores zero.
+
+    The first version of this task set graded against prose like "sendable with at most a name
+    edit", which cannot compare two models. These predicates must reject fluent nonsense.
+    """
+    bt = _business_tasks_mod()
+    if bt is None:
+        return "weights/business_tasks.py absent"
+    # a plausible-sounding answer that invents a number the source never contained
+    name, fn = bt.nonums(4.2, 12, 8)
+    assert not fn("Revenue reached 9.9M this quarter"), "nonums accepted an invented number"
+    assert fn("Revenue reached 4.2M, up 12%"), "nonums rejected numbers that were in the source"
+    # JSON checks must not be satisfied by prose that merely mentions the keys
+    name, fn = bt.js("company", "amount_usd", "due_days")
+    assert not fn("The company is Acme, amount_usd is 47500, due_days is 30"), \
+        "js() accepted prose instead of a JSON object"
+    assert fn('{"company":"Acme","amount_usd":47500,"due_days":30}'), "js() rejected valid JSON"
+    # a label check must reject an answer that hedges across two labels
+    name, fn = bt.label("BILLING", "TECHNICAL", "SALES")
+    assert not fn("This is either BILLING or TECHNICAL"), "label() accepted a hedge"
+    assert fn("BILLING"), "label() rejected a clean single label"
+    # and the whole suite must survive its own self-test
+    assert bt.selftest() == 0, "business task self-test failed"
+    return None
+
+
+def t_business_hallucination_check_does_not_invent_the_hallucination():
+    """The number extractor must not manufacture numbers that are not in the text.
+
+    A false accusation is the worst failure mode a scoring harness has: it publishes a confident
+    verdict against a model that did the task correctly. Both strings below are real outputs that
+    the naive regex failed. "Q3 revenue rose" was charged with containing the number 3, and a
+    byte-perfect CSV was charged with containing 31200000 - the regex had matched across the
+    field separator and stripped the comma.
+    """
+    bt = _business_tasks_mod()
+    if bt is None:
+        return "weights/business_tasks.py absent"
+    # a quarter label is not a number
+    assert bt._nums_in("Q3 revenue rose, up YoY but below plan.") == set(), \
+        f"quarter label read as a number: {bt._nums_in('Q3 revenue rose')}"
+    # a version string is not three numbers
+    assert bt._nums_in("running v1.24.0 here") == set(), \
+        f"version string read as numbers: {bt._nums_in('running v1.24.0 here')}"
+    # a comma between fields does not join two numbers into one
+    csv = "region,quarter,revenue\nEMEA,Q3,1200000\nAMER,Q3,3000000"
+    assert bt._nums_in(csv) == {"1200000", "3000000"}, \
+        f"CSV field separator merged numbers: {bt._nums_in(csv)}"
+    # ...but a thousands separator still does
+    assert bt._nums_in("we will refund 47,500 USD") == {"47500"}, "thousands separator lost"
+    assert bt._nums_in("ARR of 3,000,000 total") == {"3000000"}, "multi-group thousands lost"
+    # units attached to a number do not hide it
+    assert bt._nums_in("revenue was 4.2M, up 12%") == {"4.2", "12"}, \
+        f"unit-suffixed numbers lost: {bt._nums_in('revenue was 4.2M, up 12%')}"
+    # and the check itself must still catch a real invention
+    _, fn = bt.nonums(4.2, 12)
+    assert not fn("revenue was 9.9M"), "a genuinely invented number was let through"
+    assert fn("revenue was 4.2M, up 12%"), "sourced numbers were rejected"
+    assert fn("Q3 revenue rose with no figures"), "a number-free summary was rejected"
+    return None
+
+
+def t_business_reasoning_never_reaches_the_scorer():
+    """A thinking model's scratchpad must not be graded as its answer.
+
+    Qwen3 spends most of its tokens reasoning. If <think> content leaked into the graded text,
+    a model that reasons "the answer is 17839.92" and then states the wrong final figure would
+    score CORRECT - the checks look for the number anywhere in the string.
+    """
+    bt = _business_tasks_mod()
+    if bt is None:
+        return "weights/business_tasks.py absent"
+    blob = "<think>Let me compute. 49*37*12*0.82 = 17839.92 so that is the answer.</think>19999"
+    answer, think = bt.strip_reasoning(blob)
+    assert answer == "19999", f"reasoning leaked into the answer: {answer!r}"
+    assert "17839.92" in think, "reasoning was discarded instead of captured"
+    # the scorer must now FAIL this task, because the stated answer is wrong
+    _, fn = bt.num(17839.92)
+    assert not fn(answer), "a wrong final answer scored correct because reasoning leaked"
+    assert fn(blob), "control: the number really is present in the unstripped blob"
+    # an unterminated <think> (hit the token cap mid-thought) must not pass everything through
+    answer2, _ = bt.strip_reasoning("<think>still thinking and never closed")
+    assert answer2 == "", f"unterminated reasoning leaked: {answer2!r}"
+    return None
+
+
+def t_business_a_truncated_answer_is_not_a_wrong_answer():
+    """Running out of token budget mid-thought is a harness limit, not a model failure.
+
+    On a reasoning model the budget covers thinking too. At 1024 tokens five arithmetic tasks
+    burned the whole budget before emitting anything and scored as five confident failures -
+    which would have published "2.5-bit cannot do arithmetic" when the truth was "we cut it off".
+    Truncated tasks must be quarantined, AND the shrunken denominator must be disclosed, because
+    quietly dropping hard tasks is how a headline flatters itself.
+    """
+    bt = _business_tasks_mod()
+    if bt is None:
+        return "weights/business_tasks.py absent"
+    import io, json, contextlib, tempfile as tf
+    rows = [{"cluster": "arithmetic", "id": "a1", "kind": "auto", "prompt": "", "output": "",
+             "seconds": 59.0, "think_words": 393, "gen_tokens": 1024,
+             "finish_reason": "length", "truncated": True, "passed": None,
+             "checks": [["answer is 17839.92", False]], "rubric": None},
+            {"cluster": "arithmetic", "id": "a6", "kind": "auto", "prompt": "", "output": "29.4",
+             "seconds": 52.0, "think_words": 467, "gen_tokens": 908,
+             "finish_reason": "stop", "truncated": False, "passed": True,
+             "checks": [["answer is 29.4", True]], "rubric": None}]
+    path = os.path.join(tf.gettempdir(), "qp_bt_trunc_guard.json")
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump({"model": "m", "args": "", "results": rows}, fh)
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            bt.score(path)
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    out = buf.getvalue()
+    # the truncated task must NOT be counted as a failure: 1 of 1 scorable passed
+    assert "1/1 pass = 100.0%" in out, f"truncated task was scored as a failure:\n{out}"
+    # and the exclusion must be stated, with the worst case spelled out
+    assert "TRUNCATED" in out, f"quarantine was silent:\n{out}"
+    assert "50.0%" in out, f"worst-case (all truncations as failures) not disclosed:\n{out}"
+    assert "arithmetic/a1" in out, f"did not name which tasks were excluded:\n{out}"
+    return None
+
+
+def t_business_never_scores_a_run_that_did_not_happen():
+    """A verdict from a run that produced nothing is worse than no verdict.
+
+    score() reads the results FILE, so an aborted run would silently grade whatever a previous
+    run left on disk. That actually happened: a failed preflight printed "KILL RULE FIRED
+    (33.3%)" from stale data.
+    """
+    bt = _business_tasks_mod()
+    if bt is None:
+        return "weights/business_tasks.py absent"
+    called = []
+    real_run, real_score = bt.run, bt.score
+    try:
+        bt.run = lambda *a, **k: []                     # the run produces nothing
+        bt.score = lambda *a, **k: (called.append(1), 0)[1]
+        old = sys.argv
+        try:
+            sys.argv = ["business_tasks.py", "--run", "M", "--server", "http://127.0.0.1:1"]
+            rc = bt.main()
+        finally:
+            sys.argv = old
+    finally:
+        bt.run, bt.score = real_run, real_score
+    assert not called, "an empty run was still scored - a stale results file would be graded"
+    assert rc == 1, f"an empty run must exit non-zero, got {rc}"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):

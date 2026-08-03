@@ -1,0 +1,11 @@
+self-test: 40 auto tasks, boilerplate answer passes 0
+self-test: 5 known-good answers all accepted
+self-test PASS - checks discriminate in both directions
+
+preflight OK - endpoint returns instruction-following output ('ACKNOWLEDGED')
+
+  [ 1/5] arithmetic/a2 (auto)
+       TRUNC  (217s)  budget exhausted at 4044 tokens, 1452 words of reasoning, no answer emitted
+  [ 2/5] instruction/i3 (auto)
+       PASS  (184s)
+  [ 3/5] code/p4 (auto)

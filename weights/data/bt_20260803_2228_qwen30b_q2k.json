@@ -1,0 +1,1088 @@
+{
+ "model": "Qwen3-30B-A3B-Q2_K (2.95 effective bits, 11.3 GB)",
+ "args": "llama-server -ngl 99 -ot blk.(15-47).ffn_*_exps=CPU --no-mmap -b 1024 -ub 1024 --threads 4 -c 4096 -np 1 | GTX 1060 6GB + 16GB DDR4 | 22.69 tok/s | thinking on, 3072 budget",
+ "results": [
+  {
+   "cluster": "extraction",
+   "id": "e1",
+   "kind": "auto",
+   "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Dana Whitfield, VP of Partnerships at Northwind Logistics. Reach me at d.whitfield@northwind-log.com.'",
+   "output": "{\"name\": \"Dana Whitfield\", \"email\": \"d.whitfield@northwind-log.com\", \"company\": \"Northwind Logistics\", \"role\": \"VP of Partnerships\"}",
+   "seconds": 15.3,
+   "think_words": 129,
+   "gen_tokens": 250,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['company', 'email', 'name', 'role']",
+     true
+    ],
+    [
+     "email == 'd.whitfield@northwind-log.com'",
+     true
+    ],
+    [
+     "name == 'Dana Whitfield'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e2",
+   "kind": "auto",
+   "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget A   x3   @ 19.99\n  Widget B   x1   @ 249.00\n  Shipping   x1   @ 12.50",
+   "output": "[{\"item\": \"Widget A\", \"qty\": 3, \"unit_price\": 19.99}, {\"item\": \"Widget B\", \"qty\": 1, \"unit_price\": 249.0}, {\"item\": \"Shipping\", \"qty\": 1, \"unit_price\": 12.5}]",
+   "seconds": 29.0,
+   "think_words": 260,
+   "gen_tokens": 481,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json array of 3",
+     true
+    ],
+    [
+     "0.qty == 3",
+     true
+    ],
+    [
+     "1.unit_price == 249.0",
+     true
+    ],
+    [
+     "2.item == 'Shipping'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e3",
+   "kind": "auto",
+   "prompt": "From the text below return only a JSON object with keys total_headcount and revised_plan_due. Reply with only the JSON object.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "{\"total_headcount\": 22, \"revised_plan_due\": \"15 November\"}",
+   "seconds": 13.7,
+   "think_words": 121,
+   "gen_tokens": 200,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['revised_plan_due', 'total_headcount']",
+     true
+    ],
+    [
+     "total_headcount == 22",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e4",
+   "kind": "auto",
+   "prompt": "Return only a JSON object with keys company, amount_usd, due_days.\n\n'Per our agreement, Acme Corp will be invoiced 47,500 USD, net 30.'",
+   "output": "{\"company\": \"Acme Corp\", \"amount_usd\": 47500, \"due_days\": 30}",
+   "seconds": 25.2,
+   "think_words": 246,
+   "gen_tokens": 411,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['amount_usd', 'company', 'due_days']",
+     true
+    ],
+    [
+     "amount_usd == 47500",
+     true
+    ],
+    [
+     "due_days == 30",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e5",
+   "kind": "auto",
+   "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-4471 (SSO login loop), TCK-4472 (VAT wrong on Irish invoices), TCK-4488 (CSV export truncates).",
+   "output": "[\"TCK-4471\", \"TCK-4472\", \"TCK-4488\"]",
+   "seconds": 17.4,
+   "think_words": 148,
+   "gen_tokens": 282,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json array of 3",
+     true
+    ],
+    [
+     "0 == 'TCK-4471'",
+     true
+    ],
+    [
+     "2 == 'TCK-4488'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a1",
+   "kind": "auto",
+   "prompt": "A subscription is 49 USD/month per seat. A customer has 37 seats and an 18% annual discount for paying yearly. What is the annual total in USD after discount? Give the final number only, rounded to 2 decimals.",
+   "output": "17839.92",
+   "seconds": 77.8,
+   "think_words": 500,
+   "gen_tokens": 1340,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 17839.92",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a2",
+   "kind": "auto",
+   "prompt": "Monthly churn is 3.1%. Starting from 4,000 customers and no new signups, how many customers remain after 3 months? Round to the nearest whole customer. Give the number only.",
+   "output": "",
+   "seconds": 150.8,
+   "think_words": 1077,
+   "gen_tokens": 3072,
+   "finish_reason": "length",
+   "truncated": true,
+   "passed": null,
+   "checks": [
+    [
+     "answer is 3639",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a3",
+   "kind": "auto",
+   "prompt": "CAC is 12,400 USD and monthly gross profit per customer is 653 USD. What is the CAC payback period in months, rounded up to a whole month? Give the number only.",
+   "output": "19",
+   "seconds": 75.3,
+   "think_words": 815,
+   "gen_tokens": 1566,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 19",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a4",
+   "kind": "auto",
+   "prompt": "Revenue was 4.2M, which is 8% below plan. What was the plan number in millions, rounded to 3 decimals? Give the number only.",
+   "output": "4.565",
+   "seconds": 52.9,
+   "think_words": 479,
+   "gen_tokens": 1103,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 4.565",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a5",
+   "kind": "auto",
+   "prompt": "An invoice of 8,300 EUR excludes VAT at 23%. What is the gross total in EUR, to 2 decimals? Give the number only.",
+   "output": "10209.00",
+   "seconds": 63.0,
+   "think_words": 628,
+   "gen_tokens": 1317,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 10209.0",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a6",
+   "kind": "auto",
+   "prompt": "You have 22 sales reps, up from 17 a year ago. What is the year-over-year headcount growth as a percentage, to 1 decimal place? Give the number only.",
+   "output": "29.4",
+   "seconds": 43.6,
+   "think_words": 467,
+   "gen_tokens": 908,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 29.4",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k1",
+   "kind": "auto",
+   "prompt": "Classify this support ticket as exactly one of: BILLING, TECHNICAL, SALES. Answer with the single word only.\n\n'Your invoice charged me for a month after I cancelled.'",
+   "output": "BILLING",
+   "seconds": 6.3,
+   "think_words": 98,
+   "gen_tokens": 133,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of BILLING/TECHNICAL/SALES",
+     true
+    ],
+    [
+     "mentions 'billing'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k2",
+   "kind": "auto",
+   "prompt": "Classify as exactly one of: BILLING, TECHNICAL, SALES. Answer with the single word only.\n\n'After SSO redirect, Safari loops back to the login page.'",
+   "output": "TECHNICAL",
+   "seconds": 10.8,
+   "think_words": 164,
+   "gen_tokens": 220,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of BILLING/TECHNICAL/SALES",
+     true
+    ],
+    [
+     "mentions 'technical'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k3",
+   "kind": "auto",
+   "prompt": "Sentiment of this review as exactly one of: POSITIVE, NEGATIVE, MIXED. Single word only.\n\n'Setup was painless and support replied in minutes, but it is far too expensive for what it does.'",
+   "output": "MIXED",
+   "seconds": 12.5,
+   "think_words": 192,
+   "gen_tokens": 249,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of POSITIVE/NEGATIVE/MIXED",
+     true
+    ],
+    [
+     "mentions 'mixed'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k4",
+   "kind": "auto",
+   "prompt": "Is this lead ENTERPRISE or SMB? Answer with the single word only.\n\n'We're a 12-person agency looking for a cheap plan, no procurement process.'",
+   "output": "SMB",
+   "seconds": 11.2,
+   "think_words": 169,
+   "gen_tokens": 226,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of ENTERPRISE/SMB",
+     true
+    ],
+    [
+     "mentions 'smb'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k5",
+   "kind": "auto",
+   "prompt": "Route to exactly one of: LEGAL, FINANCE, ENGINEERING. Single word only.\n\n'The DPA the customer sent back has an altered sub-processor clause.'",
+   "output": "LEGAL",
+   "seconds": 10.7,
+   "think_words": 156,
+   "gen_tokens": 217,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of LEGAL/FINANCE/ENGINEERING",
+     true
+    ],
+    [
+     "mentions 'legal'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k6",
+   "kind": "auto",
+   "prompt": "Priority as exactly one of: P0, P1, P2. Single word only.\n\n'Checkout is down for all customers in production.'",
+   "output": "P0",
+   "seconds": 10.8,
+   "think_words": 154,
+   "gen_tokens": 216,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of P0/P1/P2",
+     true
+    ],
+    [
+     "mentions 'p0'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s1",
+   "kind": "auto",
+   "prompt": "Summarise in exactly 5 bullet points, one line each, starting each with '- '. Use only numbers that appear in the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "- 4.2  \n- 12  \n- 8  \n- 3.1  \n- 34",
+   "seconds": 57.0,
+   "think_words": 692,
+   "gen_tokens": 1185,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly 5 bullets",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s2",
+   "kind": "auto",
+   "prompt": "In one sentence of at most 25 words, state the single most urgent item. Use only numbers from the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "Revised FY plan by 15 November.",
+   "seconds": 23.2,
+   "think_words": 297,
+   "gen_tokens": 491,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "<= 25 words",
+     true
+    ],
+    [
+     "<= 1 sentences",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s3",
+   "kind": "auto",
+   "prompt": "Give exactly 3 bullets, each starting '- ', naming only risks stated in the text. Do not add numbers that are not in the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "- Revenue below plan  \n- Churn rise  \n- CAC payback lengthening",
+   "seconds": 24.3,
+   "think_words": 323,
+   "gen_tokens": 495,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly 3 bullets",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s4",
+   "kind": "auto",
+   "prompt": "Compress this to under 30 words with no numbers at all.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "Q3 revenue rose, up YoY but below plan. Churn rose, driven by SMB. Enterprise ARR grew. Sales headcount increased. CAC payback lengthened. Board requested revised FY plan.",
+   "seconds": 19.4,
+   "think_words": 198,
+   "gen_tokens": 394,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "<= 30 words",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i1",
+   "kind": "auto",
+   "prompt": "Reply with exactly the word ACKNOWLEDGED and nothing else.",
+   "output": "ACKNOWLEDGED",
+   "seconds": 3.6,
+   "think_words": 50,
+   "gen_tokens": 72,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "<= 1 words",
+     true
+    ],
+    [
+     "mentions 'acknowledged'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i2",
+   "kind": "auto",
+   "prompt": "List the days Monday to Friday, one per line, each prefixed with '> '. No other text.",
+   "output": "> Monday\n> Tuesday\n> Wednesday\n> Thursday\n> Friday",
+   "seconds": 8.3,
+   "think_words": 111,
+   "gen_tokens": 168,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "5 lines matching ^>\\s+\\w+day$",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i3",
+   "kind": "auto",
+   "prompt": "Write a product tagline of at most 8 words that does not contain the letter 'e'.",
+   "output": "",
+   "seconds": 148.3,
+   "think_words": 1626,
+   "gen_tokens": 3072,
+   "finish_reason": "length",
+   "truncated": true,
+   "passed": null,
+   "checks": [
+    [
+     "<= 8 words",
+     true
+    ],
+    [
+     "avoids 'e'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i4",
+   "kind": "auto",
+   "prompt": "Answer in exactly two sentences. First sentence must start with 'Yes' or 'No'. Question: should a 12-person agency buy an enterprise CRM?",
+   "output": "No, a 12-person agency typically doesn\u2019t require an enterprise CRM, as smaller solutions offer sufficient scalability and cost-effectiveness for their needs. Enterprise CRM is better suited for larger teams with complex requirements.",
+   "seconds": 13.7,
+   "think_words": 168,
+   "gen_tokens": 269,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "<= 2 sentences",
+     true
+    ],
+    [
+     "starts Yes/No",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i5",
+   "kind": "auto",
+   "prompt": "Output a CSV with header 'region,quarter,revenue' and exactly 2 data rows for EMEA and AMER in Q3, revenue 1200000 and 3000000. No other text.",
+   "output": "region,quarter,revenue\nEMEA,Q3,1200000\nAMER,Q3,3000000",
+   "seconds": 17.8,
+   "think_words": 188,
+   "gen_tokens": 365,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "1 lines matching ^region,quarter,revenue$",
+     true
+    ],
+    [
+     "2 lines matching ^(EMEA|AMER),Q3,\\d+$",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i6",
+   "kind": "auto",
+   "prompt": "Reply with only a JSON object with keys status and retry_after_seconds, where status is 'rate_limited' and retry_after_seconds is 30.",
+   "output": "{\"status\": \"rate_limited\", \"retry_after_seconds\": 30}",
+   "seconds": 4.3,
+   "think_words": 48,
+   "gen_tokens": 91,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['retry_after_seconds', 'status']",
+     true
+    ],
+    [
+     "status == 'rate_limited'",
+     true
+    ],
+    [
+     "retry_after_seconds == 30",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p1",
+   "kind": "auto",
+   "prompt": "Write a Python function `vat_gross(net, rate)` returning the gross amount rounded to 2 decimals. Reply with only the code.",
+   "output": "def vat_gross(net, rate):\n    return round(net * (1 + rate / 100), 2)",
+   "seconds": 80.9,
+   "think_words": 1013,
+   "gen_tokens": 1682,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null,
+   "needs_rerun": true
+  },
+  {
+   "cluster": "code",
+   "id": "p2",
+   "kind": "auto",
+   "prompt": "Write a Python function `churned(start, monthly_rate, months)` returning the whole number of customers remaining, rounded to nearest int. Reply with only the code.",
+   "output": "def churned(start, monthly_rate, months):\n    return round(start * (1 - monthly_rate) ** months)",
+   "seconds": 95.8,
+   "think_words": 1216,
+   "gen_tokens": 1991,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p3",
+   "kind": "auto",
+   "prompt": "Write a Python function `parse_invoice_line(s)` that turns 'Widget A   x3   @ 19.99' into the dict {'item': 'Widget A', 'qty': 3, 'unit_price': 19.99}. Reply with only code.",
+   "output": "def parse_invoice_line(s):\n    parts = s.split('x')\n    item = parts[0].strip()\n    rest = parts[1].strip()\n    qty_part, price_part = rest.split('@')\n    qty = int(qty_part.strip())\n    unit_price = float(price_part.strip())\n    return {'item': item, 'qty': qty, 'unit_price': unit_price}",
+   "seconds": 96.7,
+   "think_words": 1226,
+   "gen_tokens": 2003,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p4",
+   "kind": "auto",
+   "prompt": "Write a Python function `cac_payback(cac, monthly_gp)` returning months rounded UP to a whole number. Reply with only the code.",
+   "output": "",
+   "seconds": 148.9,
+   "think_words": 1604,
+   "gen_tokens": 3072,
+   "finish_reason": "length",
+   "truncated": true,
+   "passed": null,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p5",
+   "kind": "auto",
+   "prompt": "Write a Python function `valid_email(s)` returning True/False. Reply with only the code.",
+   "output": "",
+   "seconds": 148.5,
+   "think_words": 1907,
+   "gen_tokens": 3072,
+   "finish_reason": "length",
+   "truncated": true,
+   "passed": null,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n1",
+   "kind": "auto",
+   "prompt": "Given monthly churn 3.1%, what is the implied annual retention as a percentage to 1 decimal? Give the number only.",
+   "output": "",
+   "seconds": 148.9,
+   "think_words": 1173,
+   "gen_tokens": 3072,
+   "finish_reason": "length",
+   "truncated": true,
+   "passed": null,
+   "checks": [
+    [
+     "answer is 68.5",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n2",
+   "kind": "auto",
+   "prompt": "Reply with only a JSON object with keys metric and direction, where metric is the one that worsened most in relative terms between CAC payback 14 and 19 months, and direction is 'worse'.",
+   "output": "{\"metric\": \"CAC Payback Period\", \"direction\": \"worse\"}",
+   "seconds": 36.6,
+   "think_words": 545,
+   "gen_tokens": 756,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['direction', 'metric']",
+     true
+    ],
+    [
+     "direction == 'worse'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n3",
+   "kind": "auto",
+   "prompt": "Enterprise ARR grew 34% to 2.1M. What was it a year ago, in millions to 3 decimals? Give the number only.",
+   "output": "1.567",
+   "seconds": 83.9,
+   "think_words": 796,
+   "gen_tokens": 1748,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 1.567",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n4",
+   "kind": "auto",
+   "prompt": "Answer with exactly one word, YES or NO: at 3.1% monthly churn, does a cohort lose more than a third of its customers within 12 months?",
+   "output": "NO",
+   "seconds": 81.9,
+   "think_words": 694,
+   "gen_tokens": 1700,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of YES/NO",
+     true
+    ],
+    [
+     "mentions 'no'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m1",
+   "kind": "auto",
+   "prompt": "Translate to French, reply with only the translation: 'The invoice is due in 30 days.'",
+   "output": "La facture est due dans 30 jours.",
+   "seconds": 17.9,
+   "think_words": 235,
+   "gen_tokens": 367,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "mentions '30'",
+     true
+    ],
+    [
+     "looks french",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m2",
+   "kind": "auto",
+   "prompt": "Translate to German, reply with only the translation: 'Your account has been cancelled.'",
+   "output": "Ihr Konto wurde storniert.",
+   "seconds": 9.7,
+   "think_words": 120,
+   "gen_tokens": 201,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "looks german",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m3",
+   "kind": "auto",
+   "prompt": "Reply with only a JSON object with keys language and code, identifying the language of 'Il contratto scade il 15 novembre' using an ISO 639-1 code.",
+   "output": "{\"language\": \"Italian\", \"code\": \"it\"}",
+   "seconds": 16.4,
+   "think_words": 207,
+   "gen_tokens": 336,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['code', 'language']",
+     true
+    ],
+    [
+     "code == 'it'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m4",
+   "kind": "auto",
+   "prompt": "Translate to Spanish, reply with only the translation: 'We will refund 47,500 USD.'",
+   "output": "Reembolsaremos 47,500 USD.",
+   "seconds": 28.9,
+   "think_words": 328,
+   "gen_tokens": 602,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "mentions '47'",
+     true
+    ],
+    [
+     "looks spanish",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c1",
+   "kind": "rubric",
+   "prompt": "Write a short email declining a vendor's proposal for a CRM migration because the timeline slips past our Q4 freeze. Keep the door open for Q1.",
+   "output": "**Subject:** Re: [Vendor Name] CRM Migration Proposal \u2013 Timeline Considerations  \n\nDear [Vendor Name],  \n\nThank you for your proposal and the time you\u2019ve invested in presenting the CRM migration plan. We appreciate your enthusiasm and the value your solution could bring.  \n\nUnfortunately, due to our Q4 freeze, the proposed timeline falls outside of our current capacity to execute. We\u2019re committed to ensuring all initiatives align with our seasonal priorities, and this proposal cannot be accommodated at this time.  \n\nThat said, we remain interested in exploring opportunities in Q1 and would welcome the chance to revisit this collaboration. Please don\u2019t hesitate to reach out if you\u2019d like to discuss further or share updates.  \n\nThank you again for your understanding and continued partnership. We look forward to future possibilities.  \n\nBest regards,  \n[Your Full Name]  \n[Your Job Title]  \n[Your Company Name]  \n[Your Contact Information]  \n\n---  \nThis email maintains professionalism, acknowledges the vendor\u2019s effort, and leaves the door open for future collaboration. Let me know if you\u2019d like to adjust the tone or details!",
+   "seconds": 32.2,
+   "think_words": 342,
+   "gen_tokens": 675,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "sendable with at most a name/date edit; declines clearly; leaves the door open"
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c2",
+   "kind": "rubric",
+   "prompt": "Draft a follow-up to a client who has not responded in two weeks about an unsigned SOW. Polite, not passive-aggressive, one clear ask.",
+   "output": "**Subject:** Follow-Up on SOW for [Project Name]  \n\nDear [Client's Name],  \n\nI hope this message finds you well. I wanted to follow up on the SOW for [Project Name] to ensure we\u2019re aligned and can move forward efficiently. As we\u2019ve not yet received your signature, I wanted to check in to see if there\u2019s anything further needed from our side to facilitate the process.  \n\nThe SOW is critical to finalizing next steps, and I\u2019d appreciate your confirmation at your earliest convenience. If there are any questions or concerns, please don\u2019t hesitate to let me know\u2014I\u2019m happy to discuss further.  \n\nThank you for your attention to this, and I look forward to hearing from you.  \n\nBest regards,  \n[Your Full Name]  \n[Your Position]  \n[Your Company Name]  \n[Your Contact Information]  \n\n---  \n**Key elements:**  \n- **Tone:** Professional and courteous, avoiding pressure.  \n- **Clarity:** Direct request to confirm the SOW or address concerns.  \n- **Flexibility:** Opens the door for further discussion without assumptions.",
+   "seconds": 29.7,
+   "think_words": 305,
+   "gen_tokens": 619,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "one unambiguous ask; professional tone; no guilt-tripping"
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c3",
+   "kind": "rubric",
+   "prompt": "Reply to a customer charged for a month they had already cancelled. Acknowledge, commit to a refund, give a timeline.",
+   "output": "**Subject:** Refund for Unauthorized Charge  \n\nDear [Customer's Name],  \n\nThank you for bringing this to our attention. We sincerely apologize for the inconvenience caused by the unauthorized charge after your subscription was cancelled. We understand how frustrating this must be, and we appreciate your patience as we resolve this.  \n\nWe are committed to issuing a full refund for the unauthorized charge. The refund will be processed within **5-10 business days** from the date of this message, and you will receive a confirmation once it is completed.  \n\nTo ensure your account is fully cancelled and no further charges are processed, we have already updated your subscription status. If you have any further questions or need additional assistance, please do not hesitate to reach out.  \n\nThank you for your understanding, and we hope to regain your trust through our prompt resolution.  \n\nBest regards,  \n[Your Name]  \n[Your Position]  \n[Company Name]  \n[Contact Information]  \n\n---  \n*Note: Adjust the timeline and details based on your company\u2019s policies.*",
+   "seconds": 33.4,
+   "think_words": 399,
+   "gen_tokens": 710,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "acknowledges without admitting liability; concrete next step and timeline"
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c4",
+   "kind": "rubric",
+   "prompt": "Write a LinkedIn message to a candidate for a senior backend role. Two sentences on why them specifically, one clear call to action.",
+   "output": "**Subject:** Senior Backend Role Opportunity \u2013 Let\u2019s Connect  \n\nDear [Candidate\u2019s Name],  \nI noticed your expertise in [specific technology/framework, e.g., \"distributed systems\" or \"microservices\"] and leadership in [specific project or achievement, e.g., \"scaling high-traffic applications\"], which aligns perfectly with our needs for a senior backend developer. I\u2019d love to discuss how your background could drive our team\u2019s success\u2014would you be open to a 15-minute call this week?  \n\nBest,  \n[Your Name]  \n[Your Position]  \n[Company Name]  \n[Contact Information]",
+   "seconds": 36.2,
+   "think_words": 484,
+   "gen_tokens": 745,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "specific rather than generic; single CTA"
+  },
+  {
+   "cluster": "judgement",
+   "id": "j1",
+   "kind": "rubric",
+   "prompt": "A customer demands a feature we will not build. Draft the refusal in three sentences without saying 'unfortunately' or promising a roadmap slot.",
+   "output": "We appreciate your feedback, but this feature does not align with our current priorities. Our focus remains on refining existing capabilities to ensure a cohesive user experience. We encourage you to explore alternative solutions that may better suit your needs.",
+   "seconds": 19.5,
+   "think_words": 264,
+   "gen_tokens": 389,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "clear no; no false promise; keeps the relationship"
+  },
+  {
+   "cluster": "judgement",
+   "id": "j2",
+   "kind": "rubric",
+   "prompt": "Our deploy caused 40 minutes of downtime. Write the customer-facing incident note.",
+   "output": "**Subject:** Incident Update: 40-Minute Downtime During Deployment  \n\n**Date:** [Insert Date and Time]  \n**Status:** Resolved  \n\n**Summary:**  \nWe apologize for the 40-minute downtime experienced during our recent deployment. This incident impacted [specific service/product, e.g., \"customer access to the platform\"] and was caused by [brief explanation, e.g., \"an unexpected issue during the deployment process\"].  \n\n**What Happened:**  \nOn [date and time], a scheduled deployment led to an unexpected outage. Our team identified the issue promptly and took immediate action to resolve it. The downtime lasted [X minutes], during which [specific impact, e.g., \"customer interactions were disrupted\" or \"services were unavailable\"].  \n\n**Root Cause:**  \nThe downtime was caused by [clear, concise explanation, e.g., \"a configuration error during the deployment that triggered a system failure\"]. Our investigation confirmed this was a result of [specific cause, e.g., \"an automated rollback failed to execute properly\"].  \n\n**Resolution:**  \nWe resolved the issue by [action taken, e.g., \"rolling back the deployment and restoring services within 40 minutes\"]. Our team is now conducting a thorough review to ensure this does not recur.  \n\n**Preventive Measures:**  \nTo prevent similar incidents, we are [specific steps, e.g., \"enhancing our deployment testing protocols, implementing additional monitoring, and updating our rollback procedures\"].  \n\n**Apology and Compensation:**  \nWe sincerely apologize for the inconvenience this caused. As a gesture of goodwill, [include compensation, e.g., \"we will issue a [X]% credit to your account\" or \"offer [X] hours of service credit\"].  \n\n**Next Steps:**  \nWe are committed to improving our systems and processes. A detailed post-mortem analysis will be shared [link or reference] by [date].  \n\n**Contact:**  \nIf you have questions or need further assistance, please contact [support email/phone].  \n\nThank you for your understanding and continued trust.  \n\n\u2014  \n[Your Company Name]  \n[Date]  \n\n---  \n*Note: Customize the placeholders (e.g., dates, root cause, compensation) to align with your specific situation. If no compensation is offered, focus on the apology and preventive steps.*",
+   "seconds": 46.9,
+   "think_words": 401,
+   "gen_tokens": 973,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "states impact and duration; no blame-shifting; says what changes"
+  },
+  {
+   "cluster": "longform",
+   "id": "l1",
+   "kind": "rubric",
+   "prompt": "Write a one-page brief arguing whether to move from monthly to annual billing, covering cash flow, churn and discounting.",
+   "output": "**Argument for Transitioning to Annual Billing**  \n\n**Cash Flow Advantages**  \nAnnual billing provides a significant upfront cash inflow, improving liquidity and enabling strategic investments. Monthly billing, while generating recurring revenue, results in smaller, more frequent payments, which can strain cash flow during periods of low customer acquisition. By locking in annual payments, the business gains predictable, larger revenue streams, reducing reliance on continuous customer acquisition and improving financial stability.  \n\n**Churn Reduction**  \nAnnual billing inherently reduces churn by committing customers to a longer-term relationship. Customers who pay annually are less likely to cancel compared to monthly subscribers, as they\u2019ve already invested in a year of service. This reduces the risk of attrition and increases long-term revenue stability. While some customers may prefer monthly flexibility, the trade-off of reduced churn and higher retention justifies the shift.  \n\n**Discounting Strategy**  \nAnnual billing allows for strategic discounting, offering customers a lower total cost over the year. This incentivizes commitment, as the discount (e.g., 10\u201320% off) encourages customers to avoid the uncertainty of monthly renewals. While the per-customer revenue may decrease slightly, the upfront cash flow and reduced churn offset this, leading to higher overall profitability. Additionally, discounts can act as a competitive differentiator, attracting price-sensitive customers who prioritize long-term value.  \n\n**Conclusion**  \nTransitioning to annual billing enhances cash flow, mitigates churn, and leverages strategic discounting to drive long-term growth. While monthly billing offers flexibility, the benefits of annual billing\u2014predictable revenue, reduced attrition, and customer commitment\u2014outweigh its drawbacks. This shift aligns with the business\u2019s financial and operational goals, ensuring sustainable growth and customer retention.  \n\n*(One-page brief, concise and focused on actionable insights.)*",
+   "seconds": 54.8,
+   "think_words": 626,
+   "gen_tokens": 1124,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "coherent across the whole page; no contradiction; arguments actually connect"
+  },
+  {
+   "cluster": "longform",
+   "id": "l2",
+   "kind": "rubric",
+   "prompt": "Draft an onboarding checklist for a new enterprise customer, grouped into week 1, week 2-4, and quarter 1.",
+   "output": "**Enterprise Customer Onboarding Checklist**  \n*Grouped into Week 1, Weeks 2\u20134, and Quarter 1*\n\n---\n\n### **Week 1: Initial Setup and Orientation**  \n**Goal:** Establish foundational processes, align on goals, and ensure the customer feels supported.  \n\n1. **Account Setup**  \n   - Create customer account(s) and grant access to relevant platforms (e.g., CRM, dashboard).  \n   - Assign primary contact(s) and define roles (e.g., admin, support, end-users).  \n\n2. **Welcome and Goal Alignment**  \n   - Host a **Kickoff Meeting** to review onboarding plan, key milestones, and customer expectations.  \n   - Define success metrics and KPIs for the customer\u2019s use case.  \n\n3. **System Integration**  \n   - Begin initial integration (e.g., API setup, data migration, third-party tool connections).  \n   - Confirm connectivity and test basic functionality.  \n\n4. **Training and Documentation**  \n   - Provide initial training on platform navigation, key features, and workflows.  \n   - Share onboarding documentation (e.g., user guides, FAQs, support resources).  \n\n5. **Support Setup**  \n   - Assign a dedicated onboarding manager and support contact.  \n   - Establish communication channels (e.g., email, Slack, portal).  \n\n---\n\n### **Weeks 2\u20134: Integration, Customization, and Early Adoption**  \n**Goal:** Deepen integration, address customization needs, and ensure early adoption success.  \n\n1. **Customization and Configuration**  \n   - Finalize system configuration (e.g., user roles, permissions, workflows).  \n   - Implement customer-specific settings (e.g., branding, data fields, automation rules).  \n\n2. **Testing and Validation**  \n   - Conduct end-to-end testing of core processes (e.g., data flow, user access, reporting).  \n   - Address any bugs or gaps identified during testing.  \n\n3. **Mid-Onboarding Check-In**  \n   - Host a **Progress Review Meeting** to assess milestones achieved and address challenges.  \n   - Adjust onboarding plan based on feedback or evolving needs.  \n\n4. **User Training and Adoption**  \n   - Deliver role-specific training sessions (e.g., admin, team leads, end-users).  \n   - Provide resources for self-service learning (e.g., video tutorials, knowledge base).  \n\n5. **Pilot Project (if applicable)**  \n   - Launch a small-scale pilot to test the system in a real-world scenario.  \n   - Gather feedback and refine processes before full rollout.  \n\n6. **Documentation and Knowledge Transfer**  \n   - Share detailed process guides, troubleshooting tips, and best practices.  \n   - Ensure customer teams understand how to access support and resources.  \n\n---\n\n### **Quarter 1: Optimization and Long-Term Planning**  \n**Goal:** Ensure full adoption, optimize performance, and plan for future growth.  \n\n1. **Performance Review**  \n   - Conduct a **Quarterly Review Meeting** to assess onboarding progress, KPIs, and customer satisfaction.  \n   - Analyze system usage data and identify areas for improvement.  \n\n2. **Optimization and Scaling**  \n   - Refine configurations based on feedback and performance metrics.  \n   - Plan for scaling (e.g., additional users, modules, integrations).  \n\n3. **Advanced Training and Support**  \n   - Offer advanced training on advanced features or workflows.  \n   - Provide ongoing support for troubleshooting and updates.  \n\n4. **Strategic Planning**  \n   - Align on long-term goals (e.g., expansion, integration with new tools, process automation).  \n   - Define next steps for continued success (e.g., annual review, roadmap planning).  \n\n5. **Customer Feedback and Satisfaction**  \n   - Collect feedback through surveys or interviews to identify pain points and opportunities.  \n   - Share a summary of achievements and next steps with the customer.  \n\n6. **Ongoing Relationship Management**  \n   - Assign a dedicated account manager for ongoing support and relationship management.  \n   - Schedule regular check-ins to ensure continued alignment and success.  \n\n---\n\n**Notes:**  \n- Customize the checklist based on the customer\u2019s industry, size, and specific needs.  \n- Use a project management tool (e.g., Jira, Asana) to track progress and assign ownership.  \n- Maintain open communication and flexibility to adapt to the customer\u2019s evolving requirements.",
+   "seconds": 78.4,
+   "think_words": 522,
+   "gen_tokens": 1567,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": null,
+   "checks": [],
+   "rubric": "genuinely actionable items; correct grouping; no filler"
+  }
+ ],
+ "rescored": true
+}
