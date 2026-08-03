@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
 | Open contradictions | 24 |
-| Untried levers | 26 |
+| Untried levers | 27 |
 | External work to study | 11 |
 
 ## Established laws
@@ -513,7 +513,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `closed` · `measured` · scope: Qwen3-30B-A3B Q2_K split placement, reference box, decode · evidence: prereg #46 (the staking that split into #49/#50), prereg #50 (E6 GPU events), prereg #49 (E3 on CUDA), prereg #44 (independent card ceiling); 2026-07-28 prereg #58: the GPU share of the split token is now decomposed per-op (matmuls 80% at 5-15x byte cost per call) and reconciled under L-17 to within 5%. The token ledger is closed at every level this box can measure. · wired into: `nothing - an open measurement, deliberately unexplained`
 
-### C-06 — Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it.
+### C-06 — Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it. [CANDIDATE EXPLANATION 2026-08-03, see U-38: L-12 measured batched PREFILL as compute-bound at 65-67% of this card's FLOP ceiling. Batching does N x the arithmetic per weight-read, so the aggregate ceiling is min(N x BW/bytes, compute). The predicted crossover for a 7B on this 1060 is batch 4.5 - and C-06 measured saturation at about 4 slots. NOT CLAIMED: the compute ceiling is spec-sheet FLOPs at an assumed efficiency, and one agreement is not a test. Staked in U-38 with a refutation condition.]
 
 **Magnitude:** Aggregate decode, npl 1 -> 8, one session: split 21.93 -> 44.48 (2.03x); all-experts-CPU 19.89 -> 37.70 (1.90x); DENSE 7B fully in VRAM 22.47 -> 50.48 (2.25x). Per-step time grows 3.56x while weight bytes per step are unchanged, so weight amortisation works as expected - the cost that grows is per-sequence work, unidentified.
 
@@ -672,6 +672,22 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Protocol:** Pre-warm both models. For each of {13.7 GB, 4.4 GB} x {mmap, no-mmap}: llama-bench -ngl 0 -n 64 -r 5, decode tok/s only (excludes load, so both arms move the same bytes on the measured path). Sample free RAM before every rep. Score medians and spreads against K-1..K-4. Stability guard on the CONTROL only.
 
 `resolved` · `measured` · scope: One box, one RAM size, two models, two reps per arm. Nothing here is scored and nothing may be cited as a result. Contention was present and pushes TOWARD this outcome, since memory pressure is the variable under test - which is a second reason the numbers are not claimable. The excess over L-28 is what motivated it: 1.659x exceeds L-28's 1.388x page-touch penalty, and if faulting-vs-reading were the whole story it could not. · evidence: weights/exp100_nommap.py + weights/data/exp100_nommap.json (the discarded wall-clock design), weights/exp100b_mmap_residency.py + weights/data/exp100b_mmap_residency.json · cost: ~20 minutes on an idle box; no downloads, both models already local · wired into: `nothing, and the hypothesis is parked rather than pursued. To revive it someone needs a DENSE model sized near RAM capacity, which this box does not have. The incidental MoE-plus---no-mmap observation is the more promising thread and would need its own stake: if --no-mmap really defeats sparse activation, that is a warning quantprobe could print whenever a user pairs --no-mmap with a MoE, and U-23's RAM-headroom gate would need an architecture condition beside its size condition.`
+
+### U-38 — C-06 MAY ALREADY BE EXPLAINED BY L-12, AND IF SO OUR '2x BATCHING CEILING' IS A PASCAL RESULT WE HAVE BEEN GENERALISING INTO A LAW. C-06 records that batched decode saturates at roughly 2x by about 4 concurrent slots and states that nothing this project models explains it. L-12 records that batched PREFILL converges to 65-67% of this card's FLOP ceiling, i.e. prefill here is compute-bound. Those are plausibly the same phenomenon: batching performs N times the arithmetic per weight-read, so it walks a workload from bandwidth-bound toward compute-bound, and the aggregate ceiling is min(N x BW/bytes, compute_ceiling). The crossover batch size is the ratio of the two. Computed from spec-sheet FLOPs at L-12's own 65% efficiency for a 7B at 4.5 bits: GTX 1060 crosses at batch 4.5, RTX 4090 at 32, DGX Spark at 181. C-06 measured saturation at ABOUT 4 SLOTS on the 1060. That agreement is why this is worth testing rather than filing. THE CONSEQUENCE IF IT HOLDS IS LARGER THAN THE FINDING: Law 4 is a SINGLE-STREAM model and every hardware recommendation this tool makes optimises bandwidth per byte. Above the crossover, FLOPs decide instead - so for anyone serving more than one user, or running a batch job, we may be recommending the wrong hardware entirely. It also reframes the third-party DGX Spark reports: 35-45 tok/s on a 70B Q4 is impossible at batch 1 (ceiling 6.4) but ordinary at batch 6, and a Spark's crossover is ~181.
+
+**Hypothesis:** Batched decode is bandwidth-bound at small N and compute-bound at large N, crossing where N x (BW/bytes_per_token) meets the card's achievable FLOP throughput. C-06's 2x is not a universal batching ceiling but the specific crossover of a weak-FLOP Pascal card.
+
+**Predicted effect (staked):** STAKED BEFORE THE SWEEP. Sweep -np on a 7B all-in-VRAM on the 1060, N = 1,2,4,8,16, measuring AGGREGATE tok/s.
+  K-1 aggregate must rise roughly linearly with N below the predicted crossover (4.5) and flatten above it. Specifically: aggregate(4)/aggregate(1) >= 2.5, and aggregate(16)/aggregate(8) <= 1.25.
+  K-2 the measured knee must fall in N = 3-7. Outside that band the crossover arithmetic is wrong even if the shape is right, and no coefficient may be taken from it.
+  K-3 REFUTATION CONDITION, stated so this can die: if aggregate never exceeds ~2x at ANY N, then C-06 is a real ceiling with a different cause, L-12 does not explain it, and this hypothesis is wrong. That is the outcome C-06 as written already predicts.
+  K-4 the 7B must be all-in-VRAM so bandwidth is the only memory tier involved; a split placement would confound the crossover with the RAM tier and is not scoreable.
+
+**Why it is promising:** It would close a contradiction that has sat open as unexplained, using a law we already measured, at a cost of 15 minutes. And it opens the batched regime, which is where business workloads actually live - the 50-task suite is itself a batch job. It would also divide the disk-tier streaming penalty by the batch size, potentially a larger lever than everything in C-21 and C-23 combined.
+
+**Protocol:** llama-bench -m <7B Q4_K_M> -ngl 99 -n 64 -p 0 -r 3 -np {1,2,4,8,16}, aggregate tok/s per N, on an idle box. Plot aggregate vs N and locate the knee.
+
+`open` · `suggestive` · cost: ~15 minutes on the 1060; llama-bench supports -np directly, no new harness
 
 ### U-07 — Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.
 
