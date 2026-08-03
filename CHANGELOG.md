@@ -1,5 +1,63 @@
 # Changelog
 
+## 1.25.0 - 2026-08-03
+
+**A new command that found two bugs in itself before it found anything about your setup.**
+
+### `quantprobe audit-ollama`
+
+Prices the models already sitting in your ollama store. Its blobs *are* GGUFs, so the real
+header is already on disk - no name parsing, no guessing. Your tag says `7b`; the header says
+7.62B total at 4.92 effective bits.
+
+Measured on a real store, both placements timed by llama-bench on the **same blob at the same
+depth**:
+
+| | |
+|---|---|
+| ollama's own eval rate | 18.3 tok/s |
+| ollama's placement | 16%/84% CPU/GPU at ctx 4096 |
+| that split, timed here (`-ngl 24`) | 11.43 tok/s |
+| **all layers on the GPU (`-ngl 99`)** | **18.73 tok/s - 1.64x, and it fits** |
+
+ollama holds layers back on a model that fits in VRAM. One Modelfile line fixes it:
+`PARAMETER num_gpu 28`.
+
+**No "+X% on the table" claim without `--measure`.** Without it the output is labelled a
+prediction and says so. With it, both placements are timed, and the note states plainly that a
+prediction-vs-ollama gap is a claim about *the prediction* as much as about ollama.
+
+### The two bugs it shipped with, caught by running it
+
+- **It read the wrong number.** ollama prints `prompt eval rate:` *before* `eval rate:`, so a
+  bare regex took the prompt rate - 186.59 where the truth was 19.92. It doesn't look wrong; it's
+  a plausible tok/s. The tool reported ollama at 205.6 and concluded nothing was worth
+  recommending.
+- **It contaminated its own comparison.** ollama keeps a model resident ~5 minutes - measured,
+  5209 MiB of a 6144 MiB card. The audit measured ollama, then immediately benched the same GPU,
+  so `-ngl 99` couldn't fit, silently spilled to CPU, scored 4.56, and the tool confidently
+  recommended *against* a config measured by hand at 18.83 minutes earlier. It now stops ollama,
+  polls until the GPU is actually free, and **refuses to compare** when it isn't - including when
+  `nvidia-smi` is absent and cleanliness can't be verified.
+
+Neither was visible by reading the code. Both were obvious in one real run.
+
+### Also
+
+- **`auto` no longer trusts a partial download.** An interrupted `fetch` leaves a partial GGUF
+  where `auto` looks. Unguarded it crashed the command; on a different truncation it *succeeded*
+  and returned a plausible-but-wrong spec - a confident tok/s for a model that isn't there. Now
+  size-checked and guarded.
+- **Every evidence file the register cites is now in the repo, and a gate enforces it.** 37 of
+  109 citations pointed at files that weren't there.
+- **Retraction: gemma4-12B is one of the *steadiest* ladder rows**, not an unstable one. The
+  earlier claim quoted three readings out of seven; six span 1.087x across wildly different
+  calibrations.
+- **L-28**: mmap costs 1.388x against `read()`, and access *granularity* matters far more than
+  access *pattern* - 18x at 4 KB where 512 MB units showed nothing.
+- **U-37 not confirmed**: the `--no-mmap` residency hypothesis failed on a quiet box, and its
+  pilot's signal turned out to be contention.
+
 ## 1.24.0 - 2026-07-31
 
 **Three defects that were live in 1.23.0, and the one number this release still cannot stand behind.**

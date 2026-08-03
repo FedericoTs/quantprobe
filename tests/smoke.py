@@ -2521,6 +2521,48 @@ def t_ollama_eval_rate_is_generation_not_prompt():
     return None
 
 
+def t_ollama_store_reader_survives_a_broken_store():
+    """audit-ollama reads a directory it does not own, so it must degrade rather than crash.
+
+    Every case here is one a real machine produces: a half-deleted model leaves a manifest
+    with no blob, ollama drops non-JSON files into the tree, and the store may not exist at
+    all on a box where ollama was never installed. A traceback out of an audit command is a
+    bad outcome - it looks like quantprobe is broken when the user's store simply is.
+
+    Fixture-free: builds the layouts in a tempdir, no ollama required.
+    """
+    import json, os, tempfile
+    from quantprobe.ollama import installed, store_root, MODEL_MEDIA
+
+    assert installed("Z:/definitely/not/here") == [], "nonexistent store should be empty"
+    with tempfile.TemporaryDirectory() as d:
+        assert installed(d) == [], "empty dir should be empty"
+
+        # manifest pointing at a blob that is gone (half-deleted model)
+        mp = os.path.join(d, "manifests", "registry.ollama.ai", "library", "ghost")
+        os.makedirs(mp)
+        json.dump({"layers": [{"mediaType": MODEL_MEDIA, "digest": "sha256:dead", "size": 1}]},
+                  open(os.path.join(mp, "latest"), "w"))
+        assert installed(d) == [], "a manifest whose blob is missing must not be listed"
+
+        # non-JSON junk in the manifest tree must be skipped, not parsed
+        open(os.path.join(d, "manifests", "README.txt"), "w").write("not json")
+        assert installed(d) == [], "junk in manifests/ must be skipped without raising"
+
+    # resolution order: explicit --store beats env, env beats the default
+    old = os.environ.get("OLLAMA_MODELS")
+    try:
+        os.environ["OLLAMA_MODELS"] = "Z:/from-env"
+        assert store_root() == "Z:/from-env", "OLLAMA_MODELS ignored"
+        assert store_root("Z:/explicit") == "Z:/explicit", "--store did not win over env"
+    finally:
+        if old is None:
+            os.environ.pop("OLLAMA_MODELS", None)
+        else:
+            os.environ["OLLAMA_MODELS"] = old
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
