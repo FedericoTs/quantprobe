@@ -21,18 +21,51 @@ as lower bounds.
 | RTX 4090 24GB + 64GB DDR5 | **852** V | **125** V | **65** V | **408** V | **293** V | **6** R | **2** R | **3** d | 0.79 d | 0.73 d | 0.25 d |
 | RTX 5090 32GB + 128GB DDR5 | **1515** V | **222** V | **116** V | **726** V | **520** V | **14** R | **6** R | **9** R | 0.96 d | 0.83 d | 0.26 d |
 | 2x RTX 4090 48GB + 128GB DDR5 | **1450** V | **212** V | **111** V | **694** V | **498** V | **14** R | **6** R | **9** R | 0.96 d | 0.83 d | 0.26 d |
-| DGX Spark - 128GB unified @ 273 | **231** R | **34** R | **18** R | **107** V | **77** V | **50** V | **16** V | **28** V | **1** d | 0.93 d | 0.30 d |
-| 2x DGX Spark - 256GB unified @ 273 *(capacity, not speed)* | **231** R | **34** R | **18** R | **107** V | **77** V | **50** V | **16** V | **28** V | **3** d | **1** d | 0.35 d |
-| 4x DGX Spark - 512GB unified @ 273 *(capacity, not speed)* | **231** R | **34** R | **18** R | **107** V | **77** V | **50** V | **16** V | **28** V | **12** V | **12** V | 0.49 d |
+| DGX Spark - 128GB unified @ 273 *(checked vs reports)* | **231** R | **34** R | **18** R | **107** V | **77** V | **50** V | **16** V | **28** V | **1** d | 0.93 d | 0.30 d |
+| 2x DGX Spark - 256GB via RPC *(UPPER BOUND - RPC)* | **231** R | **34** R | **18** R | **107** V | **77** V | **50** V | **16** V | **28** V | **3** d | **1** d | 0.35 d |
+| 4x DGX Spark - 512GB via RPC *(UPPER BOUND - RPC)* | **231** R | **34** R | **18** R | **107** V | **77** V | **50** V | **16** V | **28** V | **12** V | **12** V | 0.49 d |
 | EPYC server - 512GB DDR5 8ch, no GPU | **169** R | **25** R | **13** R | **50** R | **36** R | **23** R | **8** R | **13** R | **6** R | **6** R | 0.50 d |
 
 *Italic* = under 1 tok/s, i.e. a capacity demo rather than usable inference.
 
-## The DGX Spark rows are the interesting ones
+## Scored against third-party DGX Spark reports
 
-Adding Sparks multiplies **capacity**, not speed. Each unit is 128 GB at 273 GB/s, and
-linking them does not raise per-unit bandwidth - a token still traverses every layer in
-sequence. So 4x Spark lets you *hold* a 2.4T model that one unit cannot, at roughly the
-same tok/s as one unit running something that fits. That is Law 4 stated as a purchase
-decision: buy Sparks to fit a bigger model, not to run the same model faster.
+The Spark rows are the only ones anyone else has published numbers for, so they are the
+closest thing we have to out-of-sample validation. On a single unit:
+
+| model | our prediction | third-party report | ratio |
+|---|---|---|---|
+| 32B dense Q4 | 8.4 | 10.7 | **1.27x low** |
+| 30B-A3B MoE Q4 | 81.7 | 89.0 | **1.09x low** |
+| Gemma-4-26B A4B Q4 | 67.4 | 51.6 | **0.77x — we over-predict** |
+
+The first two land inside C-02's floor band (real speed 1.1-1.8x above the printed
+number). The third does **not**, and we are not hiding it: either our active-parameter
+figure for that model is wrong, or the all-in-VRAM floor has an exception. It is logged
+rather than explained away, and it is the next thing to check.
+
+## Adding Sparks buys capacity, not speed
+
+Each unit is 128 GB at 273 GB/s, and linking them does not raise per-unit bandwidth - a
+token still traverses every layer in sequence. So 1x, 2x and 4x give identical tok/s on
+anything that already fits one unit. What 4x buys is the first configuration where
+GLM-5.2 (753B) and Kimi-K2.6 (1058B) become usable at ~12 tok/s instead of ~1.
+
+**The 2x/4x rows are upper bounds.** They model unified memory; real multi-node
+llama.cpp uses RPC. The one public datapoint - GLM-5.2 UD-IQ1_S on 2x Spark at 256K
+context - reports 8 tok/s where unified-memory arithmetic gives 23.7. We are **3x
+optimistic** there. One datapoint is not a coefficient, so nothing has been fitted to
+it; the gap is disclosed and the rows are labelled.
+
+## A number going around that cannot be true
+
+"DGX Spark runs 70B Q4 at 35-45 tok/s" appears in several write-ups. A 70B dense model
+at Q4 moves **42.5 GB per token**. At 273 GB/s the ceiling - perfect efficiency, eta =
+1.0, no overhead of any kind - is **6.4 tok/s**. Reaching 35-45 would need 1,488-1,914
+GB/s, i.e. **5.5-7x the bandwidth the hardware physically has**.
+
+Whatever those benchmarks measured, it was not single-stream decode of a 70B dense
+model: most likely batched throughput, prompt processing, or an MoE mislabelled as
+dense. This is the sort of claim Law 4 is *for* - you do not need the machine to know
+the number is impossible, only the bandwidth and the bytes.
 
