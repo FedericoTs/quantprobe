@@ -2789,6 +2789,27 @@ def t_probe_creates_workdir_and_refuses_to_bless_an_incomplete_curve():
     return None
 
 
+def t_serving_advisory_stays_on_the_placement_it_was_measured_on():
+    """U-38/U-39's multi-user numbers are placement-specific: 9.5x aggregate scaling was
+    measured dense-in-VRAM, the 2.0x cap was measured experts-in-RAM, and printing either on
+    the other family would be the C-15 leak all over again. Pure-CPU and other unmeasured
+    placements must print NOTHING."""
+    from quantprobe.plan import serving_advisory
+    dense = "\n".join(serving_advisory("all in VRAM"))
+    moe = "\n".join(serving_advisory("split experts: 39%->VRAM, rest->RAM"))
+    hyb = "\n".join(serving_advisory("hybrid: attention->VRAM, experts->RAM"))
+    cpu = "\n".join(serving_advisory("pure CPU (GPU idle)"))
+    assert "219.4 at 32" in dense and "widths 2-8 are STRICTLY DOMINATED" in dense
+    assert "Ampere+" in dense, "the one-box caveat is missing from the dense block"
+    assert "2.0x cap" in moe and "inverts the choice" in moe
+    assert "2.0x cap" in hyb, "hybrid expert-offload must carry the same measured cap"
+    assert "STRICTLY DOMINATED" not in moe, "the dense kernel rule leaked onto the MoE row"
+    assert "219.4 at 32" not in moe.split("inverts")[0], \
+        "dense aggregate presented as this row's own number"
+    assert cpu == "", "an unmeasured placement printed serving advice"
+    return None
+
+
 def t_x1_draft_length_rule_reaches_the_user():
     """X-1 measured that drafts of 4-7 sit in the slow kernel (48-51 tok/s) while m>=8 rides the
     fast one (88-132) - a 2.5x gap the old advice silently forfeited by omitting draft length.

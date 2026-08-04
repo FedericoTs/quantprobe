@@ -1779,7 +1779,41 @@ def binding_report(bc, bits=None, placement=None):
                  "placement -ub 2048 measured +73% on prefill and 0% on decode, while on an "
                  "all-in-VRAM row the same flag measured -39% prefill (prereg #19). Neither "
                  "number is a prediction for this row.")
+    lines += serving_advisory(placement)
     return lines
+
+
+def serving_advisory(placement):
+    """Multi-user advice from the U-38/U-39 sweeps - the half of task #66 the X-1 rule left open.
+
+    Everything here is MEASURED on one Pascal box (GTX 1060) and labelled so. Two families only,
+    because two families are what we measured; a MoE fully resident in VRAM gets NOTHING printed
+    rather than a guess. The single most useful sentence for anyone serving more than one user:
+    the best model INVERTS with concurrency - measured 219 aggregate tok/s (dense 7B in VRAM)
+    against 40 (30B MoE, experts in RAM) at 32 streams on the same box, while at 1 stream the
+    MoE is the better model. Law 4 stays a single-stream law; these lines are its measured edge.
+    """
+    if placement == "all in VRAM":
+        return [
+            "  serving          MULTI-USER (measured, U-38/U-39, one Pascal box): aggregate decode",
+            "    scales far past the single-stream number - 23.1 tok/s at 1 stream -> 175.6 at 16",
+            "    -> 219.4 at 32 (7B Q4, llama-server -np). The jump sits at the width-8->9 kernel",
+            "    boundary, so widths 2-8 are STRICTLY DOMINATED: a batch-8 step costs 148 ms, a",
+            "    batch-9 step 84 ms. Serve 1 stream or >=9, never in between, on this card class.",
+            "    Ampere+ boundary unverified - `bench --contribute` settles it.",
+        ]
+    if placement and "experts" in placement and ("CPU" in placement or "RAM" in placement):
+        return [
+            "  serving          MULTI-USER (measured, U-39, one Pascal box): batching does NOT",
+            "    survive this placement - routed-expert reads from system RAM do not amortise",
+            "    across streams (aggregate 19.7 -> 40.0 tok/s from 1 -> 32 streams, a 2.0x cap,",
+            "    against 9.5x for a dense model in VRAM on the same box). One user: this row is",
+            "    the right call. Many users: a dense model that fits VRAM inverts the choice -",
+            "    measured 219 vs 40 aggregate at 32 streams. Prefill is the exception and batches",
+            "    fine here (45 -> 225 tok/s by 8 streams): compute amortises, expert bandwidth",
+            "    does not.",
+        ]
+    return []
 
 
 
