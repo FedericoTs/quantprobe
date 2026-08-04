@@ -2204,7 +2204,13 @@ def t_c15_speculation_headline_is_reachable_on_the_row_it_prints_on():
     #     the number. (Same call with no row at all = the pre-fix string.)
     assert speculation_advice(False, "all in VRAM", row=bw) == \
         speculation_advice(False, "all in VRAM")
-    assert "**2.10x decode**" in speculation_advice(False, "all in VRAM", row=bw)
+    # since X-1 the reachable dense branch quotes the kernel-rule numbers (measured all-in-VRAM,
+    # so they are legitimate exactly here)...
+    assert "up to 5.8x" in speculation_advice(False, "all in VRAM", row=bw)
+    # ...and those numbers must NEVER leak onto a row whose own decomposition cannot reach them -
+    # that is C-15's whole point, re-asserted against the new text.
+    assert "5.8x" not in txt and "88.5" not in txt, \
+        "X-1 numbers printed on a row that cannot reach them"
     split = Row("split experts: 32%->VRAM, rest->RAM", 19.5, None, "-ngl 99",
                 {"vram_bw": 0.02, "ram_bw": 0.03})
     assert speculation_advice(True, "split experts: 32%->VRAM, rest->RAM", row=split) == \
@@ -2738,6 +2744,25 @@ def t_business_a_truncated_answer_is_not_a_wrong_answer():
     assert "TRUNCATED" in out, f"quarantine was silent:\n{out}"
     assert "50.0%" in out, f"worst-case (all truncations as failures) not disclosed:\n{out}"
     assert "arithmetic/a1" in out, f"did not name which tasks were excluded:\n{out}"
+    return None
+
+
+def t_x1_draft_length_rule_reaches_the_user():
+    """X-1 measured that drafts of 4-7 sit in the slow kernel (48-51 tok/s) while m>=8 rides the
+    fast one (88-132) - a 2.5x gap the old advice silently forfeited by omitting draft length.
+    The dense speculation advisory must now state the rule, recommend a concrete m past the
+    boundary, and keep the honest limits (Ampere unverified; prose gains nothing)."""
+    from quantprobe.plan import speculation_advice
+    # dense all-in-VRAM, not oversold - the branch every 7B-on-GPU user hits
+    note = speculation_advice(moe=False, placement="all in VRAM", row=None)
+    assert note is not None, "dense advisory vanished"
+    assert "size-m 12" in note, f"no concrete draft length recommended: {note[:120]}"
+    assert "m>=8" in note or "m >= 8" in note, "the kernel boundary rule is missing"
+    assert "5.8x" in note, "the measured ceiling is not stated"
+    assert "Ampere" in note, "the unverified-on-Ampere caveat is missing"
+    assert "1.01x" in note, "the prose-gains-nothing honesty line is missing"
+    # the old text that parked users in the slow kernel must be gone from this branch
+    assert "measured **2.10x decode**" not in note, "the underselling 2.10x default is back"
     return None
 
 

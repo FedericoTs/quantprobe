@@ -734,7 +734,9 @@ def speculation_advice(moe, placement, row=None):
         head = ("if your output REUSES its context - edits, refactors, RAG quoting - add "
                 "`--spec-type ngram-simple --spec-ngram-simple-size-m 384 "
                 "--spec-ngram-simple-size-n 4` to llama-server: measured **4.7x decode at ~3-bit** "
-                "(21.3 -> 98.8 tok/s), no download. ")
+                "(21.3 -> 98.8 tok/s), no download. Do NOT shrink m below 8: the verify pass "
+                "switches kernels at width 9 on this card class (X-1), and m=4-7 measured 2.5x "
+                "slower than m>=8 on the dense control - the large m is why this works. ")
         if oversold:
             head = ("if your output REUSES its context - edits, refactors, RAG quoting - add "
                     "`--spec-type ngram-simple --spec-ngram-simple-size-m 384 "
@@ -784,9 +786,23 @@ def speculation_advice(moe, placement, row=None):
                     "position still attends over the whole cache. Same drafter, this row's own "
                     f"decomposition: at most **{reach:.2f}x**, at 100% acceptance. Prose gains "
                     "nothing anywhere (1.01x): it drafts by copying spans from your context.")
-        return ("if you write CODE, add `--spec-type ngram-simple` - measured **2.10x decode** "
-                "(17.7 -> 37.2 tok/s), one flag, no download, identical output. Prose gains "
-                "nothing (1.01x): it drafts by copying spans from your context.")
+        # X-1 (preregistrations/2026-08-04-x1-verify-width-cliff.md): the verify pass is a fused
+        # multi-token step, and this card class serves widths <=8 with mat-vec kernels and >=9
+        # with mat-mat. Measured on the same 7B this note used to quote: draft 4-7 sits at
+        # 48-51 tok/s, draft 8 jumps to 88.5, draft 24 reaches 132.1 against a 22.8 baseline -
+        # the acceptance confound is excluded by bound (100% acceptance in the slow kernel caps
+        # at 60.8). So DRAFT LENGTH IS A KERNEL DECISION FIRST; the old 2.10x default parked
+        # users in the slow kernel and left ~2.5x on the table.
+        return ("if you write CODE, add `--spec-type ngram-simple "
+                "--spec-ngram-simple-size-m 12 --spec-ngram-simple-size-n 4` - one flag family, "
+                "no download, identical output. THE DRAFT LENGTH IS THE LEVER (X-1, staked and "
+                "measured): on pre-Ampere cards the verify pass switches kernels at width 9, so "
+                "drafts of 4-7 are strictly dominated - measured 48-51 tok/s at m=4-7 vs "
+                "**88.5 at m=8 and 124-132 at m=12-24**, against a 22.8 baseline: **up to 5.8x "
+                "single-stream** on copy-heavy work, byte-identical output. Never draft 4-7 on "
+                "this card class: m>=8 or leave speculation off. On Ampere+ the boundary is "
+                "unverified (`bench --contribute` settles it). Prose gains nothing at any m "
+                "(1.01x): the drafter copies spans from your context, and prose has none.")
     return None                    # MoE fully resident: untested here, so we say nothing
 
 
