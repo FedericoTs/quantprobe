@@ -1,0 +1,2167 @@
+[
+ {
+  "seed": 100000,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Tomas Costa, VP of Partnerships at Ferro Manufacturing. Reach me at t.costa@ferro-mfg.de.'",
+  "truth": {
+   "name": "Tomas Costa",
+   "email": "t.costa@ferro-mfg.de",
+   "company": "Ferro Manufacturing",
+   "role": "VP of Partnerships"
+  },
+  "hash": "f4db747fe6864823",
+  "teacher": "{\"name\": \"Tomas Costa\", \"email\": \"t.costa@ferro-mfg.de\", \"company\": \"Ferro Manufacturing\", \"role\": \"VP of Partnerships\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100001,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Console Rail   x8   @ 313.84\n  Cable Loom   x8   @ 366.17\n  Sensor Kit   x11   @ 411.61",
+  "truth": [
+   {
+    "item": "Console Rail",
+    "qty": 8,
+    "unit_price": 313.84
+   },
+   {
+    "item": "Cable Loom",
+    "qty": 8,
+    "unit_price": 366.17
+   },
+   {
+    "item": "Sensor Kit",
+    "qty": 11,
+    "unit_price": 411.61
+   }
+  ],
+  "hash": "e46771e5638763a2",
+  "teacher": "[{\"item\": \"Console Rail\", \"qty\": 8, \"unit_price\": 313.84}, {\"item\": \"Cable Loom\", \"qty\": 8, \"unit_price\": 366.17}, {\"item\": \"Sensor Kit\", \"qty\": 11, \"unit_price\": 411.61}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100002,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 40,000 USD, net 14.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 40000,
+   "currency": "USD",
+   "due_days": 14
+  },
+  "hash": "7b5a9c636b75aea3",
+  "teacher": "{\"company\": \"Ferro Manufacturing\", \"amount\": 40000, \"currency\": \"USD\", \"due_days\": 14}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100003,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1278 (SSO login loop), TCK-3911 (search index stale), TCK-7069 (VAT wrong on invoices).",
+  "truth": [
+   "TCK-1278",
+   "TCK-3911",
+   "TCK-7069"
+  ],
+  "hash": "196ae3115b992c25",
+  "teacher": "[\"TCK-1278\", \"TCK-3911\", \"TCK-7069\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100004,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Marta Vargas, VP of Partnerships at Ardent Systems. Reach me at m.vargas@ardent-sys.com.'",
+  "truth": {
+   "name": "Marta Vargas",
+   "email": "m.vargas@ardent-sys.com",
+   "company": "Ardent Systems",
+   "role": "VP of Partnerships"
+  },
+  "hash": "2f175f7df3144f97",
+  "teacher": "{\"name\": \"Marta Vargas\", \"email\": \"m.vargas@ardent-sys.com\", \"company\": \"Ardent Systems\", \"role\": \"VP of Partnerships\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100005,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Cable Loom   x2   @ 130.08\n  Drive Belt   x4   @ 244.1\n  Filter Pack   x10   @ 239.35",
+  "truth": [
+   {
+    "item": "Cable Loom",
+    "qty": 2,
+    "unit_price": 130.08
+   },
+   {
+    "item": "Drive Belt",
+    "qty": 4,
+    "unit_price": 244.1
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 10,
+    "unit_price": 239.35
+   }
+  ],
+  "hash": "9e93caf6845828b2",
+  "teacher": "[{\"item\": \"Cable Loom\", \"qty\": 2, \"unit_price\": 130.08}, {\"item\": \"Drive Belt\", \"qty\": 4, \"unit_price\": 244.1}, {\"item\": \"Filter Pack\", \"qty\": 10, \"unit_price\": 239.35}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100006,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Northwind Logistics will be invoiced 62,250 GBP, net 14.'",
+  "truth": {
+   "company": "Northwind Logistics",
+   "amount": 62250,
+   "currency": "GBP",
+   "due_days": 14
+  },
+  "hash": "d5df185ba7b78e1f",
+  "teacher": "{\"company\": \"Northwind Logistics\", \"amount\": 62250, \"currency\": \"GBP\", \"due_days\": 14}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100007,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2080 (SSO login loop), TCK-2631 (CSV export truncates), TCK-5903 (search index stale).",
+  "truth": [
+   "TCK-2080",
+   "TCK-2631",
+   "TCK-5903"
+  ],
+  "hash": "cc83a89818f17e0e",
+  "teacher": "[\"TCK-2080\", \"TCK-2631\", \"TCK-5903\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100008,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Alma Bianchi, Procurement Lead at Bramble Foods. Reach me at a.bianchi@bramble.co.'",
+  "truth": {
+   "name": "Alma Bianchi",
+   "email": "a.bianchi@bramble.co",
+   "company": "Bramble Foods",
+   "role": "Procurement Lead"
+  },
+  "hash": "58cd5232fd97b8c1",
+  "teacher": "{\"name\": \"Alma Bianchi\", \"email\": \"a.bianchi@bramble.co\", \"company\": \"Bramble Foods\", \"role\": \"Procurement Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100009,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget A   x7   @ 211.68\n  Drive Belt   x8   @ 177.55",
+  "truth": [
+   {
+    "item": "Widget A",
+    "qty": 7,
+    "unit_price": 211.68
+   },
+   {
+    "item": "Drive Belt",
+    "qty": 8,
+    "unit_price": 177.55
+   }
+  ],
+  "hash": "50ae5ce7418528f7",
+  "teacher": "[{\"item\": \"Widget A\", \"qty\": 7, \"unit_price\": 211.68}, {\"item\": \"Drive Belt\", \"qty\": 8, \"unit_price\": 177.55}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100010,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Lyra Health will be invoiced 68,500 CHF, net 14.'",
+  "truth": {
+   "company": "Lyra Health",
+   "amount": 68500,
+   "currency": "CHF",
+   "due_days": 14
+  },
+  "hash": "c8bcd943a831a187",
+  "teacher": "{\n  \"company\": \"Lyra Health\",\n  \"amount\": 68500,\n  \"currency\": \"CHF\",\n  \"due_days\": 14\n}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100011,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2914 (search index stale), TCK-5597 (CSV export truncates), TCK-9501 (VAT wrong on invoices).",
+  "truth": [
+   "TCK-2914",
+   "TCK-5597",
+   "TCK-9501"
+  ],
+  "hash": "050421919d5d5eb7",
+  "teacher": "[\"TCK-2914\", \"TCK-5597\", \"TCK-9501\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100012,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Marta Moreau, Finance Director at Delta Freight. Reach me at m.moreau@deltafreight.eu.'",
+  "truth": {
+   "name": "Marta Moreau",
+   "email": "m.moreau@deltafreight.eu",
+   "company": "Delta Freight",
+   "role": "Finance Director"
+  },
+  "hash": "45ca0228c6688e77",
+  "teacher": "{\"name\": \"Marta Moreau\", \"email\": \"m.moreau@deltafreight.eu\", \"company\": \"Delta Freight\", \"role\": \"Finance Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100013,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Mount Bracket   x4   @ 162.54\n  Mount Bracket   x4   @ 6.8",
+  "truth": [
+   {
+    "item": "Mount Bracket",
+    "qty": 4,
+    "unit_price": 162.54
+   },
+   {
+    "item": "Mount Bracket",
+    "qty": 4,
+    "unit_price": 6.8
+   }
+  ],
+  "hash": "61d4e4150a3d768f",
+  "teacher": "[{\"item\": \"Mount Bracket\", \"qty\": 4, \"unit_price\": 162.54}, {\"item\": \"Mount Bracket\", \"qty\": 4, \"unit_price\": 6.8}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100014,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Kestrel Analytics will be invoiced 97,250 CHF, net 45.'",
+  "truth": {
+   "company": "Kestrel Analytics",
+   "amount": 97250,
+   "currency": "CHF",
+   "due_days": 45
+  },
+  "hash": "cf6a6eefef80adbb",
+  "teacher": "{\n  \"company\": \"Kestrel Analytics\",\n  \"amount\": 97250,\n  \"currency\": \"CHF\",\n  \"due_days\": 45\n}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100015,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2283 (SSO login loop), TCK-6035 (VAT wrong on invoices), TCK-7553 (PDF renders blank).",
+  "truth": [
+   "TCK-2283",
+   "TCK-6035",
+   "TCK-7553"
+  ],
+  "hash": "c71b88de7979220c",
+  "teacher": "[\"TCK-2283\", \"TCK-6035\", \"TCK-7553\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100016,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Viktor Demir, Procurement Lead at Ferro Manufacturing. Reach me at v.demir@ferro-mfg.de.'",
+  "truth": {
+   "name": "Viktor Demir",
+   "email": "v.demir@ferro-mfg.de",
+   "company": "Ferro Manufacturing",
+   "role": "Procurement Lead"
+  },
+  "hash": "8613ba08b1c5ce2e",
+  "teacher": "{\"name\": \"Viktor Demir\", \"email\": \"v.demir@ferro-mfg.de\", \"company\": \"Ferro Manufacturing\", \"role\": \"Procurement Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100017,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Filter Pack   x9   @ 403.04\n  Filter Pack   x9   @ 167.88",
+  "truth": [
+   {
+    "item": "Filter Pack",
+    "qty": 9,
+    "unit_price": 403.04
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 9,
+    "unit_price": 167.88
+   }
+  ],
+  "hash": "d603989d67d9d3e6",
+  "teacher": "[{\"item\": \"Filter Pack\", \"qty\": 9, \"unit_price\": 403.04}, {\"item\": \"Filter Pack\", \"qty\": 9, \"unit_price\": 167.88}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100018,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Kestrel Analytics will be invoiced 45,500 EUR, net 45.'",
+  "truth": {
+   "company": "Kestrel Analytics",
+   "amount": 45500,
+   "currency": "EUR",
+   "due_days": 45
+  },
+  "hash": "5f4818119aa0c2f0",
+  "teacher": "{\"company\": \"Kestrel Analytics\", \"amount\": 45500, \"currency\": \"EUR\", \"due_days\": 45}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100019,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1718 (search index stale), TCK-5544 (CSV export truncates), TCK-8315 (PDF renders blank).",
+  "truth": [
+   "TCK-1718",
+   "TCK-5544",
+   "TCK-8315"
+  ],
+  "hash": "0032d0b38fea3856",
+  "teacher": "[\"TCK-1718\", \"TCK-5544\", \"TCK-8315\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100020,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Marta Halonen, Procurement Lead at Ardent Systems. Reach me at m.halonen@ardent-sys.com.'",
+  "truth": {
+   "name": "Marta Halonen",
+   "email": "m.halonen@ardent-sys.com",
+   "company": "Ardent Systems",
+   "role": "Procurement Lead"
+  },
+  "hash": "2f3390f7359138e9",
+  "teacher": "{\"name\": \"Marta Halonen\", \"email\": \"m.halonen@ardent-sys.com\", \"company\": \"Ardent Systems\", \"role\": \"Procurement Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100021,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Cable Loom   x4   @ 48.57\n  Widget A   x1   @ 23.18",
+  "truth": [
+   {
+    "item": "Cable Loom",
+    "qty": 4,
+    "unit_price": 48.57
+   },
+   {
+    "item": "Widget A",
+    "qty": 1,
+    "unit_price": 23.18
+   }
+  ],
+  "hash": "fc53b3ddab432fc6",
+  "teacher": "[{\"item\": \"Cable Loom\", \"qty\": 4, \"unit_price\": 48.57}, {\"item\": \"Widget A\", \"qty\": 1, \"unit_price\": 23.18}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100022,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 89,000 USD, net 60.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 89000,
+   "currency": "USD",
+   "due_days": 60
+  },
+  "hash": "9e0708f4c5f0f3cc",
+  "teacher": "{\"company\": \"Ferro Manufacturing\", \"amount\": 89000, \"currency\": \"USD\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100023,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2150 (VAT wrong on invoices), TCK-4808 (CSV export truncates), TCK-7336 (SSO login loop).",
+  "truth": [
+   "TCK-2150",
+   "TCK-4808",
+   "TCK-7336"
+  ],
+  "hash": "c2ef428d6d57659b",
+  "teacher": "[\"TCK-2150\", \"TCK-4808\", \"TCK-7336\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100024,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Viktor Novak, Data Lead at Bramble Foods. Reach me at v.novak@bramble.co.'",
+  "truth": {
+   "name": "Viktor Novak",
+   "email": "v.novak@bramble.co",
+   "company": "Bramble Foods",
+   "role": "Data Lead"
+  },
+  "hash": "bcf1ea05421c0fa0",
+  "teacher": "{\"name\": \"Viktor Novak\", \"email\": \"v.novak@bramble.co\", \"company\": \"Bramble Foods\", \"role\": \"Data Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100025,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Drive Belt   x7   @ 205.29\n  Widget B   x9   @ 29.94\n  Filter Pack   x6   @ 253.69",
+  "truth": [
+   {
+    "item": "Drive Belt",
+    "qty": 7,
+    "unit_price": 205.29
+   },
+   {
+    "item": "Widget B",
+    "qty": 9,
+    "unit_price": 29.94
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 6,
+    "unit_price": 253.69
+   }
+  ],
+  "hash": "e9a279b1e1727b64",
+  "teacher": "[{\"item\": \"Drive Belt\", \"qty\": 7, \"unit_price\": 205.29}, {\"item\": \"Widget B\", \"qty\": 9, \"unit_price\": 29.94}, {\"item\": \"Filter Pack\", \"qty\": 6, \"unit_price\": 253.69}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100026,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Solano Media will be invoiced 41,250 GBP, net 45.'",
+  "truth": {
+   "company": "Solano Media",
+   "amount": 41250,
+   "currency": "GBP",
+   "due_days": 45
+  },
+  "hash": "db93a173508c9ba5",
+  "teacher": "{\"company\": \"Solano Media\", \"amount\": \"41,250\", \"currency\": \"GBP\", \"due_days\": 45}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": false
+ },
+ {
+  "seed": 100027,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1308 (webhook retries stall), TCK-3816 (PDF renders blank), TCK-9567 (CSV export truncates).",
+  "truth": [
+   "TCK-1308",
+   "TCK-3816",
+   "TCK-9567"
+  ],
+  "hash": "3580c90c2f07a712",
+  "teacher": "[\"TCK-1308\", \"TCK-3816\", \"TCK-9567\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100028,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Clara Marchetti, Data Lead at Lyra Health. Reach me at c.marchetti@lyrahealth.org.'",
+  "truth": {
+   "name": "Clara Marchetti",
+   "email": "c.marchetti@lyrahealth.org",
+   "company": "Lyra Health",
+   "role": "Data Lead"
+  },
+  "hash": "2f3edeb45c931656",
+  "teacher": "{\"name\": \"Clara Marchetti\", \"email\": \"c.marchetti@lyrahealth.org\", \"company\": \"Lyra Health\", \"role\": \"Data Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100029,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Mount Bracket   x5   @ 74.42\n  Console Rail   x8   @ 74.0",
+  "truth": [
+   {
+    "item": "Mount Bracket",
+    "qty": 5,
+    "unit_price": 74.42
+   },
+   {
+    "item": "Console Rail",
+    "qty": 8,
+    "unit_price": 74.0
+   }
+  ],
+  "hash": "1f74b948a11c114c",
+  "teacher": "[{\"item\": \"Mount Bracket\", \"qty\": 5, \"unit_price\": 74.42}, {\"item\": \"Console Rail\", \"qty\": 8, \"unit_price\": 74.0}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100030,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Kestrel Analytics will be invoiced 35,500 GBP, net 60.'",
+  "truth": {
+   "company": "Kestrel Analytics",
+   "amount": 35500,
+   "currency": "GBP",
+   "due_days": 60
+  },
+  "hash": "25a3cd0162f6fd9e",
+  "teacher": "{\"company\": \"Kestrel Analytics\", \"amount\": 35500, \"currency\": \"GBP\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100031,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1123 (VAT wrong on invoices), TCK-3015 (search index stale), TCK-6566 (SSO login loop).",
+  "truth": [
+   "TCK-1123",
+   "TCK-3015",
+   "TCK-6566"
+  ],
+  "hash": "365f2e3319ace1e2",
+  "teacher": "[\"TCK-1123\", \"TCK-3015\", \"TCK-6566\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100032,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Ingrid Halonen, Head of Ops at Lyra Health. Reach me at i.halonen@lyrahealth.org.'",
+  "truth": {
+   "name": "Ingrid Halonen",
+   "email": "i.halonen@lyrahealth.org",
+   "company": "Lyra Health",
+   "role": "Head of Ops"
+  },
+  "hash": "5ef2b59e092a5648",
+  "teacher": "{\"name\": \"Ingrid Halonen\", \"email\": \"i.halonen@lyrahealth.org\", \"company\": \"Lyra Health\", \"role\": \"Head of Ops\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100033,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Drive Belt   x1   @ 455.52\n  Cable Loom   x2   @ 246.84",
+  "truth": [
+   {
+    "item": "Drive Belt",
+    "qty": 1,
+    "unit_price": 455.52
+   },
+   {
+    "item": "Cable Loom",
+    "qty": 2,
+    "unit_price": 246.84
+   }
+  ],
+  "hash": "7ef454c4bf29ada1",
+  "teacher": "[{\"item\": \"Drive Belt\", \"qty\": 1, \"unit_price\": 455.52}, {\"item\": \"Cable Loom\", \"qty\": 2, \"unit_price\": 246.84}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100034,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 47,500 GBP, net 30.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 47500,
+   "currency": "GBP",
+   "due_days": 30
+  },
+  "hash": "29553817941bd260",
+  "teacher": "{\"company\": \"Ferro Manufacturing\", \"amount\": 47500, \"currency\": \"GBP\", \"due_days\": 30}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100035,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1405 (CSV export truncates), TCK-7866 (SSO login loop), TCK-8549 (PDF renders blank).",
+  "truth": [
+   "TCK-1405",
+   "TCK-7866",
+   "TCK-8549"
+  ],
+  "hash": "434e3c272bb2cd87",
+  "teacher": "[\"TCK-1405\", \"TCK-7866\", \"TCK-8549\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100036,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Lena Okafor, Finance Director at Delta Freight. Reach me at l.okafor@deltafreight.eu.'",
+  "truth": {
+   "name": "Lena Okafor",
+   "email": "l.okafor@deltafreight.eu",
+   "company": "Delta Freight",
+   "role": "Finance Director"
+  },
+  "hash": "499d0e33f55b05a9",
+  "teacher": "{\"name\": \"Lena Okafor\", \"email\": \"l.okafor@deltafreight.eu\", \"company\": \"Delta Freight\", \"role\": \"Finance Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100037,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget A   x7   @ 363.71\n  Drive Belt   x4   @ 320.84\n  Widget A   x7   @ 425.18",
+  "truth": [
+   {
+    "item": "Widget A",
+    "qty": 7,
+    "unit_price": 363.71
+   },
+   {
+    "item": "Drive Belt",
+    "qty": 4,
+    "unit_price": 320.84
+   },
+   {
+    "item": "Widget A",
+    "qty": 7,
+    "unit_price": 425.18
+   }
+  ],
+  "hash": "8576a346eaa2c25d",
+  "teacher": "[{\"item\": \"Widget A\", \"qty\": 7, \"unit_price\": 363.71}, {\"item\": \"Drive Belt\", \"qty\": 4, \"unit_price\": 320.84}, {\"item\": \"Widget A\", \"qty\": 7, \"unit_price\": 425.18}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100038,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ardent Systems will be invoiced 91,750 EUR, net 90.'",
+  "truth": {
+   "company": "Ardent Systems",
+   "amount": 91750,
+   "currency": "EUR",
+   "due_days": 90
+  },
+  "hash": "2f947ebdf9b4752e",
+  "teacher": "{\"company\": \"Ardent Systems\", \"amount\": 91750, \"currency\": \"EUR\", \"due_days\": 90}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100039,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2993 (PDF renders blank), TCK-3125 (VAT wrong on invoices), TCK-8029 (webhook retries stall).",
+  "truth": [
+   "TCK-2993",
+   "TCK-3125",
+   "TCK-8029"
+  ],
+  "hash": "4fa952db6d36d61d",
+  "teacher": "[\"TCK-2993\", \"TCK-3125\", \"TCK-8029\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100040,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Rosa Lindqvist, VP of Partnerships at Solano Media. Reach me at r.lindqvist@solano.media.'",
+  "truth": {
+   "name": "Rosa Lindqvist",
+   "email": "r.lindqvist@solano.media",
+   "company": "Solano Media",
+   "role": "VP of Partnerships"
+  },
+  "hash": "9c5a0bf7276ff371",
+  "teacher": "{\"name\": \"Rosa Lindqvist\", \"email\": \"r.lindqvist@solano.media\", \"company\": \"Solano Media\", \"role\": \"VP of Partnerships\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100041,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Sensor Kit   x1   @ 196.56\n  Cable Loom   x10   @ 281.37",
+  "truth": [
+   {
+    "item": "Sensor Kit",
+    "qty": 1,
+    "unit_price": 196.56
+   },
+   {
+    "item": "Cable Loom",
+    "qty": 10,
+    "unit_price": 281.37
+   }
+  ],
+  "hash": "1b0c4a2b1d443a78",
+  "teacher": "[{\"item\": \"Sensor Kit\", \"qty\": 1, \"unit_price\": 196.56}, {\"item\": \"Cable Loom\", \"qty\": 10, \"unit_price\": 281.37}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100042,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Delta Freight will be invoiced 18,500 USD, net 90.'",
+  "truth": {
+   "company": "Delta Freight",
+   "amount": 18500,
+   "currency": "USD",
+   "due_days": 90
+  },
+  "hash": "da84a2303199a8bb",
+  "teacher": "{\"company\": \"Delta Freight\", \"amount\": 18500, \"currency\": \"USD\", \"due_days\": 90}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100043,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-7340 (VAT wrong on invoices), TCK-8443 (CSV export truncates), TCK-9228 (search index stale).",
+  "truth": [
+   "TCK-7340",
+   "TCK-8443",
+   "TCK-9228"
+  ],
+  "hash": "99f99248f01bb623",
+  "teacher": "[\"TCK-7340\", \"TCK-8443\", \"TCK-9228\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100044,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Viktor Whitfield, Data Lead at Northwind Logistics. Reach me at v.whitfield@northwind-log.com.'",
+  "truth": {
+   "name": "Viktor Whitfield",
+   "email": "v.whitfield@northwind-log.com",
+   "company": "Northwind Logistics",
+   "role": "Data Lead"
+  },
+  "hash": "87730d2b97a60ef5",
+  "teacher": "{\"name\": \"Viktor Whitfield\", \"email\": \"v.whitfield@northwind-log.com\", \"company\": \"Northwind Logistics\", \"role\": \"Data Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100045,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Drive Belt   x10   @ 117.12\n  Sensor Kit   x10   @ 183.42\n  Filter Pack   x1   @ 196.23",
+  "truth": [
+   {
+    "item": "Drive Belt",
+    "qty": 10,
+    "unit_price": 117.12
+   },
+   {
+    "item": "Sensor Kit",
+    "qty": 10,
+    "unit_price": 183.42
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 1,
+    "unit_price": 196.23
+   }
+  ],
+  "hash": "82c87f3acaf633e7",
+  "teacher": "[{\"item\": \"Drive Belt\", \"qty\": 10, \"unit_price\": 117.12}, {\"item\": \"Sensor Kit\", \"qty\": 10, \"unit_price\": 183.42}, {\"item\": \"Filter Pack\", \"qty\": 1, \"unit_price\": 196.23}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100046,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Solano Media will be invoiced 27,000 USD, net 14.'",
+  "truth": {
+   "company": "Solano Media",
+   "amount": 27000,
+   "currency": "USD",
+   "due_days": 14
+  },
+  "hash": "da91446700e34876",
+  "teacher": "{\"company\": \"Solano Media\", \"amount\": 27000, \"currency\": \"USD\", \"due_days\": 14}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100047,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2687 (webhook retries stall), TCK-8026 (SSO login loop), TCK-9043 (search index stale).",
+  "truth": [
+   "TCK-2687",
+   "TCK-8026",
+   "TCK-9043"
+  ],
+  "hash": "6ff5c3b32702e585",
+  "teacher": "[\"TCK-2687\", \"TCK-8026\", \"TCK-9043\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100048,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Clara Ruiz, Data Lead at Solano Media. Reach me at c.ruiz@solano.media.'",
+  "truth": {
+   "name": "Clara Ruiz",
+   "email": "c.ruiz@solano.media",
+   "company": "Solano Media",
+   "role": "Data Lead"
+  },
+  "hash": "132136f399643686",
+  "teacher": "{\"name\": \"Clara Ruiz\", \"email\": \"c.ruiz@solano.media\", \"company\": \"Solano Media\", \"role\": \"Data Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100049,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget B   x6   @ 355.87\n  Console Rail   x3   @ 154.37\n  Widget A   x3   @ 355.32",
+  "truth": [
+   {
+    "item": "Widget B",
+    "qty": 6,
+    "unit_price": 355.87
+   },
+   {
+    "item": "Console Rail",
+    "qty": 3,
+    "unit_price": 154.37
+   },
+   {
+    "item": "Widget A",
+    "qty": 3,
+    "unit_price": 355.32
+   }
+  ],
+  "hash": "58183a2a43932316",
+  "teacher": "[{\"item\": \"Widget B\", \"qty\": 6, \"unit_price\": 355.87}, {\"item\": \"Console Rail\", \"qty\": 3, \"unit_price\": 154.37}, {\"item\": \"Widget A\", \"qty\": 3, \"unit_price\": 355.32}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100050,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Northwind Logistics will be invoiced 56,500 GBP, net 60.'",
+  "truth": {
+   "company": "Northwind Logistics",
+   "amount": 56500,
+   "currency": "GBP",
+   "due_days": 60
+  },
+  "hash": "f36475662a96c5ac",
+  "teacher": "{\"company\": \"Northwind Logistics\", \"amount\": 56500, \"currency\": \"GBP\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100051,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2287 (PDF renders blank), TCK-2845 (VAT wrong on invoices), TCK-9924 (search index stale).",
+  "truth": [
+   "TCK-2287",
+   "TCK-2845",
+   "TCK-9924"
+  ],
+  "hash": "da1e1a5cde907886",
+  "teacher": "[\"TCK-2287\", \"TCK-2845\", \"TCK-9924\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100052,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Tomas Kowalski, Finance Director at Bramble Foods. Reach me at t.kowalski@bramble.co.'",
+  "truth": {
+   "name": "Tomas Kowalski",
+   "email": "t.kowalski@bramble.co",
+   "company": "Bramble Foods",
+   "role": "Finance Director"
+  },
+  "hash": "8c5afa90e5179746",
+  "teacher": "{\"name\": \"Tomas Kowalski\", \"email\": \"t.kowalski@bramble.co\", \"company\": \"Bramble Foods\", \"role\": \"Finance Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100053,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget A   x3   @ 9.0\n  Console Rail   x6   @ 191.08\n  Widget A   x5   @ 63.59",
+  "truth": [
+   {
+    "item": "Widget A",
+    "qty": 3,
+    "unit_price": 9.0
+   },
+   {
+    "item": "Console Rail",
+    "qty": 6,
+    "unit_price": 191.08
+   },
+   {
+    "item": "Widget A",
+    "qty": 5,
+    "unit_price": 63.59
+   }
+  ],
+  "hash": "6b685d34be153b97",
+  "teacher": "[{\"item\": \"Widget A\", \"qty\": 3, \"unit_price\": 9.0}, {\"item\": \"Console Rail\", \"qty\": 6, \"unit_price\": 191.08}, {\"item\": \"Widget A\", \"qty\": 5, \"unit_price\": 63.59}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100054,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Solano Media will be invoiced 3,750 EUR, net 45.'",
+  "truth": {
+   "company": "Solano Media",
+   "amount": 3750,
+   "currency": "EUR",
+   "due_days": 45
+  },
+  "hash": "34136336b4ed76b0",
+  "teacher": "{\"company\": \"Solano Media\", \"amount\": 3750, \"currency\": \"EUR\", \"due_days\": 45}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100055,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1891 (webhook retries stall), TCK-4020 (PDF renders blank), TCK-9710 (CSV export truncates).",
+  "truth": [
+   "TCK-1891",
+   "TCK-4020",
+   "TCK-9710"
+  ],
+  "hash": "5823ee1794f46796",
+  "teacher": "[\"TCK-1891\", \"TCK-4020\", \"TCK-9710\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100056,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Yusuf Marchetti, Finance Director at Lyra Health. Reach me at y.marchetti@lyrahealth.org.'",
+  "truth": {
+   "name": "Yusuf Marchetti",
+   "email": "y.marchetti@lyrahealth.org",
+   "company": "Lyra Health",
+   "role": "Finance Director"
+  },
+  "hash": "de053ac1f88325b1",
+  "teacher": "{\"name\": \"Yusuf Marchetti\", \"email\": \"y.marchetti@lyrahealth.org\", \"company\": \"Lyra Health\", \"role\": \"Finance Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100057,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Mount Bracket   x11   @ 302.62\n  Sensor Kit   x6   @ 62.61\n  Console Rail   x8   @ 431.41",
+  "truth": [
+   {
+    "item": "Mount Bracket",
+    "qty": 11,
+    "unit_price": 302.62
+   },
+   {
+    "item": "Sensor Kit",
+    "qty": 6,
+    "unit_price": 62.61
+   },
+   {
+    "item": "Console Rail",
+    "qty": 8,
+    "unit_price": 431.41
+   }
+  ],
+  "hash": "b36a2be3aa84cd42",
+  "teacher": "[{\"item\": \"Mount Bracket\", \"qty\": 11, \"unit_price\": 302.62}, {\"item\": \"Sensor Kit\", \"qty\": 6, \"unit_price\": 62.61}, {\"item\": \"Console Rail\", \"qty\": 8, \"unit_price\": 431.41}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100058,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Northwind Logistics will be invoiced 14,250 CHF, net 60.'",
+  "truth": {
+   "company": "Northwind Logistics",
+   "amount": 14250,
+   "currency": "CHF",
+   "due_days": 60
+  },
+  "hash": "5a5d1a914885f141",
+  "teacher": "{\"company\": \"Northwind Logistics\", \"amount\": 14250, \"currency\": \"CHF\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100059,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2484 (webhook retries stall), TCK-2711 (VAT wrong on invoices), TCK-3141 (CSV export truncates).",
+  "truth": [
+   "TCK-2484",
+   "TCK-2711",
+   "TCK-3141"
+  ],
+  "hash": "e30d560ac201600d",
+  "teacher": "[\"TCK-2484\", \"TCK-2711\", \"TCK-3141\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100060,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Sofia Vargas, Account Director at Lyra Health. Reach me at s.vargas@lyrahealth.org.'",
+  "truth": {
+   "name": "Sofia Vargas",
+   "email": "s.vargas@lyrahealth.org",
+   "company": "Lyra Health",
+   "role": "Account Director"
+  },
+  "hash": "3afff88887bf869c",
+  "teacher": "{\"name\": \"Sofia Vargas\", \"email\": \"s.vargas@lyrahealth.org\", \"company\": \"Lyra Health\", \"role\": \"Account Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100061,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Console Rail   x9   @ 173.85\n  Cable Loom   x10   @ 319.1",
+  "truth": [
+   {
+    "item": "Console Rail",
+    "qty": 9,
+    "unit_price": 173.85
+   },
+   {
+    "item": "Cable Loom",
+    "qty": 10,
+    "unit_price": 319.1
+   }
+  ],
+  "hash": "11286785075df9f7",
+  "teacher": "[{\"item\": \"Console Rail\", \"qty\": 9, \"unit_price\": 173.85}, {\"item\": \"Cable Loom\", \"qty\": 10, \"unit_price\": 319.1}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100062,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Bramble Foods will be invoiced 84,250 CHF, net 30.'",
+  "truth": {
+   "company": "Bramble Foods",
+   "amount": 84250,
+   "currency": "CHF",
+   "due_days": 30
+  },
+  "hash": "a34cbe543478e02a",
+  "teacher": "{\"company\": \"Bramble Foods\", \"amount\": 84250, \"currency\": \"CHF\", \"due_days\": 30}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100063,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-4986 (search index stale), TCK-6510 (CSV export truncates), TCK-7999 (SSO login loop).",
+  "truth": [
+   "TCK-4986",
+   "TCK-6510",
+   "TCK-7999"
+  ],
+  "hash": "48a79d08e2764385",
+  "teacher": "[\"TCK-4986\", \"TCK-6510\", \"TCK-7999\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100064,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Rafael Moreau, Engineering Manager at Lyra Health. Reach me at r.moreau@lyrahealth.org.'",
+  "truth": {
+   "name": "Rafael Moreau",
+   "email": "r.moreau@lyrahealth.org",
+   "company": "Lyra Health",
+   "role": "Engineering Manager"
+  },
+  "hash": "0fd94d973ad5d527",
+  "teacher": "{\"name\": \"Rafael Moreau\", \"email\": \"r.moreau@lyrahealth.org\", \"company\": \"Lyra Health\", \"role\": \"Engineering Manager\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100065,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Filter Pack   x9   @ 335.67\n  Sensor Kit   x5   @ 94.51\n  Filter Pack   x2   @ 190.9",
+  "truth": [
+   {
+    "item": "Filter Pack",
+    "qty": 9,
+    "unit_price": 335.67
+   },
+   {
+    "item": "Sensor Kit",
+    "qty": 5,
+    "unit_price": 94.51
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 2,
+    "unit_price": 190.9
+   }
+  ],
+  "hash": "2d06510b393345f1",
+  "teacher": "[{\"item\": \"Filter Pack\", \"qty\": 9, \"unit_price\": 335.67}, {\"item\": \"Sensor Kit\", \"qty\": 5, \"unit_price\": 94.51}, {\"item\": \"Filter Pack\", \"qty\": 2, \"unit_price\": 190.9}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100066,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Delta Freight will be invoiced 88,500 CHF, net 90.'",
+  "truth": {
+   "company": "Delta Freight",
+   "amount": 88500,
+   "currency": "CHF",
+   "due_days": 90
+  },
+  "hash": "14fe4f1c3e1ea9d6",
+  "teacher": "{\n  \"company\": \"Delta Freight\",\n  \"amount\": 88500,\n  \"currency\": \"CHF\",\n  \"due_days\": 90\n}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100067,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2598 (CSV export truncates), TCK-2898 (webhook retries stall), TCK-5606 (SSO login loop).",
+  "truth": [
+   "TCK-2598",
+   "TCK-2898",
+   "TCK-5606"
+  ],
+  "hash": "df0fa30d03e70d8b",
+  "teacher": "[\"TCK-2598\", \"TCK-2898\", \"TCK-5606\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100068,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Tomas Vargas, VP of Partnerships at Kestrel Analytics. Reach me at t.vargas@kestrel.io.'",
+  "truth": {
+   "name": "Tomas Vargas",
+   "email": "t.vargas@kestrel.io",
+   "company": "Kestrel Analytics",
+   "role": "VP of Partnerships"
+  },
+  "hash": "094eba889356870b",
+  "teacher": "{\"name\": \"Tomas Vargas\", \"email\": \"t.vargas@kestrel.io\", \"company\": \"Kestrel Analytics\", \"role\": \"VP of Partnerships\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100069,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget A   x8   @ 98.09\n  Filter Pack   x9   @ 423.84\n  Filter Pack   x3   @ 274.43",
+  "truth": [
+   {
+    "item": "Widget A",
+    "qty": 8,
+    "unit_price": 98.09
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 9,
+    "unit_price": 423.84
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 3,
+    "unit_price": 274.43
+   }
+  ],
+  "hash": "52c0ac1bc2781994",
+  "teacher": "[{\"item\": \"Widget A\", \"qty\": 8, \"unit_price\": 98.09}, {\"item\": \"Filter Pack\", \"qty\": 9, \"unit_price\": 423.84}, {\"item\": \"Filter Pack\", \"qty\": 3, \"unit_price\": 274.43}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100070,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Northwind Logistics will be invoiced 95,250 USD, net 30.'",
+  "truth": {
+   "company": "Northwind Logistics",
+   "amount": 95250,
+   "currency": "USD",
+   "due_days": 30
+  },
+  "hash": "1486c8d0089c3d1d",
+  "teacher": "{\"company\": \"Northwind Logistics\", \"amount\": 95250, \"currency\": \"USD\", \"due_days\": 30}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100071,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-5891 (VAT wrong on invoices), TCK-6497 (webhook retries stall), TCK-7967 (PDF renders blank).",
+  "truth": [
+   "TCK-5891",
+   "TCK-6497",
+   "TCK-7967"
+  ],
+  "hash": "2159ab7c14f046a2",
+  "teacher": "[\"TCK-5891\", \"TCK-6497\", \"TCK-7967\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100072,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Alma Vargas, Head of Ops at Northwind Logistics. Reach me at a.vargas@northwind-log.com.'",
+  "truth": {
+   "name": "Alma Vargas",
+   "email": "a.vargas@northwind-log.com",
+   "company": "Northwind Logistics",
+   "role": "Head of Ops"
+  },
+  "hash": "8b810ea04061c94e",
+  "teacher": "{\"name\": \"Alma Vargas\", \"email\": \"a.vargas@northwind-log.com\", \"company\": \"Northwind Logistics\", \"role\": \"Head of Ops\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100073,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Sensor Kit   x4   @ 277.88\n  Console Rail   x11   @ 383.69",
+  "truth": [
+   {
+    "item": "Sensor Kit",
+    "qty": 4,
+    "unit_price": 277.88
+   },
+   {
+    "item": "Console Rail",
+    "qty": 11,
+    "unit_price": 383.69
+   }
+  ],
+  "hash": "0a027c851baadc6d",
+  "teacher": "[{\"item\": \"Sensor Kit\", \"qty\": \"4\", \"unit_price\": \"277.88\"}, {\"item\": \"Console Rail\", \"qty\": \"11\", \"unit_price\": \"383.69\"}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": false
+ },
+ {
+  "seed": 100074,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 14,500 USD, net 90.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 14500,
+   "currency": "USD",
+   "due_days": 90
+  },
+  "hash": "2b456d2f2341a113",
+  "teacher": "{\"company\": \"Ferro Manufacturing\", \"amount\": 14500, \"currency\": \"USD\", \"due_days\": 90}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100075,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-3515 (PDF renders blank), TCK-3549 (webhook retries stall), TCK-9948 (search index stale).",
+  "truth": [
+   "TCK-3515",
+   "TCK-3549",
+   "TCK-9948"
+  ],
+  "hash": "d0889f7e3a180f86",
+  "teacher": "[\"TCK-3515\", \"TCK-3549\", \"TCK-9948\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100076,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Piotr Whitfield, Finance Director at Ferro Manufacturing. Reach me at p.whitfield@ferro-mfg.de.'",
+  "truth": {
+   "name": "Piotr Whitfield",
+   "email": "p.whitfield@ferro-mfg.de",
+   "company": "Ferro Manufacturing",
+   "role": "Finance Director"
+  },
+  "hash": "9dd6d4772ee2a252",
+  "teacher": "{\"name\": \"Piotr Whitfield\", \"email\": \"p.whitfield@ferro-mfg.de\", \"company\": \"Ferro Manufacturing\", \"role\": \"Finance Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100077,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Sensor Kit   x2   @ 215.59\n  Drive Belt   x6   @ 444.62\n  Widget A   x9   @ 317.85",
+  "truth": [
+   {
+    "item": "Sensor Kit",
+    "qty": 2,
+    "unit_price": 215.59
+   },
+   {
+    "item": "Drive Belt",
+    "qty": 6,
+    "unit_price": 444.62
+   },
+   {
+    "item": "Widget A",
+    "qty": 9,
+    "unit_price": 317.85
+   }
+  ],
+  "hash": "980da28b1fd0db8b",
+  "teacher": "[{\"item\": \"Sensor Kit\", \"qty\": 2, \"unit_price\": 215.59}, {\"item\": \"Drive Belt\", \"qty\": 6, \"unit_price\": 444.62}, {\"item\": \"Widget A\", \"qty\": 9, \"unit_price\": 317.85}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100078,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Lyra Health will be invoiced 10,250 GBP, net 60.'",
+  "truth": {
+   "company": "Lyra Health",
+   "amount": 10250,
+   "currency": "GBP",
+   "due_days": 60
+  },
+  "hash": "d0576d036de15e75",
+  "teacher": "{\"company\": \"Lyra Health\", \"amount\": 10250, \"currency\": \"GBP\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100079,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-5440 (SSO login loop), TCK-6779 (VAT wrong on invoices), TCK-8984 (webhook retries stall).",
+  "truth": [
+   "TCK-5440",
+   "TCK-6779",
+   "TCK-8984"
+  ],
+  "hash": "a6c4cad8ae71fccc",
+  "teacher": "[\"TCK-5440\", \"TCK-6779\", \"TCK-8984\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100080,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Piotr Lindqvist, Data Lead at Delta Freight. Reach me at p.lindqvist@deltafreight.eu.'",
+  "truth": {
+   "name": "Piotr Lindqvist",
+   "email": "p.lindqvist@deltafreight.eu",
+   "company": "Delta Freight",
+   "role": "Data Lead"
+  },
+  "hash": "c034bedf6878fb04",
+  "teacher": "{\"name\": \"Piotr Lindqvist\", \"email\": \"p.lindqvist@deltafreight.eu\", \"company\": \"Delta Freight\", \"role\": \"Data Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100081,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Cable Loom   x7   @ 140.96\n  Console Rail   x8   @ 62.2\n  Filter Pack   x9   @ 179.73",
+  "truth": [
+   {
+    "item": "Cable Loom",
+    "qty": 7,
+    "unit_price": 140.96
+   },
+   {
+    "item": "Console Rail",
+    "qty": 8,
+    "unit_price": 62.2
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 9,
+    "unit_price": 179.73
+   }
+  ],
+  "hash": "a70e73b5ab3a036f",
+  "teacher": "[{\"item\": \"Cable Loom\", \"qty\": 7, \"unit_price\": 140.96}, {\"item\": \"Console Rail\", \"qty\": 8, \"unit_price\": 62.2}, {\"item\": \"Filter Pack\", \"qty\": 9, \"unit_price\": 179.73}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100082,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Solano Media will be invoiced 88,500 EUR, net 60.'",
+  "truth": {
+   "company": "Solano Media",
+   "amount": 88500,
+   "currency": "EUR",
+   "due_days": 60
+  },
+  "hash": "c2f9c46f2576586f",
+  "teacher": "{\"company\": \"Solano Media\", \"amount\": 88500, \"currency\": \"EUR\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100083,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-3969 (VAT wrong on invoices), TCK-7165 (PDF renders blank), TCK-9852 (webhook retries stall).",
+  "truth": [
+   "TCK-3969",
+   "TCK-7165",
+   "TCK-9852"
+  ],
+  "hash": "bdf57dc2ebfb56dc",
+  "teacher": "[\"TCK-3969\", \"TCK-7165\", \"TCK-9852\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100084,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Viktor Moreau, Procurement Lead at Lyra Health. Reach me at v.moreau@lyrahealth.org.'",
+  "truth": {
+   "name": "Viktor Moreau",
+   "email": "v.moreau@lyrahealth.org",
+   "company": "Lyra Health",
+   "role": "Procurement Lead"
+  },
+  "hash": "3c522e4b5c3f7602",
+  "teacher": "{\"name\": \"Viktor Moreau\", \"email\": \"v.moreau@lyrahealth.org\", \"company\": \"Lyra Health\", \"role\": \"Procurement Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100085,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Drive Belt   x6   @ 277.05\n  Widget B   x5   @ 9.0\n  Widget B   x4   @ 75.55",
+  "truth": [
+   {
+    "item": "Drive Belt",
+    "qty": 6,
+    "unit_price": 277.05
+   },
+   {
+    "item": "Widget B",
+    "qty": 5,
+    "unit_price": 9.0
+   },
+   {
+    "item": "Widget B",
+    "qty": 4,
+    "unit_price": 75.55
+   }
+  ],
+  "hash": "38f2d824ef081122",
+  "teacher": "[{\"item\": \"Drive Belt\", \"qty\": 6, \"unit_price\": 277.05}, {\"item\": \"Widget B\", \"qty\": 5, \"unit_price\": 9.0}, {\"item\": \"Widget B\", \"qty\": 4, \"unit_price\": 75.55}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100086,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ardent Systems will be invoiced 95,250 CHF, net 60.'",
+  "truth": {
+   "company": "Ardent Systems",
+   "amount": 95250,
+   "currency": "CHF",
+   "due_days": 60
+  },
+  "hash": "825b449da67bd00a",
+  "teacher": "{\"company\": \"Ardent Systems\", \"amount\": \"95,250\", \"currency\": \"CHF\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": false
+ },
+ {
+  "seed": 100087,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-5293 (VAT wrong on invoices), TCK-9568 (CSV export truncates), TCK-9759 (SSO login loop).",
+  "truth": [
+   "TCK-5293",
+   "TCK-9568",
+   "TCK-9759"
+  ],
+  "hash": "4745bd447fd1f5f5",
+  "teacher": "[\"TCK-5293\", \"TCK-9568\", \"TCK-9759\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100088,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Nadia Lindqvist, Finance Director at Ardent Systems. Reach me at n.lindqvist@ardent-sys.com.'",
+  "truth": {
+   "name": "Nadia Lindqvist",
+   "email": "n.lindqvist@ardent-sys.com",
+   "company": "Ardent Systems",
+   "role": "Finance Director"
+  },
+  "hash": "469ae12336a60354",
+  "teacher": "{\"name\": \"Nadia Lindqvist\", \"email\": \"n.lindqvist@ardent-sys.com\", \"company\": \"Ardent Systems\", \"role\": \"Finance Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100089,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Cable Loom   x8   @ 222.88\n  Drive Belt   x7   @ 415.17",
+  "truth": [
+   {
+    "item": "Cable Loom",
+    "qty": 8,
+    "unit_price": 222.88
+   },
+   {
+    "item": "Drive Belt",
+    "qty": 7,
+    "unit_price": 415.17
+   }
+  ],
+  "hash": "ab6ad9115f170f7b",
+  "teacher": "[{\"item\": \"Cable Loom\", \"qty\": 8, \"unit_price\": 222.88}, {\"item\": \"Drive Belt\", \"qty\": 7, \"unit_price\": 415.17}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100090,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Delta Freight will be invoiced 46,000 GBP, net 14.'",
+  "truth": {
+   "company": "Delta Freight",
+   "amount": 46000,
+   "currency": "GBP",
+   "due_days": 14
+  },
+  "hash": "d94d7d4327335558",
+  "teacher": "{\"company\": \"Delta Freight\", \"amount\": 46000, \"currency\": \"GBP\", \"due_days\": 14}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100091,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1442 (CSV export truncates), TCK-2679 (PDF renders blank), TCK-8902 (VAT wrong on invoices).",
+  "truth": [
+   "TCK-1442",
+   "TCK-2679",
+   "TCK-8902"
+  ],
+  "hash": "02f0791c06093141",
+  "teacher": "[\"TCK-1442\", \"TCK-2679\", \"TCK-8902\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100092,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Alma Okafor, Procurement Lead at Bramble Foods. Reach me at a.okafor@bramble.co.'",
+  "truth": {
+   "name": "Alma Okafor",
+   "email": "a.okafor@bramble.co",
+   "company": "Bramble Foods",
+   "role": "Procurement Lead"
+  },
+  "hash": "cc9ee31b1eb70ee9",
+  "teacher": "{\"name\": \"Alma Okafor\", \"email\": \"a.okafor@bramble.co\", \"company\": \"Bramble Foods\", \"role\": \"Procurement Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100093,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Console Rail   x11   @ 105.43\n  Widget B   x4   @ 287.72",
+  "truth": [
+   {
+    "item": "Console Rail",
+    "qty": 11,
+    "unit_price": 105.43
+   },
+   {
+    "item": "Widget B",
+    "qty": 4,
+    "unit_price": 287.72
+   }
+  ],
+  "hash": "3cd3d7fcf4701b38",
+  "teacher": "[{\"item\": \"Console Rail\", \"qty\": \"11\", \"unit_price\": \"105.43\"}, {\"item\": \"Widget B\", \"qty\": \"4\", \"unit_price\": \"287.72\"}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": false
+ },
+ {
+  "seed": 100094,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 11,250 GBP, net 45.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 11250,
+   "currency": "GBP",
+   "due_days": 45
+  },
+  "hash": "b9770101e1c289eb",
+  "teacher": "{\"company\": \"Ferro Manufacturing\", \"amount\": 11250, \"currency\": \"GBP\", \"due_days\": 45}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100095,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-6190 (PDF renders blank), TCK-9028 (webhook retries stall), TCK-9960 (CSV export truncates).",
+  "truth": [
+   "TCK-6190",
+   "TCK-9028",
+   "TCK-9960"
+  ],
+  "hash": "fdc94e427fc78de6",
+  "teacher": "[\"TCK-6190\", \"TCK-9028\", \"TCK-9960\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100096,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Lena Demir, Account Director at Ferro Manufacturing. Reach me at l.demir@ferro-mfg.de.'",
+  "truth": {
+   "name": "Lena Demir",
+   "email": "l.demir@ferro-mfg.de",
+   "company": "Ferro Manufacturing",
+   "role": "Account Director"
+  },
+  "hash": "ac29fa758af13166",
+  "teacher": "{\"name\": \"Lena Demir\", \"email\": \"l.demir@ferro-mfg.de\", \"company\": \"Ferro Manufacturing\", \"role\": \"Account Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100097,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Sensor Kit   x10   @ 317.97\n  Widget A   x3   @ 382.9\n  Mount Bracket   x8   @ 357.45",
+  "truth": [
+   {
+    "item": "Sensor Kit",
+    "qty": 10,
+    "unit_price": 317.97
+   },
+   {
+    "item": "Widget A",
+    "qty": 3,
+    "unit_price": 382.9
+   },
+   {
+    "item": "Mount Bracket",
+    "qty": 8,
+    "unit_price": 357.45
+   }
+  ],
+  "hash": "3b7ac9761fa6243c",
+  "teacher": "[{\"item\": \"Sensor Kit\", \"qty\": 10, \"unit_price\": 317.97}, {\"item\": \"Widget A\", \"qty\": 3, \"unit_price\": 382.9}, {\"item\": \"Mount Bracket\", \"qty\": 8, \"unit_price\": 357.45}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100098,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 72,250 GBP, net 14.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 72250,
+   "currency": "GBP",
+   "due_days": 14
+  },
+  "hash": "6427c83f0952d353",
+  "teacher": "{\"company\": \"Ferro Manufacturing\", \"amount\": 72250, \"currency\": \"GBP\", \"due_days\": 14}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100099,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1428 (webhook retries stall), TCK-4240 (CSV export truncates), TCK-6693 (search index stale).",
+  "truth": [
+   "TCK-1428",
+   "TCK-4240",
+   "TCK-6693"
+  ],
+  "hash": "5480f14c4db08ac3",
+  "teacher": "[\"TCK-1428\", \"TCK-4240\", \"TCK-6693\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100100,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Alma Vargas, Data Lead at Ardent Systems. Reach me at a.vargas@ardent-sys.com.'",
+  "truth": {
+   "name": "Alma Vargas",
+   "email": "a.vargas@ardent-sys.com",
+   "company": "Ardent Systems",
+   "role": "Data Lead"
+  },
+  "hash": "de3eeee94f7bddcb",
+  "teacher": "{\"name\": \"Alma Vargas\", \"email\": \"a.vargas@ardent-sys.com\", \"company\": \"Ardent Systems\", \"role\": \"Data Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100101,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Cable Loom   x8   @ 62.82\n  Drive Belt   x9   @ 388.43\n  Widget B   x11   @ 7.12",
+  "truth": [
+   {
+    "item": "Cable Loom",
+    "qty": 8,
+    "unit_price": 62.82
+   },
+   {
+    "item": "Drive Belt",
+    "qty": 9,
+    "unit_price": 388.43
+   },
+   {
+    "item": "Widget B",
+    "qty": 11,
+    "unit_price": 7.12
+   }
+  ],
+  "hash": "ac6855ca5bb471ae",
+  "teacher": "[{\"item\": \"Cable Loom\", \"qty\": 8, \"unit_price\": 62.82}, {\"item\": \"Drive Belt\", \"qty\": 9, \"unit_price\": 388.43}, {\"item\": \"Widget B\", \"qty\": 11, \"unit_price\": 7.12}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100102,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Northwind Logistics will be invoiced 93,500 CHF, net 60.'",
+  "truth": {
+   "company": "Northwind Logistics",
+   "amount": 93500,
+   "currency": "CHF",
+   "due_days": 60
+  },
+  "hash": "d1c6932f7934d012",
+  "teacher": "{\"company\": \"Northwind Logistics\", \"amount\": 93500, \"currency\": \"CHF\", \"due_days\": 60}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100103,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1296 (VAT wrong on invoices), TCK-2194 (PDF renders blank), TCK-4070 (search index stale).",
+  "truth": [
+   "TCK-1296",
+   "TCK-2194",
+   "TCK-4070"
+  ],
+  "hash": "c1a2af112f7e5dad",
+  "teacher": "[\"TCK-1296\", \"TCK-2194\", \"TCK-4070\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100104,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Rosa Okafor, Procurement Lead at Kestrel Analytics. Reach me at r.okafor@kestrel.io.'",
+  "truth": {
+   "name": "Rosa Okafor",
+   "email": "r.okafor@kestrel.io",
+   "company": "Kestrel Analytics",
+   "role": "Procurement Lead"
+  },
+  "hash": "3dbca6c79321f086",
+  "teacher": "{\"name\": \"Rosa Okafor\", \"email\": \"r.okafor@kestrel.io\", \"company\": \"Kestrel Analytics\", \"role\": \"Procurement Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100105,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Mount Bracket   x10   @ 100.33\n  Cable Loom   x11   @ 247.01\n  Cable Loom   x1   @ 207.81",
+  "truth": [
+   {
+    "item": "Mount Bracket",
+    "qty": 10,
+    "unit_price": 100.33
+   },
+   {
+    "item": "Cable Loom",
+    "qty": 11,
+    "unit_price": 247.01
+   },
+   {
+    "item": "Cable Loom",
+    "qty": 1,
+    "unit_price": 207.81
+   }
+  ],
+  "hash": "5c8431493ce1dd16",
+  "teacher": "[{\"item\": \"Mount Bracket\", \"qty\": 10, \"unit_price\": 100.33}, {\"item\": \"Cable Loom\", \"qty\": 11, \"unit_price\": 247.01}, {\"item\": \"Cable Loom\", \"qty\": 1, \"unit_price\": 207.81}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100106,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 60,750 USD, net 30.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 60750,
+   "currency": "USD",
+   "due_days": 30
+  },
+  "hash": "e20a0dae6a2df45d",
+  "teacher": "{\"company\": \"Ferro Manufacturing\", \"amount\": 60750, \"currency\": \"USD\", \"due_days\": 30}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100107,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-2664 (CSV export truncates), TCK-2886 (SSO login loop), TCK-5163 (VAT wrong on invoices).",
+  "truth": [
+   "TCK-2664",
+   "TCK-2886",
+   "TCK-5163"
+  ],
+  "hash": "9fcbe8b5c257361f",
+  "teacher": "[\"TCK-2664\", \"TCK-2886\", \"TCK-5163\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100108,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Clara Haddad, Finance Director at Kestrel Analytics. Reach me at c.haddad@kestrel.io.'",
+  "truth": {
+   "name": "Clara Haddad",
+   "email": "c.haddad@kestrel.io",
+   "company": "Kestrel Analytics",
+   "role": "Finance Director"
+  },
+  "hash": "fa57e083567d53be",
+  "teacher": "{\"name\": \"Clara Haddad\", \"email\": \"c.haddad@kestrel.io\", \"company\": \"Kestrel Analytics\", \"role\": \"Finance Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100109,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Cable Loom   x3   @ 231.67\n  Filter Pack   x11   @ 471.99\n  Sensor Kit   x6   @ 318.78",
+  "truth": [
+   {
+    "item": "Cable Loom",
+    "qty": 3,
+    "unit_price": 231.67
+   },
+   {
+    "item": "Filter Pack",
+    "qty": 11,
+    "unit_price": 471.99
+   },
+   {
+    "item": "Sensor Kit",
+    "qty": 6,
+    "unit_price": 318.78
+   }
+  ],
+  "hash": "cecd2cc666d68ff9",
+  "teacher": "[{\"item\":\"Cable Loom\",\"qty\":3,\"unit_price\":231.67},{\"item\":\"Filter Pack\",\"qty\":11,\"unit_price\":471.99},{\"item\":\"Sensor Kit\",\"qty\":6,\"unit_price\":318.78}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100110,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Ferro Manufacturing will be invoiced 2,250 USD, net 30.'",
+  "truth": {
+   "company": "Ferro Manufacturing",
+   "amount": 2250,
+   "currency": "USD",
+   "due_days": 30
+  },
+  "hash": "1f92c992f5d7f0b6",
+  "teacher": "{\n  \"company\": \"Ferro Manufacturing\",\n  \"amount\": 2250,\n  \"currency\": \"USD\",\n  \"due_days\": 30\n}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100111,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1286 (SSO login loop), TCK-5750 (PDF renders blank), TCK-5901 (search index stale).",
+  "truth": [
+   "TCK-1286",
+   "TCK-5750",
+   "TCK-5901"
+  ],
+  "hash": "be906598ff9b5c68",
+  "teacher": "[\"TCK-1286\", \"TCK-5750\", \"TCK-5901\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100112,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Clara Kowalski, Data Lead at Bramble Foods. Reach me at c.kowalski@bramble.co.'",
+  "truth": {
+   "name": "Clara Kowalski",
+   "email": "c.kowalski@bramble.co",
+   "company": "Bramble Foods",
+   "role": "Data Lead"
+  },
+  "hash": "456eb3fc66b13578",
+  "teacher": "{\"name\": \"Clara Kowalski\", \"email\": \"c.kowalski@bramble.co\", \"company\": \"Bramble Foods\", \"role\": \"Data Lead\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100113,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget A   x11   @ 344.45\n  Sensor Kit   x9   @ 399.17\n  Console Rail   x8   @ 244.64",
+  "truth": [
+   {
+    "item": "Widget A",
+    "qty": 11,
+    "unit_price": 344.45
+   },
+   {
+    "item": "Sensor Kit",
+    "qty": 9,
+    "unit_price": 399.17
+   },
+   {
+    "item": "Console Rail",
+    "qty": 8,
+    "unit_price": 244.64
+   }
+  ],
+  "hash": "c921c60d3ace7517",
+  "teacher": "[{\"item\": \"Widget A\", \"qty\": 11, \"unit_price\": 344.45}, {\"item\": \"Sensor Kit\", \"qty\": 9, \"unit_price\": 399.17}, {\"item\": \"Console Rail\", \"qty\": 8, \"unit_price\": 244.64}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100114,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Bramble Foods will be invoiced 46,500 CHF, net 14.'",
+  "truth": {
+   "company": "Bramble Foods",
+   "amount": 46500,
+   "currency": "CHF",
+   "due_days": 14
+  },
+  "hash": "610e173dd4b9016c",
+  "teacher": "{\"company\": \"Bramble Foods\", \"amount\": 46500, \"currency\": \"CHF\", \"due_days\": 14}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100115,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1842 (SSO login loop), TCK-7614 (search index stale), TCK-7674 (CSV export truncates).",
+  "truth": [
+   "TCK-1842",
+   "TCK-7614",
+   "TCK-7674"
+  ],
+  "hash": "73652c29dbd7a59e",
+  "teacher": "[\"TCK-1842\", \"TCK-7614\", \"TCK-7674\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100116,
+  "kind": "contact",
+  "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Bruno Kowalski, Account Director at Ardent Systems. Reach me at b.kowalski@ardent-sys.com.'",
+  "truth": {
+   "name": "Bruno Kowalski",
+   "email": "b.kowalski@ardent-sys.com",
+   "company": "Ardent Systems",
+   "role": "Account Director"
+  },
+  "hash": "52f408cbd05f09b6",
+  "teacher": "{\"name\": \"Bruno Kowalski\", \"email\": \"b.kowalski@ardent-sys.com\", \"company\": \"Ardent Systems\", \"role\": \"Account Director\"}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100117,
+  "kind": "invoice",
+  "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Filter Pack   x2   @ 258.97\n  Sensor Kit   x6   @ 31.95\n  Widget B   x4   @ 172.71",
+  "truth": [
+   {
+    "item": "Filter Pack",
+    "qty": 2,
+    "unit_price": 258.97
+   },
+   {
+    "item": "Sensor Kit",
+    "qty": 6,
+    "unit_price": 31.95
+   },
+   {
+    "item": "Widget B",
+    "qty": 4,
+    "unit_price": 172.71
+   }
+  ],
+  "hash": "7e0fee220f18262f",
+  "teacher": "[{\"item\": \"Filter Pack\", \"qty\": 2, \"unit_price\": 258.97}, {\"item\": \"Sensor Kit\", \"qty\": 6, \"unit_price\": 31.95}, {\"item\": \"Widget B\", \"qty\": 4, \"unit_price\": 172.71}]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100118,
+  "kind": "terms",
+  "prompt": "Return only a JSON object with keys company, amount, currency, due_days.\n\n'Per our agreement, Lyra Health will be invoiced 750 EUR, net 45.'",
+  "truth": {
+   "company": "Lyra Health",
+   "amount": 750,
+   "currency": "EUR",
+   "due_days": 45
+  },
+  "hash": "22fe8fd2ef13703b",
+  "teacher": "{\"company\": \"Lyra Health\", \"amount\": 750, \"currency\": \"EUR\", \"due_days\": 45}",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ },
+ {
+  "seed": 100119,
+  "kind": "ticket",
+  "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-1465 (VAT wrong on invoices), TCK-1691 (search index stale), TCK-8801 (SSO login loop).",
+  "truth": [
+   "TCK-1465",
+   "TCK-1691",
+   "TCK-8801"
+  ],
+  "hash": "950299e054e46820",
+  "teacher": "[\"TCK-1465\", \"TCK-1691\", \"TCK-8801\"]",
+  "finish": "stop",
+  "truncated": false,
+  "passed": true
+ }
+]

@@ -36,13 +36,17 @@ MON = ["January", "March", "April", "June", "September", "November"]
 
 def _contact(r):
     f, l = r.choice(FIRST), r.choice(LAST)
+    role = r.choice(ROLE)
     i = r.randrange(len(COMP))
     email = f"{f[0].lower()}.{l.lower()}@{DOM[i]}"
     prompt = ("Extract to JSON with exactly the keys name, email, company, role. Reply with only "
               "the JSON object, no commentary.\n\n"
-              f"'Hi, I'm {f} {l}, {r.choice(ROLE)} at {COMP[i]}. Reach me at {email}.'")
-    # role must be read back from the sentence, so re-derive it from the prompt text
-    role = prompt.split(", ", 2)[2].split(" at ")[0]
+              f"'Hi, I'm {f} {l}, {role} at {COMP[i]}. Reach me at {email}.'")
+    # The first version re-derived the role by splitting the PROMPT on ", " - which split on the
+    # INSTRUCTION ("keys name, email, company, role.") and produced a ground truth containing half
+    # the instruction text. The teacher was right and the checker was wrong, on every contact
+    # instance. Ground truth is now the value we chose; KR-E in the self-test makes this class of
+    # bug impossible to ship again.
     return prompt, {"name": f"{f} {l}", "email": email, "company": COMP[i], "role": role}
 
 
@@ -120,7 +124,7 @@ def check(truth, raw):
     return False
 
 
-def ask(url, prompt, npredict=512):
+def ask(url, prompt, npredict=2048):
     import urllib.request
     body = json.dumps({"messages": [{"role": "user", "content": prompt}],
                        "max_tokens": npredict, "temperature": 0.0, "top_k": 1}).encode()
@@ -164,6 +168,25 @@ def selftest():
         if check(ex["truth"], json.dumps(bad)):
             print("  FAIL: checker accepts a one-field-off answer")
             return 1
+    # KR-E: a ground-truth value that does not appear verbatim in its own prompt cannot be
+    # extracted from it - the truth is wrong, not the model. This guard would have caught the
+    # role bug on instance 0 instead of after 15 wasted teacher calls.
+    def _strings(v):
+        if isinstance(v, str):
+            return [v]
+        if isinstance(v, dict):
+            return [x for u in v.values() for x in _strings(u)]
+        if isinstance(v, list):
+            return [x for u in v for x in _strings(u)]
+        return []
+    for sd in list(range(60)) + list(range(100000, 100030)):
+        ins = instance(sd)
+        for val in _strings(ins["truth"]):
+            if val not in ins["prompt"]:
+                print(f"  FAIL KR-E: seed {sd} ({ins['kind']}) truth value absent from prompt: "
+                      f"{val!r}")
+                return 1
+    print("self-test: every ground-truth string appears verbatim in its prompt (KR-E)")
     kinds = {instance(s)["kind"] for s in range(20)}
     if len(kinds) < 4:
         print(f"  FAIL: only {len(kinds)} instance kinds generated")
@@ -205,7 +228,11 @@ def main():
                 out, fin = "", f"ERROR {exc}"
             ins["teacher"] = out
             ins["finish"] = fin
-            ins["passed"] = check(ins["truth"], out)
+            # A truncated answer is NOT a wrong answer: the 30B is a thinking model and spends
+            # its budget before it speaks. At npredict=512 every invoice instance came back
+            # empty with finish=length and would have scored as a teacher failure.
+            ins["truncated"] = (fin == "length" and not out.strip())
+            ins["passed"] = False if ins["truncated"] else check(ins["truth"], out)
             rows.append(ins)
             if n % 20 == 0:
                 print(f"  {n}/{hi-lo}  clean so far: {sum(1 for r in rows if r['passed'])}",

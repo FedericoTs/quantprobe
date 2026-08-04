@@ -1,0 +1,26 @@
+self-test: train 400 unique prompts, held-out 120, overlap 0
+self-test: every ground-truth string appears verbatim in its prompt (KR-E)
+self-test PASS - 4 kinds, checker discriminates, splits disjoint
+  20/400  clean so far: 19
+  40/400  clean so far: 38
+  60/400  clean so far: 58
+  80/400  clean so far: 78
+  100/400  clean so far: 97
+  120/400  clean so far: 116
+  140/400  clean so far: 136
+  160/400  clean so far: 155
+  180/400  clean so far: 174
+  200/400  clean so far: 194
+  220/400  clean so far: 214
+  240/400  clean so far: 234
+  260/400  clean so far: 253
+  280/400  clean so far: 272
+  300/400  clean so far: 288
+  320/400  clean so far: 308
+  340/400  clean so far: 328
+  360/400  clean so far: 347
+  380/400  clean so far: 367
+  400/400  clean so far: 385
+
+train: 400 instances, 385 clean (96.2%)
+KR-B (>=300 clean pairs): PASS
