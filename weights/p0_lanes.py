@@ -49,60 +49,92 @@ def load_tasks():
     return tasks, get_mbpp_plus_hash()
 
 
-def run_candidate(code, entry, inputs, expected, timeout=EXEC_TIMEOUT):
-    """Execute candidate code against (inputs -> expected) pairs in a subprocess.
-    Returns (n_pass, n_total). Any crash/timeout/mismatch = fail on that input set."""
-    harness = (
-        "import json, sys, math\n"
-        + code + "\n"
-        "def _same(a, b):\n"
-        "    if isinstance(a, float) or isinstance(b, float):\n"
-        "        try:\n"
-        "            return math.isclose(a, b, rel_tol=1e-6, abs_tol=1e-6)\n"
-        "        except TypeError:\n"
-        "            return a == b\n"
-        "    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):\n"
-        "        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))\n"
-        "    return a == b\n"
-        "_IN = json.loads(sys.argv[1]); _EXP = json.loads(sys.argv[2])\n"
-        "ok = 0\n"
-        "for _i, _e in zip(_IN, _EXP):\n"
-        f"    try:\n"
-        f"        _r = {'{}'}\n"
-        "    except Exception:\n"
-        "        continue\n"
-        "    if _same(_r, _e):\n"
-        "        ok += 1\n"
-        "print(ok)\n"
-    )
-    # the call line is injected per-entry-point; arguments splat from the input row
-    harness = harness.replace("_r = {}", f"_r = {entry}(*_i)")
-    try:
-        p = subprocess.run([sys.executable, "-c", harness,
-                            json.dumps(inputs), json.dumps(expected)],
+# HARNESS v2 (2026-08-05). v1 moved inputs/outputs through JSON argv, which silently mangles
+# Python types (tuples->lists, int dict-keys->strings) and hit the Windows argv length cap.
+# On MBPP+ that cost 37 reference exclusions (9.8%, just under KR-A1's block); on HumanEval+
+# it excluded 69% of references and KR-A1 fired - the gate that caught this. v2 moves objects
+# by PICKLE FILE (types preserved exactly, no argv limit), deep-copies args per invocation
+# (references may mutate their inputs), and compares in the PARENT with float tolerance.
+# P0's published numbers used v1: internally consistent (one checker, all arms) but its task
+# exclusions and any type-coercion effects are v1 artifacts; the grid states the harness
+# version and P-A1's band is what absorbs the delta.
+_CHILD = (
+    "import pickle, sys, copy\n"
+    "with open(sys.argv[1], 'rb') as fh:\n"
+    "    job = pickle.load(fh)\n"
+    "ns = {}\n"
+    "exec(job['code'], ns)\n"
+    "fn = ns[job['entry']]\n"
+    "outs = []\n"
+    "for args in job['inputs']:\n"
+    "    try:\n"
+    "        outs.append(('ok', fn(*copy.deepcopy(args))))\n"
+    "    except Exception as e:\n"
+    "        outs.append(('err', repr(e)[:120]))\n"
+    "with open(sys.argv[2], 'wb') as fh:\n"
+    "    pickle.dump(outs, fh)\n"
+)
+
+
+def _run_pickled(code, entry, inputs, timeout):
+    """Run `entry(*args)` for every args in inputs, in an isolated subprocess, objects moved
+    by pickle. Returns list of ('ok', value) | ('err', msg), or None on crash/timeout."""
+    import pickle, tempfile
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+        jp, op = os.path.join(td, "job.pkl"), os.path.join(td, "out.pkl")
+        with open(jp, "wb") as fh:
+            pickle.dump(dict(code=code, entry=entry, inputs=inputs), fh)
+        try:
+            subprocess.run([sys.executable, "-c", _CHILD, jp, op],
                            capture_output=True, text=True, timeout=timeout)
-        n = int(p.stdout.strip().splitlines()[-1]) if p.stdout.strip() else 0
-    except Exception:
-        n = 0
+        except subprocess.TimeoutExpired:
+            return None
+        if not os.path.isfile(op):
+            return None
+        try:
+            with open(op, "rb") as fh:
+                return pickle.load(fh)
+        except Exception:
+            return None
+
+
+def _same(a, b):
+    """Float-tolerant, structure-recursive equality. list/tuple equated (evalplus-loose,
+    and v1 continuity); dict compared by exact keys; everything else exact ==."""
+    import math
+    if isinstance(a, float) or isinstance(b, float):
+        try:
+            return math.isclose(a, b, rel_tol=1e-6, abs_tol=1e-6)
+        except TypeError:
+            return a == b
+    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_same(v, b[k]) for k, v in a.items())
+    return a == b
+
+
+def run_candidate(code, entry, inputs, expected, timeout=EXEC_TIMEOUT):
+    """Execute candidate code against (inputs -> expected) pairs. Returns (n_pass, n_total).
+    Any crash/timeout/error/mismatch = fail on that input."""
+    outs = _run_pickled(code, entry, inputs, timeout)
+    if outs is None:
+        return 0, len(inputs)
+    n = sum(1 for (st, v), e in zip(outs, expected) if st == "ok" and _same(v, e))
     return n, len(inputs)
 
 
 def expected_outputs(task, inputs):
-    """Ground truth = the reference solution executed HERE, on our sandbox, our floats.
-    Comparing candidates against locally-computed expectations removes every serialization
-    ambiguity between us and upstream evalplus internals."""
+    """Ground truth = the reference executed HERE, types preserved. Raises if the reference
+    itself errors on any input - the caller's KR gate counts that task as excluded."""
     code = task["prompt"] + task["canonical_solution"]
-    harness = (
-        "import json, sys\n" + code + "\n"
-        "_IN = json.loads(sys.argv[1])\n"
-        "out = []\n"
-        "for _i in _IN:\n"
-        f"    out.append({task['entry_point']}(*_i))\n"
-        "print(json.dumps(out, default=str))\n"
-    )
-    p = subprocess.run([sys.executable, "-c", harness, json.dumps(inputs)],
-                       capture_output=True, text=True, timeout=60)
-    return json.loads(p.stdout.strip().splitlines()[-1])
+    outs = _run_pickled(code, task["entry_point"], inputs, timeout=60)
+    if outs is None:
+        raise RuntimeError("reference crashed or timed out")
+    bad = [m for st, m in outs if st == "err"]
+    if bad:
+        raise RuntimeError(f"reference errored on {len(bad)} inputs: {bad[0]}")
+    return [v for _, v in outs]
 
 
 def extract_code(txt):
