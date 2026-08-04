@@ -234,8 +234,18 @@ def tier_view(a, best):
 def _emit_contribution(a, best, meas, err, delta):
     import urllib.parse
     from . import __version__
-    hw = (dict(planmod.MACHINES.get(getattr(a, "machine", "") or "", {})).get("hint")
-          or f"vram={a.vram} vram_bw={a.vram_bw} ram={a.ram} ram_bw={a.ram_bw} disk_bw={a.disk_bw}")
+    # THE HARDWARE MUST BE THE RESOLVED HARDWARE, not the raw args. Under auto-detect (the
+    # default path, i.e. nearly every contributor) the args are all None, and this function
+    # shipped printing "vram=None vram_bw=None ram=None..." - a datapoint whose entire purpose
+    # is the machine, arriving without one. Caught by the pre-launch gauntlet on v1.26.1;
+    # re-resolve here exactly as the prediction did.
+    hw = dict(planmod.MACHINES.get(getattr(a, "machine", "") or "", {})).get("hint")
+    if not hw:
+        try:
+            vc, vb, rc, rb, db, _geta, _gl, _hw = planmod.resolve_hw(a, announce=False)
+            hw = f"vram={vc:g} vram_bw={vb:g} ram={rc:g} ram_bw={rb:g} disk_bw={db:g}"
+        except Exception:
+            hw = f"vram={a.vram} vram_bw={a.vram_bw} ram={a.ram} ram_bw={a.ram_bw} disk_bw={a.disk_bw}"
     model = getattr(a, "model", None) or f"total={a.total} active={a.active}"
     lines = [
         f"hardware: {hw}",

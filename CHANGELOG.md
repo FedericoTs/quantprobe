@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.26.2 - 2026-08-04
+
+**`bench --contribute` sent the machine as `None`.** Under auto-detect - the default path,
+i.e. nearly every contributor - the payload and issue title read `vram=None vram_bw=None
+ram=None...`: a datapoint whose entire purpose is the machine, arriving without one. The
+formatter read raw CLI args instead of the resolved hardware the prediction itself used.
+Caught by a pre-launch gauntlet walking the exact commands the launch post asks strangers to
+run; fixed by re-resolving through the same `resolve_hw` path, guarded with the exact failing
+shape. If you contributed on 1.26.0/1.26.1 (nobody has yet), re-run on 1.26.2.
+
 ## 1.26.1 - 2026-08-04
 
 **The 1.26.0 wheel self-reports 1.25.0.** The release bumped `pyproject.toml` but not the

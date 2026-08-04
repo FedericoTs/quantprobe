@@ -2918,6 +2918,29 @@ def t_business_never_scores_a_run_that_did_not_happen():
     return None
 
 
+def t_contribute_payload_carries_the_resolved_machine_not_none():
+    """A contributed datapoint's entire purpose is the machine it was measured on. Under
+    auto-detect (the default, i.e. nearly every contributor) the raw args are all None, and
+    v1.26.1 shipped printing 'hardware: vram=None vram_bw=None ram=None...' in both the body
+    and the issue title. Caught by the pre-launch gauntlet. The payload must carry the SAME
+    resolved values the prediction used."""
+    import types, io, contextlib
+    from quantprobe.runtime import _emit_contribution
+    a = types.SimpleNamespace(machine=None, vram=None, vram_bw=None, ram=None, ram_bw=None,
+                              disk_bw=None, model=None, total=7.6, active=7.1, bits=4.9)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _emit_contribution(a, ("all in VRAM", 25.0), 30.0, 0.5, 20.0)
+    out = buf.getvalue()
+    assert "vram=None" not in out and "ram_bw=None" not in out, \
+        f"contribute payload still carries None hardware:\n{out[:300]}"
+    import re as _re
+    m = _re.search(r"hardware: vram=([0-9.]+) vram_bw=([0-9.]+) ram=([0-9.]+)", out)
+    assert m, f"no numeric resolved hardware line in payload:\n{out[:300]}"
+    assert "issues/new" in out, "the pre-filled issue link vanished"
+    return None
+
+
 def t_version_string_has_one_source_of_truth():
     """The 1.26.0 wheel shipped self-reporting 1.25.0: pyproject was bumped, the __version__
     literal was not, and the release verification printed the version without asserting it.
