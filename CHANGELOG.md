@@ -28,6 +28,41 @@ Two consequences, both bigger than the refuted stake:
 
 Evidence: `weights/data/u38_np_sweep.log`, `weights/data/u38_confirm.log`.
 
+### X-1 confirmed: draft length is a kernel decision - and every speculation guide tunes the wrong knob
+
+Staked before the sweep (`preregistrations/2026-08-04-x1-verify-width-cliff.md`): speculation's
+verify pass is a fused multi-token step, so the U-38 kernel cliff (mat-vec kernels serve widths
+<=8, mat-mat >=9) should appear INSIDE single-stream speculation at the staked draft length.
+It does, exactly there:
+
+| draft m | verify width | tok/s |
+|---|---|---|
+| off | - | 22.8 |
+| 4 / 6 / 7 | 5-8 | 48.9 / 51.2 / 48.2 - the classic ~2x plateau, stuck in the slow kernel |
+| **8** | **9** | **88.5** - 1.836x in one step, at the staked boundary |
+| 12 / 24 | 13 / 25 | 124.3 / **132.1** |
+
+P1 held (jump 1.836x >= staked 1.25 at exactly width 8->9); P2 held (below-boundary ratios
+1.047 and 0.941 <= 1.15). The acceptance confound is excluded by arithmetic, not assumption:
+at 100% acceptance a width-9 verify at slow-kernel step time cannot exceed 60.8 tok/s, and
+88.5 was measured. Outputs are byte-identical across all nine arms - speculation's invariant,
+verified, so the workload is constant by construction.
+
+**The rule no guide states: on pre-Ampere cards, drafts of 4-7 leave ~2.5x on the table.**
+Total effect off -> draft 24: **5.8x single-stream** (22.8 -> 132.1 tok/s) on copy-heavy work.
+Draft length is a kernel decision first, an acceptance decision second. Ships as a planner
+advisory with the anti-valley rule (widths 2-8 dominated; 1 or >=9 only).
+
+Also registered from the same line of thought: **U-40** draft-driven expert prefetch (run the
+router on ngram drafts to prefetch RAM experts during the current step - attacks the exact
+wall U-39 confirmed) and **U-41** expert-coherent sampling (steer best-of-N lanes to share
+expert working sets), both with kill rules staked before any build.
+
+The sweep also ate two harness lessons, both now structural: killing a stuck benchmark CHILD
+revives its parent loop (three contaminated windows this session - every overlap-window arm
+was deleted, never explained; runners now carry a lockfile + per-arm timeout), and this
+build's `llama-cli` spins forever at its prompt on stdin EOF.
+
 ### U-39 confirmed: batching does NOT survive expert offload - and model choice inverts with user count
 
 Staked before the sweep (`preregistrations/2026-08-04-u39-moe-batching.md`), with a refutation

@@ -1,5 +1,27 @@
 # Roadmap
 
+## The queue, in order (updated 2026-08-04)
+
+Close-first discipline: nothing new opens while a staked test sits unscored.
+
+| # | item | size | track |
+|---|---|---|---|
+| 1 | Score **X-1** (verify-width cliff) against its staked kill rules; register | in flight | A |
+| 2 | Register **U-40** (draft-driven expert prefetch) and **U-41** (expert-coherent sampling) as staked untried ideas | minutes | C |
+| 3 | **A2A benchmark** — depth-aware quant vs uniform `llama.cpp` quant, *same model, same hardware, same context*: ppl + KL(+tail) + business pass-rate + tok/s, packaged reproducibly. The exact table the community asks for; the exllamav2 arm is not runnable on Pascal and goes on the `bench --contribute` ask for an Ampere volunteer | half-day | A→B |
+| 4 | Gemma-4-26B **0.77×** — recheck a/ne against the GGUF header, re-score the Spark row | short | A |
+| 5 | **C-23** discriminators — kimi byte counter (E-12) + airllm non-mmap (E-11) | short | A |
+| 6 | **Per-shape calibration** prereg (07-31) — run or close with a written reason | short | A |
+| 7 | Ladder rows for **0.6B and 7B** — the comparison surface becomes real | short | A |
+| 8 | **Blind-score the 8 rubric outputs** (needs an independent judge — Federico) | short | A |
+| 9 | **Batch-axis advisory** in the planner from the U-38/U-39 curves, incl. the Pascal anti-valley warning (widths 2–8 dominated; 1 or ≥9) | medium | A |
+| 10 | Lane pilots **X-2/X-3** (predicate-picked best-of-16; 16-vote on t4a2) | evening | C |
+| 11 | Distribution loops (leaderboard → interactive matrix → HF badge → launch post) | rolling | B |
+| 12 | **S-1** specialist distillation — awaiting explicit go | days | C |
+
+Parked with reasons: t4a2/t4c1 need a faster box or bigger budget; U-40 needs llama.cpp
+surgery; older backlog (#47–51, #53, #55–57) slots behind the above.
+
 The method does not change as the scope grows: **stake the prediction, define the kill rule,
 measure, publish the misses at the same size as the hits.** Everything below is ordered so each
 step either closes an open claim or builds on one already closed. Nothing here is a promise of a
