@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 400" font-family="Segoe UI,system-ui,sans-serif">
+<rect width="760" height="400" fill="#ffffff"/>
+<text x="62" y="30" font-size="16" font-weight="650" fill="#16181d">Four models, one instrument: 52 executable predicates</text>
+<text x="62" y="49" font-size="11.5" fill="#5c6066">machine-checked pass rate - JSON to exact values, arithmetic to the cent, code that must run. Same box, same prompts, same checks.</text>
+<line x1="70" y1="342.0" x2="592" y2="342.0" stroke="#eeedea"/>
+<text x="62" y="346.0" font-size="10" fill="#5c6066" text-anchor="end">0%</text>
+<line x1="70" y1="275.0" x2="592" y2="275.0" stroke="#eeedea"/>
+<text x="62" y="279.0" font-size="10" fill="#5c6066" text-anchor="end">25%</text>
+<line x1="70" y1="208.0" x2="592" y2="208.0" stroke="#eeedea"/>
+<text x="62" y="212.0" font-size="10" fill="#5c6066" text-anchor="end">50%</text>
+<line x1="70" y1="141.0" x2="592" y2="141.0" stroke="#eeedea"/>
+<text x="62" y="145.0" font-size="10" fill="#5c6066" text-anchor="end">75%</text>
+<line x1="70" y1="74.0" x2="592" y2="74.0" stroke="#eeedea"/>
+<text x="62" y="78.0" font-size="10" fill="#5c6066" text-anchor="end">100%</text>
+<rect x="87.1" y="74.0" width="21.0" height="268.0" fill="#0f766e" rx="1.5"/>
+<text x="97.6" y="70.0" font-size="9" fill="#5c6066" text-anchor="middle">20/20</text>
+<rect x="111.5" y="74.0" width="21.0" height="268.0" fill="#15803d" rx="1.5"/>
+<text x="122.0" y="70.0" font-size="9" fill="#5c6066" text-anchor="middle">20/20</text>
+<rect x="135.9" y="100.8" width="21.0" height="241.2" fill="#b45309" rx="1.5"/>
+<text x="146.3" y="96.8" font-size="9" fill="#5c6066" text-anchor="middle">18/20</text>
+<rect x="160.3" y="141.0" width="21.0" height="201.0" fill="#b91c1c" rx="1.5"/>
+<text x="170.7" y="137.0" font-size="9" fill="#5c6066" text-anchor="middle">15/20</text>
+<text x="135.2" y="358.0" font-size="11" fill="#16181d" text-anchor="middle">T1 routine</text>
+<rect x="217.6" y="74.0" width="21.0" height="268.0" fill="#0f766e" rx="1.5"/>
+<text x="228.1" y="70.0" font-size="9" fill="#5c6066" text-anchor="middle">20/20</text>
+<rect x="242.0" y="208.0" width="21.0" height="134.0" fill="#15803d" rx="1.5"/>
+<text x="252.5" y="204.0" font-size="9" fill="#5c6066" text-anchor="middle">10/20</text>
+<rect x="266.4" y="221.4" width="21.0" height="120.6" fill="#b45309" rx="1.5"/>
+<text x="276.8" y="217.4" font-size="9" fill="#5c6066" text-anchor="middle">9/20</text>
+<rect x="290.8" y="237.8" width="21.0" height="104.2" fill="#b91c1c" rx="1.5"/>
+<text x="301.2" y="233.8" font-size="9" fill="#5c6066" text-anchor="middle">7/18</text>
+<text x="265.8" y="358.0" font-size="11" fill="#16181d" text-anchor="middle">T2 standard</text>
+<rect x="348.1" y="118.7" width="21.0" height="223.3" fill="#0f766e" rx="1.5"/>
+<text x="358.6" y="114.7" font-size="9" fill="#5c6066" text-anchor="middle">5/6</text>
+<rect x="372.5" y="208.0" width="21.0" height="134.0" fill="#15803d" rx="1.5"/>
+<text x="383.0" y="204.0" font-size="9" fill="#5c6066" text-anchor="middle">3/6</text>
+<rect x="396.9" y="163.3" width="21.0" height="178.7" fill="#b45309" rx="1.5"/>
+<text x="407.3" y="159.3" font-size="9" fill="#5c6066" text-anchor="middle">4/6</text>
+<rect x="421.3" y="181.2" width="21.0" height="160.8" fill="#b91c1c" rx="1.5"/>
+<text x="431.7" y="177.2" font-size="9" fill="#5c6066" text-anchor="middle">3/5</text>
+<text x="396.2" y="358.0" font-size="11" fill="#16181d" text-anchor="middle">T3 hard</text>
+<rect x="478.6" y="297.3" width="21.0" height="44.7" fill="#0f766e" rx="1.5"/>
+<text x="489.1" y="293.3" font-size="9" fill="#5c6066" text-anchor="middle">1/6</text>
+<rect x="503.0" y="342.0" width="21.0" height="0.0" fill="#15803d" rx="1.5"/>
+<text x="513.5" y="338.0" font-size="9" fill="#5c6066" text-anchor="middle">0/6</text>
+<rect x="527.4" y="342.0" width="21.0" height="0.0" fill="#b45309" rx="1.5"/>
+<text x="537.8" y="338.0" font-size="9" fill="#5c6066" text-anchor="middle">0/6</text>
+<rect x="551.8" y="252.7" width="21.0" height="89.3" fill="#b91c1c" rx="1.5"/>
+<text x="562.2" y="248.7" font-size="9" fill="#5c6066" text-anchor="middle">1/3</text>
+<text x="526.8" y="358.0" font-size="11" fill="#16181d" text-anchor="middle">T4 ceiling</text>
+<text x="526.8" y="373.0" font-size="9.5" fill="#5c6066" text-anchor="middle">designed so today's models fail</text>
+<rect x="608" y="83" width="11" height="11" fill="#0f766e" rx="1.5"/>
+<text x="624" y="92" font-size="10.5" fill="#16181d">Qwen3-30B-A3B  2.95-bit</text>
+<text x="624" y="103" font-size="8.5" fill="#5c6066">recommended config</text>
+<rect x="608" y="109" width="11" height="11" fill="#15803d" rx="1.5"/>
+<text x="624" y="118" font-size="10.5" fill="#16181d">Qwen2.5-7B  Q4_K_M</text>
+<rect x="608" y="135" width="11" height="11" fill="#b45309" rx="1.5"/>
+<text x="624" y="144" font-size="10.5" fill="#16181d">Qwen2.5-7B  2-bit</text>
+<text x="624" y="155" font-size="8.5" fill="#5c6066">both quants identical</text>
+<rect x="608" y="161" width="11" height="11" fill="#b91c1c" rx="1.5"/>
+<text x="624" y="170" font-size="10.5" fill="#16181d">Qwen3-0.6B  Q8_0</text>
+<text x="624" y="181" font-size="8.5" fill="#5c6066">*truncations quarantined</text>
+<text x="62" y="390" font-size="9.5" fill="#5c6066">Staked pass bar was set BEFORE any output existed. The 0.6B fires the suite's own kill rule (57.9% &lt; 60%).</text>
+</svg>

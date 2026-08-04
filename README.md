@@ -79,6 +79,8 @@ The task set also carries a **difficulty ladder** for comparing models on identi
 | Qwen2.5-7B @ 2-bit (both quants, byte-equal) | 27/40 | 4/6 | 0/6 |
 | Qwen3-0.6B @ Q8 | 22/38* | 3/5* | 1/3* |
 
+<p align="center"><img src="weights/data/chart_kpi_model_ladder.svg" width="760" alt="Four models scored on 52 executable predicates across four difficulty tiers: the 30B clears T1 and T2 completely, the 0.6B fires the suite's kill rule, and T4 is designed so today's models fail"></p>
+
 \* thinking-model truncations quarantined and disclosed, never counted as failures. The 0.6B
 fires the suite's own kill rule (57.9% < 60%) — the instrument correctly refuses to call it
 business-usable. And one honest anomaly the ladder itself exposed: **the only T4 task anyone
@@ -98,6 +100,17 @@ Law 4 is `tok/s = η·BW ÷ bytes-per-token`, and it prices other people's machi
 - **airllm's unexplained 30× spread** (0.07–2 tok/s across hosts) — the law retrodicts it as a tier boundary: RAM-resident hosts land on the RAM term, disk-bound hosts on the disk term.
 
 Same arithmetic the planner runs — you just feed it someone else's bandwidth and bytes.
+
+## One box, two right answers — it depends how many people are using it
+
+<p align="center"><img src="weights/data/chart_kpi_batching_inversion.svg" width="760" alt="Aggregate throughput vs concurrent streams on a GTX 1060: the dense 7B in VRAM climbs to 219 tok/s at 32 streams while the 30B MoE with experts in RAM caps near 40, the two curves crossing early"></p>
+
+At **one user** the 30B MoE is the better model — smarter, and 19.7 tok/s. At **32 users** the
+dense 7B wins by 5.5× on aggregate throughput, because routed-expert reads from system RAM do
+not amortise across streams while dense weights read once serve everyone. The jump at width
+8→9 is a kernel switch, not a smooth curve — which also makes batch widths 2–8 strictly
+dominated on this card class. `plan` prints the right advice for whichever placement it
+recommends (U-38 overturned our own prior "2× ceiling"; U-39 confirmed the MoE cap as staked).
 
 ## Fast vs Custom
 
@@ -125,6 +138,12 @@ Most guides put *all* of a mixture-of-experts model's experts in system RAM and 
 ## Free speed, part two: if you write code
 
 `--spec-type ngram-simple` drafts tokens by finding repeated spans in your own context, then verifies them — output is **identical**, it's one flag, nothing is downloaded.
+
+<p align="center"><img src="weights/data/chart_kpi_draft_cliff.svg" width="760" alt="Decode speed against speculation draft length: drafts of 4 to 7 sit near 50 tok/s in the slow kernel, then jump to 88.5 at draft 8 and climb to 132 at draft 24"></p>
+
+**Draft length is the lever, and it is a kernel decision.** Drafts of 4–7 verify in llama.cpp's
+slow mat-vec path; m≥8 crosses into the fast one. Measured on the same model, same prompt,
+byte-identical output: 48.2 → **88.5** in one step, up to **132.1 tok/s (5.8×)** at m=24.
 
 | workload | off | ngram on | effect |
 |---|---|---|---|

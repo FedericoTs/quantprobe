@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 400" font-family="Segoe UI,system-ui,sans-serif">
+<rect width="760" height="400" fill="#ffffff"/>
+<text x="62" y="30" font-size="16" font-weight="650" fill="#16181d">The best model inverts with user count (2016 GTX 1060, measured)</text>
+<text x="62" y="49" font-size="11.5" fill="#5c6066">aggregate decode across concurrent streams - dense 7B all-in-VRAM vs 30B MoE with experts in RAM</text>
+<line x1="76" y1="344.0" x2="582" y2="344.0" stroke="#eeedea"/>
+<text x="68" y="348.0" font-size="10" fill="#5c6066" text-anchor="end">0</text>
+<line x1="76" y1="277.0" x2="582" y2="277.0" stroke="#eeedea"/>
+<text x="68" y="281.0" font-size="10" fill="#5c6066" text-anchor="end">60</text>
+<line x1="76" y1="210.0" x2="582" y2="210.0" stroke="#eeedea"/>
+<text x="68" y="214.0" font-size="10" fill="#5c6066" text-anchor="end">120</text>
+<line x1="76" y1="143.0" x2="582" y2="143.0" stroke="#eeedea"/>
+<text x="68" y="147.0" font-size="10" fill="#5c6066" text-anchor="end">180</text>
+<line x1="76" y1="76.0" x2="582" y2="76.0" stroke="#eeedea"/>
+<text x="68" y="80.0" font-size="10" fill="#5c6066" text-anchor="end">240</text>
+<text x="76.0" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">1</text>
+<text x="148.3" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">2</text>
+<text x="220.6" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">4</text>
+<text x="292.9" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">8</text>
+<text x="365.1" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">9</text>
+<text x="437.4" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">12</text>
+<text x="509.7" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">16</text>
+<text x="582.0" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">32</text>
+<line x1="329.0" y1="76" x2="329.0" y2="344" stroke="#475569" stroke-dasharray="3 3" opacity="0.55"/>
+<text x="334.0" y="88" font-size="9.5" fill="#475569">kernel switch (width 8-&gt;9)</text>
+<path d="M76.0,318.2 L148.3,299.2 L220.6,285.9 L292.9,283.8 L365.1,223.7 L437.4,192.0 L509.7,148.5 L582.0,99.0" fill="none" stroke="#0f766e" stroke-width="2.4"/>
+<circle cx="76.0" cy="318.2" r="3.4" fill="#0f766e"/>
+<circle cx="148.3" cy="299.2" r="3.4" fill="#0f766e"/>
+<circle cx="220.6" cy="285.9" r="3.4" fill="#0f766e"/>
+<circle cx="292.9" cy="283.8" r="3.4" fill="#0f766e"/>
+<circle cx="365.1" cy="223.7" r="3.4" fill="#0f766e"/>
+<circle cx="437.4" cy="192.0" r="3.4" fill="#0f766e"/>
+<circle cx="509.7" cy="148.5" r="3.4" fill="#0f766e"/>
+<circle cx="582.0" cy="99.0" r="3.4" fill="#0f766e"/>
+<path d="M76.0,322.0 L148.3,312.2 L220.6,308.9 L292.9,302.1 L509.7,302.6 L582.0,299.3" fill="none" stroke="#b45309" stroke-width="2.4"/>
+<circle cx="76.0" cy="322.0" r="3.4" fill="#b45309"/>
+<circle cx="148.3" cy="312.2" r="3.4" fill="#b45309"/>
+<circle cx="220.6" cy="308.9" r="3.4" fill="#b45309"/>
+<circle cx="292.9" cy="302.1" r="3.4" fill="#b45309"/>
+<circle cx="509.7" cy="302.6" r="3.4" fill="#b45309"/>
+<circle cx="582.0" cy="299.3" r="3.4" fill="#b45309"/>
+<text x="576.0" y="90.0" font-size="11" font-weight="650" fill="#0f766e" text-anchor="end">219.4</text>
+<text x="576.0" y="290.3" font-size="11" font-weight="650" fill="#b45309" text-anchor="end">40.0</text>
+<rect x="594" y="87" width="11" height="11" fill="#0f766e" rx="1.5"/>
+<text x="610" y="96" font-size="10.5" fill="#16181d">dense 7B Q4, all in VRAM</text>
+<rect x="594" y="109" width="11" height="11" fill="#b45309" rx="1.5"/>
+<text x="610" y="118" font-size="10.5" fill="#16181d">30B MoE, experts in RAM</text>
+<text x="594" y="152" font-size="9.5" fill="#5c6066">1 user: the MoE is</text>
+<text x="594" y="164" font-size="9.5" fill="#5c6066">the better model.</text>
+<text x="594" y="182" font-size="9.5" fill="#5c6066">32 users: the dense</text>
+<text x="594" y="194" font-size="9.5" fill="#5c6066">model wins by 5.5x.</text>
+<text x="380.0" y="392" font-size="10.5" fill="#5c6066" text-anchor="middle">concurrent streams</text>
+<text x="14" y="200.0" font-size="10.5" fill="#5c6066" transform="rotate(-90 14 200.0)" text-anchor="middle">aggregate tok/s</text>
+</svg>

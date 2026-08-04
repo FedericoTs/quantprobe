@@ -30,6 +30,10 @@ weights/data/*
 !weights/data/*.txt
 !weights/data/*.md
 !weights/data/*.png
+# figures are run evidence too; the three older charts had to be force-added because this
+# exception was missing. NOTE: .gitignore has no trailing comments - a comment on the
+# pattern line makes it part of the pattern, which is exactly how this was broken twice.
+!weights/data/*.svg
 !weights/data/*.json
 
 # third-party llama.cpp binaries (re-downloadable, ~1.8GB)
