@@ -37,7 +37,7 @@ closest thing we have to out-of-sample validation. On a single unit:
 |---|---|---|---|
 | 32B dense Q4 | 8.4 | 10.7 | **1.27x low** |
 | 30B-A3B MoE Q4 | 81.7 | 89.0 | **1.09x low** |
-| Gemma-4-26B A4B Q4 | 67.4 | 51.6 | **0.77x — we over-predict** |
+| Gemma-4-26B A4B Q4 | 67.4 | 51.6 | **0.77x â€” we over-predict** |
 
 The first two land inside C-02's floor band (real speed 1.1-1.8x above the printed
 number). The third does **not**, and we are not hiding it: either our active-parameter

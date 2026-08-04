@@ -2741,6 +2741,30 @@ def t_business_a_truncated_answer_is_not_a_wrong_answer():
     return None
 
 
+def t_docs_are_strict_utf8_or_pages_dies():
+    """GitHub Pages builds docs/ with kramdown, which hard-fails on invalid UTF-8.
+
+    On Windows, `python script > file` under a bash shell encodes stdout in cp1252, so an
+    em-dash becomes byte 0x97 and the whole Pages deployment goes red - which is exactly how
+    docs/MATRIX.md broke the site for two pushes on 2026-08-04. Regenerate docs with
+    PYTHONUTF8=1. This guard fails on the first non-UTF-8 byte in any markdown we ship.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    bad = []
+    for base in ("docs", "."):
+        d = os.path.join(root, base)
+        for name in sorted(os.listdir(d)):
+            if not name.endswith(".md"):
+                continue
+            raw = open(os.path.join(d, name), "rb").read()
+            try:
+                raw.decode("utf-8", errors="strict")
+            except UnicodeDecodeError as e:
+                bad.append(f"{base}/{name} byte {e.start}: {raw[e.start:e.start+3]!r}")
+    assert not bad, "invalid UTF-8 (Pages will fail to build): " + "; ".join(bad)
+    return None
+
+
 def t_business_no_verdict_from_an_empty_staked_set():
     """0/0 is not 0%. A tier-only results file has no staked tasks; scoring one printed
     "KILL RULE FIRED (0.0%)" over an empty denominator - a confident verdict about evidence
