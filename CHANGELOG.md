@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.26.0 - 2026-08-04
 
 ### Two published numbers corrected against primary sources - one ours, one an anomaly that dissolved
 
