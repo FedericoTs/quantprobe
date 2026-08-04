@@ -1491,12 +1491,7 @@
    "confidence": "measured, one box, one session, dense anchor replicated 3x",
    "claim": "Batching does NOT survive expert offload the way it survives dense-in-VRAM. Staked in preregistrations/2026-08-04-u39-moe-batching.md BEFORE any batched MoE measurement on this box.",
    "verdict": "MEASURED (weights/data/u39_moe_sweep.log): 30B MoE, attention+KV in VRAM, experts in RAM - aggregate decode 19.67 / 28.52 / 31.38 / 37.48 / 37.07 / 40.00 tok/s at N=1/2/4/8/16/32. P1: agg(8)/agg(1)=1.905, inside the staked [1.0,2.5]. P2: agg(32)/agg(16)=1.079, under the staked 1.5 - NO dense-style jump exists on this placement at any N up to 32. KR-A (agg(32)/agg(1)>6 would refute) came in at 2.034. KR-B valid: the dense 7B anchor hit 175.05 aggregate at N=16 in the same session, third replication of the U-38 jump (175.6, 175.8, 175.05). THE MECHANISM MODEL SURVIVES: routed-expert reads from system RAM do not amortise across streams - different users summon different experts every step - so the placement that wins single-user caps out near 2x aggregate while the dense-in-VRAM placement reaches 9.5x. PREFILL is the exception and batches fine even on the MoE (45 -> 225 tok/s, saturating by N=8): prefill is compute-bound and compute amortises; decode is expert-bandwidth-bound and does not. THE MEASURED INVERSION, now a fact not a hypothesis: at 1 user this box's best model is the 30B MoE (19.7 tok/s, far smarter than anything else that runs); at 32 users it is the dense 7B (219 aggregate vs 40 - a 5.5x throughput gap the other way). Model CHOICE inverts with concurrent users on identical hardware. No consumer tool prices this; the planner's batch axis (docs/ROADMAP.md Track A) now has its first two measured curves. BONUS from the same session's edge probe (u39_dense_edge.log): the dense jump is exactly at the 8->9 stream boundary (53.9 -> 107.7 aggregate), matching llama.cpp's mat-vec kernel cap of batch 8; above it per-stream speed is nearly flat (11.96 at N=9 -> 10.94 at N=16), i.e. the post-switch regime scales almost linearly until the next ceiling.",
-   "evidence": [
-    "preregistrations/2026-08-04-u39-moe-batching.md",
-    "weights/data/u39_moe_sweep.log",
-    "weights/data/u39_dense_anchor.log",
-    "weights/data/u39_dense_edge.log"
-   ],
+   "evidence": "preregistrations/2026-08-04-u39-moe-batching.md ; weights/data/u39_moe_sweep.log ; weights/data/u39_dense_anchor.log ; weights/data/u39_dense_edge.log",
    "priority": "closed as staked; follow-ups: batch axis term for the planner; N>32 dense ceiling; forced-kernel confirmation of the MMVQ/MMQ mechanism"
   }
  ],
