@@ -1,6 +1,11 @@
 name: smoke
 on: [push, pull_request]
 
+# Least privilege: this job only checks out and runs tests. Without this block the token
+# gets default write scopes it never uses (flagged by code scanning, 2026-08-04).
+permissions:
+  contents: read
+
 # Pushing master and then a tag fires TWO runs of the same commit within seconds. On
 # 2026-08-03 they raced each other on the HuggingFace tree API, rate-limited each other, and
 # c3c1982 came back both green (13:53:28) and red (13:53:34) - identical code, six seconds
