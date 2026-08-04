@@ -1,0 +1,68 @@
+prereg #92 - per-shape calibration - 2026-08-04 09:17:50
+  probe compiled: nvcc -O3 -arch=native
+  clocks before: 139 MHz, 1911 MHz, 37
+  sweep 1/2:
+    K= 2048 rows=   128    22.03 GB/s
+    K= 2048 rows=   256    33.85 GB/s
+    K= 2048 rows=   512    41.58 GB/s
+    K= 2048 rows=  1024    46.52 GB/s
+    K= 2048 rows=  2048    50.34 GB/s
+    K= 2048 rows=  4096    52.41 GB/s
+    K= 2048 rows=  8192    53.38 GB/s
+    K= 2048 rows= 16384    53.91 GB/s
+    K= 4096 rows=   128    28.26 GB/s
+    K= 4096 rows=   256    31.44 GB/s
+    K= 4096 rows=   512    36.22 GB/s
+    K= 4096 rows=  1024    37.95 GB/s
+    K= 4096 rows=  2048    38.87 GB/s
+    K= 4096 rows=  4096    39.46 GB/s
+    K= 4096 rows=  8192    39.71 GB/s
+    K= 4096 rows= 16384    39.86 GB/s
+  sweep 2/2 (P-3 repeat, same session):
+    K= 2048 rows=   128    24.68 GB/s
+    K= 2048 rows=   256    34.85 GB/s
+    K= 2048 rows=   512    43.11 GB/s
+    K= 2048 rows=  1024    48.76 GB/s
+    K= 2048 rows=  2048    52.14 GB/s
+    K= 2048 rows=  4096    54.16 GB/s
+    K= 2048 rows=  8192    55.19 GB/s
+    K= 2048 rows= 16384    55.75 GB/s
+    K= 4096 rows=   128    28.76 GB/s
+    K= 4096 rows=   256    34.22 GB/s
+    K= 4096 rows=   512    38.76 GB/s
+    K= 4096 rows=  1024    40.64 GB/s
+    K= 4096 rows=  2048    41.86 GB/s
+    K= 4096 rows=  4096    42.53 GB/s
+    K= 4096 rows=  8192    42.73 GB/s
+    K= 4096 rows= 16384    42.98 GB/s
+  clocks after:  1885 MHz, 1911 MHz, 41
+  curve artifact written: C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp_per_shape_curve.json
+  P-1 [KILL] 12 violation(s)
+    K=2048 ceiling 53.9 vs ref 98.7 (> 10%)
+    K=2048 rows=128 penalty +0.591 vs ref +0.694
+    K=2048 rows=256 penalty +0.372 vs ref +0.540
+    K=2048 rows=512 penalty +0.229 vs ref +0.381
+    K=2048 rows=1024 penalty +0.137 vs ref +0.225
+    K=4096 ceiling 39.9 vs ref 138.5 (> 10%)
+    K=4096 rows=128 penalty +0.291 vs ref +0.645
+    K=4096 rows=256 penalty +0.211 vs ref +0.514
+    K=4096 rows=512 penalty +0.091 vs ref +0.334
+    K=4096 rows=1024 penalty +0.048 vs ref +0.194
+    K=4096 rows=2048 penalty +0.025 vs ref +0.123
+    K=4096 rows=4096 penalty +0.010 vs ref +0.071
+  P-2 [KILL] 3 violation(s)
+    K=4096: span 1.41x < 2.0x
+    K=4096: 90% knee at 512 rows, outside [2048, 4096, 8192]
+    knee moved between widths: 2048 vs 512 rows (> 1 step; not rows-keyed)
+  P-3 [KILL] 8 violation(s)
+    K=2048 rows=128: 22.0 vs 24.7 (> 5%)
+    K=4096 rows=256: 31.4 vs 34.2 (> 5%)
+    K=4096 rows=512: 36.2 vs 38.8 (> 5%)
+    K=4096 rows=1024: 38.0 vs 40.6 (> 5%)
+    K=4096 rows=2048: 38.9 vs 41.9 (> 5%)
+    K=4096 rows=4096: 39.5 vs 42.5 (> 5%)
+    K=4096 rows=8192: 39.7 vs 42.7 (> 5%)
+    K=4096 rows=16384: 39.9 vs 43.0 (> 5%)
+  knees (90% of own max): {2048: 2048, 4096: 512}
+  results: C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\exp_per_shape_calibration.json
+VERDICT: FAIL - a staked kill rule fired (see above; a P-4 true null is a MISS and is published as one)

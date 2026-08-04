@@ -1,0 +1,66 @@
+{
+ "stake_file": "disktier_20260731_1857_staked.json",
+ "runs": {
+  "KR3_control_7B_ngl0": {
+   "tag": "KR3_control_7B_ngl0",
+   "cmd": "C:\\Users\\Federico\\Documents\\evo-compress\\tools\\llamacpp-b10098\\llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -t 4 -n 64 -p 0 -r 1 --progress",
+   "n_gen": 64,
+   "reps": 1,
+   "tok_s": 6.98,
+   "sd": 0.0,
+   "wall_s": 22.6,
+   "error": null,
+   "log": "disktier_20260731_1857_KR3_control_7B_ngl0.log",
+   "disk_counter_log": "disktier_20260731_1857_KR3_control_7B_ngl0_diskcounter.log",
+   "disk": {
+    "samples": 0,
+    "note": "disk counter unreadable - NOT substituted with an estimate"
+   }
+  },
+  "PRIMARY_laguna_tg64": {
+   "tag": "PRIMARY_laguna_tg64",
+   "cmd": "C:\\Users\\Federico\\Documents\\evo-compress\\tools\\llamacpp-b10098\\llama-bench.exe -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 64 -p 0 -r 2 --progress",
+   "n_gen": 64,
+   "reps": 2,
+   "tok_s": 0.34,
+   "sd": 0.17,
+   "wall_s": 466.2,
+   "error": null,
+   "log": "disktier_20260731_1857_PRIMARY_laguna_tg64.log",
+   "disk_counter_log": "disktier_20260731_1857_PRIMARY_laguna_tg64_diskcounter.log",
+   "disk": {
+    "samples": 0,
+    "note": "disk counter unreadable - NOT substituted with an estimate"
+   }
+  },
+  "KR2_laguna_tg32": {
+   "tag": "KR2_laguna_tg32",
+   "cmd": "C:\\Users\\Federico\\Documents\\evo-compress\\tools\\llamacpp-b10098\\llama-bench.exe -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 32 -p 0 -r 2 --progress",
+   "n_gen": 32,
+   "reps": 2,
+   "tok_s": 0.44,
+   "sd": 0.08,
+   "wall_s": 156.5,
+   "error": null,
+   "log": "disktier_20260731_1857_KR2_laguna_tg32.log",
+   "disk_counter_log": "disktier_20260731_1857_KR2_laguna_tg32_diskcounter.log",
+   "disk": {
+    "samples": 0,
+    "note": "disk counter unreadable - NOT substituted with an estimate"
+   }
+  }
+ },
+ "started_utc": "2026-07-31 17:11:00 UTC",
+ "cal_id_at_bench": "2dc97d41",
+ "gate_pre": {
+  "gpu_mib": 745,
+  "cpu_pct": 8,
+  "samples": 27
+ },
+ "gate_primary": {
+  "gpu_mib": 750,
+  "cpu_pct": 13,
+  "samples": 19
+ },
+ "finished_utc": "2026-07-31 17:37:33 UTC"
+}

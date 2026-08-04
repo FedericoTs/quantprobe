@@ -1,0 +1,29 @@
+grid 10x17x2 = 340 cells @ 2.5 bits   inject=upgrade
+  upgrade counterfactuals inspected at the evaluate() boundary : 700
+  upgrades FIRED across the grid                              : 158
+  cells where run() PRINTS speculation advice                 : 127
+  of those, oversold by the shipped gate (bound < R*(1-tol))  : 22
+  of those, oversold by the OLD k=2 ceiling<1.5 metric        : 17
+
+  A-1 invented upgrade pairs (same tok/s, different resource) : 10
+  A-2 counterfactual-identity mismatches                      : 700
+  A-3 advisor arithmetic not reproduced independently         : 51
+  B-1 UNREACHABLE headlines printed unqualified               : 0
+  B-2 qualifier printed on a row that could reach it          : 0
+  B-3 printed bound != recomputed bound                       : 0
+  B-4 row terms failed to reconstruct their own tok/s         : 0
+    FAILURE: {'cell': 'glm-air/colibri/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 0.9014390243837906, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 0.9014390243837906, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'glm-air/ddr5/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 0.966029915089259, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 0.966029915089259, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'glm-air/epyc-256/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 1.1090732602762425, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 1.1090732602762425, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'llama-70b/colibri/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 0.5749513323021224, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 0.5749513323021224, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'llama-70b/ddr5/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 0.6632971900161534, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 0.6632971900161534, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'llama-70b/epyc-256/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 0.9168963864309821, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 0.9168963864309821, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'llama-70b/rtx-4090/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 0.6745361139051039, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 0.6745361139051039, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'qwen3-30b/colibri/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 1.0891576811601686, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 1.0891576811601686, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'qwen3-30b/ddr5/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 1.1213689860452258, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 1.1213689860452258, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'qwen3-30b/epyc-256/ctx16384', 'a': ['+16 GB RAM', 'ram_capacity', 1.1844205707687023, 'pure CPU (GPU idle)'], 'b': ['NVMe SSD', 'io', 1.1844205707687023, 'pure CPU (GPU idle)']}
+    FAILURE: {'cell': 'deepseek-16b/2016-xmp/ctx0', 'diff': ['MISSING:n_layer', 'MISSING:true_size_gb', 'rc'], 'base': {'t': 15.7, 'a': 2.4, 'ne': 1.3, 'moe': True, 'bits': 2.5, 'vc': 6, 'vb': 192, 'rc': 16, 'rb': 48, 'db': 0.45, 'geta': 0.35, 'gl': 0.04, 'ctx': 0, 'kvp': 31104, 'n_layer': 27, 'true_size_gb': None, 'codebook_share': 0.0}, 'counterfactual': {'t': 15.7, 'a': 2.4, 'ne': 1.3, 'moe': True, 'bits': 2.5, 'vc': 6, 'vb': 192, 'rc': 32, 'rb': 48, 'db': 0.45, 'geta': 0.35, 'gl': 0.04, 'ctx': 0, 'kvp': 31104, 'n_layer': None, 'true_size_gb': None, 'codebook_share': 0.0}}
+    FAILURE: {'cell': 'deepseek-16b/2016-xmp/ctx0', 'diff': ['MISSING:n_layer', 'MISSING:true_size_gb', 'db'], 'base': {'t': 15.7, 'a': 2.4, 'ne': 1.3, 'moe': True, 'bits': 2.5, 'vc': 6, 'vb': 192, 'rc': 16, 'rb': 48, 'db': 0.45, 'geta': 0.35, 'gl': 0.04, 'ctx': 0, 'kvp': 31104, 'n_layer': 27, 'true_size_gb': None, 'codebook_share': 0.0}, 'counterfactual': {'t': 15.7, 'a': 2.4, 'ne': 1.3, 'moe': True, 'bits': 2.5, 'vc': 6, 'vb': 192, 'rc': 16, 'rb': 48, 'db': 3.5, 'geta': 0.35, 'gl': 0.04, 'ctx': 0, 'kvp': 31104, 'n_layer': None, 'true_size_gb': None, 'codebook_share': 0.0}}
+
+VERDICT: FAILURES
+wrote weights/data/resweep340_20260731T1656Z_inject_upgrade.json

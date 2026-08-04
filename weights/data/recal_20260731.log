@@ -1,0 +1,11 @@
+=== explicit calibrate ===
+quantprobe calibrate - measuring THIS machine (nothing is sent anywhere)
+
+  RAM stream: 25.23 GB/s [measured] - this replaces the spec-sheet number, which overstates what decode gets
+  GPU: NVIDIA GeForce GTX 1060 6GB, idle 1873 MHz (max 1911), 54 C [os]
+  (pass --model your.gguf to also measure disk + a real decode anchor)
+
+  saved: C:\Users\Federico\.quantprobe\calibration.json  [state id 37a91948]
+  plan/optimize/auto now use the measured values automatically (tagged [calibrated]).
+  Delete the file to return to auto-detection. Re-run after RAM/driver changes.
+=== ladder ===

@@ -1,0 +1,74 @@
+==============================================================================================================
+PREVIOUSLY-AFFECTED CELLS, RE-SCORED ON THE CURRENT TREE - one line per cell, no aggregate
+old artifact: weights/data/exp54_binding_constraint.json (commit 0782477)
+new audit   : resweep340_20260731T1656Z_audit.json
+==============================================================================================================
+
+D-2  THE 17 CELLS WHOSE SPECULATION HEADLINE WAS UNREACHABLE
+     cell                                   R   bound   CPU%  k2ceil  oversold?  qualifier printed?
+     gemma-12b/2016-xmp/ctx16384         2.10   1.116  80.2%   1.152  True       YES
+     gemma-12b/2016/ctx16384             2.10   1.156  74.2%   1.208  True       YES
+     gemma-12b/laptop-8gb/ctx16384       2.10   1.122  79.2%   1.161  True       YES
+     gemma-12b/ddr5/ctx16384             2.10   1.072  87.1%   1.094  True       YES
+     gemma-12b/colibri/ctx16384          2.10   1.094  83.5%   1.123  True       YES
+     gemma-12b/epyc-256/ctx16384         2.10   1.030  94.4%   1.039  True       YES
+     mistral-7b/2016-xmp/ctx16384        2.10   1.149  75.3%   1.197  True       YES
+     mistral-7b/2016/ctx16384            2.10   1.180  70.9%   1.241  True       YES
+     mistral-7b/ddr5/ctx16384            2.10   1.061  89.1%   1.078  True       YES
+     mistral-7b/colibri/ctx16384         2.10   1.079  86.0%   1.103  True       YES
+     mistral-7b/epyc-256/ctx16384        2.10   1.025  95.3%   1.032  True       YES
+     llama-70b/rtx-3090/ctx16384         2.10   1.229  64.5%   1.310  True       YES
+     llama-70b/rtx-4090/ctx16384         2.10   1.155  74.4%   1.206  True       YES
+     llama-70b/rtx-5090/ctx16384         2.10   1.145  75.8%   1.192  True       YES
+     llama-70b/ddr5/ctx16384             2.10   1.154  74.5%   1.205  True       YES
+     llama-70b/colibri/ctx16384          2.10   1.196  68.7%   1.264  True       YES
+     llama-70b/epyc-256/ctx16384         2.10   1.067  88.0%   1.087  True       YES
+     -> 17 qualified or no longer oversold | 0 still printing an unreachable headline | 0 unmeasurable
+
+D-2b CELLS OVERSOLD NOW THAT THE OLD SWEEP DID NOT LIST (5). The old sweep's metric was
+     `spec_ceiling(row, k=2) < 1.5`; the SHIPPED gate is `bound < R*(1-1%)`, which is the
+     stricter and more honest one (it uses the drafter's own measured amortization R, not a
+     K=2 draft-model proxy). Every one of these must also carry the qualifier.
+     llama-70b/2016-xmp/ctx16384        R 2.10 bound 2.025 CPU 3.4% k2ceil 2.807  qualifier YES
+     llama-70b/2016/ctx16384            R 2.10 bound 2.025 CPU 3.4% k2ceil 2.808  qualifier YES
+     llama-70b/gaming/ctx16384          R 2.10 bound 1.597 CPU 28.7% k2ceil 1.907  qualifier YES
+     llama-70b/laptop-8gb/ctx16384      R 2.10 bound 1.831 CPU 13.4% k2ceil 2.365  qualifier YES
+     llama-70b/rtx-3060/ctx16384        R 2.10 bound 1.597 CPU 28.7% k2ceil 1.907  qualifier YES
+
+D-1  THE 31 CELLS WHOSE UPGRADE ADVICE MOVED - what the advisor prints NOW
+     (invented-pair = two FIRED upgrades on DIFFERENT resources at the SAME tok/s)
+     qwen3-30b/2016/ctx0                clean    pre-fix[(none)]  ->  now[enable XMP (free) 23.4463]
+     deepseek-16b/2016/ctx0             clean    pre-fix[(none)]  ->  now[enable XMP (free) 42.6772]
+     llama-70b/rtx-3060/ctx0            clean    pre-fix[+16 GB RAM 1.06409]  ->  now[+16 GB RAM 1.30197]
+     llama-70b/gaming/ctx0              clean    pre-fix[+16 GB RAM 1.06409]  ->  now[+16 GB RAM 1.30197]
+     qwen3-30b/2016/ctx16384            clean    pre-fix[enable XMP (free) 15.7075]  ->  now[enable XMP (free) 16.7943]
+     qwen3-30b/ddr5/ctx16384            clean    pre-fix[+16 GB RAM 1.12137, NVMe SSD 1.12137]  ->  now[(none)]
+     qwen3-30b/colibri/ctx16384         clean    pre-fix[+16 GB RAM 1.08916, NVMe SSD 1.08916]  ->  now[(none)]
+     qwen3-30b/epyc-256/ctx16384        clean    pre-fix[+16 GB RAM 1.18442, NVMe SSD 1.18442]  ->  now[(none)]
+     deepseek-16b/2016/ctx16384         clean    pre-fix[(none)]  ->  now[enable XMP (free) 34.627]
+     glm-air/2016-xmp/ctx16384          clean    pre-fix[+16 GB RAM 0.229653, NVMe SSD 0.530235]  ->  now[+16 GB RAM 0.211477, NVMe SSD 0.442438]
+     glm-air/2016/ctx16384              clean    pre-fix[+16 GB RAM 0.223076, NVMe SSD 0.504003]  ->  now[+16 GB RAM 0.205888, NVMe SSD 0.424024]
+     glm-air/rtx-3060/ctx16384          clean    pre-fix[+16 GB RAM 5.1438]  ->  now[+16 GB RAM 5.82827]
+     glm-air/gaming/ctx16384            clean    pre-fix[+16 GB RAM 5.1438]  ->  now[+16 GB RAM 5.82827]
+     glm-air/ddr5/ctx16384              clean    pre-fix[+16 GB RAM 0.96603, NVMe SSD 0.96603]  ->  now[(none)]
+     glm-air/colibri/ctx16384           clean    pre-fix[+16 GB RAM 0.901439, NVMe SSD 0.901439]  ->  now[(none)]
+     glm-air/epyc-256/ctx16384          clean    pre-fix[+16 GB RAM 1.10907, NVMe SSD 1.10907]  ->  now[(none)]
+     glm-744b/2016-xmp/ctx16384         clean    pre-fix[+16 GB RAM 0.051168, NVMe SSD 0.269055]  ->  now[NVMe SSD 0.202168]
+     glm-744b/2016/ctx16384             clean    pre-fix[+16 GB RAM 0.05075, NVMe SSD 0.258649]  ->  now[NVMe SSD 0.196236]
+     glm-744b/laptop-8gb/ctx16384       clean    pre-fix[+16 GB RAM 0.18555, NVMe SSD 0.267314]  ->  now[NVMe SSD 0.201184]
+     glm-744b/ddr5/ctx16384             clean    pre-fix[+16 GB RAM 0.403034, NVMe SSD 0.314001]  ->  now[(none)]
+     glm-744b/colibri/ctx16384          clean    pre-fix[+16 GB RAM 0.442926, NVMe SSD 0.359605]  ->  now[(none)]
+     glm-744b/epyc-256/ctx16384         clean    pre-fix[+16 GB RAM 0.995281, NVMe SSD 0.737425]  ->  now[+16 GB RAM 0.46021]
+     llama-70b/2016-xmp/ctx16384        clean    pre-fix[+16 GB RAM 0.0263, NVMe SSD 0.112825]  ->  now[+16 GB RAM 0.025442, NVMe SSD 0.098557]
+     llama-70b/2016/ctx16384            clean    pre-fix[+16 GB RAM 0.026111, NVMe SSD 0.111201]  ->  now[+16 GB RAM 0.025265, NVMe SSD 0.097315]
+     llama-70b/rtx-3060/ctx16384        clean    pre-fix[+16 GB RAM 0.285071, NVMe SSD 0.161908]  ->  now[+16 GB RAM 0.390196]
+     llama-70b/rtx-4090/ctx16384        clean    pre-fix[+16 GB RAM 0.674536, NVMe SSD 0.674536]  ->  now[(none)]
+     llama-70b/laptop-8gb/ctx16384      clean    pre-fix[+16 GB RAM 0.102253, NVMe SSD 0.112559]  ->  now[+16 GB RAM 0.090393, NVMe SSD 0.098354]
+     llama-70b/gaming/ctx16384          clean    pre-fix[+16 GB RAM 0.285071, NVMe SSD 0.161908]  ->  now[+16 GB RAM 0.390196]
+     llama-70b/ddr5/ctx16384            clean    pre-fix[+16 GB RAM 0.663297, NVMe SSD 0.663297]  ->  now[(none)]
+     llama-70b/colibri/ctx16384         clean    pre-fix[+16 GB RAM 0.574951, NVMe SSD 0.574951]  ->  now[(none)]
+     llama-70b/epyc-256/ctx16384        clean    pre-fix[+16 GB RAM 0.916896, NVMe SSD 0.916896]  ->  now[(none)]
+     -> 31 clean | 0 with an invented pair or a mismatched counterfactual | 0 unmeasurable
+
+GRID: {"models": 10, "machines": 17, "ctx": [0, 16384], "cells": 340, "bits": 2.5}
+as staked (10x17x2=340): True

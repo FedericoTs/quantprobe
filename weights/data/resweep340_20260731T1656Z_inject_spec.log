@@ -1,0 +1,29 @@
+grid 10x17x2 = 340 cells @ 2.5 bits   inject=spec
+  upgrade counterfactuals inspected at the evaluate() boundary : 700
+  upgrades FIRED across the grid                              : 131
+  cells where run() PRINTS speculation advice                 : 127
+  of those, oversold by the shipped gate (bound < R*(1-tol))  : 22
+  of those, oversold by the OLD k=2 ceiling<1.5 metric        : 17
+
+  A-1 invented upgrade pairs (same tok/s, different resource) : 0
+  A-2 counterfactual-identity mismatches                      : 0
+  A-3 advisor arithmetic not reproduced independently         : 0
+  B-1 UNREACHABLE headlines printed unqualified               : 22
+  B-2 qualifier printed on a row that could reach it          : 0
+  B-3 printed bound != recomputed bound                       : 0
+  B-4 row terms failed to reconstruct their own tok/s         : 0
+    FAILURE: {'cell': 'gemma-12b/2016-xmp/ctx16384', 'R': 2.1016949152542375, 'bound': 1.1156199837986802, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.802291679145778}
+    FAILURE: {'cell': 'gemma-12b/2016/ctx16384', 'R': 2.1016949152542375, 'bound': 1.1564667186451187, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.741894556274951}
+    FAILURE: {'cell': 'gemma-12b/colibri/ctx16384', 'R': 2.1016949152542375, 'bound': 1.094479052656514, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.8353216888405329}
+    FAILURE: {'cell': 'gemma-12b/ddr5/ctx16384', 'R': 2.1016949152542375, 'bound': 1.0724117597747622, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.8711881365998912}
+    FAILURE: {'cell': 'gemma-12b/epyc-256/ctx16384', 'R': 2.1016949152542375, 'bound': 1.030153868714461, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.9441595036035482}
+    FAILURE: {'cell': 'gemma-12b/laptop-8gb/ctx16384', 'R': 2.1016949152542375, 'bound': 1.1224711146272575, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.7918545963060206}
+    FAILURE: {'cell': 'llama-70b/2016-xmp/ctx16384', 'R': 2.1016949152542375, 'bound': 2.0250993824565264, 'placement': 'stream from disk (cold experts)', 'cpu_share': 0.03433173528488231}
+    FAILURE: {'cell': 'llama-70b/2016/ctx16384', 'R': 2.1016949152542375, 'bound': 2.0252524873658206, 'placement': 'stream from disk (cold experts)', 'cpu_share': 0.03426052021093343}
+    FAILURE: {'cell': 'llama-70b/colibri/ctx16384', 'R': 2.1016949152542375, 'bound': 1.1964536066948097, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.6867634213202759}
+    FAILURE: {'cell': 'llama-70b/ddr5/ctx16384', 'R': 2.1016949152542375, 'bound': 1.1542150917434395, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.7451125476061464}
+    FAILURE: {'cell': 'llama-70b/epyc-256/ctx16384', 'R': 2.1016949152542375, 'bound': 1.0673419461075175, 'placement': 'pure CPU (GPU idle)', 'cpu_share': 0.8796377177502964}
+    FAILURE: {'cell': 'llama-70b/gaming/ctx16384', 'R': 2.1016949152542375, 'bound': 1.5972225726556268, 'placement': 'stream from disk (cold experts)', 'cpu_share': 0.2866887011613786}
+
+VERDICT: FAILURES
+wrote weights/data/resweep340_20260731T1656Z_inject_spec.json

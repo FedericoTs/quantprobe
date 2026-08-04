@@ -1,0 +1,3258 @@
+{
+ "cells": [
+  {
+   "cell": "deepseek-16b/2016-xmp/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "deepseek-16b/2016-xmp/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "deepseek-16b/2016/ctx0",
+   "fired": [
+    [
+     "enable XMP (free)",
+     42.677161,
+     "split experts: 68%->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "deepseek-16b/2016/ctx16384",
+   "fired": [
+    [
+     "enable XMP (free)",
+     34.627015,
+     "split experts: 58%->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "deepseek-16b/colibri/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/colibri/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/ddr5/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/ddr5/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/dgx-spark/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/epyc-256/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/epyc-256/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/gaming/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/gaming/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/laptop-8gb/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/laptop-8gb/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m2-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     122.952477,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m2-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     79.957105,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m2-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     245.904954,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m2-ultra/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     155.882902,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m3-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     122.952477,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m3-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     79.957105,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m3-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     251.745197,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m3-ultra/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     159.585121,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m4-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     167.830131,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/mac-m4-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     109.141448,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-3060/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-3060/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-3090/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-4090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-5090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "deepseek-16b/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gemma-12b/2016-xmp/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/2016-xmp/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.1156199837986802,
+   "cpu_share": 0.802291679145778,
+   "ceiling_k2": 1.1518156984492953,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "gemma-12b/2016/ctx0",
+   "fired": [
+    [
+     "enable XMP (free)",
+     5.94165,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/2016/ctx16384",
+   "fired": [
+    [
+     "enable XMP (free)",
+     0.987258,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.1564667186451187,
+   "cpu_share": 0.741894556274951,
+   "ceiling_k2": 1.2078320115189436,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "gemma-12b/colibri/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/colibri/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.094479052656514,
+   "cpu_share": 0.8353216888405329,
+   "ceiling_k2": 1.123324823176098,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "gemma-12b/ddr5/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/ddr5/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.0724117597747622,
+   "cpu_share": 0.8711881365998912,
+   "ceiling_k2": 1.09394178666067,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "gemma-12b/dgx-spark/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/epyc-256/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/epyc-256/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.030153868714461,
+   "cpu_share": 0.9441595036035482,
+   "ceiling_k2": 1.0386664327985347,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "gemma-12b/gaming/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/gaming/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/laptop-8gb/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/laptop-8gb/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.1224711146272575,
+   "cpu_share": 0.7918545963060206,
+   "ceiling_k2": 1.1611213864851033,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "gemma-12b/mac-m2-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     49.513747,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m2-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m2-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     99.027494,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m2-ultra/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m3-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     49.513747,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m3-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m3-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     101.379397,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m4-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     67.586265,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/mac-m4-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-3060/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-3060/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-3090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-4090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-5090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gemma-12b/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-744b/2016-xmp/ctx0",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.356591,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/2016-xmp/ctx16384",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.202168,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/2016/ctx0",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.340606,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/2016/ctx16384",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.196236,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/colibri/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/colibri/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/ddr5/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/ddr5/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/dgx-spark/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.036572,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/dgx-spark/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.017282,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/epyc-256/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     5.507246,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/epyc-256/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.46021,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/gaming/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/gaming/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/laptop-8gb/ctx0",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.393207,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/laptop-8gb/ctx16384",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.201184,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m2-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m2-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m2-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.765742,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m2-ultra/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.72632,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m3-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.831061,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m3-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.820519,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m3-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m4-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.016193,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/mac-m4-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.001825,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-3060/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-3060/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-3090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-4090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-5090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-744b/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/2016-xmp/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.44562,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     1.35806,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/2016-xmp/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.211477,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.442438,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/2016/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.435363,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     1.317517,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/2016/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.205888,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.424024,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/colibri/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/colibri/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/ddr5/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/ddr5/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/dgx-spark/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/epyc-256/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/epyc-256/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/gaming/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-air/gaming/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     5.828268,
+     "split experts: 15%->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/laptop-8gb/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.845476,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     1.468873,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/laptop-8gb/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.426616,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     1.284672,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m2-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m2-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m2-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m2-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m3-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m3-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m3-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m4-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/mac-m4-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/rtx-3060/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-air/rtx-3060/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     5.828268,
+     "split experts: 15%->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "glm-air/rtx-3090/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-air/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-air/rtx-4090/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-air/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-air/rtx-5090/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "glm-air/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "gpt-oss-120b/2016-xmp/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.079818,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     3.654048,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/2016-xmp/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.983779,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     3.41225,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/2016/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.06005,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     3.557825,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/2016/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.967343,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     3.328194,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/colibri/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/colibri/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/ddr5/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/ddr5/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/dgx-spark/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/epyc-256/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/epyc-256/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/gaming/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     14.779206,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/gaming/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     13.801456,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/laptop-8gb/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     4.467073,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     3.975436,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/laptop-8gb/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     4.016496,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     3.720244,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m2-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m2-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m2-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m2-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m3-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m3-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m3-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m4-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/mac-m4-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-3060/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     14.779206,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-3060/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     13.801456,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-3090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-4090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-5090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "gpt-oss-120b/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/2016-xmp/ctx0",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.357335,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/2016-xmp/ctx16384",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.25881,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/2016/ctx0",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.356484,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/2016/ctx16384",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.251448,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/colibri/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/colibri/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/ddr5/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/ddr5/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/dgx-spark/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/epyc-256/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.272544,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/epyc-256/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/gaming/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/gaming/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/laptop-8gb/ctx0",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.362256,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/laptop-8gb/ctx16384",
+   "fired": [
+    [
+     "NVMe SSD",
+     0.360233,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m2-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m2-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m2-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m2-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m3-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m3-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m3-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m4-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/mac-m4-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-3060/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-3060/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-3090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-4090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-5090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "kimi-k2.6/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "llama-70b/2016-xmp/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.034145,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.143859,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/2016-xmp/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.025442,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.098557,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 2.0250993824565264,
+   "cpu_share": 0.03433173528488231,
+   "ceiling_k2": 2.807244827410945,
+   "oversold_by_old_k2_metric": false,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/2016/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.033851,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.141639,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/2016/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.025265,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.097315,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 2.0252524873658206,
+   "cpu_share": 0.03426052021093343,
+   "ceiling_k2": 2.807619023407867,
+   "oversold_by_old_k2_metric": false,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/colibri/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/colibri/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.1964536066948097,
+   "cpu_share": 0.6867634213202759,
+   "ceiling_k2": 1.2639418885452738,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/ddr5/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/ddr5/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.1542150917434395,
+   "cpu_share": 0.7451125476061464,
+   "ceiling_k2": 1.2047103716719425,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/dgx-spark/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/epyc-256/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/epyc-256/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.0673419461075175,
+   "cpu_share": 0.8796377177502964,
+   "ceiling_k2": 1.0872419481586602,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/gaming/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.301974,
+     "split: 17/80 layers->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/gaming/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.390196,
+     "split: 15/80 layers->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.5972225726556268,
+   "cpu_share": 0.2866887011613786,
+   "ceiling_k2": 1.9067262537081935,
+   "oversold_by_old_k2_metric": false,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/laptop-8gb/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.140662,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.143495,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/laptop-8gb/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.090393,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.098354,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.8310163584048587,
+   "cpu_share": 0.13418386066385454,
+   "ceiling_k2": 2.3652446759364416,
+   "oversold_by_old_k2_metric": false,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/mac-m2-max/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m2-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m2-ultra/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m2-ultra/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m3-max/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m3-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m3-ultra/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m4-max/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/mac-m4-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/rtx-3060/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.301974,
+     "split: 17/80 layers->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/rtx-3060/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.390196,
+     "split: 15/80 layers->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.5972225726556268,
+   "cpu_share": 0.2866887011613786,
+   "ceiling_k2": 1.9067262537081935,
+   "oversold_by_old_k2_metric": false,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/rtx-3090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.2286953848353173,
+   "cpu_share": 0.6449238502563905,
+   "ceiling_k2": 1.3101308001087537,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/rtx-4090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.1551568216067125,
+   "cpu_share": 0.7437651152391436,
+   "ceiling_k2": 1.2060154941004186,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "llama-70b/rtx-5090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "llama-70b/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.14508932624415,
+   "cpu_share": 0.7582845414234439,
+   "ceiling_k2": 1.192099203812131,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "mistral-7b/2016-xmp/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/2016-xmp/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.1485737752230196,
+   "cpu_share": 0.7532304374068385,
+   "ceiling_k2": 1.1969067740676427,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "mistral-7b/2016/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/2016/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.180039873303258,
+   "cpu_share": 0.7089414610905633,
+   "ceiling_k2": 1.2407548655390461,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "mistral-7b/colibri/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/colibri/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.0793680806985368,
+   "cpu_share": 0.859723592227303,
+   "ceiling_k2": 1.1031653849168834,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "mistral-7b/ddr5/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/ddr5/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.0606178145869585,
+   "cpu_share": 0.8909690776392497,
+   "ceiling_k2": 1.0783848642744793,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "mistral-7b/dgx-spark/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/epyc-256/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/epyc-256/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": true,
+   "bound_x": 1.0250749345383998,
+   "cpu_share": 0.9533348654590467,
+   "ceiling_k2": 1.0321090036783875,
+   "oversold_by_old_k2_metric": true,
+   "oversold": true
+  },
+  {
+   "cell": "mistral-7b/gaming/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/gaming/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/laptop-8gb/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/laptop-8gb/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m2-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     81.835221,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m2-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m2-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     163.670442,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m2-ultra/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m3-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     81.835221,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m3-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m3-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     167.557615,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m4-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     111.705076,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/mac-m4-max/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-3060/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-3060/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-3090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-4090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-5090/ctx0",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "mistral-7b/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 2.1016949152542375,
+   "qualified": false,
+   "bound_x": 2.1016949152542375,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-235b/2016-xmp/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.113798,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.595561,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/2016-xmp/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.098459,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.373482,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/2016/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.111842,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.552238,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/2016/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.096651,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.351421,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/colibri/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/colibri/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/ddr5/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     2.022085,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/ddr5/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.693856,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/dgx-spark/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/epyc-256/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/epyc-256/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/gaming/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.142377,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/gaming/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.05473,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/laptop-8gb/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.502742,
+     "stream from disk (VRAM+RAM expert cache)"
+    ],
+    [
+     "NVMe SSD",
+     0.704654,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/laptop-8gb/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     0.299712,
+     "stream from disk (cold experts)"
+    ],
+    [
+     "NVMe SSD",
+     0.369724,
+     "stream from disk (cold experts)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m2-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     4.063327,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m2-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     3.350753,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m2-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m2-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m3-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m3-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m3-ultra/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m3-ultra/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m4-max/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/mac-m4-max/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-3060/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.142377,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-3060/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     1.05473,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-3090/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     4.153962,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-3090/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     3.860648,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-4090/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     6.621337,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-4090/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     6.088956,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-5090/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     7.948531,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-235b/rtx-5090/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     7.540904,
+     "stream from disk (VRAM+RAM expert cache)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/2016-xmp/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/2016-xmp/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/2016/ctx0",
+   "fired": [
+    [
+     "enable XMP (free)",
+     23.446347,
+     "split experts: 34%->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/2016/ctx16384",
+   "fired": [
+    [
+     "enable XMP (free)",
+     16.794276,
+     "split experts: 18%->VRAM, rest->RAM"
+    ]
+   ],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/colibri/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/colibri/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/ddr5/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/ddr5/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/dgx-spark/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/dgx-spark/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/epyc-256/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/epyc-256/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/gaming/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/gaming/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/laptop-8gb/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/laptop-8gb/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m2-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     99.285568,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m2-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     55.001931,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m2-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     198.571137,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m2-ultra/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     108.226644,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m3-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     99.285568,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m3-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     55.001931,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m3-ultra/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     203.287201,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m3-ultra/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     110.797027,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m4-max/ctx0",
+   "fired": [
+    [
+     "+16 GB RAM",
+     135.524801,
+     "pure CPU (GPU idle)"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/mac-m4-max/ctx16384",
+   "fired": [
+    [
+     "+16 GB RAM",
+     75.077635,
+     "hybrid: attention->VRAM, experts->RAM"
+    ]
+   ],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-3060/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-3060/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-3090/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-3090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-4090/ctx0",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-4090/ctx16384",
+   "fired": [],
+   "spec_branch_R": 4.634146341463414,
+   "qualified": false,
+   "bound_x": 4.634146341463414,
+   "cpu_share": 0.0,
+   "ceiling_k2": 3.0,
+   "oversold_by_old_k2_metric": false,
+   "oversold": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-5090/ctx0",
+   "fired": [],
+   "spec_printed": false
+  },
+  {
+   "cell": "qwen3-30b/rtx-5090/ctx16384",
+   "fired": [],
+   "spec_printed": false
+  }
+ ],
+ "checks": {
+  "cells": 340,
+  "adv_calls": 700,
+  "fired": 131,
+  "spec": 127,
+  "bound": 127
+ },
+ "n_spec_printed": 127,
+ "n_oversold_shipped_gate": 22,
+ "n_oversold_old_k2_metric": 17,
+ "invented_pairs": [],
+ "identity_mismatches": [],
+ "arithmetic_mismatches": [],
+ "unreachable_headlines": [],
+ "spurious_qualifiers": [],
+ "bound_text_mismatches": [],
+ "reconstruction_failures": [],
+ "grid": {
+  "models": 10,
+  "machines": 17,
+  "ctx": [
+   0,
+   16384
+  ],
+  "cells": 340,
+  "bits": 2.5
+ },
+ "inject": null,
+ "grid_as_staked": true,
+ "verdict": "CLEAN"
+}

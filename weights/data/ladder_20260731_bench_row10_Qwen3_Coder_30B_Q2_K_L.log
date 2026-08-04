@@ -1,0 +1,14 @@
+CMD: C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-bench.exe -m D:/evo-compress-data/gguf/Qwen3-Coder-30B-A3B-Instruct-Q2_K_L.gguf -ngl 99 -ot blk\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU -mmp 0 -b 1024 -ub 1024 -t 4 -n 64 -p 0 -r 2
+
+| model                          |       size |     params | backend    | ngl | n_batch | n_ubatch | ot                    | mmap |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | ------: | -------: | --------------------- | ---: | --------------: | -------------------: |
+| qwen3moe 30B.A3B Q2_K - Medium |  10.55 GiB |    30.53 B | CUDA       |  99 |    1024 |     1024 | blk\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\.ffn_.*_exps\.=CPU |    0 |            tg64 |         17.60 ± 0.47 |
+
+build: 0278d8362 (10098)
+
+--- stderr ---
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
+  Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
+load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll

@@ -1,0 +1,54 @@
+[19:11:05]   gate pre sample 1: cpu 54% (streak 0/3), gpu 745 MiB
+[19:11:26]   gate pre sample 2: cpu 16% (streak 1/3), gpu 745 MiB
+[19:11:47]   gate pre sample 3: cpu 40% (streak 0/3), gpu 745 MiB
+[19:12:09]   gate pre sample 4: cpu 36% (streak 0/3), gpu 745 MiB
+[19:12:30]   gate pre sample 5: cpu 47% (streak 0/3), gpu 745 MiB
+[19:12:51]   gate pre sample 6: cpu 4% (streak 1/3), gpu 745 MiB
+[19:13:13]   gate pre sample 7: cpu 45% (streak 0/3), gpu 745 MiB
+[19:13:34]   gate pre sample 8: cpu 39% (streak 0/3), gpu 745 MiB
+[19:13:55]   gate pre sample 9: cpu 44% (streak 0/3), gpu 745 MiB
+[19:14:17]   gate pre sample 10: cpu 36% (streak 0/3), gpu 745 MiB
+[19:14:38]   gate pre sample 11: cpu 36% (streak 0/3), gpu 745 MiB
+[19:14:59]   gate pre sample 12: cpu 47% (streak 0/3), gpu 745 MiB
+[19:15:20]   gate pre sample 13: cpu 50% (streak 0/3), gpu 745 MiB
+[19:15:42]   gate pre sample 14: cpu 34% (streak 0/3), gpu 745 MiB
+[19:16:03]   gate pre sample 15: cpu 39% (streak 0/3), gpu 745 MiB
+[19:16:24]   gate pre sample 16: cpu 50% (streak 0/3), gpu 745 MiB
+[19:16:46]   gate pre sample 17: cpu 10% (streak 1/3), gpu 745 MiB
+[19:17:07]   gate pre sample 18: cpu 17% (streak 2/3), gpu 745 MiB
+[19:17:28]   gate pre sample 19: cpu 45% (streak 0/3), gpu 745 MiB
+[19:17:50]   gate pre sample 20: cpu 42% (streak 0/3), gpu 745 MiB
+[19:18:11]   gate pre sample 21: cpu 36% (streak 0/3), gpu 745 MiB
+[19:18:32]   gate pre sample 22: cpu 47% (streak 0/3), gpu 745 MiB
+[19:18:54]   gate pre sample 23: cpu 7% (streak 1/3), gpu 745 MiB
+[19:19:15]   gate pre sample 24: cpu 40% (streak 0/3), gpu 745 MiB
+[19:19:36]   gate pre sample 25: cpu 16% (streak 1/3), gpu 745 MiB
+[19:19:58]   gate pre sample 26: cpu 5% (streak 2/3), gpu 745 MiB
+[19:20:19]   gate pre sample 27: cpu 8% (streak 3/3), gpu 745 MiB
+[19:20:19] KR3 falsifier: same harness on a RAM-resident 7B, must report > 3.0 tok/s
+[19:20:19] RUN KR3_control_7B_ngl0: C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -t 4 -n 64 -p 0 -r 1 --progress
+[19:20:41]   -> 6.98 tok/s (sd 0.0) wall 22.6s err=None
+[19:20:46]   gate primary sample 1: cpu 7% (streak 1/3), gpu 750 MiB
+[19:21:07]   gate primary sample 2: cpu 15% (streak 2/3), gpu 750 MiB
+[19:21:29]   gate primary sample 3: cpu 41% (streak 0/3), gpu 750 MiB
+[19:21:50]   gate primary sample 4: cpu 5% (streak 1/3), gpu 750 MiB
+[19:22:11]   gate primary sample 5: cpu 7% (streak 2/3), gpu 750 MiB
+[19:22:32]   gate primary sample 6: cpu 82% (streak 0/3), gpu 750 MiB
+[19:22:54]   gate primary sample 7: cpu 14% (streak 1/3), gpu 750 MiB
+[19:23:15]   gate primary sample 8: cpu 13% (streak 2/3), gpu 750 MiB
+[19:23:36]   gate primary sample 9: cpu 34% (streak 0/3), gpu 750 MiB
+[19:23:58]   gate primary sample 10: cpu 22% (streak 1/3), gpu 750 MiB
+[19:24:19]   gate primary sample 11: cpu 7% (streak 2/3), gpu 750 MiB
+[19:24:40]   gate primary sample 12: cpu 76% (streak 0/3), gpu 750 MiB
+[19:25:02]   gate primary sample 13: cpu 100% (streak 0/3), gpu 750 MiB
+[19:25:23]   gate primary sample 14: cpu 51% (streak 0/3), gpu 750 MiB
+[19:25:44]   gate primary sample 15: cpu 100% (streak 0/3), gpu 750 MiB
+[19:26:06]   gate primary sample 16: cpu 30% (streak 0/3), gpu 750 MiB
+[19:26:27]   gate primary sample 17: cpu 16% (streak 1/3), gpu 750 MiB
+[19:26:48]   gate primary sample 18: cpu 7% (streak 2/3), gpu 750 MiB
+[19:27:10]   gate primary sample 19: cpu 13% (streak 3/3), gpu 750 MiB
+[19:27:10] RUN PRIMARY_laguna_tg64: C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-bench.exe -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 64 -p 0 -r 2 --progress
+[19:34:56]   -> 0.34 tok/s (sd 0.17) wall 466.2s err=None
+[19:34:56] RUN KR2_laguna_tg32: C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\llama-bench.exe -m D:/evo-compress-data/gguf/Laguna-S-2.1-UD-Q2_K_XL.gguf -ngl 0 -b 2048 -ub 2048 -t 4 -n 32 -p 0 -r 2 --progress
+[19:37:33]   -> 0.44 tok/s (sd 0.08) wall 156.5s err=None
+[19:37:33] DONE -> C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\disktier_20260731_1857_measured.json

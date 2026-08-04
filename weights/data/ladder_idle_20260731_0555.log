@@ -1,0 +1,4 @@
+cpu sample 1: %
+ABORT: CPU not idle (%) - close other work and rerun
+cpu sample 1: 29%
+ABORT: CPU not idle (29%) - close other work and rerun

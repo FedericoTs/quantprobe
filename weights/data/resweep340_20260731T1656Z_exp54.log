@@ -1,0 +1,84 @@
+================================================================================================
+experiment #54 / pre-registration #88 -- WHICH RESOURCE BINDS
+grid: 10 models x 17 machines x ctx[0, 16384] = 340 cells @ 2.5 bits (unselected)
+regression baseline: git 0782477^:quantprobe/plan.py
+================================================================================================
+
+P-1  informativeness      distinct classes = 4 (>= 3), modal share = 52.4% (<= 85%)   PASS
+       bandwidth-bound     178 / 340  (52.4%)
+       IO-bound             99 / 340  (29.1%)
+       compute-bound        33 / 340  (9.7%)
+       capacity-bound       30 / 340  (8.8%)
+P-2  soundness            phantom-sensitivity 0 failures / 228 checks | monotonicity 0 failures / 280 checks   PASS
+                          terms reconstruct their own tok/s to 1e-09: 0 failures / 1527 rows
+                              (K-2's SECOND staked clause, prereg section 5. It was scored NOWHERE before the
+                               second adversarial pass: the smoke suite's version runs a hand-picked six-config
+                               grid that never emits the dense-split row - a WINNER on 8 of these 340 cells.
+                               Fault injection: dropping that row's CPU-tier KV term left tok/s bit-identical,
+                               every other arm clean, and this script printed PASS at exit 0 while the row
+                               reconstructed 4.94% off and the PRINTED share/ceiling moved 64.5%->67.7%, 2.82x->3.09x.)
+     P-1 HEADROOM (reported, NOT scored - the adversarial question about any threshold is whether it
+     was ever close to firing). Modal share over the same 340-cell grid at other bit-widths:
+       2b 55.9% (d4) | 2.5b 52.4% (d4) | 3.5b 50.9% (d4) | 4.5b 48.2% (d4) | 6b 43.2% (d4) | 8b 46.5% (d4)
+       Worst modal share anywhere in 2.0-8.0 bits: 55.9% against a staked bar of 85%;
+       fewest distinct classes anywhere: 4 against a staked bar of 3.
+       READ K-1's PASS ACCORDINGLY: on this grid the bar is not live. K-1 could not have fired at ANY
+       bit-width we ship, so its PASS is weak evidence and is NOT cited as a confirmed prediction.
+       The bar is not retuned here - back-fitting a threshold after seeing the answer is what the
+       protocol forbids. A live successor bar is staked FORWARD in the prereg, section 8.
+P-3  advice changes       (a) upgrade lines changed on 31 cells   PASS
+                          (b) codebook warning over-sold (<5%) on 124 CPU-tier cells   PASS
+                              (SYNTHETIC arm: run() also requires --iq-share > 0.3, which no preset sets;
+                               these are counterfactual cells, as prereg P-3b states.)
+                          (c) speculation ceiling < 1.5x on 17 of the 127 cells where run()
+                              actually PRINTS speculation advice   PASS
+                              (ungated count would be 35; the 18 extra are cells the
+                               shipped block never reaches and so cannot over-sell.)
+     P-3 carries NO kill rule (prereg section 5). If all three probes came back empty the classification
+     would be decoration - prereg section 7.4 names that as a refutation, but nothing in section 5 fires on it.
+     That asymmetry is a defect of the pre-registration, recorded in section 8 and staked forward as K-6.
+P-4  ceiling non-trivial  ceiling < 2.0x on 2/340 = 0.6% (>= 10%)   MISS
+       MISS, and the reason is worth more than the prediction: the median binding share is 99.6% over
+       all 340 cells and 91.2% over the 172 that use more than one resource at all.
+       The modelled token is dominated by ONE resource almost everywhere, so the binding resource's
+       own ceiling is >=2x by construction. P-4 staked in advance that a miss here costs this
+       number its headline space - applied: binding_report now demotes it and says so on the page.
+       The caps that DO bite are the non-binding ones ('faster storage: NO effect'), which is
+       the BigMoeOnEdge lesson and is unaffected by this miss. P-4 carries no kill rule (section 5).
+
+P-5  external arm (BigMoeOnEdge laptop, retrodiction -- see prereg section 0.3)
+       hot 1.428168 GB (staked 1.428168) | streamable 0.744573 GB (staked 0.744573)
+       C1 our uniform residency : miss 0.515369  io 0.127910s  ram 0.092312s  -> IO-bound (58.1%, margin 1.39x)
+       C2 their measured 80% hit: miss 0.200000  io 0.049638s  ram 0.104429s  -> bandwidth-bound (67.8%, margin 2.10x)
+       C2 RAM term vs their published compute floor 0.115 s: -9.2% (kill at +/-15%)
+       staked numbers reproduced: yes | classes as staked: yes   PASS
+       hot/streamable/miss are inverted out of the shipped disk row's own terms, and eta_r is imported (plan.ETA_R_MOE = 0.38),
+       so a change inside evaluate's disk row breaks P-5 instead of leaving it self-consistent.
+       EPISTEMIC GRADE (prereg 0.3, sharpened by adversarial review): the author computed all of section 3
+       BY HAND before staking, INCLUDING the -9.2% against their compute floor, and the +/-15% band was
+       chosen knowing that number. P-5 is therefore a REPRODUCTION check on shipped code against arithmetic
+       already done, not a blind prediction about the world. K-5 can fire on an implementation bug; it
+       cannot fire on a surprise from BigMoeOnEdge, because there is no surprise left to have.
+
+KILL RULES
+  K-1 label carries information            PASS
+  K-2 classification is sound              PASS
+  K-3 no predicted number moved            PASS (340/340 identical)
+      arm 1 (staked, prereg section 2): 340 preset cells, true_size_gb=None, codebook_share=0 -> 0 moved
+      arm 2 (added by the second adversarial pass): the same 340 pairs replayed with a
+      PINNED file size (x0.8) and codebook_share=0.5 -> 0 moved. Every one of the 14
+      locked ladder rows is a `--gguf` run, i.e. exactly those two inputs; arm 1 pins neither, so a
+      regression that only bites when a real size is pinned was invisible to the staked arm.
+  K-4 all-in-VRAM <4.5b carries the caveat  PASS (137 all-in-VRAM WINNERS on the grid checked through binding_report, plus the >4.5-bit negative control)
+  K-5 agrees with the external ground truth PASS
+    upgrade advice changed: qwen3-30b/2016/ctx0  old=[]  new=[('enable XMP (free)', 23.446347)]
+    upgrade advice changed: deepseek-16b/2016/ctx0  old=[]  new=[('enable XMP (free)', 42.677161)]
+    upgrade advice changed: llama-70b/rtx-3060/ctx0  old=[('+16 GB RAM', 1.06409)]  new=[('+16 GB RAM', 1.301974)]
+    upgrade advice changed: llama-70b/gaming/ctx0  old=[('+16 GB RAM', 1.06409)]  new=[('+16 GB RAM', 1.301974)]
+    upgrade advice changed: qwen3-30b/2016/ctx16384  old=[('enable XMP (free)', 15.707461)]  new=[('enable XMP (free)', 16.794276)]
+
+================================================================================================
+VERDICT: PASS -- every staked kill rule holds.
+================================================================================================
+
+wrote weights\data\exp54_binding_constraint.json and weights\data\exp54_binding_constraint.log

@@ -1,0 +1,65 @@
+# prereg #92 shape sweep, 2026-08-04 09:17:57
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=128 row_bytes=1152 tensors=2730 gbs=22.03
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=256 row_bytes=1152 tensors=1365 gbs=33.85
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=512 row_bytes=1152 tensors=682 gbs=41.58
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=1024 row_bytes=1152 tensors=341 gbs=46.52
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=2048 row_bytes=1152 tensors=170 gbs=50.34
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=4096 row_bytes=1152 tensors=85 gbs=52.41
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=8192 row_bytes=1152 tensors=42 gbs=53.38
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=16384 row_bytes=1152 tensors=21 gbs=53.91
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=128 row_bytes=2304 tensors=1365 gbs=28.26
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=256 row_bytes=2304 tensors=682 gbs=31.44
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=512 row_bytes=2304 tensors=341 gbs=36.22
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=1024 row_bytes=2304 tensors=170 gbs=37.95
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=2048 row_bytes=2304 tensors=85 gbs=38.87
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=4096 row_bytes=2304 tensors=42 gbs=39.46
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=8192 row_bytes=2304 tensors=21 gbs=39.71
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=16384 row_bytes=2304 tensors=10 gbs=39.86
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=128 row_bytes=1152 tensors=2730 gbs=24.68
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=256 row_bytes=1152 tensors=1365 gbs=34.85
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=512 row_bytes=1152 tensors=682 gbs=43.11
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=1024 row_bytes=1152 tensors=341 gbs=48.76
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=2048 row_bytes=1152 tensors=170 gbs=52.14
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=4096 row_bytes=1152 tensors=85 gbs=54.16
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=8192 row_bytes=1152 tensors=42 gbs=55.19
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=2048 rows=16384 row_bytes=1152 tensors=21 gbs=55.75
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=128 row_bytes=2304 tensors=1365 gbs=28.76
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=256 row_bytes=2304 tensors=682 gbs=34.22
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=512 row_bytes=2304 tensors=341 gbs=38.76
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=1024 row_bytes=2304 tensors=170 gbs=40.64
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=2048 row_bytes=2304 tensors=85 gbs=41.86
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=4096 row_bytes=2304 tensors=42 gbs=42.53
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=8192 row_bytes=2304 tensors=21 gbs=42.73
+DEVICE name="NVIDIA GeForce GTX 1060 6GB" cc=6.1 sms=10
+POINT K=4096 rows=16384 row_bytes=2304 tensors=10 gbs=42.98

@@ -1,0 +1,17 @@
+grid 10x17x2 = 340 cells @ 2.5 bits   inject=None
+  upgrade counterfactuals inspected at the evaluate() boundary : 700
+  upgrades FIRED across the grid                              : 131
+  cells where run() PRINTS speculation advice                 : 127
+  of those, oversold by the shipped gate (bound < R*(1-tol))  : 22
+  of those, oversold by the OLD k=2 ceiling<1.5 metric        : 17
+
+  A-1 invented upgrade pairs (same tok/s, different resource) : 0
+  A-2 counterfactual-identity mismatches                      : 0
+  A-3 advisor arithmetic not reproduced independently         : 0
+  B-1 UNREACHABLE headlines printed unqualified               : 0
+  B-2 qualifier printed on a row that could reach it          : 0
+  B-3 printed bound != recomputed bound                       : 0
+  B-4 row terms failed to reconstruct their own tok/s         : 0
+
+VERDICT: CLEAN
+wrote weights/data/resweep340_20260731T1656Z_audit.json

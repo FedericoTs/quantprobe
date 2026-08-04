@@ -1,0 +1,65 @@
+[05:35:29] STAKE under cal_id 75eb1d48 (ram 22.58 GB/s, disk 0.45 GB/s, ambient GPU 787 MiB)
+[05:35:37]   Qwen2.5-0.5B Q8_0            predicted  124.4  all in VRAM  [ub4096 in output: False]
+[05:35:45]   Qwen3-0.6B Q8_0              predicted  103.3  all in VRAM  [ub4096 in output: False]
+[05:35:58]   Qwen3.5-4B Q4_K_M            predicted   32.7  all in VRAM  [ub4096 in output: False]
+[05:36:06]   Qwen2.5-7B IQ4_NL            predicted   27.5  all in VRAM  [ub4096 in output: False]
+[05:36:14]   Qwen2.5-7B Q4_K_M            predicted   21.5  all in VRAM  [ub4096 in output: False]
+[05:36:34]   gemma4-12B depth-aware       predicted   12.5  all in VRAM  [ub4096 in output: False]
+[05:36:40]   DS-Lite 16B IQ2_XS           predicted   29.3  split experts: 65%->VRAM, rest->RAM  [ub4096 in output: True]
+[05:36:48]   Qwen2.5-14B Q4_K_M           predicted    4.5  split: 21/48 layers->VRAM, rest->RAM  [ub4096 in output: False]
+[05:36:53]   DS-Lite 16B Q4_K_M           predicted   18.9  split experts: 35%->VRAM, rest->RAM  [ub4096 in output: True]
+[05:37:02]   Qwen3-30B-A3B Q2_K           predicted   18.7  split experts: 32%->VRAM, rest->RAM  [ub4096 in output: True]
+[05:37:11]   Qwen3-Coder-30B Q2_K_L       predicted   18.7  split experts: 32%->VRAM, rest->RAM  [ub4096 in output: True]
+[05:37:23]   Qwen3.5-35B APEX-Mini        predicted   21.1  split experts: 24%->VRAM, rest->RAM  [ub4096 in output: False]
+[05:37:36]   Qwen3.6-35B Q2_K_XL          predicted   17.9  split experts: 25%->VRAM, rest->RAM  [ub4096 in output: True]
+[05:37:48]   Qwen3.6-35B APEX-MTP-Nano    predicted   18.5  split experts: 28%->VRAM, rest->RAM  [ub4096 in output: True]
+[05:37:48] staked 14 rows -> C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\ladder_20260731_staked.json
+[05:38:22]   bench row 00 Qwen2.5-0.5B Q8_0 (ambient 795 MiB): tg64 r=2 ...
+[05:38:25]     -> measured 144.98 +/- 6.87 (-14.2%)  [3s]
+[05:38:25]   bench row 01 Qwen3-0.6B Q8_0 (ambient 795 MiB): tg64 r=2 ...
+[05:38:30]     -> measured 104.38 +/- 5.37 (-1.0%)  [4s]
+[05:38:30]   bench row 02 Qwen3.5-4B Q4_K_M (ambient 795 MiB): tg64 r=2 ...
+[05:38:43]     -> measured 30.87 +/- 0.13 (+5.9%)  [13s]
+[05:38:43]   bench row 03 Qwen2.5-7B IQ4_NL (ambient 800 MiB): tg64 r=2 ...
+[05:38:59]     -> measured 25.13 +/- 0.01 (+9.4%)  [17s]
+[05:39:00]   bench row 04 Qwen2.5-7B Q4_K_M (ambient 795 MiB): tg64 r=2 ...
+[05:39:17]     -> measured 22.75 +/- 0.02 (-5.5%)  [18s]
+[05:39:17]   bench row 05 gemma4-12B depth-aware (ambient 795 MiB): tg64 r=2 ...
+[05:39:45]     -> measured 13.12 +/- 0.05 (-4.7%)  [27s]
+[05:39:45]   bench row 06 DS-Lite 16B IQ2_XS (ambient 752 MiB): tg64 r=2 ...
+[05:40:05]     -> measured 22.34 +/- 0.60 (+31.2%)  [20s]
+[05:40:05]   bench row 07 Qwen2.5-14B Q4_K_M (ambient 752 MiB): tg64 r=2 ...
+[05:40:59]     -> measured 4.61 +/- 0.05 (-2.4%)  [54s]
+[05:40:59]   bench row 08 DS-Lite 16B Q4_K_M (ambient 775 MiB): tg64 r=2 ...
+[05:41:31]     -> measured 21.22 +/- 0.15 (-10.9%)  [32s]
+[05:41:31]   bench row 09 Qwen3-30B-A3B Q2_K (ambient 775 MiB): tg64 r=2 ...
+[05:42:09]     -> measured 17.59 +/- 0.08 (+6.3%)  [38s]
+[05:42:10]   pp spot-check ub4096: -p 2048 r=3 ...
+[05:43:05]     -> ub4096: 390.96
+[05:43:05]   pp spot-check ub2048: -p 2048 r=3 ...
+[05:43:59]     -> ub2048: 385.72
+[05:43:59]     ub4096 vs ub2048: +1.36% (expected ~+4.3%)
+[05:43:59]   bench row 10 Qwen3-Coder-30B Q2_K_L (ambient 768 MiB): tg64 r=2 ...
+[05:44:35]     -> measured 17.60 +/- 0.47 (+6.2%)  [36s]
+[05:44:35]   bench row 11 Qwen3.5-35B APEX-Mini (ambient 773 MiB): tg64 r=2 ...
+[05:45:12]     -> measured 19.68 +/- 0.23 (+7.2%)  [38s]
+[05:45:13]   bench row 12 Qwen3.6-35B Q2_K_XL (ambient 778 MiB): tg64 r=2 ...
+[05:45:52]     -> measured 13.14 +/- 0.08 (+36.2%)  [40s]
+[05:45:52]   bench row 13 Qwen3.6-35B APEX-MTP-Nano (ambient 772 MiB): tg64 r=2 ...
+[05:46:29]     -> measured 14.07 +/- 0.10 (+31.5%)  [37s]
+[05:46:30] bench phase complete
+[05:46:50] scored: median |err| 6.75% over 14 rows (11 inside band) -> C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\ladder_20260731_scored.json
+[05:46:50]   Qwen2.5-0.5B Q8_0            pred  124.4 meas  144.98 err  -14.2%  old  -18.6%  band=IN
+[05:46:50]   Qwen3-0.6B Q8_0              pred  103.3 meas  104.38 err   -1.0%  old   -2.6%  band=IN
+[05:46:50]   Qwen3.5-4B Q4_K_M            pred   32.7 meas   30.87 err   +5.9%  old   +8.7%  band=IN
+[05:46:50]   Qwen2.5-7B IQ4_NL            pred   27.5 meas   25.13 err   +9.4%  old   +8.8%  band=IN
+[05:46:50]   Qwen2.5-7B Q4_K_M            pred   21.5 meas   22.75 err   -5.5%  old   -5.0%  band=IN
+[05:46:50]   gemma4-12B depth-aware       pred   12.5 meas   13.12 err   -4.7%  old   +0.0%  band=IN
+[05:46:50]   DS-Lite 16B IQ2_XS           pred   29.3 meas   22.34 err  +31.2%  old  +22.7%  band=OUT
+[05:46:50]   Qwen2.5-14B Q4_K_M           pred    4.5 meas    4.61 err   -2.4%  old   -5.5%  band=IN
+[05:46:50]   DS-Lite 16B Q4_K_M           pred   18.9 meas   21.22 err  -10.9%  old  -19.1%  band=IN
+[05:46:50]   Qwen3-30B-A3B Q2_K           pred   18.7 meas   17.59 err   +6.3%  old  -10.2%  band=IN
+[05:46:50]   Qwen3-Coder-30B Q2_K_L       pred   18.7 meas   17.60 err   +6.2%  old  -10.0%  band=IN
+[05:46:50]   Qwen3.5-35B APEX-Mini        pred   21.1 meas   19.68 err   +7.2%  old   -3.8%  band=IN
+[05:46:50]   Qwen3.6-35B Q2_K_XL          pred   17.9 meas   13.14 err  +36.2%  old  +11.3%  band=OUT
+[05:46:50]   Qwen3.6-35B APEX-MTP-Nano    pred   18.5 meas   14.07 err  +31.5%  old   +8.5%  band=OUT

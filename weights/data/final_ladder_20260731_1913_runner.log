@@ -1,0 +1,44 @@
+cpu sample 1: 41%  (idle streak 0/3)
+cpu sample 2: 48%  (idle streak 0/3)
+cpu sample 3: 48%  (idle streak 0/3)
+cpu sample 4: 44%  (idle streak 0/3)
+cpu sample 5: 45%  (idle streak 0/3)
+cpu sample 6: 45%  (idle streak 0/3)
+cpu sample 7: 8%  (idle streak 1/3)
+cpu sample 8: 47%  (idle streak 0/3)
+cpu sample 9: 44%  (idle streak 0/3)
+cpu sample 10: 7%  (idle streak 1/3)
+cpu sample 11: 7%  (idle streak 2/3)
+cpu sample 12: 7%  (idle streak 3/3)
+gates passed: GPU 750MiB, CPU idle. Fresh calibrate + full ladder.
+=== ladder exit 0 ===
+      -> measured 152.62  (-18.8%)
+  Qwen3-0.6B Q8_0              predicted  103.0  all in VRAM
+      -> measured 103.94  (-0.9%)
+  Qwen3.5-4B Q4_K_M            predicted   32.6  all in VRAM
+      -> measured 29.95  (+8.8%)
+  Qwen2.5-7B IQ4_NL            predicted   27.4  all in VRAM
+      -> measured 25.37  (+8.0%)
+  Qwen2.5-7B Q4_K_M            predicted   21.5  all in VRAM
+      -> measured 22.50  (-4.4%)
+  gemma4-12B depth-aware       predicted   12.4  all in VRAM
+      -> measured 13.86  (-10.5%)
+  DS-Lite 16B IQ2_XS           predicted   30.6  split experts: 65%->VRAM, rest->RAM
+      -> measured 25.64  (+19.3%)
+  Qwen2.5-14B Q4_K_M           predicted    5.0  split: 21/48 layers->VRAM, rest->RAM
+      -> measured 4.90  (+2.0%)
+  DS-Lite 16B Q4_K_M           predicted   20.0  split experts: 35%->VRAM, rest->RAM
+      -> measured 23.63  (-15.4%)
+  Qwen3-30B-A3B Q2_K           predicted   19.8  split experts: 32%->VRAM, rest->RAM
+      -> measured 19.48  (+1.6%)
+  Qwen3-Coder-30B Q2_K_L       predicted   19.8  split experts: 32%->VRAM, rest->RAM
+      -> measured 17.36  (+14.1%)
+  Qwen3.5-35B APEX-Mini        predicted   22.0  split experts: 24%->VRAM, rest->RAM
+      -> measured 4.25  (+417.6%)
+  Qwen3.6-35B Q2_K_XL          predicted   18.7  split experts: 25%->VRAM, rest->RAM
+      -> measured 7.55  (+147.7%)
+  Qwen3.6-35B APEX-MTP-Nano    predicted   19.2  split experts: 28%->VRAM, rest->RAM
+      -> measured 12.75  (+50.6%)
+
+wrote C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\ladder_state_locked.json
+=== ladder exit 0 ===

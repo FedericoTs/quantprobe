@@ -62,3 +62,7 @@ tools/*
 tools/kernelprobe/*
 !tools/kernelprobe/*.cu
 !tools/kernelprobe/*.py
+# transient plumbing: gate runs, release builds, per-arm server logs
+weights/data/*_gate_*.log
+weights/data/release_*.log
+weights/data/*_server.log
