@@ -233,6 +233,7 @@ quantprobe dashboard --gguf 2bit.gguf                    # the law live, every r
 | [QUICKSTART.md](QUICKSTART.md) | get running, three levels; recipes for fine-tunes, coding agents, hardware buying |
 | [LAWS.md](LAWS.md) | the four laws — statements, measurements, falsifiable predictions |
 | [docs/MATRIX.md](docs/MATRIX.md) | **what to run on what** — 11 machines × 11 models, every cell priced by the shipped engine, scored against third-party reports |
+| [docs/ATLAS.md](docs/ATLAS.md) | **every machine the law has been scored on** — and the one command that adds yours |
 | [docs/EXAMPLES.md](docs/EXAMPLES.md) | worked examples with real output, including the ×5.4 optimizer A/B |
 | [docs/HARDWARE.md](docs/HARDWARE.md) | the 2016 box: exact specs, measured bandwidths, what the next euro buys |
 | [preregistrations/](preregistrations/) | every staked prediction with its verdict — hits **and** misses |
