@@ -1,0 +1,60 @@
+23:46:10 === row 0.6B_aiv ===
+23:46:10 [gpu 0.6B_aiv pre] 45, 139 MHz, 532 MiB
+23:46:18 [0.6B_aiv] planner: all in VRAM predicted 103.0 tok/s  flags={'-ngl': '99'}
+23:46:21 [0.6B_aiv] baseline measured: 94.64 (ok, 2.5s)
+23:46:23 [0.6B_aiv] t4: 97.86 tok/s (ok, 2.4s)
+23:46:25 [0.6B_aiv] t6: 98.4 tok/s (ok, 2.3s)
+23:46:28 [0.6B_aiv] t8: 98.14 tok/s (ok, 2.4s)
+23:46:30 [0.6B_aiv] ub256: 98.06 tok/s (ok, 2.4s)
+23:46:32 [0.6B_aiv] ub512: 98.14 tok/s (ok, 2.3s)
+23:46:35 [0.6B_aiv] ub1024: 98.03 tok/s (ok, 2.4s)
+23:46:37 [0.6B_aiv] ub2048: 97.99 tok/s (ok, 2.3s)
+23:46:40 [0.6B_aiv] b512: 98.28 tok/s (ok, 2.3s)
+23:46:42 [0.6B_aiv] b2048: 97.79 tok/s (ok, 2.4s)
+23:46:44 [0.6B_aiv] kv_q8: 97.8 tok/s (ok, 2.4s)
+23:46:46 [0.6B_aiv] fa_flip: 106.89 tok/s (ok, 2.2s)
+23:46:49 [0.6B_aiv] nommap_flip: 97.48 tok/s (ok, 2.2s)
+23:46:51 [0.6B_aiv] compose: 107.07 tok/s (ok, 2.2s)
+23:46:54 [0.6B_aiv] KR-A reproduce 'compose': 107.07 tok/s (ok)
+23:46:54 [gpu 0.6B_aiv post] 57, 1860 MHz, 527 MiB
+23:46:54 === row 7B_aiv ===
+23:46:54 [gpu 7B_aiv pre] 57, 1860 MHz, 527 MiB
+23:47:01 [7B_aiv] planner: all in VRAM predicted 21.5 tok/s  flags={'-ngl': '99'}
+23:47:20 [7B_aiv] baseline measured: 22.62 (ok, 18.7s)
+23:47:29 [7B_aiv] t4: 22.65 tok/s (ok, 8.9s)
+23:47:38 [7B_aiv] t6: 22.61 tok/s (ok, 8.8s)
+23:47:47 [7B_aiv] t8: 22.58 tok/s (ok, 8.8s)
+23:47:56 [7B_aiv] ub256: 22.58 tok/s (ok, 8.8s)
+23:48:04 [7B_aiv] ub512: 22.55 tok/s (ok, 8.9s)
+23:48:13 [7B_aiv] ub1024: 22.52 tok/s (ok, 8.9s)
+23:48:22 [7B_aiv] ub2048: 22.54 tok/s (ok, 9.1s)
+23:48:32 [7B_aiv] b512: 22.5 tok/s (ok, 9.1s)
+23:48:41 [7B_aiv] b2048: 22.46 tok/s (ok, 9.1s)
+23:48:50 [7B_aiv] kv_q8: 22.98 tok/s (ok, 9.0s)
+23:48:59 [7B_aiv] fa_flip: 22.64 tok/s (ok, 9.1s)
+23:49:06 [7B_aiv] nommap_flip: 22.47 tok/s (ok, 7.7s)
+23:49:18 [7B_aiv] KR-A reproduce 'kv_q8': 22.93 tok/s (ok)
+23:49:18 [gpu 7B_aiv post] 70, 1797 MHz, 517 MiB
+23:49:18 === row 30B_split ===
+23:49:18 [gpu 30B_split pre] 70, 1797 MHz, 517 MiB
+23:49:26 [30B_split] planner: split experts: 32%->VRAM, rest->RAM predicted 19.8 tok/s  flags={'-ngl': '99', '-ot': 'blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU', '--no-mmap': True, '-b': '1024', '-ub': '1024'}
+23:50:04 [30B_split] baseline measured: 20.64 (ok, 38.6s)
+23:50:43 [30B_split] t4: 20.44 tok/s (ok, 38.6s)
+23:51:22 [30B_split] t6: 19.35 tok/s (ok, 39.1s)
+23:52:01 [30B_split] t8: 20.04 tok/s (ok, 38.6s)
+23:52:39 [30B_split] ub256: 20.5 tok/s (ok, 38.6s)
+23:53:18 [30B_split] ub512: 20.6 tok/s (ok, 38.4s)
+23:53:56 [30B_split] ub2048: 20.62 tok/s (ok, 38.4s)
+23:54:35 [30B_split] b512: 20.13 tok/s (ok, 38.8s)
+23:55:14 [30B_split] b2048: 20.19 tok/s (ok, 38.8s)
+23:55:52 [30B_split] kv_q8: 21.52 tok/s (ok, 38.2s)
+23:56:30 [30B_split] fa_flip: 22.21 tok/s (ok, 38.1s)
+23:56:58 [30B_split] nommap_flip: 11.91 tok/s (ok, 27.8s)
+23:57:36 [30B_split] compose: 21.77 tok/s (ok, 38.1s)
+23:58:17 [30B_split] KR-A reproduce 'fa_flip': 21.96 tok/s (ok)
+23:58:17 [gpu 30B_split post] 58, 1860 MHz, 522 MiB
+23:58:17 results -> autotune_results.json
+23:58:17 === STAKED GATES (score after inspection) ===
+23:58:17   0.6B_aiv: best 'compose' 107.07 vs baseline 94.64 (+13.1%)  repro_r3=107.07  P2 rho=None (n=1)
+23:58:17   7B_aiv: best 'kv_q8' 22.98 vs baseline 22.62 (+1.6%)  repro_r3=22.93  P2 rho=None (n=1)
+23:58:17   30B_split: best 'fa_flip' 22.21 vs baseline 20.64 (+7.6%)  repro_r3=21.96  P2 rho=None (n=1)

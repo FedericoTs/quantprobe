@@ -1,0 +1,583 @@
+{
+ "0.6B_aiv": {
+  "planner": {
+   "placement": "all in VRAM",
+   "predicted": 103.01
+  },
+  "ledger": [
+   {
+    "name": "baseline",
+    "cfg": {
+     "-ngl": "99"
+    },
+    "predicted": 103.01,
+    "measured": 94.64,
+    "err": 5.13,
+    "status": "ok",
+    "wall": 2.5
+   },
+   {
+    "name": "t4",
+    "cfg": {
+     "-ngl": "99",
+     "-t": "4"
+    },
+    "predicted": null,
+    "measured": 97.86,
+    "err": 0.12,
+    "status": "ok",
+    "wall": 2.4
+   },
+   {
+    "name": "t6",
+    "cfg": {
+     "-ngl": "99",
+     "-t": "6"
+    },
+    "predicted": null,
+    "measured": 98.4,
+    "err": 0.09,
+    "status": "ok",
+    "wall": 2.3
+   },
+   {
+    "name": "t8",
+    "cfg": {
+     "-ngl": "99",
+     "-t": "8"
+    },
+    "predicted": null,
+    "measured": 98.14,
+    "err": 0.34,
+    "status": "ok",
+    "wall": 2.4
+   },
+   {
+    "name": "ub256",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "256"
+    },
+    "predicted": null,
+    "measured": 98.06,
+    "err": 0.03,
+    "status": "ok",
+    "wall": 2.4
+   },
+   {
+    "name": "ub512",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "512"
+    },
+    "predicted": null,
+    "measured": 98.14,
+    "err": 0.28,
+    "status": "ok",
+    "wall": 2.3
+   },
+   {
+    "name": "ub1024",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "1024"
+    },
+    "predicted": null,
+    "measured": 98.03,
+    "err": 0.34,
+    "status": "ok",
+    "wall": 2.4
+   },
+   {
+    "name": "ub2048",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "2048"
+    },
+    "predicted": null,
+    "measured": 97.99,
+    "err": 0.7,
+    "status": "ok",
+    "wall": 2.3
+   },
+   {
+    "name": "b512",
+    "cfg": {
+     "-ngl": "99",
+     "-b": "512"
+    },
+    "predicted": null,
+    "measured": 98.28,
+    "err": 0.22,
+    "status": "ok",
+    "wall": 2.3
+   },
+   {
+    "name": "b2048",
+    "cfg": {
+     "-ngl": "99",
+     "-b": "2048"
+    },
+    "predicted": null,
+    "measured": 97.79,
+    "err": 0.0,
+    "status": "ok",
+    "wall": 2.4
+   },
+   {
+    "name": "kv_q8",
+    "cfg": {
+     "-ngl": "99",
+     "-ctk": "q8_0",
+     "-ctv": "q8_0",
+     "-fa": true
+    },
+    "predicted": null,
+    "measured": 97.8,
+    "err": 0.42,
+    "status": "ok",
+    "wall": 2.4
+   },
+   {
+    "name": "fa_flip",
+    "cfg": {
+     "-ngl": "99",
+     "-fa": true
+    },
+    "predicted": null,
+    "measured": 106.89,
+    "err": 0.27,
+    "status": "ok",
+    "wall": 2.2
+   },
+   {
+    "name": "nommap_flip",
+    "cfg": {
+     "-ngl": "99",
+     "--no-mmap": true
+    },
+    "predicted": null,
+    "measured": 97.48,
+    "err": 0.11,
+    "status": "ok",
+    "wall": 2.2
+   },
+   {
+    "name": "compose",
+    "cfg": {
+     "-ngl": "99",
+     "-fa": true,
+     "-t": "8",
+     "-b": "512"
+    },
+    "predicted": null,
+    "measured": 107.07,
+    "err": 0.3,
+    "status": "ok",
+    "wall": 2.2,
+    "repro_r3": {
+     "measured": 107.07,
+     "err": 0.64,
+     "status": "ok",
+     "wall": 2.8
+    }
+   }
+  ],
+  "spearman_priceable": null,
+  "priceable_n": 1
+ },
+ "7B_aiv": {
+  "planner": {
+   "placement": "all in VRAM",
+   "predicted": 21.46
+  },
+  "ledger": [
+   {
+    "name": "baseline",
+    "cfg": {
+     "-ngl": "99"
+    },
+    "predicted": 21.46,
+    "measured": 22.62,
+    "err": 0.04,
+    "status": "ok",
+    "wall": 18.7
+   },
+   {
+    "name": "t4",
+    "cfg": {
+     "-ngl": "99",
+     "-t": "4"
+    },
+    "predicted": null,
+    "measured": 22.65,
+    "err": 0.01,
+    "status": "ok",
+    "wall": 8.9
+   },
+   {
+    "name": "t6",
+    "cfg": {
+     "-ngl": "99",
+     "-t": "6"
+    },
+    "predicted": null,
+    "measured": 22.61,
+    "err": 0.02,
+    "status": "ok",
+    "wall": 8.8
+   },
+   {
+    "name": "t8",
+    "cfg": {
+     "-ngl": "99",
+     "-t": "8"
+    },
+    "predicted": null,
+    "measured": 22.58,
+    "err": 0.04,
+    "status": "ok",
+    "wall": 8.8
+   },
+   {
+    "name": "ub256",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "256"
+    },
+    "predicted": null,
+    "measured": 22.58,
+    "err": 0.01,
+    "status": "ok",
+    "wall": 8.8
+   },
+   {
+    "name": "ub512",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "512"
+    },
+    "predicted": null,
+    "measured": 22.55,
+    "err": 0.03,
+    "status": "ok",
+    "wall": 8.9
+   },
+   {
+    "name": "ub1024",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "1024"
+    },
+    "predicted": null,
+    "measured": 22.52,
+    "err": 0.0,
+    "status": "ok",
+    "wall": 8.9
+   },
+   {
+    "name": "ub2048",
+    "cfg": {
+     "-ngl": "99",
+     "-ub": "2048"
+    },
+    "predicted": null,
+    "measured": 22.54,
+    "err": 0.03,
+    "status": "ok",
+    "wall": 9.1
+   },
+   {
+    "name": "b512",
+    "cfg": {
+     "-ngl": "99",
+     "-b": "512"
+    },
+    "predicted": null,
+    "measured": 22.5,
+    "err": 0.0,
+    "status": "ok",
+    "wall": 9.1
+   },
+   {
+    "name": "b2048",
+    "cfg": {
+     "-ngl": "99",
+     "-b": "2048"
+    },
+    "predicted": null,
+    "measured": 22.46,
+    "err": 0.04,
+    "status": "ok",
+    "wall": 9.1
+   },
+   {
+    "name": "kv_q8",
+    "cfg": {
+     "-ngl": "99",
+     "-ctk": "q8_0",
+     "-ctv": "q8_0",
+     "-fa": true
+    },
+    "predicted": null,
+    "measured": 22.98,
+    "err": 0.01,
+    "status": "ok",
+    "wall": 9.0,
+    "repro_r3": {
+     "measured": 22.93,
+     "err": 0.02,
+     "status": "ok",
+     "wall": 11.8
+    }
+   },
+   {
+    "name": "fa_flip",
+    "cfg": {
+     "-ngl": "99",
+     "-fa": true
+    },
+    "predicted": null,
+    "measured": 22.64,
+    "err": 0.02,
+    "status": "ok",
+    "wall": 9.1
+   },
+   {
+    "name": "nommap_flip",
+    "cfg": {
+     "-ngl": "99",
+     "--no-mmap": true
+    },
+    "predicted": null,
+    "measured": 22.47,
+    "err": 0.02,
+    "status": "ok",
+    "wall": 7.7
+   }
+  ],
+  "spearman_priceable": null,
+  "priceable_n": 1
+ },
+ "30B_split": {
+  "planner": {
+   "placement": "split experts: 32%->VRAM, rest->RAM",
+   "predicted": 19.81
+  },
+  "ledger": [
+   {
+    "name": "baseline",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "1024"
+    },
+    "predicted": 19.81,
+    "measured": 20.64,
+    "err": 0.2,
+    "status": "ok",
+    "wall": 38.6
+   },
+   {
+    "name": "t4",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "1024",
+     "-t": "4"
+    },
+    "predicted": null,
+    "measured": 20.44,
+    "err": 0.06,
+    "status": "ok",
+    "wall": 38.6
+   },
+   {
+    "name": "t6",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "1024",
+     "-t": "6"
+    },
+    "predicted": null,
+    "measured": 19.35,
+    "err": 0.32,
+    "status": "ok",
+    "wall": 39.1
+   },
+   {
+    "name": "t8",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "1024",
+     "-t": "8"
+    },
+    "predicted": null,
+    "measured": 20.04,
+    "err": 0.12,
+    "status": "ok",
+    "wall": 38.6
+   },
+   {
+    "name": "ub256",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "256"
+    },
+    "predicted": null,
+    "measured": 20.5,
+    "err": 0.1,
+    "status": "ok",
+    "wall": 38.6
+   },
+   {
+    "name": "ub512",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "512"
+    },
+    "predicted": null,
+    "measured": 20.6,
+    "err": 0.22,
+    "status": "ok",
+    "wall": 38.4
+   },
+   {
+    "name": "ub2048",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "2048"
+    },
+    "predicted": null,
+    "measured": 20.62,
+    "err": 0.04,
+    "status": "ok",
+    "wall": 38.4
+   },
+   {
+    "name": "b512",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "512",
+     "-ub": "1024"
+    },
+    "predicted": null,
+    "measured": 20.13,
+    "err": 0.18,
+    "status": "ok",
+    "wall": 38.8
+   },
+   {
+    "name": "b2048",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "2048",
+     "-ub": "1024"
+    },
+    "predicted": null,
+    "measured": 20.19,
+    "err": 0.25,
+    "status": "ok",
+    "wall": 38.8
+   },
+   {
+    "name": "kv_q8",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "1024",
+     "-ctk": "q8_0",
+     "-ctv": "q8_0",
+     "-fa": true
+    },
+    "predicted": null,
+    "measured": 21.52,
+    "err": 0.11,
+    "status": "ok",
+    "wall": 38.2
+   },
+   {
+    "name": "fa_flip",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "1024",
+     "-fa": true
+    },
+    "predicted": null,
+    "measured": 22.21,
+    "err": 0.1,
+    "status": "ok",
+    "wall": 38.1,
+    "repro_r3": {
+     "measured": 21.96,
+     "err": 0.17,
+     "status": "ok",
+     "wall": 41.5
+    }
+   },
+   {
+    "name": "nommap_flip",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": false,
+     "-b": "1024",
+     "-ub": "1024"
+    },
+    "predicted": null,
+    "measured": 11.91,
+    "err": 4.44,
+    "status": "ok",
+    "wall": 27.8
+   },
+   {
+    "name": "compose",
+    "cfg": {
+     "-ngl": "99",
+     "-ot": "blk\\.(15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47)\\.ffn_.*_exps\\.=CPU",
+     "--no-mmap": true,
+     "-b": "1024",
+     "-ub": "1024",
+     "-fa": true,
+     "-ctk": "q8_0",
+     "-ctv": "q8_0"
+    },
+    "predicted": null,
+    "measured": 21.77,
+    "err": 0.1,
+    "status": "ok",
+    "wall": 38.1
+   }
+  ],
+  "spearman_priceable": null,
+  "priceable_n": 1
+ }
+}
