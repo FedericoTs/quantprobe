@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.26.3 - 2026-08-04
+
+**Split GGUFs half-specced, and the contribution payload could ship `total=None`.** Found by
+the tool's first external datapoint (issue #1, an RX 5700 XT measuring +0% against prediction -
+thank you): the submission arrived titled `total=None active=None @ 2.5-bit` for a Q4_0 7.6B,
+because the file was a 2-part split. Two distinct bugs:
+
+- **Multi-part GGUFs (`-00001-of-00002.gguf`) were specced from one part.** Autospec saw half
+  the tensors, and every `os.path.getsize` site (file-size calibration, tier placement, anchor
+  records, probe estimates) priced half the model. `from_gguf` now enumerates every part
+  (metadata from part 1, tensors from all), any part maps to the full set, and a missing
+  sibling refuses to spec rather than speccing a half model. New `spec.split_siblings` /
+  `spec.gguf_size` used at all seven size sites.
+- **The contribution payload's model side read raw CLI args** - `None` whenever resolution
+  happened anywhere but the flags (the mirror of the 1.26.2 hardware fix). `bench` now stashes
+  the exact spec the prediction used at its resolution moment, and the payload carries it plus
+  the GGUF filename - the field a human reader actually recognises.
+
+Two new smoke tests pin both regressions, including the mutation direction.
+
 ## 1.26.2 - 2026-08-04
 
 **`bench --contribute` sent the machine as `None`.** Under auto-detect - the default path,

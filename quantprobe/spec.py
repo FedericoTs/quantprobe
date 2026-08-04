@@ -9,6 +9,38 @@ So `--gguf model.gguf` alone fully specifies the model; flags remain as override
 """
 from __future__ import annotations
 import os
+import re
+
+
+# Multi-part GGUFs (llama.cpp gguf-split naming: model-00001-of-00002.gguf). The first external
+# contribution the tool ever received (issue #1, RX 5700 XT) arrived as "total=None active=None
+# @ 2.5-bit" for a Q4_0 7.6B - because the file was a 2-part split, from_gguf saw one part,
+# and every downstream consumer fell back to defaults. A split part is a fully valid GGUF, so
+# the fix is enumeration, not parsing: spec from ALL parts, size from ALL parts.
+_SPLIT_RE = re.compile(r"^(.*)-(\d{5})-of-(\d{5})\.gguf$", re.IGNORECASE)
+
+
+def split_siblings(path):
+    """All parts of a split GGUF (sorted), or [path] for a normal file. Missing parts raise:
+    a spec computed from a subset of the model is wrong, not approximate."""
+    m = _SPLIT_RE.match(os.path.basename(path))
+    if not m:
+        return [path]
+    stem, _no, cnt = m.group(1), int(m.group(2)), int(m.group(3))
+    d = os.path.dirname(path) or "."
+    parts = [os.path.join(d, f"{stem}-{i:05d}-of-{cnt:05d}.gguf") for i in range(1, cnt + 1)]
+    missing = [p for p in parts if not os.path.isfile(p)]
+    if missing:
+        raise FileNotFoundError(
+            f"split GGUF: {len(parts) - len(missing)} of {cnt} parts present "
+            f"(first missing: {os.path.basename(missing[0])})")
+    return parts
+
+
+def gguf_size(path):
+    """Bytes on disk for the WHOLE model - sums split parts. os.path.getsize on part 1 of a
+    2-part file halves every size-derived quantity (bits, act_scale, tier placement)."""
+    return sum(os.path.getsize(p) for p in split_siblings(path))
 
 
 def _field(r, *names):
@@ -55,7 +87,10 @@ CODEBOOK_FALLBACK_MIN_SHARE = 0.25
 
 def from_gguf(path):
     from gguf import GGUFReader
-    r = GGUFReader(path)
+    paths = split_siblings(path)
+    # Part 1 carries the full metadata (gguf-split copies the KV store there; later parts hold
+    # only split bookkeeping). Tensors, however, live where they live: every part contributes.
+    r = GGUFReader(paths[0])
     n_layer = _field(r, ".block_count") or 32
     total = 0
     routed = 0
@@ -65,7 +100,10 @@ def from_gguf(path):
     tier_att = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}
     embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
     has_output = False       # a separate output/lm_head means embeddings are NOT tied
-    for t in r.tensors:
+    tensors = list(r.tensors)
+    for extra in paths[1:]:
+        tensors.extend(GGUFReader(extra).tensors)
+    for t in tensors:
         n = 1
         for d in t.shape:
             n *= int(d)
@@ -141,7 +179,7 @@ def from_gguf(path):
             k_dim = v_dim = emb // heads
         kvp = n_layer * kv_heads * ((k_dim or 128) + (v_dim or k_dim or 128)) * 2
 
-    bits = os.path.getsize(path) * 8 / total
+    bits = sum(os.path.getsize(p) for p in paths) * 8 / total
     arch = None
     for field in r.fields.values():        # recipe matching needs (arch, n_layer), not layers alone
         if field.name == "general.architecture":
@@ -231,9 +269,11 @@ def tensor_roles(path):
     builder can warn about weight classes it has no protection rule for."""
     import re
     from gguf import GGUFReader
-    r = GGUFReader(path)
+    tensors = []
+    for p in split_siblings(path):
+        tensors.extend(GGUFReader(p).tensors)
     roles, unknown = {}, {}
-    for t in r.tensors:
+    for t in tensors:
         nbytes = int(t.n_bytes) if hasattr(t, "n_bytes") else 0
         for name, pat, _ in TENSOR_ROLES:
             if re.search(pat, t.name):

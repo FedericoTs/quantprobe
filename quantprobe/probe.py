@@ -196,7 +196,8 @@ def run(a):
 
     # Up-front honesty about cost. A 35 GB source took 5h40m on the reference box - telling
     # people "30-60 min" (as this tool used to) is wrong by an order of magnitude on big models.
-    src_gb = os.path.getsize(a.gguf) / 1e9
+    from .spec import gguf_size as _gguf_size
+    src_gb = _gguf_size(a.gguf) / 1e9
     ram_gb, vram_gb = 16.0, 0.0
     try:
         from . import detect as detmod
@@ -346,7 +347,8 @@ def make_imatrix(llama_dir, src, eval_file, out=None, chunks=100, ngl=99, dry=Fa
         return out
     im = exe("llama-imatrix") if dry else os.path.join(find_llama(llama_dir), exe("llama-imatrix"))
     cmd = [im, "-m", src, "-f", eval_file, "-o", out, "--chunks", str(chunks), "-ngl", str(ngl), "-c", "512"]
-    src_gb = os.path.getsize(src) / 1e9 if os.path.isfile(src) else 0
+    from .spec import gguf_size as _gguf_size
+    src_gb = _gguf_size(src) / 1e9 if os.path.isfile(src) else 0
     im_est = src_gb * IMATRIX_MIN_PER_GB * (chunks / 100.0)
     print(f"[quantprobe] building importance matrix over {chunks} chunks on a {src_gb:.0f} GB source")
     print(f"  ESTIMATED TIME: ~{fmt_dur(im_est)} (measured 4.5 h for a 35 GB source at 100 chunks).")

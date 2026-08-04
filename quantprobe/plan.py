@@ -1874,8 +1874,9 @@ def run(args):
 
     nlay = effective_n_layer(args, m)
     import os as _os
+    from . import spec as _specmod
     _g = getattr(args, 'gguf', None)
-    true_size = _os.path.getsize(_g) / 1e9 if _g and _os.path.isfile(_g) else None
+    true_size = _specmod.gguf_size(_g) / 1e9 if _g and _os.path.isfile(_g) else None
     vb, geta = resolve_gpu_eta(hw, args, a, args.bits, vb, geta)
     rb = resolve_cpu_bw(hw, args, a, args.bits, rb)
     # ONE argument dict for the baseline AND every counterfactual (upgrades, capacity probes,

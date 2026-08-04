@@ -65,7 +65,7 @@ def best_flags(a):
     if gguf and os.path.isfile(gguf) and not from_file:
         ab = max(a.bits, 4.5)
         size_pred = (ne * ab / 8 + (t - ne) * a.bits / 8) * 1.08
-        size_real = os.path.getsize(gguf) / 1e9
+        size_real = specmod.gguf_size(gguf) / 1e9
         if size_pred > 0:
             act_scale = size_real / size_pred
             print(f"[quantprobe] calibrated to file: {size_real:.2f} GB on disk "
@@ -73,7 +73,12 @@ def best_flags(a):
     ctx = getattr(a, "ctx", 0) or 0
     kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None)
            else m.get("kvp", planmod.DEFAULT_KVP))
-    _true = os.path.getsize(gguf) / 1e9 if gguf and os.path.isfile(gguf) else None
+    _true = specmod.gguf_size(gguf) / 1e9 if gguf and os.path.isfile(gguf) else None
+    # The contribution payload must carry the spec THE PREDICTION USED, not the raw args - under
+    # autospec-failure or preset paths a.total/a.active are None, and issue #1 (the tool's first
+    # external datapoint) arrived titled "total=None active=None". Same bug class as the
+    # v1.26.1 hardware fix, other operand; stashed here because this is the resolution moment.
+    a._resolved_spec = (t, ac)
     # same size-classed GPU-eta dispatch as plan (ONE shared function; layer 3 enforces parity)
     vb, geta = planmod.resolve_gpu_eta(hw, a, ac, a.bits, vb, geta)
     rb = planmod.resolve_cpu_bw(hw, a, ac, a.bits, rb)
@@ -217,7 +222,8 @@ def tier_view(a, best):
         planmod.apply_calibration_overrides(hw, a)
     vc = planmod.agg_cap(a.vram) if a.vram is not None else hw.get("vc", 0)
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
-    size = os.path.getsize(a.gguf) / 1e9 if a.gguf and os.path.isfile(a.gguf) else 0
+    from . import spec as specmod
+    size = specmod.gguf_size(a.gguf) / 1e9 if a.gguf and os.path.isfile(a.gguf) else 0
     name = best[0]
     if name == "all in VRAM":
         return [("VRAM", vc, size), ("RAM", rc, 1.0)]
@@ -246,7 +252,13 @@ def _emit_contribution(a, best, meas, err, delta):
             hw = f"vram={vc:g} vram_bw={vb:g} ram={rc:g} ram_bw={rb:g} disk_bw={db:g}"
         except Exception:
             hw = f"vram={a.vram} vram_bw={a.vram_bw} ram={a.ram} ram_bw={a.ram_bw} disk_bw={a.disk_bw}"
-    model = getattr(a, "model", None) or f"total={a.total} active={a.active}"
+    # Model identity, best available first: preset name > GGUF filename > resolved spec. The raw
+    # a.total/a.active fallback stays last - it is what shipped None/None in issue #1.
+    rs = getattr(a, "_resolved_spec", None)
+    spec_s = (f"total={rs[0]:g} active={rs[1]:g}" if rs
+              else f"total={a.total} active={a.active}")
+    gguf_name = os.path.basename(a.gguf) if getattr(a, "gguf", None) else None
+    model = getattr(a, "model", None) or (f"{gguf_name} ({spec_s})" if gguf_name else spec_s)
     lines = [
         f"hardware: {hw}",
         f"model: {model} @ {a.bits:g}-bit",
@@ -258,7 +270,7 @@ def _emit_contribution(a, best, meas, err, delta):
         "Notes (optional): ",
     ]
     body = "\n".join(lines)
-    title = f"[eta] {model} {a.bits:g}-bit on {str(hw)[:40]}"
+    title = f"[eta] {str(model)[:60]} {a.bits:g}-bit on {str(hw)[:40]}"
     url = ("https://github.com/FedericoTs/quantprobe/issues/new?labels=eta-datapoint"
            f"&title={urllib.parse.quote(title)}&body={urllib.parse.quote(body)}")
     print("\n[quantprobe] Contribute this data point (OPT-IN). It contains ONLY what you see below --")

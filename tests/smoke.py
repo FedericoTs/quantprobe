@@ -2941,6 +2941,68 @@ def t_contribute_payload_carries_the_resolved_machine_not_none():
     return None
 
 
+def t_contribute_payload_carries_model_spec_not_none():
+    """Issue #1 (the tool's first external datapoint, RX 5700 XT): the title read 'total=None
+    active=None @ 2.5-bit' for a 7.6B Q4_0 - the model side of the payload read raw args that
+    no resolution path had written back (split-GGUF autospec failure -> every fallback fired).
+    Same bug class as the v1.26.1 hardware fix, other operand. The payload must carry the spec
+    THE PREDICTION USED (stashed by best_flags at its resolution moment), plus the GGUF
+    filename when there is one - the field a human reader actually recognises."""
+    import types, io, contextlib
+    from quantprobe.runtime import _emit_contribution
+    base = dict(machine=None, vram=8.0, vram_bw=448.0, ram=32.0, ram_bw=22.0, disk_bw=3.4,
+                model=None, total=None, active=None, bits=4.65)
+    a = types.SimpleNamespace(**base, _resolved_spec=(7.6, 7.6),
+                              gguf="D:/x/qwen2.5-7b-q4_0-00001-of-00002.gguf")
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _emit_contribution(a, ("all in VRAM", 73.1), 73.18, 0.16, 0.1)
+    out = buf.getvalue()
+    assert "total=None" not in out and "active=None" not in out, \
+        f"payload still ships a None model spec (issue #1):\n{out[:300]}"
+    assert "total=7.6" in out and "qwen2.5-7b-q4_0-00001-of-00002.gguf" in out, \
+        f"resolved spec / filename missing from payload:\n{out[:300]}"
+    # Without the stash the legacy fallback prints None/None - the exact shipped bug. Assert
+    # that path still exists as the LAST resort so this test pins the mutation direction: if
+    # someone deletes the stash in best_flags, the first assert above is what fails.
+    b = types.SimpleNamespace(**base)
+    buf2 = io.StringIO()
+    with contextlib.redirect_stdout(buf2):
+        _emit_contribution(b, ("all in VRAM", 73.1), 73.18, 0.16, 0.1)
+    assert "total=None" in buf2.getvalue(), "legacy fallback changed; update this test's premise"
+    return None
+
+
+def t_split_gguf_siblings_and_size():
+    """Issue #1 root cause: a 2-part GGUF specced from part 1 alone halves total params and
+    every size-derived quantity. split_siblings must map ANY part to the full ordered set,
+    refuse a partial set outright (a spec from half a model is wrong, not approximate), and
+    gguf_size must sum the parts while staying byte-identical to getsize on plain files."""
+    import tempfile
+    from quantprobe.spec import split_siblings, gguf_size
+    d = tempfile.mkdtemp()
+    def _w(name, nbytes):
+        p = os.path.join(d, name)
+        with open(p, "wb") as fh:
+            fh.write(b"x" * nbytes)
+        return p
+    p1 = _w("m-00001-of-00002.gguf", 100)
+    p2 = _w("m-00002-of-00002.gguf", 50)
+    sib = split_siblings(p2)                  # part 2 in, full ordered set out
+    assert [os.path.basename(x) for x in sib] == \
+        ["m-00001-of-00002.gguf", "m-00002-of-00002.gguf"], sib
+    assert gguf_size(p1) == 150, gguf_size(p1)
+    plain = _w("plain.gguf", 7)
+    assert split_siblings(plain) == [plain] and gguf_size(plain) == 7
+    os.remove(p2)                             # simulate a half-downloaded split
+    try:
+        split_siblings(p1)
+        assert False, "missing split part must raise, not spec half a model"
+    except FileNotFoundError as e:
+        assert "of 2" in str(e), str(e)
+    return None
+
+
 def t_version_string_has_one_source_of_truth():
     """The 1.26.0 wheel shipped self-reporting 1.25.0: pyproject was bumped, the __version__
     literal was not, and the release verification printed the version without asserting it.

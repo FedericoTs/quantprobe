@@ -24,6 +24,8 @@ measured RAM/disk numbers automatically whenever it would otherwise auto-detect,
 from __future__ import annotations
 import json, os, platform, subprocess, threading, time
 
+from .spec import gguf_size as _gguf_size    # split-GGUF-aware size (issue #1)
+
 CAL_DIR = os.path.join(os.path.expanduser("~"), ".quantprobe")
 CAL_PATH = os.path.join(CAL_DIR, "calibration.json")
 STALE_DAYS = 60          # hardware does not drift, but drivers and RAM configs do
@@ -149,7 +151,7 @@ def _bench_anchor(model_path, ngl, metric_tokens, llama_dir=None):
                 anchor = dict(placement=("pure CPU (-ngl 0)" if ngl == 0 else "all-in-VRAM (-ngl 99)"),
                               metric=tag, tok_s=toks,
                               model=os.path.basename(model_path),
-                              model_gb=round(os.path.getsize(model_path) / 1e9, 3),
+                              model_gb=round(_gguf_size(model_path) / 1e9, 3),
                               sustained_sm=clk.sustained())
                 # the anchor's own spec, so plan can price this arm with the SAME formula it uses
                 # for every row (active bytes with the 1.08 overhead), and rescale the ratio by
@@ -181,7 +183,7 @@ def gpu_anchor(model_path, vram_gb, llama_dir=None):
     clearly fits (80% of detected VRAM), because an OOM teaches nothing and wastes minutes.
     tg128 rather than tg64: the run must outlast the model-load phase by enough for the clock
     sampler to collect real loaded samples (see ClockSampler.sustained)."""
-    gb = os.path.getsize(model_path) / 1e9
+    gb = _gguf_size(model_path) / 1e9
     if not vram_gb or gb > 0.8 * vram_gb:
         return None, f"model {gb:.1f} GB does not clearly fit {vram_gb or 0:.0f} GB VRAM - GPU anchor skipped"
     return _bench_anchor(model_path, 99, 128, llama_dir)
