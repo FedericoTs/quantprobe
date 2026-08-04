@@ -1,0 +1,161 @@
+self-test: 52 auto tasks, boilerplate answer passes 0
+tier keys: all recomputed and confirmed; both puzzles have exactly one solution
+self-test: 14 known-good answers all accepted
+self-test PASS - checks discriminate in both directions
+
+preflight OK - endpoint returns instruction-following output ('ACKNOWLEDGED')
+
+  [ 1/60] extraction/e1 (auto)
+       PASS  (3s)
+  [ 2/60] extraction/e2 (auto)
+       PASS  (4s)
+  [ 3/60] extraction/e3 (auto)
+       PASS  (2s)
+  [ 4/60] extraction/e4 (auto)
+       PASS  (2s)
+  [ 5/60] extraction/e5 (auto)
+       PASS  (2s)
+  [ 6/60] arithmetic/a1 (auto)
+       FAIL  (10s)  failed: answer is 17839.92
+  [ 7/60] arithmetic/a2 (auto)
+       FAIL  (11s)  failed: answer is 3639
+  [ 8/60] arithmetic/a3 (auto)
+       FAIL  (0s)  failed: answer is 19
+  [ 9/60] arithmetic/a4 (auto)
+       FAIL  (0s)  failed: answer is 4.565
+  [10/60] arithmetic/a5 (auto)
+       FAIL  (1s)  failed: answer is 10209.0
+  [11/60] arithmetic/a6 (auto)
+       PASS  (0s)
+  [12/60] classification/k1 (auto)
+       PASS  (0s)
+  [13/60] classification/k2 (auto)
+       PASS  (0s)
+  [14/60] classification/k3 (auto)
+       FAIL  (0s)  failed: mentions 'mixed'
+  [15/60] classification/k4 (auto)
+       PASS  (0s)
+  [16/60] classification/k5 (auto)
+       PASS  (0s)
+  [17/60] classification/k6 (auto)
+       FAIL  (0s)  failed: mentions 'p0'
+  [18/60] summarisation/s1 (auto)
+       FAIL  (4s)  failed: exactly 5 bullets
+  [19/60] summarisation/s2 (auto)
+       PASS  (2s)
+  [20/60] summarisation/s3 (auto)
+       PASS  (4s)
+  [21/60] summarisation/s4 (auto)
+       FAIL  (4s)  failed: <= 30 words, invents no numbers
+  [22/60] instruction/i1 (auto)
+       PASS  (0s)
+  [23/60] instruction/i2 (auto)
+       PASS  (1s)
+  [24/60] instruction/i3 (auto)
+       PASS  (1s)
+  [25/60] instruction/i4 (auto)
+       PASS  (2s)
+  [26/60] instruction/i5 (auto)
+       PASS  (2s)
+  [27/60] instruction/i6 (auto)
+       PASS  (1s)
+  [28/60] code/p1 (auto)
+       FAIL  (1s)  failed: code runs and passes assertions
+  [29/60] code/p2 (auto)
+       PASS  (2s)
+  [30/60] code/p3 (auto)
+       FAIL  (3s)  failed: code runs and passes assertions
+  [31/60] code/p4 (auto)
+       PASS  (1s)
+  [32/60] code/p5 (auto)
+       PASS  (3s)
+  [33/60] analysis/n1 (auto)
+       FAIL  (0s)  failed: answer is 68.5
+  [34/60] analysis/n2 (auto)
+       PASS  (1s)
+  [35/60] analysis/n3 (auto)
+       FAIL  (0s)  failed: answer is 1.567
+  [36/60] analysis/n4 (auto)
+       PASS  (0s)
+  [37/60] multilingual/m1 (auto)
+       PASS  (1s)
+  [38/60] multilingual/m2 (auto)
+       PASS  (1s)
+  [39/60] multilingual/m3 (auto)
+       PASS  (1s)
+  [40/60] multilingual/m4 (auto)
+       PASS  (1s)
+  [41/60] tier3/t3x1 (auto)
+       PASS  (2s)
+  [42/60] tier3/t3a1 (auto)
+       FAIL  (27s)  failed: answer is 1646.35
+  [43/60] tier3/t3c1 (auto)
+       PASS  (3s)
+  [44/60] tier3/t3l1 (auto)
+       FAIL  (3s)  failed: house1.color == 'red', house1.pet == 'fish', house2.color == 'blue', house2.drink == 'tea', house2.pet == 'cat', house3.color == 'green', house3.drink == 'coffee'
+  [45/60] tier3/t3s1 (auto)
+       PASS  (3s)
+  [46/60] tier3/t3h1 (auto)
+       PASS  (1s)
+  [47/60] tier4/t4a1 (auto)
+       FAIL  (6s)  failed: answer is 431535946492791126
+  [48/60] tier4/t4a2 (auto)
+       FAIL  (31s)  failed: answer is 59583.73
+  [49/60] tier4/t4w1 (auto)
+       FAIL  (2s)  failed: exactly 45 words, avoids 'e'
+  [50/60] tier4/t4l1 (auto)
+       FAIL  (8s)  failed: house1.color == 'yellow', house1.nationality == 'Norwegian', house1.drink == 'water', house2.color == 'blue', house2.nationality == 'Dane', house2.drink == 'tea', house3.color == 'red', house3.nationality == 'Brit', house3.drink == 'milk', house4.color == 'green', house4.drink == 'coffee', house5.color == 'white', house5.drink == 'beer'
+  [51/60] tier4/t4c1 (auto)
+       FAIL  (8s)  failed: code runs and passes assertions
+  [52/60] tier4/t4s1 (auto)
+       FAIL  (1s)  failed: exactly 'The ylretrauq troper swohs ydaets htworg'...
+  [53/60] correspondence/c1 (rubric)
+  [54/60] correspondence/c2 (rubric)
+  [55/60] correspondence/c3 (rubric)
+  [56/60] correspondence/c4 (rubric)
+  [57/60] judgement/j1 (rubric)
+  [58/60] judgement/j2 (rubric)
+  [59/60] longform/l1 (rubric)
+  [60/60] longform/l2 (rubric)
+
+wrote weights/data/a2a_suite_U.json  (258s total)
+
+MODEL: A2A arm U
+ARGS : 7B 2-bit A2A; arm U; 16k ctx; -ngl 99
+
+STAKED SET: 27/40 pass = 67.5%   (+12 extension tasks reported below, outside the staked bar)
+
+  per cluster:
+    arithmetic        1/ 6   16.7%
+    summarisation     2/ 4   50.0%
+    analysis          2/ 4   50.0%
+    code              3/ 5   60.0%
+    classification    4/ 6   66.7%
+    extraction        5/ 5  100.0%
+    instruction       6/ 6  100.0%
+    multilingual      4/ 4  100.0%
+
+  difficulty ladder (staked + extension, scorable tasks):
+    T1 routine  18/20   90.0%
+    T2 standard  9/20   45.0%
+    T3 hard      4/ 6   66.7%
+    T4 ceiling   0/ 6    0.0%  <- 0 expected today; ranks future models
+
+  failures:
+    arithmetic/a1   answer is 17839.92
+    arithmetic/a2   answer is 3639
+    arithmetic/a3   answer is 19
+    arithmetic/a4   answer is 4.565
+    arithmetic/a5   answer is 10209.0
+    classification/k3   mentions 'mixed'
+    classification/k6   mentions 'p0'
+    summarisation/s1   exactly 5 bullets
+    summarisation/s4   <= 30 words, invents no numbers
+    code/p1   code runs and passes assertions
+    code/p3   code runs and passes assertions
+    analysis/n1   answer is 68.5
+    analysis/n3   answer is 1.567
+
+  VERDICT: QUALIFIED (67.5%) - drafting aid, not send-ready.
+
+  (8 rubric tasks captured for separate human review - NOT counted above)

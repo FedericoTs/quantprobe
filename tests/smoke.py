@@ -2747,6 +2747,48 @@ def t_business_a_truncated_answer_is_not_a_wrong_answer():
     return None
 
 
+def t_probe_creates_workdir_and_refuses_to_bless_an_incomplete_curve():
+    """Two defects from the A2A pipeline (2026-08-04), one harness. A --workdir that did not
+    exist made llama-quantize fail at stream-open on step 1, every later step failed on the
+    missing files - and the probe still exited 0 with '(incomplete: curve unavailable)', so
+    the caller read success over ten failures. The probe must (a) create the workdir it was
+    given, (b) exit nonzero when any band produced no perplexity."""
+    import types, tempfile as tf, io, contextlib
+    import quantprobe.probe as P
+    calls = []
+    real = (P.find_llama, P.n_layers, P.sh, P.ppl)
+    wd = os.path.join(tf.gettempdir(), "qp_probe_wd_guard", "nested", "deep")
+    import shutil
+    shutil.rmtree(os.path.join(tf.gettempdir(), "qp_probe_wd_guard"), ignore_errors=True)
+    gguf = os.path.join(tf.gettempdir(), "qp_probe_fake.gguf")
+    open(gguf, "wb").write(b"\0" * 1024)
+    a = types.SimpleNamespace(gguf=gguf, workdir=wd, bands=4, chunks=2, eval="e.raw",
+                              ngl=0, llama_dir=None, dry_run=False, apply=False,
+                              out=None, imatrix=None)
+    try:
+        P.find_llama = lambda d: tf.gettempdir()
+        P.n_layers = lambda p: 8
+        P.sh = lambda cmd, dry: calls.append(cmd)
+        P.ppl = lambda *x, **k: None                      # every band fails to score
+        buf = io.StringIO()
+        rc = None
+        try:
+            with contextlib.redirect_stdout(buf):
+                P.run(a)
+        except SystemExit as e:
+            rc = e.code
+    finally:
+        P.find_llama, P.n_layers, P.sh, P.ppl = real
+        try:
+            os.unlink(gguf)
+        except OSError:
+            pass
+    assert os.path.isdir(wd), "probe did not create the workdir it was given"
+    assert rc == 1, f"incomplete curve must exit 1, got {rc!r}"
+    assert "INCOMPLETE" in buf.getvalue(), "the failure is not stated in the output"
+    return None
+
+
 def t_x1_draft_length_rule_reaches_the_user():
     """X-1 measured that drafts of 4-7 sit in the slow kernel (48-51 tok/s) while m>=8 rides the
     fast one (88-132) - a 2.5x gap the old advice silently forfeited by omitting draft length.

@@ -98,7 +98,7 @@ Same arithmetic the planner runs — you just feed it someone else's bandwidth a
 | time | minutes (mostly download) | **~50 min for a 7B, ~10 h for a 35B** — it tells you before starting |
 | disk | one file | source + working files, 3–4× bigger |
 | **speed** | full | **identical** — speed comes from placement, not from the build |
-| **quality** | whatever the community published | **−9% perplexity at the same file size** |
+| **quality** | whatever the community published | **−9% ppl** (Gemma-12B) · **−13.2% ppl / −39.5% KLD** (Qwen2.5-7B, byte-matched, [staked](preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md)) |
 
 **Most people want Fast.** Above ~3 bits per weight, community quants are already near-lossless — so `--custom` refuses to run on machines that don't need it and says why. Reach for Custom when you're squeezing a model that barely fits (under ~3 bits, where ordinary compression falls off a cliff), when you have a fine-tune nobody has published, or when you need maximum quality at a fixed size.
 
@@ -132,6 +132,7 @@ Copyability is the whole mechanism: code answers repeat their input, prose inven
 | Qwen3-30B-A3B on a 2016 desktop | **20.4–22.7 tok/s** (22.69 re-measured 2026-08-03 on a normal working session, [server log](weights/data/bt_server.log); 22.94 on a scrubbed box, not quoted as the headline) |
 | Same config, 40 machine-checked business tasks | **40/40** ([evidence](weights/data/bt_20260803_2228_qwen30b_q2k.json)) |
 | Same model, partial expert offload | **20.62 tok/s** (+12.4%, free) |
+| Depth-aware vs uniform quant, **equal bytes** (7B @ 2-bit, staked A2A) | **-13.2% perplexity, -39.5% median KLD, +5.1 pts same-token, +6.6% tok/s** at +0.48% file size ([prereg + verdict](preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md)) |
 | Context window trade, measured | 22.69 tok/s at 4k ctx → **~11.7 at 16k** — KV displaces weights on a 6 GB card; run 4k for chat, open it for long chains |
 | Same bytes, different layers protected (Gemma 4 12B) | **byte-identical files, 2.25 ppl apart** |
 | Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |

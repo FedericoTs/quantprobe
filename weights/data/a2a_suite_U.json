@@ -1,0 +1,1530 @@
+{
+ "model": "A2A arm U",
+ "args": "7B 2-bit A2A; arm U; 16k ctx; -ngl 99",
+ "results": [
+  {
+   "cluster": "extraction",
+   "id": "e1",
+   "kind": "auto",
+   "prompt": "Extract to JSON with exactly the keys name, email, company, role. Reply with only the JSON object, no commentary.\n\n'Hi, I'm Dana Whitfield, VP of Partnerships at Northwind Logistics. Reach me at d.whitfield@northwind-log.com.'",
+   "output": "```json\n{\n  \"name\": \"Dana Whitfield\",\n  \"email\": \"d.whitfield@northwind-log.com\",\n  \"company\": \"Northwind Logistics\",\n  \"role\": \"VP of Partnerships\"\n}\n```",
+   "seconds": 2.5,
+   "think_words": 0,
+   "gen_tokens": 51,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['company', 'email', 'name', 'role']",
+     true
+    ],
+    [
+     "email == 'd.whitfield@northwind-log.com'",
+     true
+    ],
+    [
+     "name == 'Dana Whitfield'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e2",
+   "kind": "auto",
+   "prompt": "Extract every line item to a JSON array of objects with keys item, qty, unit_price. Reply with only the JSON array.\n\nINVOICE\n  Widget A   x3   @ 19.99\n  Widget B   x1   @ 249.00\n  Shipping   x1   @ 12.50",
+   "output": "[\n  {\"item\": \"Widget A\", \"qty\": 3, \"unit_price\": 19.99},\n  {\"item\": \"Widget B\", \"qty\":1, \"unit_price\":249.00},\n  {\"item\": \"Shipping\", \"qty\":1, \"unit_price\":12.50}\n]",
+   "seconds": 3.7,
+   "think_words": 0,
+   "gen_tokens": 74,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json array of 3",
+     true
+    ],
+    [
+     "0.qty == 3",
+     true
+    ],
+    [
+     "1.unit_price == 249.0",
+     true
+    ],
+    [
+     "2.item == 'Shipping'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e3",
+   "kind": "auto",
+   "prompt": "From the text below return only a JSON object with keys total_headcount and revised_plan_due. Reply with only the JSON object.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "```json\n{\n  \"total_headcount\": 22,\n  \"revised_plan_due\": \"2023-11-15\"\n}\n```",
+   "seconds": 2.0,
+   "think_words": 0,
+   "gen_tokens": 36,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['revised_plan_due', 'total_headcount']",
+     true
+    ],
+    [
+     "total_headcount == 22",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e4",
+   "kind": "auto",
+   "prompt": "Return only a JSON object with keys company, amount_usd, due_days.\n\n'Per our agreement, Acme Corp will be invoiced 47,500 USD, net 30.'",
+   "output": "```json\n{\n  \"company\": \"Acme Corp\",\n  \"amount_usd\": 47500,\n  \"due_days\": 30\n}\n```",
+   "seconds": 1.9,
+   "think_words": 0,
+   "gen_tokens": 38,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['amount_usd', 'company', 'due_days']",
+     true
+    ],
+    [
+     "amount_usd == 47500",
+     true
+    ],
+    [
+     "due_days == 30",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "extraction",
+   "id": "e5",
+   "kind": "auto",
+   "prompt": "List the three ticket IDs as a JSON array of strings, in the order given. Reply with only the array.\n\nOpen: TCK-4471 (SSO login loop), TCK-4472 (VAT wrong on Irish invoices), TCK-4488 (CSV export truncates).",
+   "output": "[\"TCK-4471\", \"TCK-4472\", \"TCK-4488\"]",
+   "seconds": 1.5,
+   "think_words": 0,
+   "gen_tokens": 28,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json array of 3",
+     true
+    ],
+    [
+     "0 == 'TCK-4471'",
+     true
+    ],
+    [
+     "2 == 'TCK-4488'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a1",
+   "kind": "auto",
+   "prompt": "A subscription is 49 USD/month per seat. A customer has 37 seats and an 18% annual discount for paying yearly. What is the annual total in USD after discount? Give the final number only, rounded to 2 decimals.",
+   "output": "First, calculate the monthly cost for 37 seats:\n\n\\[ 49 \\text{ USD/seat/month} \\times 37 \\text{ seats} = 1809 \\text{ USD/month}\\]\n\nNext, calculate the annual cost without discount:\n\n\\[1809 \\text{ USD/month} \\times 12 \\text{ months} = 21708 \\text{ USD/year}\\]\n\nNow, apply the 18% discount:\n\n\\[21708 \\text{ USD/year} \\times (1 -0.18) =21708 \\times 0.82 =17727.68 \\text{ USD/year}\\]\n\nSo, the annual total in USD after discount is:\n\n\\[17727.68 \\text{ USD}\\]\n\nRounded to two decimal places, the final answer is:\n\n\\[17727.68 \\text{ USD}\\]",
+   "seconds": 9.8,
+   "think_words": 0,
+   "gen_tokens": 206,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 17839.92",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a2",
+   "kind": "auto",
+   "prompt": "Monthly churn is 3.1%. Starting from 4,000 customers and no new signups, how many customers remain after 3 months? Round to the nearest whole customer. Give the number only.",
+   "output": "To find the number of customers remaining after 3 months, we can use the formula for exponential decay, which in this context is the formula for monthly churn. The formula to calculate the remaining number of customers after \\( n\\) months is:\n\n\\[ \\text{Remaining customers} = \\text{Initial customers} \\times (1 -\\text{churn rate})^n\\]\n\nGiven:\n- Initial number of customers = 4,000\n- Monthly churn rate = 3.1% = 0.031\n- \\(n = 3\\) months\n\nPlugging in the values:\n\n\\[ \\text{Remaining customers} = 4000 \\times (1 -0.031)^3\\]\n\\[= 4000 \\times (0.969)^3\\]\n\\[= 4000 \\times 0.873483779\\]\n\\[= 3493.93\\]\n\nRounding to the nearest whole number:\n\n\\[=3494\\]\n\nSo, the number of customers remaining after 3 months is 3494.",
+   "seconds": 11.5,
+   "think_words": 0,
+   "gen_tokens": 242,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 3639",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a3",
+   "kind": "auto",
+   "prompt": "CAC is 12,400 USD and monthly gross profit per customer is 653 USD. What is the CAC payback period in months, rounded up to a whole month? Give the number only.",
+   "output": "20",
+   "seconds": 0.3,
+   "think_words": 0,
+   "gen_tokens": 3,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 19",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a4",
+   "kind": "auto",
+   "prompt": "Revenue was 4.2M, which is 8% below plan. What was the plan number in millions, rounded to 3 decimals? Give the number only.",
+   "output": "1.125",
+   "seconds": 0.4,
+   "think_words": 0,
+   "gen_tokens": 6,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 4.565",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a5",
+   "kind": "auto",
+   "prompt": "An invoice of 8,300 EUR excludes VAT at 23%. What is the gross total in EUR, to 2 decimals? Give the number only.",
+   "output": "8,300.00",
+   "seconds": 0.5,
+   "think_words": 0,
+   "gen_tokens": 9,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 10209.0",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "arithmetic",
+   "id": "a6",
+   "kind": "auto",
+   "prompt": "You have 22 sales reps, up from 17 a year ago. What is the year-over-year headcount growth as a percentage, to 1 decimal place? Give the number only.",
+   "output": "29.4",
+   "seconds": 0.3,
+   "think_words": 0,
+   "gen_tokens": 5,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 29.4",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k1",
+   "kind": "auto",
+   "prompt": "Classify this support ticket as exactly one of: BILLING, TECHNICAL, SALES. Answer with the single word only.\n\n'Your invoice charged me for a month after I cancelled.'",
+   "output": "BILLING",
+   "seconds": 0.3,
+   "think_words": 0,
+   "gen_tokens": 3,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of BILLING/TECHNICAL/SALES",
+     true
+    ],
+    [
+     "mentions 'billing'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k2",
+   "kind": "auto",
+   "prompt": "Classify as exactly one of: BILLING, TECHNICAL, SALES. Answer with the single word only.\n\n'After SSO redirect, Safari loops back to the login page.'",
+   "output": "TECHNICAL",
+   "seconds": 0.4,
+   "think_words": 0,
+   "gen_tokens": 5,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of BILLING/TECHNICAL/SALES",
+     true
+    ],
+    [
+     "mentions 'technical'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k3",
+   "kind": "auto",
+   "prompt": "Sentiment of this review as exactly one of: POSITIVE, NEGATIVE, MIXED. Single word only.\n\n'Setup was painless and support replied in minutes, but it is far too expensive for what it does.'",
+   "output": "NEGATIVE",
+   "seconds": 0.3,
+   "think_words": 0,
+   "gen_tokens": 3,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "exactly one of POSITIVE/NEGATIVE/MIXED",
+     true
+    ],
+    [
+     "mentions 'mixed'",
+     false
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k4",
+   "kind": "auto",
+   "prompt": "Is this lead ENTERPRISE or SMB? Answer with the single word only.\n\n'We're a 12-person agency looking for a cheap plan, no procurement process.'",
+   "output": "SMB",
+   "seconds": 0.2,
+   "think_words": 0,
+   "gen_tokens": 3,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of ENTERPRISE/SMB",
+     true
+    ],
+    [
+     "mentions 'smb'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k5",
+   "kind": "auto",
+   "prompt": "Route to exactly one of: LEGAL, FINANCE, ENGINEERING. Single word only.\n\n'The DPA the customer sent back has an altered sub-processor clause.'",
+   "output": "LEGAL",
+   "seconds": 0.2,
+   "think_words": 0,
+   "gen_tokens": 2,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of LEGAL/FINANCE/ENGINEERING",
+     true
+    ],
+    [
+     "mentions 'legal'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "classification",
+   "id": "k6",
+   "kind": "auto",
+   "prompt": "Priority as exactly one of: P0, P1, P2. Single word only.\n\n'Checkout is down for all customers in production.'",
+   "output": "P1",
+   "seconds": 0.2,
+   "think_words": 0,
+   "gen_tokens": 3,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "exactly one of P0/P1/P2",
+     true
+    ],
+    [
+     "mentions 'p0'",
+     false
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s1",
+   "kind": "auto",
+   "prompt": "Summarise in exactly 5 bullet points, one line each, starting each with '- '. Use only numbers that appear in the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "-Q3 revenue was 4.2M, up 12% YoY but 8% below plan.\n-Churn rose to 3.1% monthly, driven by SMB.\n-Enterprise ARR grew 34%.\n-Sales headcount is 22, up from 17.\n-CAC payback lengthened from 14 to 19 months.",
+   "seconds": 4.1,
+   "think_words": 0,
+   "gen_tokens": 80,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "exactly 5 bullets",
+     false
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s2",
+   "kind": "auto",
+   "prompt": "In one sentence of at most 25 words, state the single most urgent item. Use only numbers from the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "The revised FY plan is due by 15 November based on Q3 revenue of 4.2M, 8% below plan, and SMB-driven churn of 3.1%.",
+   "seconds": 2.2,
+   "think_words": 0,
+   "gen_tokens": 40,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "<= 25 words",
+     true
+    ],
+    [
+     "<= 1 sentences",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s3",
+   "kind": "auto",
+   "prompt": "Give exactly 3 bullets, each starting '- ', naming only risks stated in the text. Do not add numbers that are not in the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "- Monthly churn rose by 3% which could drive up customer attrition and negatively impact long-term revenue stability.\n- CAC payback lengthened from 14 to 19 months, indicating increased sales acquisition costs and potentially straining financial resources.\n- Enterprise ARR grew by 34%, but the significant increase might not be sustainable or aligned with the planned growth, posing a risk to financial health.",
+   "seconds": 4.3,
+   "think_words": 0,
+   "gen_tokens": 84,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "exactly 3 bullets",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "summarisation",
+   "id": "s4",
+   "kind": "auto",
+   "prompt": "Compress this to under 30 words with no numbers at all.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "Q3 revenue 4.2M, up 12% YoY, 8% below plan; churn 3.1%, driven by SMB; enterprise ARR up 34%; sales headcount 22 (up from 17); CAC payback lengthened; FY plan revision due 15 Nov.",
+   "seconds": 3.6,
+   "think_words": 0,
+   "gen_tokens": 70,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "<= 30 words",
+     false
+    ],
+    [
+     "invents no numbers",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i1",
+   "kind": "auto",
+   "prompt": "Reply with exactly the word ACKNOWLEDGED and nothing else.",
+   "output": "ACKNOWLEDGED",
+   "seconds": 0.3,
+   "think_words": 0,
+   "gen_tokens": 4,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "<= 1 words",
+     true
+    ],
+    [
+     "mentions 'acknowledged'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i2",
+   "kind": "auto",
+   "prompt": "List the days Monday to Friday, one per line, each prefixed with '> '. No other text.",
+   "output": "> Monday\n> Tuesday\n> Wednesday\n> Thursday\n> Friday",
+   "seconds": 0.8,
+   "think_words": 0,
+   "gen_tokens": 15,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "5 lines matching ^>\\s+\\w+day$",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i3",
+   "kind": "auto",
+   "prompt": "Write a product tagline of at most 8 words that does not contain the letter 'e'.",
+   "output": "Fnd grt bnytd.",
+   "seconds": 0.5,
+   "think_words": 0,
+   "gen_tokens": 9,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "<= 8 words",
+     true
+    ],
+    [
+     "avoids 'e'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i4",
+   "kind": "auto",
+   "prompt": "Answer in exactly two sentences. First sentence must start with 'Yes' or 'No'. Question: should a 12-person agency buy an enterprise CRM?",
+   "output": "No, a 12-person agency should not necessarily buy an enterprise CRM. They might consider a more tailored solution that aligns with their specific needs and budget.",
+   "seconds": 1.7,
+   "think_words": 0,
+   "gen_tokens": 34,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "<= 2 sentences",
+     true
+    ],
+    [
+     "starts Yes/No",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i5",
+   "kind": "auto",
+   "prompt": "Output a CSV with header 'region,quarter,revenue' and exactly 2 data rows for EMEA and AMER in Q3, revenue 1200000 and 3000000. No other text.",
+   "output": "region,quarter,revenue\nEMEA,Q3,1200000\nAMER,Q3,3000000",
+   "seconds": 1.7,
+   "think_words": 0,
+   "gen_tokens": 32,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "1 lines matching ^region,quarter,revenue$",
+     true
+    ],
+    [
+     "2 lines matching ^(EMEA|AMER),Q3,\\d+$",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "instruction",
+   "id": "i6",
+   "kind": "auto",
+   "prompt": "Reply with only a JSON object with keys status and retry_after_seconds, where status is 'rate_limited' and retry_after_seconds is 30.",
+   "output": "```json\n{\"status\":\"rate_limited\",\"retry_after_seconds\":30}\n```",
+   "seconds": 1.0,
+   "think_words": 0,
+   "gen_tokens": 19,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['retry_after_seconds', 'status']",
+     true
+    ],
+    [
+     "status == 'rate_limited'",
+     true
+    ],
+    [
+     "retry_after_seconds == 30",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p1",
+   "kind": "auto",
+   "prompt": "Write a Python function `vat_gross(net, rate)` returning the gross amount rounded to 2 decimals, where rate is a decimal fraction (0.23 means 23%). Reply with only the code.",
+   "output": "```python\ndef vat_gross(net, rate):\n    return round(net / (1 + rate), 2)\n```",
+   "seconds": 1.3,
+   "think_words": 0,
+   "gen_tokens": 26,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p2",
+   "kind": "auto",
+   "prompt": "Write a Python function `churned(start, monthly_rate, months)` returning the whole number of customers remaining, rounded to nearest int. Reply with only the code.",
+   "output": "```python\ndef churned(start, monthly_rate, months):\n    remaining_customers = start * (1 - monthly_rate)**months\n    return round(remaining_customers)\n```utowrite",
+   "seconds": 2.0,
+   "think_words": 0,
+   "gen_tokens": 40,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p3",
+   "kind": "auto",
+   "prompt": "Write a Python function `parse_invoice_line(s)` that turns 'Widget A   x3   @ 19.99' into the dict {'item': 'Widget A', 'qty': 3, 'unit_price': 19.99}. Reply with only code.",
+   "output": "```python\ndef parse_invoice_line(s):\n    parts = s.split()\n    item = parts[0]\n    qty = int(parts[2][0])\n    unit_price = float(parts[-1])\n    return {'item': item, 'qty': qty, 'unit_price': unit_price}\n```",
+   "seconds": 3.1,
+   "think_words": 0,
+   "gen_tokens": 62,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p4",
+   "kind": "auto",
+   "prompt": "Write a Python function `cac_payback(cac, monthly_gp)` returning months rounded UP to a whole number. Reply with only the code.",
+   "output": "```python\nimport math\ndef cac_payback(cac, monthly_gp):\n    return math.ceil(cac / monthly_gp)\n```",
+   "seconds": 1.4,
+   "think_words": 0,
+   "gen_tokens": 28,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "code",
+   "id": "p5",
+   "kind": "auto",
+   "prompt": "Write a Python function `valid_email(s)` returning True/False. Reply with only the code.",
+   "output": "```python\nimport re\n\ndef valid_email(s):\n    pattern = r\"^[a-z0-9._.-]+@[a-z0-9.-]+\\.[a-z]{2,}$\"\n    return bool(re.match(pattern, s.lower()))\n```",
+   "seconds": 2.6,
+   "think_words": 0,
+   "gen_tokens": 53,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n1",
+   "kind": "auto",
+   "prompt": "Given monthly churn 3.1%, what is the implied annual retention as a percentage to 1 decimal? Give the number only.",
+   "output": "96.9",
+   "seconds": 0.3,
+   "think_words": 0,
+   "gen_tokens": 5,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 68.5",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n2",
+   "kind": "auto",
+   "prompt": "Reply with only a JSON object with keys metric and direction, where metric is the one that worsened most in relative terms between CAC payback 14 and 19 months, and direction is 'worse'.",
+   "output": "```json\n{\n  \"metric\": \"CAC payback\",\n  \"direction\": \"worse\"\n}\n```",
+   "seconds": 1.2,
+   "think_words": 0,
+   "gen_tokens": 24,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['direction', 'metric']",
+     true
+    ],
+    [
+     "direction == 'worse'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n3",
+   "kind": "auto",
+   "prompt": "Enterprise ARR grew 34% to 2.1M. What was it a year ago, in millions to 3 decimals? Give the number only.",
+   "output": "1.471",
+   "seconds": 0.4,
+   "think_words": 0,
+   "gen_tokens": 6,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 1.567",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "analysis",
+   "id": "n4",
+   "kind": "auto",
+   "prompt": "Answer with exactly one word, YES or NO: at 3.1% monthly churn, does a cohort lose more than a third of its customers within 12 months?",
+   "output": "NO",
+   "seconds": 0.2,
+   "think_words": 0,
+   "gen_tokens": 2,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "exactly one of YES/NO",
+     true
+    ],
+    [
+     "mentions 'no'",
+     true
+    ],
+    [
+     "<= 3 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m1",
+   "kind": "auto",
+   "prompt": "Translate to French, reply with only the translation: 'The invoice is due in 30 days.'",
+   "output": "L'facture est due dans 30 jours.",
+   "seconds": 0.7,
+   "think_words": 0,
+   "gen_tokens": 13,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "mentions '30'",
+     true
+    ],
+    [
+     "looks french",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m2",
+   "kind": "auto",
+   "prompt": "Translate to German, reply with only the translation: 'Your account has been cancelled.'",
+   "output": "Ihr Konto wurde aufgehoben.",
+   "seconds": 0.6,
+   "think_words": 0,
+   "gen_tokens": 11,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "looks german",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m3",
+   "kind": "auto",
+   "prompt": "Reply with only a JSON object with keys language and code, identifying the language of 'Il contratto scade il 15 novembre' using an ISO 639-1 code.",
+   "output": "```json\n{\"language\": \"it\", \"code\": \"it\"}",
+   "seconds": 0.9,
+   "think_words": 0,
+   "gen_tokens": 16,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['code', 'language']",
+     true
+    ],
+    [
+     "code == 'it'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "multilingual",
+   "id": "m4",
+   "kind": "auto",
+   "prompt": "Translate to Spanish, reply with only the translation: 'We will refund 47,500 USD.'",
+   "output": "Reembolsaremos 47,500 USD.",
+   "seconds": 0.7,
+   "think_words": 0,
+   "gen_tokens": 14,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "mentions '47'",
+     true
+    ],
+    [
+     "looks spanish",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3x1",
+   "kind": "auto",
+   "prompt": "Ledger A: 'rent 2400, software 1180, travel 3310, payroll 41200'. Ledger B: 'rent 2400, software 1180, travel 3130, payroll 41200'. Exactly one item disagrees. Reply with only a JSON object with keys item, ledger_a, ledger_b, delta (delta = ledger_a - ledger_b).",
+   "output": "{\"item\": \"travel\", \"ledger_a\": 3310, \"ledger_b\": 3130, \"delta\": 180}",
+   "seconds": 2.0,
+   "think_words": 0,
+   "gen_tokens": 35,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['delta', 'item', 'ledger_a', 'ledger_b']",
+     true
+    ],
+    [
+     "item == 'travel'",
+     true
+    ],
+    [
+     "ledger_a == 3310",
+     true
+    ],
+    [
+     "ledger_b == 3130",
+     true
+    ],
+    [
+     "delta == 180",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3a1",
+   "kind": "auto",
+   "prompt": "NPV of cashflows -10000, 3000, 4000, 5000, 2000 (t=0..4) at a discount rate of 8%. Give the number only, to 2 decimals.",
+   "output": "To calculate the Net Present Value (NPV) of the cash flows at a discount rate of 8%, we need to discount each cash flow to its present value and then sum them up. The formula for the present value of a cash flow at time \\( t \\) is:\n\n\\[ PV_t = \\frac{CF_t}{(1 +r)^t}\\]\n\nwhere \\(CF_t\\) is the cash flow at time \\(t\\), and \\(r\\) is the discount rate.\n\nGiven cash flows are: \\(-10000, 3000, 4000, 5000, 2000\\) at times \\(t=0, 1, 2, 3, 4\\) respectively, and the discount rate \\(r = 0.08\\).\n\nLet's calculate the present value of each cash flow:\n\n\\[PV_0 = \\frac{-10000}{(1+0.08)^0} = -10000\\]\n\n\\[PV_1 = \\frac{3000}{(1+0.08)^1} = \\frac{3000}{1.08} = 2777.78\\]\n\n\\[PV_2 = \\frac{4000}{(1+0.08)^2} = \\frac{4000}{1.1664} = 3428.57\\]\n\n\\[PV_3 = \\frac{5000}{(1+0.08)^3} = \\frac{5000}{1.2597} = 3981.60\\]\n\n\\[PV_4 = \\frac{2000}{(1+0.08)^4} = \\frac{2000}{1.3689} = 14orne{36}4.53\\]\n\nNow summing these present values:\n\n\\[NPV = PV_0 +PV_1+PV_2+PV_3+PV_4\\]\n\n\\[NPV = -10000 +2777.78+3428.57+3981.60+1436.45 = -10000 +9644.40 = -455.60\\]\n\nSo the NPV is:\n\n\\[-455.60\\]\n\nRounded to two decimal places, the NPV is:\n\n\\[-455.60\\]",
+   "seconds": 26.5,
+   "think_words": 0,
+   "gen_tokens": 555,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 1646.35",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3c1",
+   "kind": "auto",
+   "prompt": "Write a Python function `monthly_payment(principal, annual_rate, months)` for a standard amortized loan (annual_rate is a decimal fraction, e.g. 0.055), returning the payment rounded to 2 decimals. Reply with only the code.",
+   "output": "```python\ndef monthly_payment(principal, annual_rate, months):\n    monthly_rate = annual_rate / 12\n    payment = (principal * monthly_rate * (1 +monthly_rate)**months) / ((1 +monthly_rate)**months -1)\n    return round(payment, 2)\n```",
+   "seconds": 3.1,
+   "think_words": 0,
+   "gen_tokens": 63,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3l1",
+   "kind": "auto",
+   "prompt": "Three houses, numbered 1-3 left to right. Colors red, blue, green; drinks tea, coffee, milk; pets cat, dog, fish - each exactly once. Clues: the red house is immediately left of the blue house; coffee is drunk in the green house; the cat lives in house 2; milk is drunk in house 1; the fish lives in the red house. Reply with only a JSON object of the form {\"house1\": {\"color\": ..., \"drink\": ..., \"pet\": ...}, \"house2\": ..., \"house3\": ...}.",
+   "output": "{\"house1\":{\"color\":\"green\",\"drink\":\"milk\",\"pet\":\"cat\"},\"house2\":{\"color\":\"red\",\"drink\":\"coffee\",\"pet\":\"fish\"},\"house3\":{\"color\":\"blue\",\"drink\":\"tea\",\"pet\":\"dog\"}}",
+   "seconds": 2.6,
+   "think_words": 0,
+   "gen_tokens": 48,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "json object with keys ['house1', 'house2', 'house3']",
+     true
+    ],
+    [
+     "house1.color == 'red'",
+     false
+    ],
+    [
+     "house1.drink == 'milk'",
+     true
+    ],
+    [
+     "house1.pet == 'fish'",
+     false
+    ],
+    [
+     "house2.color == 'blue'",
+     false
+    ],
+    [
+     "house2.drink == 'tea'",
+     false
+    ],
+    [
+     "house2.pet == 'cat'",
+     false
+    ],
+    [
+     "house3.color == 'green'",
+     false
+    ],
+    [
+     "house3.drink == 'coffee'",
+     false
+    ],
+    [
+     "house3.pet == 'dog'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3s1",
+   "kind": "auto",
+   "prompt": "Summarise in exactly 3 bullet lines, each starting with '- ', each at most 12 words, using only numbers that appear in the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "- Q3 revenue was 4.2M, up 12% YoY.\n- Churn rose to 3.1% monthly, driven by SMB.\n- Enterprise ARR grew 34%, CAC payback lengthened from 14 to 19 months.",
+   "seconds": 3.1,
+   "think_words": 0,
+   "gen_tokens": 60,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "exactly 3 bullets",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ],
+    [
+     "every bullet <= 12 words",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3h1",
+   "kind": "auto",
+   "prompt": "Tickets: TCK-101 'refund of 300 EUR not received', TCK-102 'dark mode broken', TCK-103 'invoice shows 250 instead of 25', TCK-104 'password reset loop', TCK-105 'charged twice this month'. Reply with only a JSON array of the ticket IDs that concern money, in the order given.",
+   "output": "[\"TCK-101\", \"TCK-103\", \"TCK-105\"]",
+   "seconds": 1.4,
+   "think_words": 0,
+   "gen_tokens": 25,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": true,
+   "checks": [
+    [
+     "json array of 3",
+     true
+    ],
+    [
+     "0 == 'TCK-101'",
+     true
+    ],
+    [
+     "1 == 'TCK-103'",
+     true
+    ],
+    [
+     "2 == 'TCK-105'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4a1",
+   "kind": "auto",
+   "prompt": "Compute exactly: 738451926 * 584379201. Give the integer only.",
+   "output": "To compute the product \\(738451926 \\times 584379201\\), we can use a straightforward multiplication method:\n\n\\[\n738451926 \\times 584379201 = 4325111877784857786\n\\]\n\nThe integer result of the computation is:\n\n\\[\n4325111877784857786\n\\]",
+   "seconds": 5.6,
+   "think_words": 0,
+   "gen_tokens": 116,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 431535946492791126",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4a2",
+   "kind": "auto",
+   "prompt": "A 250,000 loan at 5.5% annual (monthly compounding, standard amortization) is repaid over 96 monthly payments. What is the TOTAL INTEREST paid over the life of the loan, to the cent? Give the number only.",
+   "output": "To calculate the total interest paid over the life of the loan, we can use the formula for the total interest in a standard amortization loan. The formula for the monthly payment \\(M\\) on a loan of principal \\(P\\) at an annual interest rate \\(r\\) over \\(n\\) months is:\n\n\\[ M = \\frac{P \\cdot r/12}{1 -1/(1+r/12)^n} \\]\n\nWhere:\n- \\(P = 250,000\\) (the loan amount),\n- \\(r = 0.055\\) (annual interest rate),\n- \\(n = 96\\) (number of monthly payments).\n\nFirst, we calculate the monthly payment \\(M\\):\n\n\\[ M = \\frac{250,000 \\cdot \\frac{0.055}{12}}{1 -\\frac{1}{(1+\\frac{0.055}{12})^{96}}} \\]\n\n\\[ M = \\frac{250,000 \\cdot \\frac{0.055}{12}}{1-\\frac{1}{(1+0.00458333)^{96}}\\]\n\n\\[ M = \\frac{250,000 \\cdot 0.00458333}{1-\\frac{1}{(1.00458333)^{96}}\\]\n\n\\[ M = \\frac{1,145.83}{1-\\frac{1}{(1.00458333)^{96}}\\]\n\n\\[ M = \\frac{1,145.83}{1-\\frac{1}{2.11457}} \\]\n\n\\[ M = \\frac{1,145.83}{1-0.4736}\\]\n\n\\[ M = \\frac{1,145.83}{0.5264}\\]\n\n\\[ M = 2178.57\\]\n\nNow, we calculate the total amount paid over the life of the loan:\n\n\\[ \\text{Total amount paid} = M \\cdot n = 2178.57 \\cdot 96 = 209,587.12\\]\n\nFinally, we calculate the total interest paid:\n\n\\[ \\text{Total interest} = \\text{Total amount paid} -\\text{Principal} = 209,587.12 -250,000 = -40,412.88\\]\n\nSince the total amount paid includes both principal and interest, the total interest paid is the total amount paid minus the principal:\n\n\\[ \\text{Total interest} = 209,587.12 -250,000 = 59,587.12\\]\n\nSo, the total interest paid over the life of the loan is:\n\n\\[ \\boxed{59587.12}\\]",
+   "seconds": 31.2,
+   "think_words": 0,
+   "gen_tokens": 653,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 59583.73",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4w1",
+   "kind": "auto",
+   "prompt": "Write exactly 45 words about a company's finances without using the letter 'e' anywhere. The words 'profit', 'cash' and 'margin' must all appear.",
+   "output": "Qwen Inc. saw Q2 profit jump, up 15% year-over-year. Cash reserves robustly at $1M+. Margin analysis shows improved gross margins driving overall financial health.",
+   "seconds": 2.0,
+   "think_words": 0,
+   "gen_tokens": 40,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "exactly 45 words",
+     false
+    ],
+    [
+     "avoids 'e'",
+     false
+    ],
+    [
+     "mentions 'profit', 'cash', 'margin'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4l1",
+   "kind": "auto",
+   "prompt": "Five houses, numbered 1-5 left to right. Colors red, green, blue, white, yellow; nationalities Brit, Swede, Dane, German, Norwegian; drinks tea, coffee, milk, beer, water - each exactly once. Clues: the Brit lives in the red house; the green house is immediately left of the white house; coffee is drunk in the green house; the Norwegian lives in the first house; the Norwegian lives next to the blue house; milk is drunk in the middle house; the Dane drinks tea; the Swede drinks beer; beer is drunk in the last house. Reply with only a JSON object mapping house1..house5 to objects with keys color, nationality, drink.",
+   "output": "{\n  \"house1\": {\n    \"color\": \"red\",\n    \"nationality\": \"Brit\",\n    \"drink\": \"tea\"\n  },\n  \"house2\": {\n    \"color\": \"white\",\n    \"nationality\": \"Norwegian\",\n    \"drink\": \"milk\"\n  },\n  \"house3\":{\n    \"color\": \"green\",\n    \"nationality\": \"Dane\",\n    \"drink\": \"coffee\"\n  },\n  \"house4\":{\n    \"color\": \"blue\",\n    \"nationality\": \"German\",\n    \"drink\": \"beer\"\n  },\n  \"house5\":{\n    \"color\": \"yellow\",\n    \"nationality\": \"Swede\",\n    \"drink\": \"water\"\n  }\n}",
+   "seconds": 7.9,
+   "think_words": 0,
+   "gen_tokens": 157,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "json object with keys ['house1', 'house2', 'house3', 'house4', 'house5']",
+     true
+    ],
+    [
+     "house1.color == 'yellow'",
+     false
+    ],
+    [
+     "house1.nationality == 'Norwegian'",
+     false
+    ],
+    [
+     "house1.drink == 'water'",
+     false
+    ],
+    [
+     "house2.color == 'blue'",
+     false
+    ],
+    [
+     "house2.nationality == 'Dane'",
+     false
+    ],
+    [
+     "house2.drink == 'tea'",
+     false
+    ],
+    [
+     "house3.color == 'red'",
+     false
+    ],
+    [
+     "house3.nationality == 'Brit'",
+     false
+    ],
+    [
+     "house3.drink == 'milk'",
+     false
+    ],
+    [
+     "house4.color == 'green'",
+     false
+    ],
+    [
+     "house4.nationality == 'German'",
+     true
+    ],
+    [
+     "house4.drink == 'coffee'",
+     false
+    ],
+    [
+     "house5.color == 'white'",
+     false
+    ],
+    [
+     "house5.nationality == 'Swede'",
+     true
+    ],
+    [
+     "house5.drink == 'beer'",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4c1",
+   "kind": "auto",
+   "prompt": "Write a Python function `iso_week(y, m, d)` returning the ISO-8601 week number for that date WITHOUT importing anything (no datetime, no calendar). Reply with only the code.",
+   "output": "```python\ndef iso_week(y, m, d):\n    # Day of the ISO week\n    day = datetime.date(y, m, d)\n    day_of_week = day.weekday()\n    day_of_year = day.timetuple().tm_yday\n    week_num = int((day_of_year + day_of_week) / 7) + 1\n    return week_num if day_of_week == 0 else week_num -1\n```\n\nNote: The above code snippet still imports the `datetime` module to calculate the week number, as it is necessary to parse the date. However, you've asked for a function that does not import anything, which is not possible in Python for this specific task due to the nature of date and time handling in Python.",
+   "seconds": 7.7,
+   "think_words": 0,
+   "gen_tokens": 160,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "no imports used",
+     true
+    ],
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4s1",
+   "kind": "auto",
+   "prompt": "Take the sentence: 'The quarterly report shows steady growth across all regions.' For every word of 5 or more letters, reverse its letters. Words of 4 or fewer letters stay unchanged. The final period is not part of any word. Reply with only the transformed sentence.",
+   "output": "The qoppat report shoos tacitaytay  growht acnay  alo taeriyons.",
+   "seconds": 1.4,
+   "think_words": 0,
+   "gen_tokens": 27,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "exactly 'The ylretrauq troper swohs ydaets htworg'...",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c1",
+   "kind": "rubric",
+   "prompt": "Write a short email declining a vendor's proposal for a CRM migration because the timeline slips past our Q4 freeze. Keep the door open for Q1.",
+   "output": "Subject: Re: CRM Migration Proposal\n\nDear [Vendor's Name],\n\nThank you for your proposal regarding the CRM migration. We appreciate your team's efforts and the benefits your solution brings to our organization. However, we regret to inform you that we will not be able to proceed with the timeline proposed for this project.\n\nAs you know, we are currently in the Q4 freeze period, where we prioritize finalizing existing projects and focusing on year-end objectives. This freeze period typically runs through the end of the year and into the beginning of Q1 next year.\n\nWe understand the importance of this project and the value it would bring to our operations. We are keeping the proposal open and would be more than happy to revisit it once we enter the Q1 period next year. We believe that with the fresh start and the new year, we would be able to realign our resources and timelines accordingly.\n\nThank you once again for your understanding and flexibility. Please feel free to reach out if you have any questions or need further information from us.\n\nBest regards,\n\n[Your Name]  \n[Your Company]",
+   "seconds": 10.5,
+   "think_words": 0,
+   "gen_tokens": 220,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "sendable with at most a name/date edit; declines clearly; leaves the door open"
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c2",
+   "kind": "rubric",
+   "prompt": "Draft a follow-up to a client who has not responded in two weeks about an unsigned SOW. Polite, not passive-aggressive, one clear ask.",
+   "output": "Hello [Client's Name],\n\nI hope this message finds you well. I wanted to follow up on the status of the signed Service Order of Work (SOW) we discussed earlier. We value your time and appreciate your consideration. Could you please let us know your availability for signing the SOW at your earliest convenience?\n\nThank you for your understanding and cooperation.\n\nBest regards,\n[Your Name]",
+   "seconds": 3.9,
+   "think_words": 0,
+   "gen_tokens": 80,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "one unambiguous ask; professional tone; no guilt-tripping"
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c3",
+   "kind": "rubric",
+   "prompt": "Reply to a customer charged for a month they had already cancelled. Acknowledge, commit to a refund, give a timeline.",
+   "output": "Certainly! Here's a sample response you could use:\n\n---\n\nDear [Customer's Name],\n\nThank you for bringing this to our attention. We deeply apologize for any inconvenience caused and understand your frustration regarding the charges that appeared on your bill for a month you had already cancelled your service.\n\nWe commit to processing a refund as soon as possible. Typically, refunds are processed within 3-5 business days once we receive the cleared refund from the payment processor. We will keep you updated on the progress of your refund via this platform.\n\nIf you have any further questions or need assistance, please do not hesitate to reach out to us. We value your feedback and are committed to resolving this matter as swiftly as possible.\n\nThank you for your understanding and patience.\n\nBest regards,\n\n[Your Company Name]",
+   "seconds": 7.5,
+   "think_words": 0,
+   "gen_tokens": 158,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "acknowledges without admitting liability; concrete next step and timeline"
+  },
+  {
+   "cluster": "correspondence",
+   "id": "c4",
+   "kind": "rubric",
+   "prompt": "Write a LinkedIn message to a candidate for a senior backend role. Two sentences on why them specifically, one clear call to action.",
+   "output": "Hi [Candidate's Name],\n\nI was impressed by your experience in [specific area of expertise relevant to the senior backend role], particularly in your work on [specific project or technology]. Your expertise would be a great fit for our current needs, and I believe you could make significant contributions to our team.\n\nPlease review the attached job description and let's discuss your role in our upcoming call. Looking forward to your insights!\n\nBest regards,\n[Your Name]",
+   "seconds": 4.4,
+   "think_words": 0,
+   "gen_tokens": 91,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "specific rather than generic; single CTA"
+  },
+  {
+   "cluster": "judgement",
+   "id": "j1",
+   "kind": "rubric",
+   "prompt": "A customer demands a feature we will not build. Draft the refusal in three sentences without saying 'unfortunately' or promising a roadmap slot.",
+   "output": "Thank you for your request, but we do not plan to implement that feature in the near future. We value your feedback and will consider it as we prioritize our development roadmap based on community needs and priorities.",
+   "seconds": 2.1,
+   "think_words": 0,
+   "gen_tokens": 42,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "clear no; no false promise; keeps the relationship"
+  },
+  {
+   "cluster": "judgement",
+   "id": "j2",
+   "kind": "rubric",
+   "prompt": "Our deploy caused 40 minutes of downtime. Write the customer-facing incident note.",
+   "output": "Certainly! Here's a sample customer-facing incident note that you can use:\n\n---\n\n**Dear [Customer Name],\n\nWe are writing to inform you of an incident that occurred on [Date] affecting our service. We apologize for any inconvenience this may have caused.\n\nOn [Date], we experienced a brief downtime of approximately 40 minutes due to a deployment issue. During this time, our service was unavailable.\n\nWe understand the impact this may have had on your operations and we are deeply sorry for any disruption this may have caused.\n\nOur engineering team is currently investigating the cause of the downtime and will provide an update on the resolution of the issue as soon as possible.\n\nThank you for your patience and understanding during this incident.\n\nBest regards,\n\n[Your Company Name] Team\n\n---\n\nFeel free to adjust the details as needed to fit your specific situation and company policies.",
+   "seconds": 8.2,
+   "think_words": 0,
+   "gen_tokens": 172,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "states impact and duration; no blame-shifting; says what changes"
+  },
+  {
+   "cluster": "longform",
+   "id": "l1",
+   "kind": "rubric",
+   "prompt": "Write a one-page brief arguing whether to move from monthly to annual billing, covering cash flow, churn and discounting.",
+   "output": "### Billing Frequency Analysis: Monthly vs Annual Billing\n\n#### Overview\n\nIn the current landscape of software as a service (SaaS) and subscription-based businesses, billing frequency can significantly impact a company's cash flow, churn rates, and overall financial health. This brief explores the implications of moving from monthly to annual billing and provides recommendations based on a detailed analysis of cash flow, churn rates, and discounting strategies.\n\n#### Cash Flow Analysis\n\n**Monthly Billing:**\n- **Consistency:** Monthly billing provides a more consistent and predictable cash flow pattern, which can be easier to manage and forecast.\n- **Liquidity:** Smaller, more frequent payments reduce the risk of large, unpredictable cash inflows, which can be beneficial during seasonal or economic downturns.\n- **Customer Perception:** Monthly billing can be perceived as less of a financial burden, potentially leading to higher conversion rates.\n\n**Annual Billing:**\n- **Larger Inflows:** Annual billing results in larger, less predictable cash inflows, which can strain cash flow management and require more robust financial planning.\n- **Seasonality:** Annual billing can exacerbate seasonal fluctuations in cash flow, particularly if the business experiences higher usage during specific months.\n- **Risk of Non-Payment:** There is a higher risk of non-payment or delayed payments when billing is annual rather than monthly.\n\n#### Churn Analysis\n\n**Monthly Billing:**\n- **Frequent Billing:** Monthly billing can make it easier to detect and address churn issues early, as the company receives feedback on usage patterns more frequently.\n- **Customer Retention:** Smaller, more predictable payments can make it easier to retain customers who might be on the fence about renewing their subscription.\n\n**Annual Billing:**\n- **Longer Commitment:** Annual billing can create a longer commitment period, which might be a barrier to renewals if the customer is not satisfied with the service.\n- **Lack of Flexibility:** Annual billing can make it more challenging to adjust pricing or offerings in response to customer feedback without risking losing the entire annual payment.\n\n#### Discounting Strategies\n\n**Monthly Billing:**\n- **No Discount:** Monthly billing typically does not offer discounts compared to annual billing, as it is the standard practice.\n- **Customer Perception:** Monthly billing can be perceived as less of a financial burden, which might be a selling point in competitive pricing strategies.\n\n**Annual Billing:**\n- **Discount Opportunity:** Annual billing can be a strategic discount point, offering customers a discount for committing to a longer term. This can be a powerful retention and upselling strategy.\n- **Negotiation:** Annual billing can facilitate more flexible negotiation spaces, where customers might be more willing to discuss pricing and value propositions.\n\n#### Recommendations\n\nBased on the analysis:\n\n- **Current Financial Health:** If the company has a robust and predictable cash flow, moving to annual billing might not be necessary.\n- **Customer Base:** If the customer base is more likely to commit long-term and the churn rate is low, annual billing could be beneficial.\n- **Discount Strategy:** If the company is implementing a discount strategy, annual billing can be a strategic advantage.\n\nIn conclusion, moving from monthly to annual billing can be beneficial if it aligns with the company's strategic goals and financial health. However, careful consideration of cash flow management, churn rates, and discounting strategies is essential to make an informed decision.",
+   "seconds": 32.3,
+   "think_words": 0,
+   "gen_tokens": 678,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "coherent across the whole page; no contradiction; arguments actually connect"
+  },
+  {
+   "cluster": "longform",
+   "id": "l2",
+   "kind": "rubric",
+   "prompt": "Draft an onboarding checklist for a new enterprise customer, grouped into week 1, week 2-4, and quarter 1.",
+   "output": "Certainly! Here is an onboarding checklist for a new enterprise customer, grouped into Week 1, Week 2-4, and Quarter 1:\n\n### Week 1\n- **Welcome and Introduction**\n  - Send a welcome email with an introduction to the onboarding process.\n  - Schedule a kickoff meeting with the new customer.\n- **Customer Information**\n  - Collect necessary information and documentation required for onboarding.\n  - Set up the customer's account and provide login credentials.\n- **Communication Channels**\n  - Establish preferred communication channels (email, phone, Slack, etc.).\n  - Schedule regular check-ins and availability for the first week.\n\n### Week 2-4\n- **Product Familiarization**\n  - Provide training materials and resources to familiarize the customer with the product features.\n  - Schedule a demo or training session with the customer.\n- **Support and Resources**\n  - Ensure the customer has access to all necessary resources and documentation.\n  - Provide a list of support channels and contact information.\n- **Feedback Loop**\n  - Schedule a meeting to discuss expectations and goals.\n  - Collect feedback on the onboarding process and address any concerns.\n\n### Quarter 1\n- **Product Utilization**\n  - Monitor the customer's progress and utilization of the product.\n  - Provide usage reports and analytics to the customer.\n- **Goal Setting**\n  - Collaborate with the customer to set specific goals and objectives.\n  - Develop a plan to achieve these goals.\n- **Customer Success**\n  - Schedule regular progress meetings to discuss the customer's success.\n  - Provide success stories and case studies to demonstrate how other customers have achieved similar goals.\n- **Continuous Improvement**\n  - Gather feedback on the onboarding process and make necessary adjustments.\n  - Schedule a review meeting at the end of the quarter to evaluate the onboarding process and plan for the next quarter.\n\n### Additional Notes:\n- **Customer Onboarding Coordinator:** Assign a dedicated coordinator to manage the onboarding process and ensure all tasks are completed.\n- **Customer Onboarding Plan:** Develop a detailed plan that outlines all the steps involved in onboarding the new customer.\n- **Customer Onboarding Timeline:** Create a timeline that outlines the expected timeline for each task and milestone.\n\nThis checklist will help ensure a smooth and effective onboarding process for your new enterprise customer.",
+   "seconds": 22.5,
+   "think_words": 0,
+   "gen_tokens": 473,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": null,
+   "checks": [],
+   "rubric": "genuinely actionable items; correct grouping; no filler"
+  }
+ ]
+}

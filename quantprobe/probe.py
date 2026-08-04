@@ -183,6 +183,12 @@ def run(a):
     quant = os.path.join(llama, exe("llama-quantize"))
     perp = os.path.join(llama, exe("llama-perplexity"))
     wd = a.workdir or os.path.dirname(os.path.abspath(a.gguf))
+    # A --workdir that does not exist made llama-quantize fail at stream-open
+    # (ios_base::failbit) on the very first step, and every later step then failed on the
+    # missing files while the step counter marched to 10/10. Create it; creating a directory
+    # the user explicitly named is what they asked for, not a side effect.
+    if not a.dry_run:
+        os.makedirs(wd, exist_ok=True)
     L = n_layers(a.gguf)
     step = (L + a.bands - 1) // a.bands
     bands = [(i, min(i + step - 1, L - 1)) for i in range(0, L, step)]
@@ -241,9 +247,16 @@ def run(a):
         os.remove(ref)
 
     print("\n[3/3] recipe", flush=True)
-    if a.dry_run or any(d is None for d in deltas):
-        print("  (dry-run / incomplete: curve unavailable)", flush=True)
+    if a.dry_run:
+        print("  (dry-run: curve unavailable)", flush=True)
         return
+    if any(d is None for d in deltas):
+        # An incomplete curve exited 0 here and a caller could not tell a failed probe from a
+        # finished one - the A2A pipeline read "probe exit=0" over five failed builds and five
+        # failed perplexity runs. A probe that cannot name the fragile band has FAILED.
+        print("  INCOMPLETE: one or more bands produced no perplexity - the curve cannot be "
+              "trusted and no recipe is emitted. See the errors above.", flush=True)
+        raise SystemExit(1)
     worst = max(range(len(bands)), key=lambda i: deltas[i])
     lo, hi = bands[worst]
     print(f"  fragile band: layers {lo}-{hi} (delta +{deltas[worst]:.2f} vs "

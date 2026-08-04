@@ -1,0 +1,12 @@
+0.00.529.235 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 16, abort
+0.00.771.474 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.27.239.766 I 
+0.27.240.317 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.27.241.232 I perplexity: saving all logits to D:/evo-compress-data/a2a_probe/ref_logits.kld
+0.27.241.241 I perplexity: tokenizing the input ..
+0.27.717.624 I perplexity: tokenization took 476.382 ms
+0.27.718.137 I perplexity: calculating perplexity over 32 chunks, n_ctx=512, batch_size=2048, n_seq=4
+0.35.206.725 I perplexity: 7.46 seconds per pass - ETA 0.98 minutes
+[1]5.7087,[2]7.7757,[3]6.7821,[4]6.4252,[5]6.4202,[6]6.4893,[7]6.5848,[8]6.8596,[9]7.0432,[10]7.4269,[11]7.2973,[12]7.4700,[13]7.8141,[14]7.6760,[15]7.6417,[16]7.8872,[17]7.4768,[18]7.5935,[19]7.5644,[20]7.5234,[21]7.3465,[22]7.3972,[23]7.1325,[24]6.8293,[25]6.6664,[26]6.5121,[27]6.3421,[28]6.2634,[29]6.3622,[30]6.3246,[31]6.3038,[32]6.3237,
+1.32.633.938 I Final estimate: PPL = 6.3237 +/- 0.18336
+

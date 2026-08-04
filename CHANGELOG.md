@@ -25,6 +25,31 @@ context the same floor gives 58.0-49.2, bracketing the 51.6 report inside the C-
 scoring rule shipped into MATRIX.md: third-party reports get scored at their stated context
 with kvp read from the header, or they do not get scored.
 
+### A2A scored, same day: depth-aware beats uniform at equal bytes - 3x over its staked bar - and one prediction missed
+
+The benchmark the community asked for, run end to end on the shipped product path. Uniform
+`Q2_K` vs a depth-aware build whose fragile band came from a **fresh, blind probe run that
+landed on the identical band the stored recipe carries** (21-27, delta +1.01 vs median +0.44) -
+the instrument replicating its own historical measurement from a re-downloaded source.
+
+| equal bytes (+0.48%) | uniform | depth-aware |
+|---|---|---|
+| perplexity | 9.579 | **8.319 (-13.2%; staked >=4%)** |
+| KLD median vs Q8_0 teacher | 0.268 | **0.162 (-39.5%)** |
+| same top token | 70.3% | **75.5%** |
+| tok/s (tg128) | 21.41 | **22.82 (+6.6%)** |
+
+P1 and P2 confirmed; KR-1 does not fire. **P3 missed and is published as a miss**: speed was
+staked invariant to +/-3% and the depth-aware arm is 6.6% *faster* - consistent with the
+documented Pascal format effect (fewer q2_k bytes; q2_k decodes slower per byte on this card),
+stated as consistent-with. P4 (exploratory) returned the most instructive null of the day:
+**52/52 suite verdicts identical across the arms** - a measured instrument-sensitivity
+ordering, KLD >> perplexity >> binary task predicates. The ladder separates *models* (30B
+2.95-bit: 40/40 staked; 7B 2-bit: 27/40, T4 0/6 again) and cannot see these two byte-equal
+quants. KR-2 earned its keep: the first build came out +13.69% and was rejected and rebuilt
+to +0.48% before any quality number was read. Full verdict in the prereg; README carries the
+row.
+
 ### Staked: the apples-to-apples benchmark the community asked for
 
 `preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md` - depth-aware vs uniform Q2_K,
