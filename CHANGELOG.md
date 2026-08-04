@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+### Two published numbers corrected against primary sources - one ours, one an anomaly that dissolved
+
+**E-12 (Kimi K3) byte model corrected.** Our note modelled expert-only movement (23.8
+GB/token). The repo's own `docs/data` states the engine re-reads the **trunk in full every
+token: 108.81 GB**, plus ~25.8 GB of touched experts - 134.6 GB/token, trunk-dominated. Under
+the corrected two-tier arithmetic the laptop arm lands at **32.6 s/tok predicted vs 32.69
+measured (0.3%)** with ordinary bandwidths; the high-RAM arms run ~1.7x slower than
+full-trunk-caching predicts, *consistent with* their ladder's stated hard cgroup caps (their
+harness property; we say consistent-with, not proven). The discrimination is restated honestly:
+the naive add-RAM rival (15.6x) stays refuted by the measured 1.63x, but our original "Law 4
+predicts ~1x because experts cannot be cached" was also wrong - corrected bytes predict ~3.8x
+at the capped end. A smaller, honest win; the withdrawn implied-bandwidth column and the
+correction are both in the register and MATRIX.md. The 200-320x unit-inversion finding is
+untouched.
+
+**The Gemma-4-26B "C-02 violation" is resolved - no exception exists.** The model's own GGUF
+header (read remotely from an ungated mirror, parsed by our shipped autospec) shows active
+params were fine (3.82B vs our ~4.0B) but **gemma4 carries 480 KB of KV per position - 5x
+Qwen-class**. Our 67.4 tok/s was a zero-depth floor; priced at the reporter's plausible 1-2k
+context the same floor gives 58.0-49.2, bracketing the 51.6 report inside the C-02 band. New
+scoring rule shipped into MATRIX.md: third-party reports get scored at their stated context
+with kvp read from the header, or they do not get scored.
+
+### Staked: the apples-to-apples benchmark the community asked for
+
+`preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md` - depth-aware vs uniform Q2_K,
+same 7B, same box, same context, byte-matched to ±2%: perplexity, full-distribution KLD,
+tok/s, and the 40-task business suite on both arms. P1 stakes ≥4% ppl advantage (not the -9%
+headline - that was another family and staking it here would pretend transfer); KR-1 kills the
+claim's scope and qualifies the README at equal prominence if depth-aware fails to beat
+uniform on both ppl and KLD. The exllamav2 arm is stated not runnable on Pascal and goes to
+`bench --contribute`.
+
 ### U-38 scored: our batching hypothesis is refuted - and the "2x ceiling" it tried to explain is overturned with it
 
 The stake said batched decode crosses smoothly from bandwidth-bound to compute-bound at N~4.5 on
