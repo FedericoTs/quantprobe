@@ -207,3 +207,27 @@ failure signature.
 into `calibration.json`, and — only if P-4 also hits — a per-shape term in plan's GPU-tier
 pricing. On the P-4 null: calibration ships as measurement-only (curve stored, reported,
 nothing re-priced) pending U-32's separately-staked accuracy gate.
+
+---
+
+## VERDICT (scored 2026-08-04): FAIL - kill rules fired, per-shape calibration does NOT ship
+
+Run as staked (`--phase a`, embedded probe compiled at runtime with the box's own nvcc + MSVC
+Build Tools host compiler; self-test passed first; one session, GPU clean, lockfile held).
+
+- **P-2 KILLED, 3 violations:** at K=4096 the measured span is 1.41x against a staked >=2.0x;
+  the 90% knee sits at 512 rows, outside the staked [2048..8192] window; and the knee moved
+  between widths (2048 vs 512 rows), so it is not rows-keyed as the research characterization
+  claimed.
+- **P-3 KILLED, 8 violations:** the productized rewrite reads systematically ~7% below the
+  logged #80/#81 curve (e.g. 39.9 vs 43.0 GB/s at K=4096/16384 rows) against a staked +/-5%.
+  This prereg's own disclosure anticipated exactly this failure mode: the original probe binary
+  was never committed, and "a rewrite that does not reproduce the logged curve is a rewrite of
+  something else."
+- Phase B (the decision half) is gated on Phase A and therefore does not run. **No per-shape
+  term ships.** U-32's separately staked prediction half is untouched by this verdict.
+- First attempt exited 2 (precondition: nvcc could not find cl.exe); resolved by putting the
+  MSVC Build Tools host compiler on PATH - recorded because exit codes 2 and 1 mean different
+  things and only the second is a result.
+
+Evidence: `weights/data/exp_per_shape_phaseA.log`, `weights/data/exp_per_shape_calibration.json`.

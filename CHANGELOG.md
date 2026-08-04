@@ -25,6 +25,17 @@ context the same floor gives 58.0-49.2, bracketing the 51.6 report inside the C-
 scoring rule shipped into MATRIX.md: third-party reports get scored at their stated context
 with kvp read from the header, or they do not get scored.
 
+### Prereg #92 scored: per-shape calibration KILLED by its own gates - nothing ships, and that is the system working
+
+The dangling 07-31 stake is closed as a FAIL, published at the same size as the wins. Phase A's
+replication gate did exactly what it exists for: the productized probe (compiled at runtime on
+the user path, as a shipped `calibrate --shapes` would have to) reads systematically ~7% below
+the logged research curve (staked +/-5%, 8 violations), and the curve's own shape missed the
+staked characterization (span 1.41x vs >=2.0x; knee at 512 rows, outside [2048..8192]; knee not
+rows-keyed). Phase B never runs; no per-shape term enters the planner; U-32's separately staked
+prediction half is untouched. First attempt exited 2 (nvcc missing its host compiler) - a
+precondition, not a result - and only after fixing it did the stake produce its verdict.
+
 ### A2A scored, same day: depth-aware beats uniform at equal bytes - 3x over its staked bar - and one prediction missed
 
 The benchmark the community asked for, run end to end on the shipped product path. Uniform
