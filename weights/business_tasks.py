@@ -619,6 +619,31 @@ TASKS = [
       js_path("house5.color", "white"), js_path("house5.nationality", "Swede"),
       js_path("house5.drink", "beer")]),
 
+    # t4l2 REPLACES t4l1 as the T4 puzzle. t4l1 (the Einstein-style 5-house layout) was solved
+    # by the 30B AND the 0.6B while both 7Bs failed it - non-monotonic in capability, the
+    # signature of training-data recall. This variant uses a novel attribute space (no
+    # nationalities, no drinks, no classic layout) and its uniqueness is BRUTE-FORCED by the
+    # self-test, which also caught the author's own hand-derived solution being wrong.
+    ("tier4", "t4l2", "auto",
+     "Five build machines in desk slots 1-5, left to right. Accent colors teal, crimson, "
+     "amber, slate, violet; runtimes ollama, llama, tgi, vllm, mlx; quants q2, q3, q4, q5, q8 "
+     "- each value used exactly once. Clues: the leftmost machine is teal; the amber machine "
+     "is immediately right of the crimson machine; the violet machine is immediately right of "
+     "the slate machine; the machine in slot 1 runs ollama; the crimson machine runs llama; "
+     "the mlx machine is immediately right of the vllm machine; q2 is in the middle slot; the "
+     "llama machine has q8; the vllm machine has q5; the ollama machine has q4; the mlx "
+     "machine has q3. Reply with only a JSON object mapping slot1..slot5 to objects with keys "
+     "color, runtime, quant.",
+     [js("slot1", "slot2", "slot3", "slot4", "slot5"),
+      js_path("slot1.color", "teal"), js_path("slot1.runtime", "ollama"),
+      js_path("slot1.quant", "q4"), js_path("slot2.color", "crimson"),
+      js_path("slot2.runtime", "llama"), js_path("slot2.quant", "q8"),
+      js_path("slot3.color", "amber"), js_path("slot3.runtime", "tgi"),
+      js_path("slot3.quant", "q2"), js_path("slot4.color", "slate"),
+      js_path("slot4.runtime", "vllm"), js_path("slot4.quant", "q5"),
+      js_path("slot5.color", "violet"), js_path("slot5.runtime", "mlx"),
+      js_path("slot5.quant", "q3")]),
+
     ("tier4", "t4c1", "auto",
      "Write a Python function `iso_week(y, m, d)` returning the ISO-8601 week number for that "
      "date WITHOUT importing anything (no datetime, no calendar). Reply with only the code.",
@@ -658,6 +683,11 @@ for _t in TASKS:
         TIER[_t[1]] = 1
     else:
         TIER[_t[1]] = 2
+# t4l1 DEMOTED to T3 on measured evidence (2026-08-04): solved by the 30B and the 0.6B while
+# both 7Bs failed it - recall, not ceiling-grade reasoning. Its historical scores stand; its
+# tier reflects what the ladder measured. t4l2 (novel attribute space, brute-forced unique)
+# is the T4 puzzle going forward.
+TIER["t4l1"] = 3
 
 
 def clusters():
@@ -769,7 +799,33 @@ def selftest():
     if sols != [want]:
         print(f"  FAIL - t4l1 has {len(sols)} solution(s) or key mismatch: {sols[:2]}")
         return 1
-    print("tier keys: all recomputed and confirmed; both puzzles have exactly one solution")
+    # t4l2: the replacement T4 puzzle. Novel attribute space, and the brute-forcer is the
+    # authority - it caught the author's own hand-derived solution being wrong at design time.
+    C5=("teal","crimson","amber","slate","violet")
+    R5=("ollama","llama","tgi","vllm","mlx")
+    Q5=("q4","q8","q2","q5","q3")
+    sols=[]
+    for cols in permutations(C5):
+        if cols[0]!="teal": continue
+        ci=cols.index("crimson")
+        if ci+1>=5 or cols[ci+1]!="amber": continue
+        si=cols.index("slate")
+        if si+1>=5 or cols[si+1]!="violet": continue
+        for rts in permutations(R5):
+            if rts[0]!="ollama" or rts[cols.index("crimson")]!="llama": continue
+            vi=rts.index("vllm")
+            if vi+1>=5 or rts[vi+1]!="mlx": continue
+            for qs in permutations(Q5):
+                if qs[2]!="q2" or qs[rts.index("llama")]!="q8": continue
+                if qs[rts.index("vllm")]!="q5" or qs[rts.index("ollama")]!="q4": continue
+                if qs[rts.index("mlx")]!="q3": continue
+                sols.append((cols,rts,qs))
+    want5=(("teal","crimson","amber","slate","violet"),
+           ("ollama","llama","tgi","vllm","mlx"),
+           ("q4","q8","q2","q5","q3"))
+    if sols != [want5]:
+        print(f"  FAIL - t4l2 has {len(sols)} solution(s) or key mismatch"); return 1
+    print("tier keys: all recomputed and confirmed; all three puzzles have exactly one solution")
 
     spot.update({
         "t3x1": '{"item":"travel","ledger_a":3310,"ledger_b":3130,"delta":180}',
@@ -790,6 +846,11 @@ def selftest():
                  '"house4":{"color":"green","nationality":"German","drink":"coffee"},'
                  '"house5":{"color":"white","nationality":"Swede","drink":"beer"}}'),
         "t4s1": "The ylretrauq troper swohs ydaets htworg ssorca all snoiger.",
+        "t4l2": ('{"slot1":{"color":"teal","runtime":"ollama","quant":"q4"},'
+                 '"slot2":{"color":"crimson","runtime":"llama","quant":"q8"},'
+                 '"slot3":{"color":"amber","runtime":"tgi","quant":"q2"},'
+                 '"slot4":{"color":"slate","runtime":"vllm","quant":"q5"},'
+                 '"slot5":{"color":"violet","runtime":"mlx","quant":"q3"}}'),
     })
     dead = []
     for t in auto:
