@@ -1,0 +1,54 @@
+self-test: 52 auto tasks, boilerplate answer passes 0
+tier keys: all recomputed and confirmed; both puzzles have exactly one solution
+self-test: 14 known-good answers all accepted
+self-test PASS - checks discriminate in both directions
+
+preflight OK - endpoint returns instruction-following output ('ACKNOWLEDGED')
+
+  [ 1/12] tier3/t3x1 (auto)
+       PASS  (36s)
+  [ 2/12] tier3/t3a1 (auto)
+       PASS  (770s)
+  [ 3/12] tier3/t3c1 (auto)
+       PASS  (396s)
+  [ 4/12] tier3/t3l1 (auto)
+       PASS  (88s)
+  [ 5/12] tier3/t3s1 (auto)
+       FAIL  (176s)  failed: every bullet <= 12 words
+  [ 6/12] tier3/t3h1 (auto)
+       PASS  (29s)
+  [ 7/12] tier4/t4a1 (auto)
+       SERVER ERROR: timed out
+       FAIL  (900s)  failed: answer is 431535946492791126
+  [ 8/12] tier4/t4a2 (auto)
+       SERVER ERROR: timed out
+       FAIL  (900s)  failed: answer is 59583.73
+  [ 9/12] tier4/t4w1 (auto)
+       FAIL  (251s)  failed: exactly 45 words, avoids 'e'
+  [10/12] tier4/t4l1 (auto)
+       PASS  (233s)
+  [11/12] tier4/t4c1 (auto)
+       SERVER ERROR: timed out
+       FAIL  (900s)  failed: code runs and passes assertions
+  [12/12] tier4/t4s1 (auto)
+       FAIL  (218s)  failed: exactly 'The ylretrauq troper swohs ydaets htworg'...
+
+wrote weights/data/bt_tier_30b.json  (4897s total)
+
+MODEL: Qwen3-30B-A3B-Q2_K tier ladder T3+T4 first datapoint
+ARGS : 16k ctx placement; T4 is ceiling - 0/6 expected
+
+STAKED SET: 0/0 pass = 0.0%   (+12 extension tasks reported below, outside the staked bar)
+
+  per cluster:
+
+  difficulty ladder (staked + extension, scorable tasks):
+    T3 hard      5/ 6   83.3%
+    T4 ceiling   1/ 6   16.7%  <- 0 expected today; ranks future models
+
+
+  VERDICT: KILL RULE FIRED (0.0% < 60%). This config is NOT
+           business-usable. Every tok/s figure we publish for it must be
+           qualified at equal prominence in the README.
+
+  (0 rubric tasks captured for separate human review - NOT counted above)

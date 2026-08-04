@@ -147,8 +147,23 @@ each has exactly one solution equal to the staked key. It also caught the author
 sample containing a forbidden letter - the checks discriminate against the person who wrote
 them, which is the point.
 
-The 30B has not yet been scored on T3/T4; that run is queued. The tiers ship with the
-instrument so any model anyone runs lands on the same ladder.
+**First datapoint** - the 2.5-bit 30B on the 1060, 16k context (`bt_tier_30b.json`,
+`bt_tier_30b_t4rerun.json`):
+
+| tier | score | composition |
+|---|---|---|
+| T3 hard | **5/6** | solved NPV to the cent (8,476 tokens of work), amortization code, ledger reconciliation, hallucination-capture, the 3-house puzzle; missed only a 12-word bullet cap |
+| T4 ceiling | **1/6** | solved the 5-house puzzle; wrong answers on the 9x9-digit product (emitted an exact-looking but wrong 18-digit result), the lipogram and the string transform; burned the full 15,000-token budget without answering on the interest chain and the ISO-week code |
+
+Two honest annotations. The staked expectation was 0/6 on T4 and it came in 1/6 - **the
+expectation missed, and that is published, not adjusted**. The solved task is the Einstein-style
+puzzle, the one T4 task where training-data familiarity plausibly helps; the exact-arithmetic
+tasks, where recall cannot help, all held. Second, the 9x9 product failure is the ceiling
+working exactly as designed: the model *announced* it would need a calculator, then printed a
+confident 18-digit answer that is wrong in the 5th digit - a perfect specimen of why these
+tasks are machine-checked to the digit rather than eyeballed.
+
+The tiers ship with the instrument, so any model anyone runs lands on the same ladder.
 
 ### Also
 

@@ -1,0 +1,390 @@
+{
+ "model": "Qwen3-30B-A3B-Q2_K tier ladder T3+T4 first datapoint",
+ "args": "16k ctx placement; T4 is ceiling - 0/6 expected",
+ "results": [
+  {
+   "cluster": "tier3",
+   "id": "t3x1",
+   "kind": "auto",
+   "prompt": "Ledger A: 'rent 2400, software 1180, travel 3310, payroll 41200'. Ledger B: 'rent 2400, software 1180, travel 3130, payroll 41200'. Exactly one item disagrees. Reply with only a JSON object with keys item, ledger_a, ledger_b, delta (delta = ledger_a - ledger_b).",
+   "output": "{\"item\": \"travel\", \"ledger_a\": 3310, \"ledger_b\": 3130, \"delta\": 180}",
+   "seconds": 35.8,
+   "think_words": 198,
+   "gen_tokens": 384,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['delta', 'item', 'ledger_a', 'ledger_b']",
+     true
+    ],
+    [
+     "item == 'travel'",
+     true
+    ],
+    [
+     "ledger_a == 3310",
+     true
+    ],
+    [
+     "ledger_b == 3130",
+     true
+    ],
+    [
+     "delta == 180",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3a1",
+   "kind": "auto",
+   "prompt": "NPV of cashflows -10000, 3000, 4000, 5000, 2000 (t=0..4) at a discount rate of 8%. Give the number only, to 2 decimals.",
+   "output": "1646.35",
+   "seconds": 770.4,
+   "think_words": 2936,
+   "gen_tokens": 8476,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "answer is 1646.35",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3c1",
+   "kind": "auto",
+   "prompt": "Write a Python function `monthly_payment(principal, annual_rate, months)` for a standard amortized loan (annual_rate is a decimal fraction, e.g. 0.055), returning the payment rounded to 2 decimals. Reply with only the code.",
+   "output": "def monthly_payment(principal, annual_rate, months):\n    if annual_rate == 0:\n        return round(principal / months, 2)\n    monthly_rate = annual_rate / 12\n    numerator = principal * monthly_rate * ((1 + monthly_rate) ** months)\n    denominator = ((1 + monthly_rate) ** months) - 1\n    payment = numerator / denominator\n    return round(payment, 2)",
+   "seconds": 396.4,
+   "think_words": 2548,
+   "gen_tokens": 4471,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "code runs and passes assertions",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3l1",
+   "kind": "auto",
+   "prompt": "Three houses, numbered 1-3 left to right. Colors red, blue, green; drinks tea, coffee, milk; pets cat, dog, fish - each exactly once. Clues: the red house is immediately left of the blue house; coffee is drunk in the green house; the cat lives in house 2; milk is drunk in house 1; the fish lives in the red house. Reply with only a JSON object of the form {\"house1\": {\"color\": ..., \"drink\": ..., \"pet\": ...}, \"house2\": ..., \"house3\": ...}.",
+   "output": "{\"house1\": {\"color\": \"red\", \"drink\": \"milk\", \"pet\": \"fish\"}, \"house2\": {\"color\": \"blue\", \"drink\": \"tea\", \"pet\": \"cat\"}, \"house3\": {\"color\": \"green\", \"drink\": \"coffee\", \"pet\": \"dog\"}}",
+   "seconds": 87.5,
+   "think_words": 617,
+   "gen_tokens": 983,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['house1', 'house2', 'house3']",
+     true
+    ],
+    [
+     "house1.color == 'red'",
+     true
+    ],
+    [
+     "house1.drink == 'milk'",
+     true
+    ],
+    [
+     "house1.pet == 'fish'",
+     true
+    ],
+    [
+     "house2.color == 'blue'",
+     true
+    ],
+    [
+     "house2.drink == 'tea'",
+     true
+    ],
+    [
+     "house2.pet == 'cat'",
+     true
+    ],
+    [
+     "house3.color == 'green'",
+     true
+    ],
+    [
+     "house3.drink == 'coffee'",
+     true
+    ],
+    [
+     "house3.pet == 'dog'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3s1",
+   "kind": "auto",
+   "prompt": "Summarise in exactly 3 bullet lines, each starting with '- ', each at most 12 words, using only numbers that appear in the source.\n\nQ3 revenue was 4.2M, up 12% YoY but 8% below plan. Churn rose to 3.1% monthly, driven by SMB. Enterprise ARR grew 34%. Sales headcount is 22, up from 17. CAC payback lengthened from 14 to 19 months. The board asked for a revised FY plan by 15 November.",
+   "output": "- Q3 revenue 4.2M up 12% YoY 8% below plan.  \n- Churn rose 3.1% monthly SMB.  \n- Enterprise ARR 34% sales headcount 22 up 17 CAC payback 14 to 19 months board 15 November.",
+   "seconds": 175.7,
+   "think_words": 1111,
+   "gen_tokens": 1995,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": false,
+   "checks": [
+    [
+     "exactly 3 bullets",
+     true
+    ],
+    [
+     "invents no numbers",
+     true
+    ],
+    [
+     "every bullet <= 12 words",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier3",
+   "id": "t3h1",
+   "kind": "auto",
+   "prompt": "Tickets: TCK-101 'refund of 300 EUR not received', TCK-102 'dark mode broken', TCK-103 'invoice shows 250 instead of 25', TCK-104 'password reset loop', TCK-105 'charged twice this month'. Reply with only a JSON array of the ticket IDs that concern money, in the order given.",
+   "output": "[\"TCK-101\", \"TCK-103\", \"TCK-105\"]",
+   "seconds": 28.8,
+   "think_words": 150,
+   "gen_tokens": 311,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json array of 3",
+     true
+    ],
+    [
+     "0 == 'TCK-101'",
+     true
+    ],
+    [
+     "1 == 'TCK-103'",
+     true
+    ],
+    [
+     "2 == 'TCK-105'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4a1",
+   "kind": "auto",
+   "prompt": "Compute exactly: 738451926 * 584379201. Give the integer only.",
+   "output": "",
+   "seconds": 900.0,
+   "think_words": 0,
+   "gen_tokens": 0,
+   "finish_reason": "",
+   "truncated": false,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 431535946492791126",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4a2",
+   "kind": "auto",
+   "prompt": "A 250,000 loan at 5.5% annual (monthly compounding, standard amortization) is repaid over 96 monthly payments. What is the TOTAL INTEREST paid over the life of the loan, to the cent? Give the number only.",
+   "output": "",
+   "seconds": 900.0,
+   "think_words": 0,
+   "gen_tokens": 0,
+   "finish_reason": "",
+   "truncated": false,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 59583.73",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4w1",
+   "kind": "auto",
+   "prompt": "Write exactly 45 words about a company's finances without using the letter 'e' anywhere. The words 'profit', 'cash' and 'margin' must all appear.",
+   "output": "Company's funds show profit, cash flow, and margin. Strong profit boosts cash, margin improves. Cash flow supports liquidity. Profit margin key. Cash reserves support growth. Profit margin vital. Funds track profit, cash, margin. Profit margin vital. Funds track profit, cash, margin. Profit margin vital.",
+   "seconds": 250.8,
+   "think_words": 1469,
+   "gen_tokens": 2849,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": false,
+   "checks": [
+    [
+     "exactly 45 words",
+     false
+    ],
+    [
+     "avoids 'e'",
+     false
+    ],
+    [
+     "mentions 'profit', 'cash', 'margin'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4l1",
+   "kind": "auto",
+   "prompt": "Five houses, numbered 1-5 left to right. Colors red, green, blue, white, yellow; nationalities Brit, Swede, Dane, German, Norwegian; drinks tea, coffee, milk, beer, water - each exactly once. Clues: the Brit lives in the red house; the green house is immediately left of the white house; coffee is drunk in the green house; the Norwegian lives in the first house; the Norwegian lives next to the blue house; milk is drunk in the middle house; the Dane drinks tea; the Swede drinks beer; beer is drunk in the last house. Reply with only a JSON object mapping house1..house5 to objects with keys color, nationality, drink.",
+   "output": "{\n  \"house1\": {\n    \"color\": \"yellow\",\n    \"nationality\": \"Norwegian\",\n    \"drink\": \"water\"\n  },\n  \"house2\": {\n    \"color\": \"blue\",\n    \"nationality\": \"Dane\",\n    \"drink\": \"tea\"\n  },\n  \"house3\": {\n    \"color\": \"red\",\n    \"nationality\": \"Brit\",\n    \"drink\": \"milk\"\n  },\n  \"house4\": {\n    \"color\": \"green\",\n    \"nationality\": \"German\",\n    \"drink\": \"coffee\"\n  },\n  \"house5\": {\n    \"color\": \"white\",\n    \"nationality\": \"Swede\",\n    \"drink\": \"beer\"\n  }\n}",
+   "seconds": 233.0,
+   "think_words": 1667,
+   "gen_tokens": 2628,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": true,
+   "checks": [
+    [
+     "json object with keys ['house1', 'house2', 'house3', 'house4', 'house5']",
+     true
+    ],
+    [
+     "house1.color == 'yellow'",
+     true
+    ],
+    [
+     "house1.nationality == 'Norwegian'",
+     true
+    ],
+    [
+     "house1.drink == 'water'",
+     true
+    ],
+    [
+     "house2.color == 'blue'",
+     true
+    ],
+    [
+     "house2.nationality == 'Dane'",
+     true
+    ],
+    [
+     "house2.drink == 'tea'",
+     true
+    ],
+    [
+     "house3.color == 'red'",
+     true
+    ],
+    [
+     "house3.nationality == 'Brit'",
+     true
+    ],
+    [
+     "house3.drink == 'milk'",
+     true
+    ],
+    [
+     "house4.color == 'green'",
+     true
+    ],
+    [
+     "house4.nationality == 'German'",
+     true
+    ],
+    [
+     "house4.drink == 'coffee'",
+     true
+    ],
+    [
+     "house5.color == 'white'",
+     true
+    ],
+    [
+     "house5.nationality == 'Swede'",
+     true
+    ],
+    [
+     "house5.drink == 'beer'",
+     true
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4c1",
+   "kind": "auto",
+   "prompt": "Write a Python function `iso_week(y, m, d)` returning the ISO-8601 week number for that date WITHOUT importing anything (no datetime, no calendar). Reply with only the code.",
+   "output": "",
+   "seconds": 900.0,
+   "think_words": 0,
+   "gen_tokens": 0,
+   "finish_reason": "",
+   "truncated": false,
+   "passed": false,
+   "checks": [
+    [
+     "no imports used",
+     true
+    ],
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4s1",
+   "kind": "auto",
+   "prompt": "Take the sentence: 'The quarterly report shows steady growth across all regions.' For every word of 5 or more letters, reverse its letters. Words of 4 or fewer letters stay unchanged. The final period is not part of any word. Reply with only the transformed sentence.",
+   "output": "\"The ylterauq trop er swohs ydaets htworg ssorca all snogier.\"",
+   "seconds": 218.1,
+   "think_words": 1461,
+   "gen_tokens": 2465,
+   "finish_reason": "stop",
+   "truncated": false,
+   "passed": false,
+   "checks": [
+    [
+     "exactly 'The ylretrauq troper swohs ydaets htworg'...",
+     false
+    ]
+   ],
+   "rubric": null
+  }
+ ]
+}

@@ -1,0 +1,73 @@
+{
+ "model": "Qwen3-30B-A3B-Q2_K T4 rerun (t4a1,t4a2,t4c1) - budget-bound, harness timeout 2400s",
+ "args": "16k ctx; token budget is the bound, not the wall clock",
+ "results": [
+  {
+   "cluster": "tier4",
+   "id": "t4a1",
+   "kind": "auto",
+   "prompt": "Compute exactly: 738451926 * 584379201. Give the integer only.",
+   "output": "To compute the exact integer value of the product:\n\n$$\n738451926 \\times 584379201\n$$\n\nwe recognize that both numbers are large (9-digit numbers), and their product will be a 18-digit number. While it's possible to compute this manually using the standard multiplication algorithm, it would be extremely time-consuming and error-prone without computational tools.\n\nHowever, using a computational method or a calculator, we can determine the exact value of this product.\n\n---\n\n### Step-by-Step Computation (Conceptual):\n\n1. **Break down the multiplication**:\n   - Multiply 738,451,926 by 584,379,201 using the distributive property or standard multiplication algorithm.\n   - This involves multiplying each digit of the second number by the first number and summing the results.\n\n2. **Use computational tools**:\n   - Since the numbers are too large to compute manually efficiently, we rely on a computational method or a calculator to compute the exact value.\n\n---\n\n### Final Result:\n\n$$\n738451926 \\times 584379201 = \\boxed{431523843238438438}\n$$",
+   "seconds": 922.5,
+   "think_words": 4126,
+   "gen_tokens": 9830,
+   "finish_reason": "stop",
+   "truncated": false,
+   "error": null,
+   "passed": false,
+   "checks": [
+    [
+     "answer is 431535946492791126",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4a2",
+   "kind": "auto",
+   "prompt": "A 250,000 loan at 5.5% annual (monthly compounding, standard amortization) is repaid over 96 monthly payments. What is the TOTAL INTEREST paid over the life of the loan, to the cent? Give the number only.",
+   "output": "",
+   "seconds": 1456.1,
+   "think_words": 5855,
+   "gen_tokens": 15000,
+   "finish_reason": "length",
+   "truncated": true,
+   "error": null,
+   "passed": null,
+   "checks": [
+    [
+     "answer is 59583.73",
+     false
+    ]
+   ],
+   "rubric": null
+  },
+  {
+   "cluster": "tier4",
+   "id": "t4c1",
+   "kind": "auto",
+   "prompt": "Write a Python function `iso_week(y, m, d)` returning the ISO-8601 week number for that date WITHOUT importing anything (no datetime, no calendar). Reply with only the code.",
+   "output": "",
+   "seconds": 1457.0,
+   "think_words": 9335,
+   "gen_tokens": 15000,
+   "finish_reason": "length",
+   "truncated": true,
+   "error": null,
+   "passed": null,
+   "checks": [
+    [
+     "no imports used",
+     true
+    ],
+    [
+     "code runs and passes assertions",
+     false
+    ]
+   ],
+   "rubric": null
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+self-test: 52 auto tasks, boilerplate answer passes 0
+tier keys: all recomputed and confirmed; both puzzles have exactly one solution
+self-test: 14 known-good answers all accepted
+self-test PASS - checks discriminate in both directions
+
+preflight OK - endpoint returns instruction-following output ('ACKNOWLEDGED')
+
+  [ 1/3] tier4/t4a1 (auto)
+       FAIL  (922s)  failed: answer is 431535946492791126
+  [ 2/3] tier4/t4a2 (auto)
+       TRUNC  (1456s)  budget exhausted at 15000 tokens, 5855 words of reasoning, no answer emitted
+  [ 3/3] tier4/t4c1 (auto)
+       TRUNC  (1457s)  budget exhausted at 15000 tokens, 9335 words of reasoning, no answer emitted
+
+wrote weights/data/bt_tier_30b_t4rerun.json  (3836s total)
+
+MODEL: Qwen3-30B-A3B-Q2_K T4 rerun (t4a1,t4a2,t4c1) - budget-bound, harness timeout 2400s
+ARGS : 16k ctx; token budget is the bound, not the wall clock
+
+STAKED SET: none in this file (1 extension tasks below)
+
+  !! 2 of 3 tasks TRUNCATED (budget exhausted before an
+     answer was emitted) and are excluded from the 0.0% above.
+     If every truncated task were counted as a failure the score would be
+     0.0%. Truncated: tier4/t4a2, tier4/t4c1
+     Raise --npredict and re-run before quoting either number.
+
+  per cluster:
+
+  difficulty ladder (staked + extension, scorable tasks):
+    T4 ceiling   0/ 1    0.0%  <- 0 expected today; ranks future models
+    (plus 2 tier-4 truncation(s) - burned the whole budget without an answer; listed above)
+
+
+  STAKED VERDICT: not applicable - this file contains no staked-set tasks.
+
+  (0 rubric tasks captured for separate human review - NOT counted above)
