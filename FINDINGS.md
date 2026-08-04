@@ -987,6 +987,34 @@ THE SHARPEST AVAILABLE TEST OF C-23, AND AN UNPROMPTED RETRODICTION HIT. airllm 
 
 `open`
 
+### E-13 — Issue #1 (2026-08-04): the first datapoint through the tool's own contribute loop - RX 5700 XT, RDNA1/Vulkan, +0.1%
+
+THE CONTRIBUTION LOOP WORKED AND THE FIRST FOREIGN-SILICON POINT LANDED ON THE LINE. An
+independent user (github.com/FedericoTs/quantprobe/issues/1) ran `bench --contribute` v1.25.0 on
+hardware this project has never touched - AMD RX 5700 XT (RDNA1, gfx1010), Vulkan backend,
+Windows 11, llama.cpp b10242: the first AMD, first Vulkan, first non-CUDA datapoint. Qwen2.5-7B-
+Instruct Q4_0 (2-part split GGUF), dense 7.6B, all in VRAM: predicted 73.1, measured 73.18 +/-
+0.16 tok/s (+0.1%). The C-02 floor landed exactly on the line on a vendor none of the constants
+were measured on. TWO OF OUR PUBLISHED LEVERS WERE HAND-TESTED IN THE SAME SUBMISSION: Q5_K_M on
+the same card measured 61.8 -> Q4_0 +18.4% faster, against +15.6% implied by our Pascal-measured
+FORMAT_EBW ratio (119.1/103.0) - the format ORDERING transfers to RDNA1 within 3 points; and
+ngram-simple on novel generation measured 60.4 (no gain), reproducing D-10's zero-draft result
+externally. HONESTY CLAUSE, at equal prominence: the same payload exposed two shipped bugs (fixed
+same day, v1.26.3) - the split GGUF defeated autospec, so the prediction ran the degraded
+fallback path (defaults corrected by file-size calibration against ONE part's size), and the
+payload's model side arrived as `total=None active=None`. The +0.1% therefore validates what the
+deployed pipeline actually printed for this user, which is the claim that matters to a user, but
+WHICH internal path produced 73.1 is not reconstructable from the payload; the hardware line's
+calibrate-grade precision (ram_bw=21.96, disk_bw=3.38) suggests their anchors were live,
+unconfirmed. n=1, and no C-14 machine-state audit is possible on a box we do not own.
+
+**Question to answer:** From the contributor (asked in the issue reply): exact invocation, and
+whether `calibrate` had run. A re-run on v1.26.3 would carry the full spec and upgrade this from
+pipeline-output validation to input-audited validation. RDNA1/Vulkan eta becomes a calibration
+row only with n>=2 and provenance.
+
+`reviewed`
+
 ---
 
 ## How something gets into this register
