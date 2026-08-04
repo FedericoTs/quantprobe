@@ -2918,6 +2918,24 @@ def t_business_never_scores_a_run_that_did_not_happen():
     return None
 
 
+def t_version_string_has_one_source_of_truth():
+    """The 1.26.0 wheel shipped self-reporting 1.25.0: pyproject was bumped, the __version__
+    literal was not, and the release verification printed the version without asserting it.
+    A package whose --version lies breaks the provable-headline rule. This guard fails the
+    gate whenever the two version declarations disagree."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    py = open(os.path.join(root, "pyproject.toml"), encoding="utf-8").read()
+    import re as _re
+    m = _re.search(r'^version = "([^"]+)"', py, _re.M)
+    assert m, "no version in pyproject.toml"
+    init = open(os.path.join(root, "quantprobe", "__init__.py"), encoding="utf-8").read()
+    m2 = _re.search(r'^__version__ = "([^"]+)"', init, _re.M)
+    assert m2, "no __version__ literal in quantprobe/__init__.py"
+    assert m.group(1) == m2.group(1), \
+        f"version desync: pyproject {m.group(1)} vs __init__ {m2.group(1)}"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):

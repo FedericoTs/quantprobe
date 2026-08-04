@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.26.1 - 2026-08-04
+
+**The 1.26.0 wheel self-reports 1.25.0.** The release bumped `pyproject.toml` but not the
+`__version__` literal, and the clean-venv verification *printed* the version without *asserting*
+it - so a package whose `--version` lies reached PyPI. Functionally 1.26.0 is complete (the
+clean-venv check proved the new advisories present); only the string is wrong. 1.26.1 fixes the
+string, and the smoke suite now asserts `pyproject.toml` and `__version__` agree, so this class
+cannot pass a gate again. Prefer 1.26.1; 1.26.0 remains installable but misreports itself.
+
 ## 1.26.0 - 2026-08-04
 
 ### Two published numbers corrected against primary sources - one ours, one an anomaly that dissolved
