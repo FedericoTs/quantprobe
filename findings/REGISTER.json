@@ -945,7 +945,7 @@
   {
    "id": "C-06",
    "kind": "contradiction",
-   "status": "open",
+   "status": "OVERTURNED 2026-08-04 by the U-38 sweep",
    "confidence": "measured",
    "claim": "Batched decode saturates at roughly 2x by about 4 concurrent slots, identically across architecture, placement and memory tier - and nothing this project models explains it. [CANDIDATE EXPLANATION 2026-08-03, see U-38: L-12 measured batched PREFILL as compute-bound at 65-67% of this card's FLOP ceiling. Batching does N x the arithmetic per weight-read, so the aggregate ceiling is min(N x BW/bytes, compute). The predicted crossover for a 7B on this 1060 is batch 4.5 - and C-06 measured saturation at about 4 slots. NOT CLAIMED: the compute ceiling is spec-sheet FLOPs at an assumed efficiency, and one agreement is not a test. Staked in U-38 with a refutation condition.]",
    "magnitude": "Aggregate decode, npl 1 -> 8, one session: split 21.93 -> 44.48 (2.03x); all-experts-CPU 19.89 -> 37.70 (1.90x); DENSE 7B fully in VRAM 22.47 -> 50.48 (2.25x). Per-step time grows 3.56x while weight bytes per step are unchanged, so weight amortisation works as expected - the cost that grows is per-sequence work, unidentified.",
@@ -955,7 +955,8 @@
    "wired_into": "disclosed in the CLI; NOT modelled",
    "hypotheses_already_refuted": "(a) Host-residency amortisation - staked as P-2 and refuted BY DIRECTION: the placement with MORE host-resident weight gained LESS (1.90x vs 2.03x). (b) MoE routing divergence across slots - refuted by the dense control, which saturates at 2.25x, barely above the MoE split. No mechanism is named here on purpose: in this project the first mechanism guess has been wrong four times, and each wrong guess survived exactly as long as nobody built a control that could kill it.",
    "next_action": "Run the identical sweep on ANY modern GPU. It costs one command and decides whether this is a law or a museum piece. Until then quantprobe must not model concurrency - it can only disclose it.",
-   "the_part_that_did_work": "PREFILL shows the staked mechanism plainly: arm A gains 2.12x from batching against arm S's 1.44x, because A has the most host-resident weight to amortise - exactly L-09. But all three arms converge to ~405-445 t/s, a ceiling that caps the effect before it can change any recommendation."
+   "the_part_that_did_work": "PREFILL shows the staked mechanism plainly: arm A gains 2.12x from batching against arm S's 1.44x, because A has the most host-resident weight to amortise - exactly L-09. But all three arms converge to ~405-445 t/s, a ceiling that caps the effect before it can change any recommendation.",
+   "resolution": "The '2x aggregate ceiling by ~4 slots' was an artifact of sweep RANGE. Up to N=8 the ceiling is real (2.3x, flat 52->54); at N=16 aggregate jumps to 175.6 tok/s (7.6x) and at N=32 to 219.4 (9.5x), replicated (weights/data/u38_np_sweep.log, u38_confirm.log). Earlier sweeps stopped inside the flat region and generalised it. The plateau-then-jump shape is consistent with a batch-width kernel switch, not with any ceiling this project's bandwidth model contains. The one-command modern-GPU replication ask published under this ID should now sweep to N=32 minimum."
   },
   {
    "id": "C-07",
@@ -1472,7 +1473,7 @@
   {
    "id": "U-38",
    "kind": "untried",
-   "status": "open",
+   "status": "scored 2026-08-04 - REFUTED AS STAKED, and the sweep found something the model did not predict",
    "confidence": "suggestive",
    "claim": "C-06 MAY ALREADY BE EXPLAINED BY L-12, AND IF SO OUR '2x BATCHING CEILING' IS A PASCAL RESULT WE HAVE BEEN GENERALISING INTO A LAW. C-06 records that batched decode saturates at roughly 2x by about 4 concurrent slots and states that nothing this project models explains it. L-12 records that batched PREFILL converges to 65-67% of this card's FLOP ceiling, i.e. prefill here is compute-bound. Those are plausibly the same phenomenon: batching performs N times the arithmetic per weight-read, so it walks a workload from bandwidth-bound toward compute-bound, and the aggregate ceiling is min(N x BW/bytes, compute_ceiling). The crossover batch size is the ratio of the two. Computed from spec-sheet FLOPs at L-12's own 65% efficiency for a 7B at 4.5 bits: GTX 1060 crosses at batch 4.5, RTX 4090 at 32, DGX Spark at 181. C-06 measured saturation at ABOUT 4 SLOTS on the 1060. That agreement is why this is worth testing rather than filing. THE CONSEQUENCE IF IT HOLDS IS LARGER THAN THE FINDING: Law 4 is a SINGLE-STREAM model and every hardware recommendation this tool makes optimises bandwidth per byte. Above the crossover, FLOPs decide instead - so for anyone serving more than one user, or running a batch job, we may be recommending the wrong hardware entirely. It also reframes the third-party DGX Spark reports: 35-45 tok/s on a 70B Q4 is impossible at batch 1 (ceiling 6.4) but ordinary at batch 6, and a Spark's crossover is ~181.",
    "hypothesis": "Batched decode is bandwidth-bound at small N and compute-bound at large N, crossing where N x (BW/bytes_per_token) meets the card's achievable FLOP throughput. C-06's 2x is not a universal batching ceiling but the specific crossover of a weak-FLOP Pascal card.",
@@ -1480,7 +1481,8 @@
    "cost": "~15 minutes on the 1060; llama-bench supports -np directly, no new harness",
    "protocol": "llama-bench -m <7B Q4_K_M> -ngl 99 -n 64 -p 0 -r 3 -np {1,2,4,8,16}, aggregate tok/s per N, on an idle box. Plot aggregate vs N and locate the knee.",
    "why_it_is_promising": "It would close a contradiction that has sat open as unexplained, using a law we already measured, at a cost of 15 minutes. And it opens the batched regime, which is where business workloads actually live - the 50-task suite is itself a batch job. It would also divide the disk-tier streaming penalty by the batch size, potentially a larger lever than everything in C-21 and C-23 combined.",
-   "priority": 1
+   "priority": 1,
+   "verdict": "K-1 FAILED BOTH HALVES: agg(4)/agg(1) = 2.256 against a staked >=2.5, and agg(16)/agg(8) = 3.257 against a staked <=1.25. The smooth min(N x BW/bytes, FLOP-ceiling) crossover at N~4.5 is NOT what this card does, and per K-2's own language no coefficient may be taken. WHAT ACTUALLY HAPPENED (weights/data/u38_np_sweep.log, u38_confirm.log): aggregate decode 23.07 -> 40.07 -> 52.04 -> 53.90 across N=1,2,4,8 - which LOOKS like C-06's 2x-and-flat - then JUMPS to 175.6 at N=16 (replicated twice to 0.1%) and 219.4 at N=32. Per-stream speed falls 23.1 -> 6.7 through N=8, then RECOVERS to 11.0 at N=12-16. A smooth crossover cannot produce a per-stream recovery; a KERNEL REGIME SWITCH can (mat-vec path below some batch width, mat-mat path above it). That mechanism is a HYPOTHESIS - naming the kernels requires forcing them individually, which is the follow-up - but the discontinuity itself is measured, replicated, and sits between N=8 and N=12. CONSEQUENCES. (1) C-06 IS OVERTURNED - see its entry. (2) The practical headline stands regardless of mechanism: this 2016 GTX 1060 serves 32 concurrent streams of a 7B Q4_K_M at 219 aggregate tok/s, 6.9 tok/s each - 9.5x the single-stream number this project has been quoting as the card's speed. Law 4 remains a SINGLE-STREAM law; a batch axis is now evidence-backed roadmap work, not speculation. (3) The DGX Spark reframe in the original claim survives in weakened form: batched aggregates far above the single-stream ceiling are real, but our crossover arithmetic may not predict WHERE they appear on any card."
   }
  ],
  "external": [

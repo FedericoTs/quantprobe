@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### U-38 scored: our batching hypothesis is refuted - and the "2x ceiling" it tried to explain is overturned with it
+
+The stake said batched decode crosses smoothly from bandwidth-bound to compute-bound at N~4.5 on
+this card. The sweep (N=1,2,4,8,16, staked kill rules, 7B all-in-VRAM) killed it on both halves
+of K-1: agg(4)/agg(1) = **2.256** against a staked >=2.5, and agg(16)/agg(8) = **3.257** against
+a staked <=1.25. No coefficient taken.
+
+What the sweep found instead was not in the hypothesis: aggregate decode runs 23 -> 40 -> 52 ->
+54 tok/s through N=8 - exactly C-06's "2x and flat" - then **jumps to 175.6 at N=16**
+(replicated twice to 0.1%) **and 219.4 at N=32**. Per-stream speed *recovers* from 6.7 to 11.0
+across the jump, which no smooth crossover can do and a batch-width kernel switch can. The
+mechanism is registered as a hypothesis, not a claim.
+
+Two consequences, both bigger than the refuted stake:
+
+- **C-06 is overturned.** The "2x aggregate ceiling by ~4 slots" was a sweep-range artifact -
+  every earlier sweep stopped inside the flat region and we generalised the plateau into a law.
+  The register entry now says so, and the public replication ask under that ID is updated to
+  sweep to N=32 minimum.
+- **The 2016 GTX 1060 serves 32 concurrent streams of a 7B at 219 aggregate tok/s** - 6.9 tok/s
+  per stream, 9.5x the single-stream figure this project quotes as the card's speed. Law 4
+  remains a single-stream law and says so; a batch axis is now evidence-backed roadmap work
+  (docs/ROADMAP.md, Track A).
+
+Evidence: `weights/data/u38_np_sweep.log`, `weights/data/u38_confirm.log`.
+
 **A claim that inverted, and five harness bugs caught before any of them became a finding.**
 
 ### E-12: the Kimi K3 number is a unit error, and the repo's own data tests our law
