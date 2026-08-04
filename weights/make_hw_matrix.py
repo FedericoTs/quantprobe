@@ -53,6 +53,10 @@ MODELS = [
     ("DeepSeek V4-Flash Q2_K",     284.0, 13.0,  4.0, True,  2.5, "arch est"),
     ("GLM-5.2 753B Q2_K",          753.3, 32.0,  8.0, True,  2.5, "a/ne est"),
     ("Kimi-K2.6 1058B Q2_K",      1058.6, 32.0,  6.0, True,  2.5, "a/ne est"),
+    # K3 figures are from its technical report (arXiv 2607.24653): 2.8T total, 104B
+    # ACTIVATED - a paper number, not an estimate. Experts ship MXFP4 (~4.25 bpw);
+    # ne (always-active share) remains an estimate pending a GGUF header.
+    ("Kimi-K3 2.8T MXFP4",        2800.0, 104.0, 20.0, True,  4.25, "a paper / ne est"),
     ("Qwen3.8-Max Q2_K",          2400.0, 95.0, 30.0, True,  2.5, "arch est"),
 ]
 
