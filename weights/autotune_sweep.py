@@ -71,13 +71,14 @@ def bench_args(cfg):
 def variants(base, row):
     """Coordinate sweep: one axis changed at a time. Deterministic order.
     Each variant: (name, cfg, priceable) - priceable=False -> predicted null (KR-C)."""
+    base = {k: (v if isinstance(v, bool) else str(v)) for k, v in base.items()}
     vs = []
     ngl0 = int(base.get("-ngl", 99))
-    for t in (4, 6, 8):
+    for t in ("4", "6", "8"):
         vs.append((f"t{t}", {**base, "-t": t}, False))
-    for ub in (256, 512, 1024, 2048):
+    for ub in ("256", "512", "1024", "2048"):
         vs.append((f"ub{ub}", {**base, "-ub": ub}, False))
-    for b in (512, 2048):
+    for b in ("512", "2048"):
         vs.append((f"b{b}", {**base, "-b": b}, False))
     vs.append(("kv_q8", {**base, "-ctk": "q8_0", "-ctv": "q8_0", "-fa": True}, False))
     vs.append(("fa_flip", {**base, "-fa": not base.get("-fa", False)}, False))
