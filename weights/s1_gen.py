@@ -84,12 +84,34 @@ def _ticket(r):
     return prompt, [f"TCK-{i}" for i in ids]
 
 
+def _classify(r):
+    """CONTROL family for KR-A - the student is NEVER trained on these. Single label,
+    executable check, label always present in the prompt (KR-E holds by construction)."""
+    cases = [
+        ("Your invoice charged me for a month after I cancelled.", "BILLING"),
+        ("After SSO redirect the app loops back to the login page.", "TECHNICAL"),
+        ("We are a 300-seat enterprise looking for a procurement contact.", "SALES"),
+        ("The card was charged twice for the same order.", "BILLING"),
+        ("The export endpoint returns 500 on files over 2 GB.", "TECHNICAL"),
+        ("Can you send pricing for the annual plan for 40 users?", "SALES"),
+        ("Refund promised three weeks ago has not arrived.", "BILLING"),
+        ("Push notifications stopped after the last app update.", "TECHNICAL"),
+    ]
+    txt, label = cases[r.randrange(len(cases))]
+    who = r.choice(FIRST)
+    prompt = ("Classify this support message as exactly one of: BILLING, TECHNICAL, SALES. "
+              "Answer with the single word only.\n\n"
+              f"'{who} writes: {txt}'")
+    return prompt, label
+
+
 GENS = [_contact, _invoice, _terms, _ticket]
 
 
 def instance(seed):
     r = random.Random(seed)
-    fn = GENS[seed % len(GENS)]
+    # seeds in the control range are ALWAYS classification - the untouched family (KR-A)
+    fn = _classify if 200000 <= seed < 300000 else GENS[seed % len(GENS)]
     prompt, truth = fn(r)
     return {"seed": seed, "kind": fn.__name__.strip("_"), "prompt": prompt, "truth": truth,
             "hash": hashlib.sha256(prompt.encode()).hexdigest()[:16]}
@@ -114,6 +136,11 @@ def check(truth, raw):
     m = re.search(r"```(?:json)?\s*(.*?)```", t, re.S)
     if m:
         t = m.group(1).strip()
+    if isinstance(truth, str):                      # classification label
+        import re as _re
+        hits = {w for w in ("BILLING", "TECHNICAL", "SALES")
+                if _re.search("(?<![A-Z])" + w + "(?![A-Z])", t.upper())}
+        return hits == {truth}
     for o, c in (("{", "}"), ("[", "]")):
         i, j = t.find(o), t.rfind(c)
         if i != -1 and j > i:
@@ -140,7 +167,8 @@ def ask(url, prompt, npredict=2048):
     return txt.strip(), d["choices"][0].get("finish_reason", "")
 
 
-SPLITS = {"train": (0, 400), "heldout": (100000, 100120)}   # DISJOINT by construction
+SPLITS = {"train": (0, 400), "heldout": (100000, 100120),
+          "control": (200000, 200060)}   # DISJOINT by construction; control = KR-A only
 
 
 def selftest():

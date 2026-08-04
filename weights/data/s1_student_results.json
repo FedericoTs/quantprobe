@@ -1,0 +1,44 @@
+{
+ "base": {
+  "heldout": {
+   "clean": 118,
+   "total": 120,
+   "rate": 0.9833333333333333,
+   "seconds": 315.4
+  },
+  "control": {
+   "clean": 28,
+   "total": 60,
+   "rate": 0.4666666666666667,
+   "seconds": 11.0
+  }
+ },
+ "tuned": {
+  "heldout": {
+   "clean": 120,
+   "total": 120,
+   "rate": 1.0,
+   "seconds": 449.0
+  },
+  "control": {
+   "clean": 28,
+   "total": 60,
+   "rate": 0.4666666666666667,
+   "seconds": 17.4
+  }
+ },
+ "teacher_heldout_bar": 0.9666666666666667,
+ "P1_gain_ge_10pts": {
+  "gain": 0.0167,
+  "pass": false
+ },
+ "P2_ge_teacher": {
+  "tuned": 1.0,
+  "bar": 0.9667,
+  "pass": true
+ },
+ "KRA_forgetting_gt_15pts": {
+  "drop": 0.0,
+  "fired": false
+ }
+}
