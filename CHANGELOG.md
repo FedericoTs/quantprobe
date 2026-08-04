@@ -28,6 +28,34 @@ Two consequences, both bigger than the refuted stake:
 
 Evidence: `weights/data/u38_np_sweep.log`, `weights/data/u38_confirm.log`.
 
+### U-39 confirmed: batching does NOT survive expert offload - and model choice inverts with user count
+
+Staked before the sweep (`preregistrations/2026-08-04-u39-moe-batching.md`), with a refutation
+condition that would have made the 1060 a multi-user 30B server. It did not fire. Measured, same
+session, dense anchor replicated a third time to 0.4%:
+
+| concurrent users | 30B MoE (experts in RAM) | dense 7B (all in VRAM) |
+|---|---|---|
+| 1 | **19.7** tok/s | 23.1 tok/s |
+| 8 | 37.5 aggregate | 53.9 aggregate |
+| 32 | **40.0** aggregate (1.25/user) | **219.4** aggregate (6.9/user) |
+
+P1 held (agg8/agg1 = 1.905 in the staked [1.0, 2.5]); P2 held (agg32/agg16 = 1.079 < 1.5 - no
+jump exists on this placement at any N). Mechanism as staked: routed-expert reads from system
+RAM do not amortise across streams - each user summons different experts every step - while
+dense weights read once serve everyone. Prefill is the exception and batches fine even on the
+MoE (45 -> 225 tok/s): compute amortises, expert bandwidth does not.
+
+**The practical sentence: at 1 user this box's best model is the 30B MoE; at 32 users it is the
+dense 7B, by 5.5x.** Same hardware, same budget - the right model depends on how many people
+share it, and no consumer tool prices that today. The planner's batch axis (ROADMAP Track A) now
+has its first two measured curves.
+
+Bonus from the edge probe: the dense jump sits exactly at the 8->9 stream boundary (53.9 ->
+107.7 aggregate), matching llama.cpp's mat-vec kernel cap of batch 8; per-stream speed above the
+switch is nearly flat (~11-12 tok/s each from N=9 to 16). Consistent-with, not proven - kernels
+were not individually forced.
+
 **A claim that inverted, and five harness bugs caught before any of them became a finding.**
 
 ### E-12: the Kimi K3 number is a unit error, and the repo's own data tests our law

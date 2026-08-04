@@ -1,0 +1,12 @@
+0.00.421.178 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.02.954.312 W llama_context: n_ctx is not divisible by n_seq_max - rounding down to 6144
+
+llama_batched_bench: n_kv_max = 6144, n_batch = 2048, n_ubatch = 512, flash_attn = -1, is_pp_shared = 0, is_tg_separate = 0, n_gpu_layers = 99, n_threads = 4, n_threads_batch = 4
+
+|    PP |     TG |    B |   N_KV |   T_PP s | S_PP t/s |   T_TG s | S_TG t/s |      T s |    S t/s |
+|-------|--------|------|--------|----------|----------|----------|----------|----------|----------|
+|    64 |    128 |    9 |   1728 |    1.484 |   388.10 |   10.699 |   107.68 |   12.183 |   141.84 |
+|    64 |    128 |   10 |   1920 |    1.656 |   386.55 |   10.915 |   117.27 |   12.571 |   152.74 |
+|    64 |    128 |   11 |   2112 |    1.890 |   372.57 |   11.097 |   126.88 |   12.987 |   162.62 |
+|    64 |    128 |   12 |   2304 |    2.042 |   376.09 |   11.286 |   136.10 |   13.328 |   172.87 |
+
