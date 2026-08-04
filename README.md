@@ -72,11 +72,20 @@ Speed numbers are worthless if the model can't do the job. So we staked a bar **
 
 The task set also carries a **difficulty ladder** for comparing models on identical predicates — up to a tier designed so today's models fail it:
 
-| tier | the 2.5-bit 30B scored |
-|---|---|
-| T1 routine / T2 standard (the staked 40) | **40/40** |
-| T3 hard — NPV to the cent, brute-force-verified logic puzzles, hallucination traps | **5/6** |
-| T4 ceiling — 9×9-digit exact products, lipograms, ISO-week code with no imports | **1/6** (staked expectation was 0/6 — the miss is published) |
+| model (same 52 predicates, same box) | staked 40 | T3 hard | T4 ceiling |
+|---|---|---|---|
+| **Qwen3-30B-A3B @ 2.95-bit** (the recommended config) | **40/40** | 5/6 | 1/6 |
+| Qwen2.5-7B @ Q4_K_M | 30/40 | 3/6 | 0/6 |
+| Qwen2.5-7B @ 2-bit (both quants, byte-equal) | 27/40 | 4/6 | 0/6 |
+| Qwen3-0.6B @ Q8 | 22/38* | 3/5* | 1/3* |
+
+\* thinking-model truncations quarantined and disclosed, never counted as failures. The 0.6B
+fires the suite's own kill rule (57.9% < 60%) — the instrument correctly refuses to call it
+business-usable. And one honest anomaly the ladder itself exposed: **the only T4 task anyone
+solved (the 5-house logic puzzle) was solved by the *biggest and the smallest* model while both
+7Bs failed it** — non-monotonic in capability, the signature of training-data recall rather
+than reasoning. That task is being replaced with a generated-novel variant; the score stands as
+recorded.
 
 Every T3/T4 answer key is recomputed mechanically by the self-test and both logic puzzles are brute-forced to exactly one solution before any model is scored. The T4 nine-digit multiplication is the tier working as intended: the model *announced it would need a calculator*, then printed a confident 18-digit answer that is wrong at digit 5.
 

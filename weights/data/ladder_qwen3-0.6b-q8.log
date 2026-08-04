@@ -1,0 +1,173 @@
+self-test: 52 auto tasks, boilerplate answer passes 0
+tier keys: all recomputed and confirmed; both puzzles have exactly one solution
+self-test: 14 known-good answers all accepted
+self-test PASS - checks discriminate in both directions
+
+preflight OK - endpoint returns instruction-following output ('ACKNOWLEDGED')
+
+  [ 1/60] extraction/e1 (auto)
+       PASS  (3s)
+  [ 2/60] extraction/e2 (auto)
+       PASS  (3s)
+  [ 3/60] extraction/e3 (auto)
+       PASS  (2s)
+  [ 4/60] extraction/e4 (auto)
+       PASS  (3s)
+  [ 5/60] extraction/e5 (auto)
+       PASS  (3s)
+  [ 6/60] arithmetic/a1 (auto)
+       FAIL  (21s)  failed: answer is 17839.92
+  [ 7/60] arithmetic/a2 (auto)
+       TRUNC  (34s)  budget exhausted at 3072 tokens, 1340 words of reasoning, no answer emitted
+  [ 8/60] arithmetic/a3 (auto)
+       PASS  (8s)
+  [ 9/60] arithmetic/a4 (auto)
+       PASS  (31s)
+  [10/60] arithmetic/a5 (auto)
+       FAIL  (18s)  failed: answer is 10209.0
+  [11/60] arithmetic/a6 (auto)
+       FAIL  (8s)  failed: answer is 29.4
+  [12/60] classification/k1 (auto)
+       PASS  (3s)
+  [13/60] classification/k2 (auto)
+       PASS  (2s)
+  [14/60] classification/k3 (auto)
+       PASS  (2s)
+  [15/60] classification/k4 (auto)
+       PASS  (3s)
+  [16/60] classification/k5 (auto)
+       FAIL  (2s)  failed: mentions 'legal'
+  [17/60] classification/k6 (auto)
+       FAIL  (4s)  failed: exactly one of P0/P1/P2, mentions 'p0'
+  [18/60] summarisation/s1 (auto)
+       PASS  (5s)
+  [19/60] summarisation/s2 (auto)
+       FAIL  (4s)  failed: <= 25 words
+  [20/60] summarisation/s3 (auto)
+       PASS  (3s)
+  [21/60] summarisation/s4 (auto)
+       FAIL  (4s)  failed: <= 30 words, invents no numbers
+  [22/60] instruction/i1 (auto)
+       PASS  (1s)
+  [23/60] instruction/i2 (auto)
+       FAIL  (2s)  failed: 5 lines matching ^>\s+\w+day$
+  [24/60] instruction/i3 (auto)
+       FAIL  (5s)  failed: avoids 'e'
+  [25/60] instruction/i4 (auto)
+       PASS  (2s)
+  [26/60] instruction/i5 (auto)
+       FAIL  (3s)  failed: 2 lines matching ^(EMEA|AMER),Q3,\d+$
+  [27/60] instruction/i6 (auto)
+       PASS  (1s)
+  [28/60] code/p1 (auto)
+       PASS  (7s)
+  [29/60] code/p2 (auto)
+       FAIL  (11s)  failed: code runs and passes assertions
+  [30/60] code/p3 (auto)
+       FAIL  (7s)  failed: code runs and passes assertions
+  [31/60] code/p4 (auto)
+       FAIL  (8s)  failed: code runs and passes assertions
+  [32/60] code/p5 (auto)
+       TRUNC  (34s)  budget exhausted at 3072 tokens, 1965 words of reasoning, no answer emitted
+  [33/60] analysis/n1 (auto)
+       FAIL  (17s)  failed: answer is 68.5
+  [34/60] analysis/n2 (auto)
+       PASS  (3s)
+  [35/60] analysis/n3 (auto)
+       PASS  (11s)
+  [36/60] analysis/n4 (auto)
+       FAIL  (4s)  failed: mentions 'no'
+  [37/60] multilingual/m1 (auto)
+       PASS  (3s)
+  [38/60] multilingual/m2 (auto)
+       FAIL  (2s)  failed: looks german
+  [39/60] multilingual/m3 (auto)
+       PASS  (2s)
+  [40/60] multilingual/m4 (auto)
+       PASS  (3s)
+  [41/60] tier3/t3x1 (auto)
+       FAIL  (6s)  failed: ledger_a == 3310, ledger_b == 3130
+  [42/60] tier3/t3a1 (auto)
+       TRUNC  (34s)  budget exhausted at 3072 tokens, 1014 words of reasoning, no answer emitted
+  [43/60] tier3/t3c1 (auto)
+       PASS  (16s)
+  [44/60] tier3/t3l1 (auto)
+       PASS  (16s)
+  [45/60] tier3/t3s1 (auto)
+       PASS  (13s)
+  [46/60] tier3/t3h1 (auto)
+       FAIL  (4s)  failed: json array of 3, 1 == 'TCK-103', 2 == 'TCK-105'
+  [47/60] tier4/t4a1 (auto)
+       TRUNC  (34s)  budget exhausted at 3072 tokens, 1383 words of reasoning, no answer emitted
+  [48/60] tier4/t4a2 (auto)
+       TRUNC  (34s)  budget exhausted at 3072 tokens, 1260 words of reasoning, no answer emitted
+  [49/60] tier4/t4w1 (auto)
+       FAIL  (8s)  failed: exactly 45 words, avoids 'e'
+  [50/60] tier4/t4l1 (auto)
+       PASS  (25s)
+  [51/60] tier4/t4c1 (auto)
+       TRUNC  (34s)  budget exhausted at 3072 tokens, 2125 words of reasoning, no answer emitted
+  [52/60] tier4/t4s1 (auto)
+       FAIL  (14s)  failed: exactly 'The ylretrauq troper swohs ydaets htworg'...
+  [53/60] correspondence/c1 (rubric)
+  [54/60] correspondence/c2 (rubric)
+  [55/60] correspondence/c3 (rubric)
+  [56/60] correspondence/c4 (rubric)
+  [57/60] judgement/j1 (rubric)
+  [58/60] judgement/j2 (rubric)
+  [59/60] longform/l1 (rubric)
+  [60/60] longform/l2 (rubric)
+
+wrote weights/data/ladder_qwen3-0.6b-q8.json  (568s total)
+
+MODEL: qwen3-0.6b-q8
+ARGS : ladder row qwen3-0.6b-q8; 16k ctx; -ngl 99
+
+STAKED SET: 22/38 pass = 57.9%   (+8 extension tasks reported below, outside the staked bar)
+
+  !! 6 of 52 tasks TRUNCATED (budget exhausted before an
+     answer was emitted) and are excluded from the 57.9% above.
+     If every truncated task were counted as a failure the score would be
+     42.3%. Truncated: arithmetic/a2, code/p5, tier3/t3a1, tier4/t4a1, tier4/t4a2, tier4/t4c1
+     Raise --npredict and re-run before quoting either number.
+
+  per cluster:
+    code              1/ 4   25.0%
+    arithmetic        2/ 5   40.0%
+    summarisation     2/ 4   50.0%
+    instruction       3/ 6   50.0%
+    analysis          2/ 4   50.0%
+    classification    4/ 6   66.7%
+    multilingual      3/ 4   75.0%
+    extraction        5/ 5  100.0%
+
+  difficulty ladder (staked + extension, scorable tasks):
+    T1 routine  15/20   75.0%
+    T2 standard  7/18   38.9%
+    T3 hard      3/ 5   60.0%
+    T4 ceiling   1/ 3   33.3%  <- 0 expected today; ranks future models
+    (plus 3 tier-4 truncation(s) - burned the whole budget without an answer; listed above)
+
+  failures:
+    arithmetic/a1   answer is 17839.92
+    arithmetic/a5   answer is 10209.0
+    arithmetic/a6   answer is 29.4
+    classification/k5   mentions 'legal'
+    classification/k6   exactly one of P0/P1/P2, mentions 'p0'
+    summarisation/s2   <= 25 words
+    summarisation/s4   <= 30 words, invents no numbers
+    instruction/i2   5 lines matching ^>\s+\w+day$
+    instruction/i3   avoids 'e'
+    instruction/i5   2 lines matching ^(EMEA|AMER),Q3,\d+$
+    code/p2   code runs and passes assertions
+    code/p3   code runs and passes assertions
+    code/p4   code runs and passes assertions
+    analysis/n1   answer is 68.5
+    analysis/n4   mentions 'no'
+    multilingual/m2   looks german
+
+  VERDICT: KILL RULE FIRED (57.9% < 60%). This config is NOT
+           business-usable. Every tok/s figure we publish for it must be
+           qualified at equal prominence in the README.
+
+  (8 rubric tasks captured for separate human review - NOT counted above)

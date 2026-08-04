@@ -25,6 +25,21 @@ context the same floor gives 58.0-49.2, bracketing the 51.6 report inside the C-
 scoring rule shipped into MATRIX.md: third-party reports get scored at their stated context
 with kvp read from the header, or they do not get scored.
 
+### The ladder becomes a four-model comparison surface - and catches its own compromised task
+
+Rows added on the same 52 predicates, same box: Qwen2.5-7B @ Q4_K_M scores 30/40 staked
+(T1 100%, T2 50%); the 7B at 2-bit (both byte-equal quants) 27/40; Qwen3-0.6B @ Q8 22/38 with
+thinking-model truncations quarantined - and the 0.6B fires the suite's own kill rule (57.9% <
+60%), the instrument correctly refusing to call a 0.6B business-usable. The 30B's 40/40 now sits
+atop a measured gradient instead of standing alone.
+
+The ladder also caught its own defect: **the only T4 task ever solved (t4l1, the 5-house logic
+puzzle) has now been solved by the 30B AND the 0.6B while both 7Bs failed it.** Non-monotonic in
+model capability is the signature of training-data recall (the 0.6B's chain-of-thought is a
+co-factor), exactly the caveat logged when the 30B first solved it. t4l1's scores stand as
+recorded; a generated-novel 5-house variant (fresh constraints, brute-force-verified unique)
+replaces it for future rows per the roadmap's recall-immunity item.
+
 ### Prereg #92 scored: per-shape calibration KILLED by its own gates - nothing ships, and that is the system working
 
 The dangling 07-31 stake is closed as a FAIL, published at the same size as the wins. Phase A's
