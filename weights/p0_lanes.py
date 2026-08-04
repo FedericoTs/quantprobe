@@ -16,10 +16,12 @@ from __future__ import annotations
 import argparse, json, os, re, subprocess, sys, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.dirname(HERE))     # the WORKTREE's quantprobe, not site-packages
 DATA = os.path.join(HERE, "data")
 LOCK = os.path.join(DATA, ".p0_lock")
 GGUF = "D:/evo-compress-data/gguf"
-LLAMA = os.environ.get("QUANTPROBE_LLAMA_DIR", "D:/evo-compress-data/llama-b10242")
+LLAMA = os.environ.get("QUANTPROBE_LLAMA_DIR",
+                       "C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098")
 PORT = 8093
 SEED = 20260804
 N_TASKS = 120
@@ -113,10 +115,14 @@ def extract_code(txt):
 
 # ---------------------------------------------------------------- server + ask
 def qp_flags(gguf):
-    """The tool plans its own experiment: quantprobe's best_flags for this file, this box."""
-    from quantprobe.cli import build_parser
+    """The tool plans its own experiment: quantprobe's best_flags for this file, this box.
+    The CLI builds its parser inline in main(), so the namespace is built directly with the
+    exact fields best_flags/spec.apply read; everything else is getattr-defaulted."""
+    import argparse
     from quantprobe import runtime
-    a = build_parser().parse_args(["run", "--gguf", gguf])
+    a = argparse.Namespace(gguf=gguf, model=None, machine=None, bits=None, total=None,
+                           active=None, always_active=None, vram=None, vram_bw=None,
+                           ram=None, ram_bw=None, disk_bw=None, ctx=0, kv_per_pos=None)
     best, flags = runtime.best_flags(a)
     return best, [f for f in flags if f]
 

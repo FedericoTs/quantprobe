@@ -71,3 +71,45 @@ Verdict appended here.
 $0 and one evening. Downloads: the `evalplus` package and MBPP+ data (~MB, public, versioned —
 recorded in the log). The census table feeds S-2 target selection; the P1/P2 outcome decides
 whether the program's later phases ride lanes or abandon them.
+
+---
+
+## VERDICT (scored 2026-08-04, same day): P3 PASS, P1/P2 FAIL - the mechanism is real, the staked headline is not
+
+Pilot chose k=16 (aggregate held to 16 lanes, U-38 consistent). 113 tasks (7 references
+excluded by KR-B at 5.8%, under the block). One session per arm, locks held, GPU state logged.
+
+| arm | solve (plus tests) | median wall/task |
+|---|---|---|
+| A - Coder-30B single | 83/113 = 73.5% | 3.7s |
+| B - 7B single | 73/113 = 64.6% | 2.5s |
+| **C - 7B x16 verified lanes** | **86/113 = 76.1%** | 12.0s |
+| D - 0.6B single (census) | 38/113 = 33.6% | 7.8s |
+| D - 0.6B x16 lanes (census) | 60/113 = 53.1% | 20.8s |
+
+- **P3 PASS: +11.5 pts** (76.1 vs 64.6) - execution-picked selection is a real mechanism,
+  past the +10 bar.
+- **KR-A holds:** B sits 8.9 pts under A - the goliath was real; P1 was scored, not voided.
+- **P1 FAIL: +2.6 < +5.** C DID beat the Coder-30B absolutely - a Q4 7B on a GTX 1060
+  outscoring the strongest coder this box owns - but under the margin this stake said would
+  count. Published as a miss.
+- **P2 FAIL: 12.0s vs 3.7s.** The verified answer costs 3.2x the big model's wall-clock. The
+  cost is dominated by selection engineering (16 sequential subprocess test runs per task),
+  not decode - see P0b below.
+
+**Decomposition (from per-task records):** of C's 27 failures, only 5 scored zero on plus
+tests; 22 were near-misses (winner passed a partial plus set) - the recoverable class that
+better selection targets. C solves 9 tasks A fails; A solves 6 C fails (union 81.4%). The
+0.6B census pair is the program's loudest result: lanes bought +19.5 pts on the 0.6B - the
+mechanism scales DOWN the ladder - and the 0.6B sits 39.9 pts under the teacher on this
+family, the real headroom S-1's design rule demanded. CAVEAT recorded: the 0.6B lanes row ran
+with heavy thinking-budget truncation (quarantined per stake, up to 16/16 lanes on some
+tasks), so 53.1% is a floor.
+
+**What feeds forward:** (1) P0b restake - early-exit lanes (test candidates as they finish,
+kill lanes on first base-passer) + council/test-augmentation selection on ties, targeting P1
+>= +5 AND P2 pass; (2) S-2 code distillation - C's 86 plus-verified winners are a free,
+locally-generated training corpus for the 0.6B, whose 40-pt gap is now measured; (3) the
+frontier framing: 76.1% best-of-16-verified sits inside the frontier single-shot band on this
+family (~72-78 for GPT-4o/Claude-3.5-class per EvalPlus), with the asymmetries stated in the
+body. Raw: weights/data/p0_run.log, p0_results.json, p0_subset.json.
