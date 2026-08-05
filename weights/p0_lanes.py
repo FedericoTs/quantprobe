@@ -105,7 +105,7 @@ def _same(a, b):
     if isinstance(a, float) or isinstance(b, float):
         try:
             return math.isclose(a, b, rel_tol=1e-6, abs_tol=1e-6)
-        except TypeError:
+        except (TypeError, OverflowError):     # a candidate once returned an int too big for float
             return a == b
     if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
         return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
@@ -120,7 +120,15 @@ def run_candidate(code, entry, inputs, expected, timeout=EXEC_TIMEOUT):
     outs = _run_pickled(code, entry, inputs, timeout)
     if outs is None:
         return 0, len(inputs)
-    n = sum(1 for (st, v), e in zip(outs, expected) if st == "ok" and _same(v, e))
+
+    def _cmp(v, e):
+        # Candidate output is HOSTILE input: no value a model returns may crash the harness.
+        # 2026-08-05: one huge-int output overflowed isclose and killed a 14-row grid mid-run.
+        try:
+            return _same(v, e)
+        except Exception:
+            return False
+    n = sum(1 for (st, v), e in zip(outs, expected) if st == "ok" and _cmp(v, e))
     return n, len(inputs)
 
 
