@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.27.0 - 2026-08-05
+
+**AMD and Intel GPUs are now detected.** The tool was nvidia-smi-only: issue #1's contributor
+ran an RX 5700 XT and `hw` printed "GPU: none detected", forcing them to hand-pass flags for
+the very card class the tool exists to serve. Now:
+
+- Non-NVIDIA adapters are read from the **Windows driver registry** (`qwMemorySize` - the CIM
+  `AdapterRAM` field is a uint32 that caps at 4 GB and under-reports every modern card), with
+  virtual/remote adapters filtered.
+- The bandwidth table gains **29 AMD/Intel entries** (RDNA1-4, Vega, Arc A/B) at spec-sheet
+  peaks, same `[table]` convention as the NVIDIA rows. The field case prices at exactly the
+  448 GB/s the contributor had to type by hand.
+- A detected card whose bandwidth is NOT in the table is **named, with its VRAM**, and asked
+  for `--vram-bw` - never a silent "none". Capacity without bandwidth is not priced (a GPU
+  tier with unknown bandwidth would be an invented number).
+- Eta on RDNA/Arc backends is flagged UNVALIDATED in the output; `calibrate`'s anchors and the
+  size-classed floor do the honest work - which is precisely how E-13's +0.1% prediction
+  landed with zero GPU-side calibration.
+
 ## 1.26.3 - 2026-08-04
 
 **Split GGUFs half-specced, and the contribution payload could ship `total=None`.** Found by

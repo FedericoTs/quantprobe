@@ -29,6 +29,25 @@ GPU_TABLE = [
     ("2080", 448, 0.45, 0.25), ("2070", 448, 0.45, 0.25), ("2060", 336, 0.42, 0.22),
     ("1080", 320, 0.38, 0.06), ("1070", 256, 0.36, 0.05), ("1060", 192, 0.35, 0.04),
     ("a100", 1935, 0.7, 0.55), ("h100", 3350, 0.75, 0.6), ("rtx 6000", 960, 0.62, 0.42),
+    # AMD / Intel, added for issue #1 (an RX 5700 XT owner got "GPU: none detected" and had to
+    # hand-pass the exact 448 this table now carries). Spec-sheet peaks, same [table] convention
+    # as above; the geta/gl hints are the generic-unknown values because NO eta has been
+    # measured on RDNA/Arc backends here - resolve_gpu_eta's size-classed floor and the user's
+    # own `calibrate` anchors do the honest work, exactly as they did for E-13's +0.1%.
+    ("rx 9070 xt", 640, 0.45, 0.27), ("rx 9070", 640, 0.45, 0.27),
+    ("rx 7900 xtx", 960, 0.45, 0.27), ("rx 7900 xt", 800, 0.45, 0.27),
+    ("rx 7900 gre", 576, 0.45, 0.27), ("rx 7800 xt", 624, 0.45, 0.27),
+    ("rx 7700 xt", 432, 0.45, 0.27), ("rx 7600 xt", 288, 0.45, 0.27),
+    ("rx 7600", 288, 0.45, 0.27), ("rx 6950 xt", 576, 0.45, 0.27),
+    ("rx 6900 xt", 512, 0.45, 0.27), ("rx 6800 xt", 512, 0.45, 0.27),
+    ("rx 6800", 512, 0.45, 0.27), ("rx 6750 xt", 432, 0.45, 0.27),
+    ("rx 6700 xt", 384, 0.45, 0.27), ("rx 6700", 320, 0.45, 0.27),
+    ("rx 6650 xt", 280, 0.45, 0.27), ("rx 6600 xt", 256, 0.45, 0.27),
+    ("rx 6600", 224, 0.45, 0.27), ("rx 5700 xt", 448, 0.45, 0.27),
+    ("rx 5700", 448, 0.45, 0.27), ("rx 5600 xt", 288, 0.45, 0.27),
+    ("radeon vii", 1024, 0.45, 0.27), ("vega 64", 484, 0.45, 0.27), ("vega 56", 410, 0.45, 0.27),
+    ("arc a770", 560, 0.45, 0.27), ("arc a750", 512, 0.45, 0.27),
+    ("arc b580", 456, 0.45, 0.27), ("arc b570", 380, 0.45, 0.27),
 ]
 MAC_BW = {"m1 ultra": 800, "m1 max": 400, "m1 pro": 200, "m1": 68,
           "m2 ultra": 800, "m2 max": 400, "m2 pro": 200, "m2": 100,
@@ -56,6 +75,45 @@ def gpu_lookup(name):
         if frag in n:
             return bw, geta, gl, "[table]"
     return 300, 0.45, 0.27, "[default: unknown GPU, pass --vram-bw]"
+
+
+def _parse_win_adapters(text):
+    """'DriverDesc|bytes' lines -> [(name, vram_gb)], virtual adapters filtered, dedup by max.
+    Pure parser so the smoke suite can test it without the registry."""
+    VIRTUAL = ("basic display", "basic render", "remote", "virtual", "vnc", "dameware",
+               "parsec", "spacedesk", "idd", "usb", "mirage", "citrix")
+    out = {}
+    for line in (text or "").strip().splitlines():
+        if "|" not in line:
+            continue
+        name, _, raw = line.rpartition("|")
+        name = name.strip()
+        if not name or any(v in name.lower() for v in VIRTUAL):
+            continue
+        try:
+            gb = int(raw.strip()) / 2**30
+        except ValueError:
+            gb = 0.0
+        out[name] = max(gb, out.get(name, 0.0))
+    return sorted(out.items())
+
+
+def gpus_other():
+    """Non-NVIDIA adapters, Windows: driver registry first - qwMemorySize is the reliable VRAM
+    field; Win32_VideoController.AdapterRAM is a uint32 that CAPS AT 4 GB and under-reports
+    every modern card - CIM only as fallback. Issue #1's contributor ran an RX 5700 XT and this
+    tool printed 'GPU: none detected'; this function is the fix."""
+    if os.name != "nt":
+        return []
+    ps = ("$k='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\"
+          "{4d36e968-e325-11ce-bfc1-08002be10318}\\0*';"
+          "$r=Get-ItemProperty $k -ErrorAction SilentlyContinue | "
+          "Where-Object { $_.DriverDesc } | "
+          "ForEach-Object { $_.DriverDesc + '|' + $_.'HardwareInformation.qwMemorySize' };"
+          "if (-not $r) { $r = Get-CimInstance Win32_VideoController | "
+          "ForEach-Object { $_.Name + '|' + $_.AdapterRAM } };"
+          "$r")
+    return _parse_win_adapters(_run(["powershell", "-NoProfile", "-c", ps]))
 
 
 def ram_windows():
@@ -150,8 +208,31 @@ def detect():
                      + (f" (x{len(gs)} per-card sum, 0.85 TP efficiency [est]; slower card gates its share)" if len(gs) > 1 else ""))
         hw.update(vram=vram, vram_bw=round(vram_bw), geta=geta, gl=gl)
     else:
-        hw.update(vram=0, vram_bw=0)
-        notes.append("GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]")
+        # nvidia-smi saw nothing - check the Windows driver registry for AMD/Intel (or an
+        # NVIDIA card with no driver tools). Field case: issue #1, RX 5700 XT, "none detected".
+        others = gpus_other()
+        priced = [(n, gb) + gpu_lookup(n) for n, gb in others]
+        known = [p for p in priced if "table" in p[5]]
+        unknown = [p for p in priced if "table" not in p[5]]
+        if known:
+            vram = sum(p[1] for p in known)
+            vram_bw = sum(p[2] for p in known) * (1.0 if len(known) == 1 else 0.85)
+            names = " + ".join(p[0] for p in known)
+            hw.update(vram=round(vram, 1), vram_bw=round(vram_bw),
+                      geta=known[0][3], gl=known[0][4])
+            notes.append(f"GPU: {names}, {vram:.0f} GB [os], {vram_bw:.0f} GB/s [table] - "
+                         f"non-NVIDIA path: VRAM from the driver registry, bandwidth from spec; "
+                         f"eta on this backend is UNVALIDATED here, so run `quantprobe "
+                         f"calibrate` with your llama.cpp build to anchor it")
+        elif unknown:
+            names = ", ".join(f"{p[0]} ({p[1]:.0f} GB)" for p in unknown)
+            hw.update(vram=0, vram_bw=0)
+            notes.append(f"GPU: {names} detected [os] but not in the bandwidth table - pass "
+                         f"--vram <GB> --vram-bw <GB/s> (spec sheet) to include the GPU tier; "
+                         f"planning CPU-only until then")
+        else:
+            hw.update(vram=0, vram_bw=0)
+            notes.append("GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]")
 
     # disk: class default; a real measured number needs `quantprobe hw --measure` (reads a large file)
     hw.update(ram=round(total), ram_bw=ram_bw, disk_bw=0.5)

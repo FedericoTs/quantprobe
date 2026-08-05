@@ -2973,6 +2973,30 @@ def t_contribute_payload_carries_model_spec_not_none():
     return None
 
 
+def t_amd_gpu_detection_prices_the_field_case():
+    """Issue #1's contributor ran an RX 5700 XT and detect printed 'GPU: none detected' - the
+    tool was nvidia-smi-only, and they had to hand-pass the exact 448 GB/s the table now
+    carries. v1.27: non-NVIDIA adapters come from the driver registry (qwMemorySize;
+    Win32_VideoController.AdapterRAM is a uint32 that caps at 4 GB), a table-known card is
+    priced, an unknown card is NAMED with its VRAM and asked for flags, and virtual adapters
+    never leak through."""
+    from quantprobe.detect import _parse_win_adapters, gpu_lookup
+    txt = ("Radeon RX 5700 XT|8589934592\n"
+           "Microsoft Basic Display Adapter|0\n"
+           "DameWare Development Mirror Driver 64-bit|\n"
+           "Radeon RX 5700 XT|4294967296\n")          # CIM duplicate with capped AdapterRAM
+    ads = _parse_win_adapters(txt)
+    assert ads == [("Radeon RX 5700 XT", 8.0)], f"parse/dedup/filter broken: {ads}"
+    bw, _geta, _gl, src = gpu_lookup("Radeon RX 5700 XT")
+    assert bw == 448 and "table" in src, f"field case must price at spec 448: {bw} {src}"
+    bw2, _, _, src2 = gpu_lookup("Banana Graphics 9000")
+    assert "default" in src2 and bw2 == 300, "unknown cards must fall to the explicit default"
+    assert gpu_lookup("Intel Arc B580 Graphics")[0] == 456, "Arc entries missing"
+    # an NVIDIA name must never match an AMD fragment ('rtx 5070' vs 'rx 5700')
+    assert gpu_lookup("NVIDIA GeForce RTX 5070")[0] == 672, "cross-vendor fragment collision"
+    return None
+
+
 def t_split_gguf_siblings_and_size():
     """Issue #1 root cause: a 2-part GGUF specced from part 1 alone halves total params and
     every size-derived quantity. split_siblings must map ANY part to the full ordered set,
