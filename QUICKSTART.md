@@ -1,5 +1,15 @@
 # quantprobe — get running
 
+**What quantprobe is:** an open-source toolkit that *predicts, measures, and optimizes* local
+LLM inference on consumer hardware. Tokens-per-second and memory-fit forecasts for any GGUF on
+your exact machine **before you download it** · per-machine self-calibration (`calibrate`) ·
+the exact llama.cpp command including the placement regexes guides get wrong · one command
+from model name to running server (`auto`) · depth-aware custom quantization when nothing
+fits · measured speed levers (format choice, expert offload, prompt-lookup speculation,
+multi-user batch advisories) · and a community validation loop (`bench --contribute`) feeding
+a public [hardware atlas](docs/HARDWARE_TABLE.md). Every published number comes from a
+pre-registered experiment, and the misses are published at the same prominence as the hits.
+
 **One command. Hardware detected, nothing to fill in:**
 
 ```bash

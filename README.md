@@ -6,7 +6,7 @@
 
 <p align="center"><em>the bar is the probe: one column through the memory tiers it prices — VRAM, RAM, disk.</em></p>
 
-Predicts how fast an LLM will run on your machine — **before you download it** — then hands you the exact llama.cpp command. If nothing fits well enough, it builds a quantization tuned to your specific model and hardware. Then it proves the result: speed re-measured on demand, quality scored by KL divergence, and the recommended config put through **40 machine-checked business tasks** before we called it usable.
+Predicts how fast an LLM will run on your machine — **before you download it** — then hands you the exact llama.cpp command, or does the whole thing itself (`quantprobe auto`: detect → pick → fetch → launch). It **self-calibrates to your hardware**, finds free speed in what you already own (format choice, expert offload, speculation, batch lanes), and if nothing fits well enough it builds a quantization tuned to your specific model and hardware. Then it proves the result: speed re-measured on demand, quality scored by KL divergence, the recommended config put through **40 machine-checked business tasks**, and every user's `bench --contribute` run feeding a public [validation atlas](docs/HARDWARE_TABLE.md) — because **every claim here was pre-registered before measurement, and the misses are published at the same size as the hits.**
 
 [**Quickstart**](#quickstart) · [**Browser version**](https://federicots.github.io/quantprobe/) · [**What runs on what**](docs/MATRIX.md) · [**Commands**](#commands) · [**The laws**](LAWS.md) · [**When it won't help**](#when-quantprobe-wont-help-you)
 
