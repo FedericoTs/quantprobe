@@ -1,0 +1,31 @@
+{
+ "_rule": "KR-Q3: every number cites a committed measurement; the generator refuses without sources",
+ "model": "Qwen3-30B-A3B",
+ "quant": "Q2_K (10.5 GB)",
+ "config_strip": "KV f16  -  14 resident expert layers  -  -b 1024 -ub 1024  -  2016 desktop",
+ "machine": {
+  "gpu": "GTX 1060 6GB (Pascal, 2016)",
+  "ram": "16 GB DDR4  -  measured 24.4 GB/s stream",
+  "runtime": "llama.cpp b10098, CUDA, Windows",
+  "placement": "hybrid CPU/GPU - MoE expert offload, planned by quantprobe"
+ },
+ "decode": [
+  {"depth": 0, "tok_s": 20.66, "err": 0.13, "kind": "tg128",
+   "source": "weights/data/prereg66_overview.log:100 (U-16 emitted config, fresh session)"},
+  {"depth": 4096, "tok_s": 18.75, "err": 0.05, "kind": "tg64",
+   "source": "weights/data/prereg66_overview.log:57 (ctxfl4k arm)"}
+ ],
+ "depth_note": "committed points shown; the 8K/16K/32K sweep is queued and will extend this curve",
+ "prefill": {"tok_s": 391.5, "err": 0.7, "kind": "pp2048",
+  "source": "weights/data/prereg66_overview.log:101"},
+ "predicted": {"floor": 19.8, "measured": 20.66, "delta": "+4.3% over floor",
+  "source": "autotune_run.log planner line + prereg66 U-16 measurement; C-02 floor semantics"},
+ "binding": "system RAM bandwidth - 51% of every decode token",
+ "flags": "llama-server -m Qwen3-30B-A3B-Q2_K.gguf -ngl 99 -ot blk\\.(1[4-9]|[2-3][0-9]|4[0-7])\\.ffn_.*_exps\\.=CPU --no-mmap -b 1024 -ub 1024 --threads 4",
+ "protocol": {"reps": 3,
+  "line": "one machine state per row (C-14) - GPU clocks logged before/after - predictions staked before measurement - misses published at full size"},
+ "kpi": {
+  "peak_decode": 20.66, "peak_decode_at": "fresh context, tg128",
+  "headline": "20.7 t/s", "headline_sub": "30B MoE, 6 GB VRAM, 16 GB RAM"
+ }
+}
