@@ -1,0 +1,292 @@
+01:05:18 precomputing expected outputs: mbpp (371)
+01:07:58 precomputing expected outputs: humaneval (164)
+01:08:49 [gpu mbpp/7B/single pre] 33, 139 MHz, 719 MiB
+01:09:11 [mbpp/7B/single] server up (k=1, ctx/slot=4096)
+01:10:35   [mbpp/7B/single] 25/371 (12 solved, 1m elapsed, ETA 19m)
+01:11:46   [mbpp/7B/single] 50/371 (31 solved, 3m elapsed, ETA 17m)
+01:13:24   [mbpp/7B/single] 75/371 (46 solved, 4m elapsed, ETA 17m)
+01:15:01   [mbpp/7B/single] 100/371 (65 solved, 6m elapsed, ETA 16m)
+01:16:39   [mbpp/7B/single] 125/371 (79 solved, 7m elapsed, ETA 15m)
+01:17:57   [mbpp/7B/single] 150/371 (100 solved, 9m elapsed, ETA 13m)
+01:19:13   [mbpp/7B/single] 175/371 (115 solved, 10m elapsed, ETA 11m)
+01:20:24   [mbpp/7B/single] 200/371 (136 solved, 11m elapsed, ETA 10m)
+01:21:36   [mbpp/7B/single] 225/371 (153 solved, 12m elapsed, ETA 8m)
+01:23:14   [mbpp/7B/single] 250/371 (169 solved, 14m elapsed, ETA 7m)
+01:24:43   [mbpp/7B/single] 275/371 (186 solved, 16m elapsed, ETA 5m)
+01:26:28   [mbpp/7B/single] 300/371 (202 solved, 17m elapsed, ETA 4m)
+01:28:15   [mbpp/7B/single] 325/371 (221 solved, 19m elapsed, ETA 3m)
+01:29:21   [mbpp/7B/single] 350/371 (236 solved, 20m elapsed, ETA 1m)
+01:30:24   [mbpp/7B/single] 371/371 (254 solved, 21m elapsed, ETA 0m)
+01:30:27 [gpu mbpp/7B/single post] 70, 911 MHz, 708 MiB
+01:30:27 [mbpp/7B/single] 254/371 = 68.5%  median 2.7s
+01:30:28 [gpu mbpp/30B/single pre] 70, 911 MHz, 708 MiB
+01:31:06 [mbpp/30B/single] server up (k=1, ctx/slot=4096)
+01:32:57   [mbpp/30B/single] 25/371 (16 solved, 2m elapsed, ETA 25m)
+01:34:39   [mbpp/30B/single] 50/371 (35 solved, 4m elapsed, ETA 23m)
+01:36:47   [mbpp/30B/single] 75/371 (55 solved, 6m elapsed, ETA 22m)
+01:38:50   [mbpp/30B/single] 100/371 (74 solved, 8m elapsed, ETA 21m)
+01:41:09   [mbpp/30B/single] 125/371 (91 solved, 10m elapsed, ETA 20m)
+01:42:31   [mbpp/30B/single] 150/371 (111 solved, 11m elapsed, ETA 17m)
+01:44:37   [mbpp/30B/single] 175/371 (125 solved, 14m elapsed, ETA 15m)
+01:46:05   [mbpp/30B/single] 200/371 (145 solved, 15m elapsed, ETA 13m)
+01:47:58   [mbpp/30B/single] 225/371 (165 solved, 17m elapsed, ETA 11m)
+01:49:55   [mbpp/30B/single] 250/371 (184 solved, 19m elapsed, ETA 9m)
+01:51:46   [mbpp/30B/single] 275/371 (204 solved, 21m elapsed, ETA 7m)
+01:54:07   [mbpp/30B/single] 300/371 (224 solved, 23m elapsed, ETA 5m)
+01:56:02   [mbpp/30B/single] 325/371 (242 solved, 25m elapsed, ETA 4m)
+01:57:38   [mbpp/30B/single] 350/371 (262 solved, 27m elapsed, ETA 2m)
+01:58:58   [mbpp/30B/single] 371/371 (280 solved, 28m elapsed, ETA 0m)
+01:59:02 [gpu mbpp/30B/single post] 63, 1037 MHz, 697 MiB
+01:59:02 [mbpp/30B/single] 280/371 = 75.5%  median 3.4s
+01:59:02 [gpu mbpp/0.6B/single pre] 63, 1037 MHz, 697 MiB
+01:59:15 [mbpp/0.6B/single] server up (k=1, ctx/slot=4096)
+01:59:44   [mbpp/0.6B/single] 25/371 (6 solved, 0m elapsed, ETA 7m)
+02:00:03   [mbpp/0.6B/single] 50/371 (17 solved, 1m elapsed, ETA 5m)
+02:00:17   [mbpp/0.6B/single] 75/371 (27 solved, 1m elapsed, ETA 4m)
+02:00:41   [mbpp/0.6B/single] 100/371 (39 solved, 1m elapsed, ETA 4m)
+02:09:30 precomputing expected outputs: mbpp (371)
+02:12:03 precomputing expected outputs: humaneval (164)
+02:12:50 [mbpp/7B/single] already complete - skipped (resume)
+02:12:50 [mbpp/30B/single] already complete - skipped (resume)
+02:12:50 [gpu mbpp/0.6B/single pre] 33, 139 MHz, 693 MiB
+02:13:00 [mbpp/0.6B/single] server up (k=1, ctx/slot=4096)
+02:13:29   [mbpp/0.6B/single] 25/371 (6 solved, 0m elapsed, ETA 7m)
+02:13:48   [mbpp/0.6B/single] 50/371 (17 solved, 1m elapsed, ETA 5m)
+02:14:01   [mbpp/0.6B/single] 75/371 (27 solved, 1m elapsed, ETA 4m)
+02:14:26   [mbpp/0.6B/single] 100/371 (39 solved, 1m elapsed, ETA 4m)
+02:14:42   [mbpp/0.6B/single] 125/371 (46 solved, 2m elapsed, ETA 3m)
+02:14:55   [mbpp/0.6B/single] 150/371 (58 solved, 2m elapsed, ETA 3m)
+02:15:09   [mbpp/0.6B/single] 175/371 (67 solved, 2m elapsed, ETA 2m)
+02:15:23   [mbpp/0.6B/single] 200/371 (77 solved, 2m elapsed, ETA 2m)
+02:15:37   [mbpp/0.6B/single] 225/371 (86 solved, 3m elapsed, ETA 2m)
+02:15:54   [mbpp/0.6B/single] 250/371 (93 solved, 3m elapsed, ETA 1m)
+02:16:07   [mbpp/0.6B/single] 275/371 (102 solved, 3m elapsed, ETA 1m)
+02:16:23   [mbpp/0.6B/single] 300/371 (111 solved, 3m elapsed, ETA 1m)
+02:16:46   [mbpp/0.6B/single] 325/371 (118 solved, 4m elapsed, ETA 1m)
+02:17:20   [mbpp/0.6B/single] 350/371 (125 solved, 4m elapsed, ETA 0m)
+02:17:31   [mbpp/0.6B/single] 371/371 (136 solved, 5m elapsed, ETA 0m)
+02:17:34 [gpu mbpp/0.6B/single post] 60, 923 MHz, 693 MiB
+02:17:34 [mbpp/0.6B/single] 136/371 = 36.7%  median 0.5s
+02:17:34 [gpu mbpp/4B/single pre] 60, 923 MHz, 693 MiB
+02:17:56 [mbpp/4B/single] server up (k=1, ctx/slot=4096)
+02:31:45   [mbpp/4B/single] 25/371 (4 solved, 14m elapsed, ETA 191m)
+02:44:52   [mbpp/4B/single] 50/371 (8 solved, 27m elapsed, ETA 173m)
+02:58:49   [mbpp/4B/single] 75/371 (11 solved, 41m elapsed, ETA 161m)
+03:12:40   [mbpp/4B/single] 100/371 (14 solved, 55m elapsed, ETA 148m)
+03:26:31   [mbpp/4B/single] 125/371 (16 solved, 69m elapsed, ETA 135m)
+03:40:20   [mbpp/4B/single] 150/371 (18 solved, 82m elapsed, ETA 121m)
+03:53:46   [mbpp/4B/single] 175/371 (22 solved, 96m elapsed, ETA 107m)
+04:07:14   [mbpp/4B/single] 200/371 (24 solved, 109m elapsed, ETA 93m)
+04:20:37   [mbpp/4B/single] 225/371 (28 solved, 123m elapsed, ETA 80m)
+04:34:01   [mbpp/4B/single] 250/371 (32 solved, 136m elapsed, ETA 66m)
+04:47:25   [mbpp/4B/single] 275/371 (35 solved, 149m elapsed, ETA 52m)
+05:00:29   [mbpp/4B/single] 300/371 (40 solved, 163m elapsed, ETA 38m)
+05:14:15   [mbpp/4B/single] 325/371 (43 solved, 176m elapsed, ETA 25m)
+05:27:53   [mbpp/4B/single] 350/371 (45 solved, 190m elapsed, ETA 11m)
+05:39:40   [mbpp/4B/single] 371/371 (46 solved, 202m elapsed, ETA 0m)
+05:39:44 [gpu mbpp/4B/single post] 68, 911 MHz, 716 MiB
+05:39:44 [mbpp/4B/single] 46/371 = 12.4%  median 34.7s
+05:39:44 [gpu humaneval/7B/single pre] 68, 911 MHz, 716 MiB
+05:40:11 [humaneval/7B/single] server up (k=1, ctx/slot=4096)
+05:44:15   [humaneval/7B/single] 25/164 (18 solved, 4m elapsed, ETA 23m)
+05:48:40   [humaneval/7B/single] 50/164 (29 solved, 8m elapsed, ETA 19m)
+05:52:14   [humaneval/7B/single] 75/164 (46 solved, 12m elapsed, ETA 14m)
+05:55:23   [humaneval/7B/single] 100/164 (65 solved, 15m elapsed, ETA 10m)
+05:58:08   [humaneval/7B/single] 125/164 (88 solved, 18m elapsed, ETA 6m)
+06:01:50   [humaneval/7B/single] 150/164 (108 solved, 22m elapsed, ETA 2m)
+06:04:06   [humaneval/7B/single] 164/164 (118 solved, 24m elapsed, ETA 0m)
+06:04:10 [gpu humaneval/7B/single post] 67, 936 MHz, 716 MiB
+06:04:10 [humaneval/7B/single] 118/164 = 72.0%  median 7.9s
+06:04:10 [gpu humaneval/30B/single pre] 67, 936 MHz, 716 MiB
+06:04:48 [humaneval/30B/single] server up (k=1, ctx/slot=4096)
+06:09:54   [humaneval/30B/single] 25/164 (23 solved, 5m elapsed, ETA 28m)
+06:15:42   [humaneval/30B/single] 50/164 (41 solved, 11m elapsed, ETA 25m)
+06:20:21   [humaneval/30B/single] 75/164 (62 solved, 16m elapsed, ETA 18m)
+06:24:22   [humaneval/30B/single] 100/164 (85 solved, 20m elapsed, ETA 13m)
+06:27:28   [humaneval/30B/single] 125/164 (109 solved, 23m elapsed, ETA 7m)
+06:31:45   [humaneval/30B/single] 150/164 (132 solved, 27m elapsed, ETA 3m)
+06:33:58   [humaneval/30B/single] 164/164 (144 solved, 29m elapsed, ETA 0m)
+06:34:02 [gpu humaneval/30B/single post] 62, 1442 MHz, 716 MiB
+06:34:02 [humaneval/30B/single] 144/164 = 87.8%  median 9.5s
+06:34:02 [gpu humaneval/0.6B/single pre] 62, 1442 MHz, 716 MiB
+06:34:20 [humaneval/0.6B/single] server up (k=1, ctx/slot=4096)
+06:44:47 precomputing expected outputs: mbpp (371)
+06:47:19 precomputing expected outputs: humaneval (164)
+06:48:07 [mbpp/7B/single] already complete - skipped (resume)
+06:48:07 [mbpp/30B/single] already complete - skipped (resume)
+06:48:07 [gpu mbpp/0.6B/single pre] 31, 139 MHz, 716 MiB
+06:48:17 [mbpp/0.6B/single] server up (k=1, ctx/slot=4096)
+06:48:34   [mbpp/0.6B/single] 25/371 (5 solved, 0m elapsed, ETA 4m)
+06:48:52   [mbpp/0.6B/single] 50/371 (16 solved, 1m elapsed, ETA 4m)
+06:49:05   [mbpp/0.6B/single] 75/371 (27 solved, 1m elapsed, ETA 3m)
+06:49:31   [mbpp/0.6B/single] 100/371 (40 solved, 1m elapsed, ETA 3m)
+06:49:47   [mbpp/0.6B/single] 125/371 (47 solved, 1m elapsed, ETA 3m)
+06:49:58   [mbpp/0.6B/single] 150/371 (57 solved, 2m elapsed, ETA 2m)
+06:50:12   [mbpp/0.6B/single] 175/371 (66 solved, 2m elapsed, ETA 2m)
+06:50:24   [mbpp/0.6B/single] 200/371 (77 solved, 2m elapsed, ETA 2m)
+06:50:38   [mbpp/0.6B/single] 225/371 (86 solved, 2m elapsed, ETA 2m)
+06:51:03   [mbpp/0.6B/single] 250/371 (94 solved, 3m elapsed, ETA 1m)
+06:51:14   [mbpp/0.6B/single] 275/371 (103 solved, 3m elapsed, ETA 1m)
+06:51:27   [mbpp/0.6B/single] 300/371 (112 solved, 3m elapsed, ETA 1m)
+06:51:50   [mbpp/0.6B/single] 325/371 (119 solved, 4m elapsed, ETA 1m)
+06:52:23   [mbpp/0.6B/single] 350/371 (126 solved, 4m elapsed, ETA 0m)
+06:52:42   [mbpp/0.6B/single] 371/371 (136 solved, 4m elapsed, ETA 0m)
+06:52:46 [gpu mbpp/0.6B/single post] 60, 911 MHz, 721 MiB
+06:52:46 [mbpp/0.6B/single] 136/371 = 36.7%  median 0.4s
+06:52:46 [gpu mbpp/4B/single pre] 60, 911 MHz, 721 MiB
+06:53:02 [mbpp/4B/single] server up (k=1, ctx/slot=4096)
+06:54:16   [mbpp/4B/single] 25/371 (13 solved, 1m elapsed, ETA 17m)
+06:55:15   [mbpp/4B/single] 50/371 (31 solved, 2m elapsed, ETA 14m)
+06:58:09   [mbpp/4B/single] 75/371 (47 solved, 5m elapsed, ETA 20m)
+07:00:05   [mbpp/4B/single] 100/371 (64 solved, 7m elapsed, ETA 19m)
+07:01:51   [mbpp/4B/single] 125/371 (79 solved, 9m elapsed, ETA 17m)
+07:02:48   [mbpp/4B/single] 150/371 (97 solved, 10m elapsed, ETA 14m)
+07:04:17   [mbpp/4B/single] 175/371 (111 solved, 11m elapsed, ETA 13m)
+07:05:12   [mbpp/4B/single] 200/371 (128 solved, 12m elapsed, ETA 10m)
+07:06:23   [mbpp/4B/single] 225/371 (143 solved, 13m elapsed, ETA 9m)
+07:07:36   [mbpp/4B/single] 250/371 (161 solved, 15m elapsed, ETA 7m)
+07:08:38   [mbpp/4B/single] 275/371 (176 solved, 16m elapsed, ETA 5m)
+07:10:05   [mbpp/4B/single] 300/371 (197 solved, 17m elapsed, ETA 4m)
+07:11:09   [mbpp/4B/single] 325/371 (211 solved, 18m elapsed, ETA 3m)
+07:12:06   [mbpp/4B/single] 350/371 (230 solved, 19m elapsed, ETA 1m)
+07:12:57   [mbpp/4B/single] 371/371 (245 solved, 20m elapsed, ETA 0m)
+07:13:01 [gpu mbpp/4B/single post] 67, 911 MHz, 716 MiB
+07:13:01 [mbpp/4B/single] 245/371 = 66.0%  median 2.1s
+07:13:01 [humaneval/7B/single] already complete - skipped (resume)
+07:13:01 [humaneval/30B/single] already complete - skipped (resume)
+07:13:01 [gpu humaneval/0.6B/single pre] 67, 911 MHz, 716 MiB
+07:13:13 [humaneval/0.6B/single] server up (k=1, ctx/slot=4096)
+07:14:01   [humaneval/0.6B/single] 25/164 (5 solved, 1m elapsed, ETA 4m)
+07:14:52   [humaneval/0.6B/single] 50/164 (8 solved, 2m elapsed, ETA 4m)
+07:15:53   [humaneval/0.6B/single] 75/164 (15 solved, 3m elapsed, ETA 3m)
+07:16:35   [humaneval/0.6B/single] 100/164 (23 solved, 3m elapsed, ETA 2m)
+07:17:22   [humaneval/0.6B/single] 125/164 (30 solved, 4m elapsed, ETA 1m)
+07:18:18   [humaneval/0.6B/single] 150/164 (36 solved, 5m elapsed, ETA 0m)
+07:18:55   [humaneval/0.6B/single] 164/164 (40 solved, 6m elapsed, ETA 0m)
+07:18:59 [gpu humaneval/0.6B/single post] 62, 911 MHz, 721 MiB
+07:18:59 [humaneval/0.6B/single] 40/164 = 24.4%  median 1.4s
+07:18:59 [gpu humaneval/4B/single pre] 62, 911 MHz, 721 MiB
+07:19:17 [humaneval/4B/single] server up (k=1, ctx/slot=4096)
+07:23:01   [humaneval/4B/single] 25/164 (20 solved, 4m elapsed, ETA 21m)
+07:28:01   [humaneval/4B/single] 50/164 (33 solved, 9m elapsed, ETA 20m)
+07:31:39   [humaneval/4B/single] 75/164 (53 solved, 12m elapsed, ETA 15m)
+07:34:33   [humaneval/4B/single] 100/164 (74 solved, 15m elapsed, ETA 10m)
+07:36:52   [humaneval/4B/single] 125/164 (96 solved, 18m elapsed, ETA 5m)
+07:40:32   [humaneval/4B/single] 150/164 (116 solved, 21m elapsed, ETA 2m)
+07:42:38   [humaneval/4B/single] 164/164 (126 solved, 23m elapsed, ETA 0m)
+07:42:42 [gpu humaneval/4B/single post] 69, 1809 MHz, 716 MiB
+07:42:42 [humaneval/4B/single] 126/164 = 76.8%  median 7.5s
+07:42:42 [gpu mbpp/7B/lanes pre] 69, 1809 MHz, 716 MiB
+07:42:52 [mbpp/7B/lanes] SERVER FAILED - row recorded unrunnable
+07:42:52 [gpu humaneval/7B/lanes pre] 63, 189 MHz, 716 MiB
+07:43:02 [humaneval/7B/lanes] SERVER FAILED - row recorded unrunnable
+07:43:02 [gpu mbpp/0.6B/lanes pre] 60, 139 MHz, 721 MiB
+07:43:11 [mbpp/0.6B/lanes] SERVER FAILED - row recorded unrunnable
+07:43:11 [gpu humaneval/0.6B/lanes pre] 57, 139 MHz, 716 MiB
+07:43:21 [humaneval/0.6B/lanes] SERVER FAILED - row recorded unrunnable
+07:43:21 [gpu mbpp/4B/lanes pre] 55, 139 MHz, 721 MiB
+07:43:35 [mbpp/4B/lanes] SERVER FAILED - row recorded unrunnable
+07:43:35 [gpu humaneval/4B/lanes pre] 53, 139 MHz, 721 MiB
+07:43:49 [humaneval/4B/lanes] SERVER FAILED - row recorded unrunnable
+07:43:49 grid pass complete
+07:56:43 precomputing expected outputs: mbpp (371)
+07:59:14 precomputing expected outputs: humaneval (164)
+08:00:01 [mbpp/7B/single] already complete - skipped (resume)
+08:00:01 [mbpp/30B/single] already complete - skipped (resume)
+08:00:01 [mbpp/0.6B/single] already complete - skipped (resume)
+08:00:01 [mbpp/4B/single] already complete - skipped (resume)
+08:00:01 [humaneval/7B/single] already complete - skipped (resume)
+08:00:01 [humaneval/30B/single] already complete - skipped (resume)
+08:00:01 [humaneval/0.6B/single] already complete - skipped (resume)
+08:00:01 [humaneval/4B/single] already complete - skipped (resume)
+08:00:01 [gpu mbpp/7B/lanes pre] 32, 139 MHz, 660 MiB
+08:00:13 [mbpp/7B/lanes] server up (k=16, ctx/slot=2048)
+08:10:51   [mbpp/7B/lanes] 25/371 (14 solved, 11m elapsed, ETA 147m)
+08:20:39   [mbpp/7B/lanes] 50/371 (34 solved, 20m elapsed, ETA 131m)
+08:30:39   [mbpp/7B/lanes] 75/371 (48 solved, 30m elapsed, ETA 120m)
+08:40:53   [mbpp/7B/lanes] 100/371 (70 solved, 41m elapsed, ETA 110m)
+08:51:32   [mbpp/7B/lanes] 125/371 (87 solved, 51m elapsed, ETA 101m)
+09:00:42   [mbpp/7B/lanes] 150/371 (109 solved, 60m elapsed, ETA 89m)
+09:13:25   [mbpp/7B/lanes] 175/371 (128 solved, 73m elapsed, ETA 82m)
+09:21:14   [mbpp/7B/lanes] 200/371 (151 solved, 81m elapsed, ETA 69m)
+09:30:08   [mbpp/7B/lanes] 225/371 (168 solved, 90m elapsed, ETA 58m)
+09:40:40   [mbpp/7B/lanes] 250/371 (185 solved, 100m elapsed, ETA 49m)
+09:50:15   [mbpp/7B/lanes] 275/371 (204 solved, 110m elapsed, ETA 38m)
+10:01:05   [mbpp/7B/lanes] 300/371 (223 solved, 121m elapsed, ETA 29m)
+10:11:08   [mbpp/7B/lanes] 325/371 (244 solved, 131m elapsed, ETA 19m)
+10:18:40   [mbpp/7B/lanes] 350/371 (262 solved, 138m elapsed, ETA 8m)
+10:26:00   [mbpp/7B/lanes] 371/371 (281 solved, 146m elapsed, ETA 0m)
+10:26:04 [gpu mbpp/7B/lanes post] 65, 670 MHz, 626 MiB
+10:26:04 [mbpp/7B/lanes] 281/371 = 75.7%  median 19.0s
+10:26:04 [gpu humaneval/7B/lanes pre] 65, 670 MHz, 626 MiB
+10:26:19 [humaneval/7B/lanes] server up (k=16, ctx/slot=2048)
+10:51:18   [humaneval/7B/lanes] 25/164 (24 solved, 25m elapsed, ETA 139m)
+11:16:42   [humaneval/7B/lanes] 50/164 (40 solved, 50m elapsed, ETA 115m)
+11:37:47   [humaneval/7B/lanes] 75/164 (60 solved, 71m elapsed, ETA 85m)
+11:55:32   [humaneval/7B/lanes] 100/164 (82 solved, 89m elapsed, ETA 57m)
+12:11:08   [humaneval/7B/lanes] 125/164 (107 solved, 105m elapsed, ETA 33m)
+12:32:03   [humaneval/7B/lanes] 150/164 (127 solved, 126m elapsed, ETA 12m)
+12:46:38   [humaneval/7B/lanes] 164/164 (139 solved, 140m elapsed, ETA 0m)
+12:46:42 [gpu humaneval/7B/lanes post] 65, 1101 MHz, 625 MiB
+12:46:42 [humaneval/7B/lanes] 139/164 = 84.8%  median 44.8s
+12:46:42 [gpu mbpp/0.6B/lanes pre] 65, 1101 MHz, 625 MiB
+12:46:55 [mbpp/0.6B/lanes] server up (k=16, ctx/slot=2048)
+12:49:12   [mbpp/0.6B/lanes] 25/371 (10 solved, 2m elapsed, ETA 32m)
+12:50:37   [mbpp/0.6B/lanes] 50/371 (29 solved, 4m elapsed, ETA 24m)
+12:53:28   [mbpp/0.6B/lanes] 75/371 (44 solved, 7m elapsed, ETA 26m)
+12:54:54   [mbpp/0.6B/lanes] 100/371 (61 solved, 8m elapsed, ETA 22m)
+12:56:42   [mbpp/0.6B/lanes] 125/371 (73 solved, 10m elapsed, ETA 19m)
+12:58:08   [mbpp/0.6B/lanes] 150/371 (89 solved, 11m elapsed, ETA 17m)
+12:59:37   [mbpp/0.6B/lanes] 175/371 (101 solved, 13m elapsed, ETA 14m)
+13:01:02   [mbpp/0.6B/lanes] 200/371 (118 solved, 14m elapsed, ETA 12m)
+13:02:43   [mbpp/0.6B/lanes] 225/371 (131 solved, 16m elapsed, ETA 10m)
+13:04:43   [mbpp/0.6B/lanes] 250/371 (144 solved, 18m elapsed, ETA 9m)
+13:06:30   [mbpp/0.6B/lanes] 275/371 (156 solved, 20m elapsed, ETA 7m)
+13:08:45   [mbpp/0.6B/lanes] 300/371 (170 solved, 22m elapsed, ETA 5m)
+13:10:26   [mbpp/0.6B/lanes] 325/371 (182 solved, 24m elapsed, ETA 3m)
+13:12:11   [mbpp/0.6B/lanes] 350/371 (195 solved, 25m elapsed, ETA 2m)
+13:13:41   [mbpp/0.6B/lanes] 371/371 (211 solved, 27m elapsed, ETA 0m)
+13:13:45 [gpu mbpp/0.6B/lanes post] 59, 417 MHz, 620 MiB
+13:13:45 [mbpp/0.6B/lanes] 211/371 = 56.9%  median 3.3s
+13:13:45 [gpu humaneval/0.6B/lanes pre] 59, 417 MHz, 620 MiB
+13:13:57 [humaneval/0.6B/lanes] server up (k=16, ctx/slot=2048)
+13:19:20   [humaneval/0.6B/lanes] 25/164 (14 solved, 5m elapsed, ETA 30m)
+13:23:56   [humaneval/0.6B/lanes] 50/164 (21 solved, 10m elapsed, ETA 23m)
+13:28:41   [humaneval/0.6B/lanes] 75/164 (36 solved, 15m elapsed, ETA 17m)
+13:31:35   [humaneval/0.6B/lanes] 100/164 (52 solved, 18m elapsed, ETA 11m)
+13:34:25   [humaneval/0.6B/lanes] 125/164 (71 solved, 20m elapsed, ETA 6m)
+13:38:39   [humaneval/0.6B/lanes] 150/164 (84 solved, 25m elapsed, ETA 2m)
+13:41:13   [humaneval/0.6B/lanes] 164/164 (92 solved, 27m elapsed, ETA 0m)
+13:41:17 [gpu humaneval/0.6B/lanes post] 63, 189 MHz, 616 MiB
+13:41:17 [humaneval/0.6B/lanes] 92/164 = 56.1%  median 8.1s
+13:41:17 [gpu mbpp/4B/lanes pre] 63, 189 MHz, 616 MiB
+13:41:43 [mbpp/4B/lanes] server up (k=16, ctx/slot=2048)
+13:56:39   [mbpp/4B/lanes] 25/371 (15 solved, 15m elapsed, ETA 207m)
+14:06:56   [mbpp/4B/lanes] 50/371 (35 solved, 25m elapsed, ETA 162m)
+14:23:25   [mbpp/4B/lanes] 75/371 (54 solved, 42m elapsed, ETA 165m)
+14:39:08   [mbpp/4B/lanes] 100/371 (73 solved, 57m elapsed, ETA 156m)
+14:55:47   [mbpp/4B/lanes] 125/371 (90 solved, 74m elapsed, ETA 146m)
+15:04:17   [mbpp/4B/lanes] 150/371 (110 solved, 83m elapsed, ETA 122m)
+15:19:32   [mbpp/4B/lanes] 175/371 (126 solved, 98m elapsed, ETA 110m)
+15:28:08   [mbpp/4B/lanes] 200/371 (146 solved, 106m elapsed, ETA 91m)
+15:41:39   [mbpp/4B/lanes] 225/371 (164 solved, 120m elapsed, ETA 78m)
+15:57:09   [mbpp/4B/lanes] 250/371 (181 solved, 135m elapsed, ETA 66m)
+16:06:55   [mbpp/4B/lanes] 275/371 (203 solved, 145m elapsed, ETA 51m)
+16:20:14   [mbpp/4B/lanes] 300/371 (224 solved, 159m elapsed, ETA 38m)
+16:31:21   [mbpp/4B/lanes] 325/371 (242 solved, 170m elapsed, ETA 24m)
+16:40:12   [mbpp/4B/lanes] 350/371 (261 solved, 178m elapsed, ETA 11m)
+16:47:21   [mbpp/4B/lanes] 371/371 (279 solved, 186m elapsed, ETA 0m)
+16:47:25 [gpu mbpp/4B/lanes post] 66, 405 MHz, 645 MiB
+16:47:25 [mbpp/4B/lanes] 279/371 = 75.2%  median 16.6s
+16:47:25 [gpu humaneval/4B/lanes pre] 66, 405 MHz, 645 MiB
+16:47:51 [humaneval/4B/lanes] server up (k=16, ctx/slot=2048)
+17:10:31   [humaneval/4B/lanes] 25/164 (23 solved, 23m elapsed, ETA 126m)
+17:38:16   [humaneval/4B/lanes] 50/164 (43 solved, 50m elapsed, ETA 115m)
+17:56:52   [humaneval/4B/lanes] 75/164 (65 solved, 69m elapsed, ETA 82m)
+18:11:25   [humaneval/4B/lanes] 100/164 (88 solved, 84m elapsed, ETA 53m)
+18:22:30   [humaneval/4B/lanes] 125/164 (112 solved, 95m elapsed, ETA 30m)
+18:43:11   [humaneval/4B/lanes] 150/164 (134 solved, 115m elapsed, ETA 11m)
+18:54:27   [humaneval/4B/lanes] 164/164 (145 solved, 127m elapsed, ETA 0m)
+18:54:31 [gpu humaneval/4B/lanes post] 68, 1556 MHz, 656 MiB
+18:54:31 [humaneval/4B/lanes] 145/164 = 88.4%  median 37.1s
+18:54:31 grid pass complete

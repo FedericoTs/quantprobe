@@ -70,3 +70,45 @@ scored against these cells), the public comparison surface for the README, and t
 representativeness check that decides how much the P0 numbers can be trusted as proxies.
 
 Raw under `weights/data/grid_*`. Verdict appended here. Phases B/C/D get their own stakes.
+
+---
+
+## VERDICT (Phase A, scored 2026-08-05): P-A1 PASS, P-A2 PASS, P-A3 FAIL - and the fail is a promotion
+
+Full grid, 14 cells (12 measured + 30B lanes excluded by stake, 4B lanes deferred-then-run),
+371 MBPP+ / 164 HumanEval+ tasks, harness v2, one protocol for every surviving row.
+
+| pass@1 / lanes16 | MBPP+ | HumanEval+ |
+|---|---|---|
+| 0.6B | 36.7 / 56.9 (+20.2) | 24.4 / 56.1 (+31.7) |
+| 4B | 66.0 / **75.2** (+9.2) | 76.8 / **88.4** (+11.6) |
+| 7B | 68.5 / 75.7 (+7.2) | 72.0 / 84.8 (+12.8) |
+| 30B Coder | 75.5 / - | 87.8 / - |
+
+- **P-A1 PASS 5/5:** every P0-measured cell reproduced on the full bench within the +/-6 band
+  (+3.9, +2.0, +3.1, -0.4, +3.8) - across a harness upgrade and a protocol change, which is
+  what the band was staked to absorb. The P0 subset was representative.
+- **P-A2 PASS:** 7B lanes transferred to a bench the machinery never touched at **+12.8**
+  (bar: +5). Verified-lanes is a mechanism, not an MBPP artifact.
+- **P-A3 FAIL, mechanism identified:** staked order 0.6B < 4B < 7B <= 30B holds on MBPP+ and
+  breaks on HumanEval+ - the 4B beats the 7B by 4.8 pts (76.8 vs 72.0). Clean rows, no
+  truncation degradation: **model generation (Qwen3.5) beats parameter count (Qwen2.5) on
+  this bench.** Published as a miss against the stake and acted on: the 4B is promoted to
+  primary lanes-engine candidate for Phases C/D.
+- **KR-A1 honored the hard way:** v1 of the executor was precondition-blocked by its own gate
+  on HumanEval+ (69% reference exclusions - JSON transport mangling Python types). Harness v2
+  (pickle transport): 0/164 and 7/378 (1.9%) exclusions. **KR-A2:** zero degraded rows after
+  the thinking-template fix. **KR-A3:** one overlap incident (release-verify bench fired
+  during the grid) - the affected row was voided and re-measured; verify.py now refuses to
+  bench under any runner lock. **KR-A4:** zero cross-bench overlap.
+
+**The headline, stated with its caveats:** on a 2016 GTX 1060, a 4B model with 16
+execution-verified lanes matches the strongest local 30B coder single-shot on MBPP+ (75.2 vs
+75.5) and beats it on HumanEval+ (88.4 vs 87.8) - at 5-8x the wall-clock (16.6s vs 3.4s
+median), with test-availability assumed, and with the 30B denied its own lanes by the staked
+U-39 exclusion (its batching caps ~2x; a lanes-30B arm would be slow, not impossible).
+Same-cost comparisons live in P0b.
+
+**Feeds forward:** the grid is the Phase C/D baseline table; the 4B promotion is Phase C's
+first casting decision; lanes-vs-size scaling (+20/+9/+7 MBPP) says verification compounds
+hardest exactly where training is cheapest. Raw: weights/data/grid_*.json, grid_run.log.
