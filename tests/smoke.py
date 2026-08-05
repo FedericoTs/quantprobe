@@ -2973,6 +2973,36 @@ def t_contribute_payload_carries_model_spec_not_none():
     return None
 
 
+def t_decon_screen_mutation_directions_pinned():
+    """The Phase B decontamination screen is a kill rule (program law 2026-08-05): a verbatim
+    protected-bench text MUST flag, an 8-gram-sharing paraphrase MUST flag, a clean sample
+    MUST pass. If evalplus data is unavailable offline this test SKIPS LOUDLY rather than
+    passing vacuously - a skip is not a pass."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "weights"))
+    try:
+        try:
+            import decon
+            from evalplus.data import get_mbpp_plus
+        except Exception as e:
+            print(f"      (decon screen: evalplus data unavailable, SKIPPED: {e})", end="")
+            return
+        hashes, grams, meta = decon.load_protected()
+        assert meta["n_grams"] > 10000, "protected gram set implausibly small"
+        t = next(iter(get_mbpp_plus().values()))
+        ok, _ = decon.screen_one(t["prompt"] + t["canonical_solution"], hashes, grams)
+        assert not ok, "verbatim bench text passed the screen"
+        toks = decon._tokens(t["canonical_solution"])[:decon.NGRAM]
+        ok2, _ = decon.screen_one("training filler " + " ".join(toks) + " more filler", hashes, grams)
+        assert not ok2, "8-gram paraphrase passed the screen"
+        ok3, why = decon.screen_one("a wholly original sample about clamping kelvin sensor "
+                                    "glitches while logging their indices", hashes, grams)
+        assert ok3, f"clean sample flagged: {why}"
+    finally:
+        sys.path.pop(0)
+    return None
+
+
 def t_hardware_doc_matches_the_code():
     """docs/HARDWARE.md is GENERATED from detect.py's tables; if someone edits either side
     alone, the doc lies about the tool. Regenerate in memory and compare. (Absent doc = fail:
