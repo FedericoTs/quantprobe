@@ -96,7 +96,10 @@ def score_row(bench, model, mode, tasks, log):
     """One (bench, model, mode) cell. Server up -> every task -> JSON. P0's score_arm shape."""
     from concurrent.futures import ThreadPoolExecutor
     k = 1 if mode == "single" else K
-    extra = () if mode == "single" else ("-ctk", "q8_0", "-ctv", "q8_0", "-fa")
+    # b10098's llama-server -fa REQUIRES a value (on|off|auto); the bare flag printed usage
+    # and exited, which took out all six lanes rows on the first grid pass (llama-bench's
+    # dialect accepts bare/numeric forms - the two binaries do not share an argv grammar).
+    extra = () if mode == "single" else ("-ctk", "q8_0", "-ctv", "q8_0", "-fa", "on")
     ctx = 4096 if mode == "single" else 2048
     gpu_state(f"{bench}/{model}/{mode} pre", log)
     proc, cmd = start_server(MODELS[model], k, ctx_per_slot=ctx, extra=extra)
