@@ -2973,6 +2973,24 @@ def t_contribute_payload_carries_model_spec_not_none():
     return None
 
 
+def t_hardware_doc_matches_the_code():
+    """docs/HARDWARE.md is GENERATED from detect.py's tables; if someone edits either side
+    alone, the doc lies about the tool. Regenerate in memory and compare. (Absent doc = fail:
+    the README links it.)"""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "weights"))
+    try:
+        from make_hardware_table import render, rows
+    finally:
+        sys.path.pop(0)
+    p = os.path.join(root, "docs", "HARDWARE_TABLE.md")
+    assert os.path.isfile(p), "docs/HARDWARE_TABLE.md missing - run weights/make_hardware_table.py"
+    on_disk = open(p, encoding="utf-8").read()
+    assert on_disk == render(rows()), \
+        "docs/HARDWARE_TABLE.md drifted from detect.py - re-run weights/make_hardware_table.py"
+    return None
+
+
 def t_amd_gpu_detection_prices_the_field_case():
     """Issue #1's contributor ran an RX 5700 XT and detect printed 'GPU: none detected' - the
     tool was nvidia-smi-only, and they had to hand-pass the exact 448 GB/s the table now

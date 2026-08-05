@@ -1,0 +1,626 @@
+{
+ "_schema": "rendered from quantprobe/detect.py - do not hand-edit",
+ "rows": [
+  {
+   "match": "5090",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 1792,
+   "geta_hint": 0.62,
+   "gl_hint": 0.42,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "5080",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 960,
+   "geta_hint": 0.62,
+   "gl_hint": 0.42,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "5070 ti",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 896,
+   "geta_hint": 0.62,
+   "gl_hint": 0.42,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "5070",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 672,
+   "geta_hint": 0.6,
+   "gl_hint": 0.4,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "5060 ti",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.58,
+   "gl_hint": 0.38,
+   "status": "external",
+   "evidence": "E-08: Blackwell-generation replication, +2%..+7.6% inside the published band"
+  },
+  {
+   "match": "5060",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.58,
+   "gl_hint": 0.38,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "4090",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 1008,
+   "geta_hint": 0.62,
+   "gl_hint": 0.42,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "4080",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 717,
+   "geta_hint": 0.6,
+   "gl_hint": 0.4,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "4070",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 504,
+   "geta_hint": 0.55,
+   "gl_hint": 0.35,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "4060",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 272,
+   "geta_hint": 0.5,
+   "gl_hint": 0.3,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "3090",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 936,
+   "geta_hint": 0.6,
+   "gl_hint": 0.4,
+   "status": "external",
+   "evidence": "first external replication (Ryzen 8600G box; source of the channel-count rule)"
+  },
+  {
+   "match": "3080",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 760,
+   "geta_hint": 0.58,
+   "gl_hint": 0.38,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "3070",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.52,
+   "gl_hint": 0.32,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "3060 ti",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.5,
+   "gl_hint": 0.3,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "3060",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 360,
+   "geta_hint": 0.5,
+   "gl_hint": 0.3,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "3050",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 224,
+   "geta_hint": 0.45,
+   "gl_hint": 0.28,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "2080",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.45,
+   "gl_hint": 0.25,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "2070",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.45,
+   "gl_hint": 0.25,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "2060",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 336,
+   "geta_hint": 0.42,
+   "gl_hint": 0.22,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "1080",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 320,
+   "geta_hint": 0.38,
+   "gl_hint": 0.06,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "1070",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 256,
+   "geta_hint": 0.36,
+   "gl_hint": 0.05,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "1060",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 192,
+   "geta_hint": 0.35,
+   "gl_hint": 0.04,
+   "status": "measured",
+   "evidence": "reference box - eta measured across the full ladder (FINDINGS)"
+  },
+  {
+   "match": "a100",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 1935,
+   "geta_hint": 0.7,
+   "gl_hint": 0.55,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "h100",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 3350,
+   "geta_hint": 0.75,
+   "gl_hint": 0.6,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rtx 6000",
+   "vendor": "NVIDIA",
+   "vram_bw_gbs": 960,
+   "geta_hint": 0.62,
+   "gl_hint": 0.42,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 9070 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 640,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 9070",
+   "vendor": "AMD",
+   "vram_bw_gbs": 640,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 7900 xtx",
+   "vendor": "AMD",
+   "vram_bw_gbs": 960,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 7900 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 800,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 7900 gre",
+   "vendor": "AMD",
+   "vram_bw_gbs": 576,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 7800 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 624,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 7700 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 432,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 7600 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 288,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 7600",
+   "vendor": "AMD",
+   "vram_bw_gbs": 288,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6950 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 576,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6900 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 512,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6800 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 512,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6800",
+   "vendor": "AMD",
+   "vram_bw_gbs": 512,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6750 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 432,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6700 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 384,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6700",
+   "vendor": "AMD",
+   "vram_bw_gbs": 320,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6650 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 280,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6600 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 256,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 6600",
+   "vendor": "AMD",
+   "vram_bw_gbs": 224,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 5700 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "external",
+   "evidence": "[issue #1 / E-13](https://github.com/FedericoTs/quantprobe/issues/1): predicted 73.1 vs measured 73.18 +/- 0.16 (+0.1%), Vulkan, Windows 11"
+  },
+  {
+   "match": "rx 5700",
+   "vendor": "AMD",
+   "vram_bw_gbs": 448,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "rx 5600 xt",
+   "vendor": "AMD",
+   "vram_bw_gbs": 288,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "radeon vii",
+   "vendor": "AMD",
+   "vram_bw_gbs": 1024,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "vega 64",
+   "vendor": "AMD",
+   "vram_bw_gbs": 484,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "vega 56",
+   "vendor": "AMD",
+   "vram_bw_gbs": 410,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "arc a770",
+   "vendor": "Intel",
+   "vram_bw_gbs": 560,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "arc a750",
+   "vendor": "Intel",
+   "vram_bw_gbs": 512,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "arc b580",
+   "vendor": "Intel",
+   "vram_bw_gbs": 456,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "arc b570",
+   "vendor": "Intel",
+   "vram_bw_gbs": 380,
+   "geta_hint": 0.45,
+   "gl_hint": 0.27,
+   "status": "spec",
+   "evidence": ""
+  },
+  {
+   "match": "m3 ultra",
+   "vendor": "Apple",
+   "vram_bw_gbs": 819,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m1 ultra",
+   "vendor": "Apple",
+   "vram_bw_gbs": 800,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m2 ultra",
+   "vendor": "Apple",
+   "vram_bw_gbs": 800,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m4 max",
+   "vendor": "Apple",
+   "vram_bw_gbs": 546,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m1 max",
+   "vendor": "Apple",
+   "vram_bw_gbs": 400,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m2 max",
+   "vendor": "Apple",
+   "vram_bw_gbs": 400,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m3 max",
+   "vendor": "Apple",
+   "vram_bw_gbs": 400,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m4 pro",
+   "vendor": "Apple",
+   "vram_bw_gbs": 273,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m1 pro",
+   "vendor": "Apple",
+   "vram_bw_gbs": 200,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m2 pro",
+   "vendor": "Apple",
+   "vram_bw_gbs": 200,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m3 pro",
+   "vendor": "Apple",
+   "vram_bw_gbs": 150,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m4",
+   "vendor": "Apple",
+   "vram_bw_gbs": 120,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m2",
+   "vendor": "Apple",
+   "vram_bw_gbs": 100,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m3",
+   "vendor": "Apple",
+   "vram_bw_gbs": 100,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  },
+  {
+   "match": "m1",
+   "vendor": "Apple",
+   "vram_bw_gbs": 68,
+   "geta_hint": 0.26,
+   "gl_hint": 0.24,
+   "status": "spec",
+   "evidence": "unified memory; estimated eta, unvalidated - bench me"
+  }
+ ]
+}

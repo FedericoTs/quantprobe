@@ -109,6 +109,16 @@ def layer3_e2e(gguf, llama_dir):
     real llama.cpp and compares predicted vs measured."""
     if not gguf or not os.path.isfile(gguf):
         SKIP.append("E2E: no --gguf given"); return False
+    # Layer 3 is a MEASUREMENT and must obey the same one-owner rule as every runner. On
+    # 2026-08-05 this bench ran while the Phase A grid held the GPU and read -46% - a
+    # contamination artifact that failed the release check AND polluted the grid row in
+    # flight. A lock present means NOT VERIFIED (assert, not skip): a release cannot be
+    # called good on a bench that never legitimately ran.
+    locks = [os.path.join("weights", "data", n)
+             for n in (".p0_lock", ".autotune_lock", ".grid_lock")]
+    held = [l for l in locks if os.path.isdir(l)]
+    assert not held, (f"measurement lock present ({held[0]}) - another runner owns the box; "
+                      f"re-run verify when it finishes. A bench under contention is not evidence.")
     env = dict(os.environ)
     if llama_dir:
         env["QUANTPROBE_LLAMA_DIR"] = llama_dir
