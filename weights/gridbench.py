@@ -48,12 +48,17 @@ def load_bench(name):
 
 
 def prompt_for(task, model):
-    p = ("Complete this Python function. Return ONLY the complete function definition "
-         "in a ```python code block, no explanation.\n\n```python\n"
-         + task["prompt"].rstrip() + "\n```")
-    if model in THINKING_FAMILY:
-        p += "\n/no_think"
-    return p
+    # No /no_think here anymore: Qwen3.5 ignores it (the voided 4B row's 84%-truncation
+    # diagnosis) and an un-understood switch is literal prompt noise. Thinking is disabled
+    # server-side via chat_template_kwargs - see tk() and the ask() payload.
+    return ("Complete this Python function. Return ONLY the complete function definition "
+            "in a ```python code block, no explanation.\n\n```python\n"
+            + task["prompt"].rstrip() + "\n```")
+
+
+def tk(model):
+    """chat_template_kwargs for this model row: hard-off thinking for the soft-switch family."""
+    return {"enable_thinking": False} if model in THINKING_FAMILY else None
 
 
 def kr_a1_reference_check(bench, tasks):
@@ -107,10 +112,11 @@ def score_row(bench, model, mode, tasks, log):
         t0 = time.time()
         prompt = prompt_for(t, model)
         if k == 1:
-            outs = [ask(prompt, 0.0, 20260805, npredict=NPRED)]
+            outs = [ask(prompt, 0.0, 20260805, npredict=NPRED, template_kwargs=tk(model))]
         else:
             with ThreadPoolExecutor(max_workers=k) as ex:
-                outs = list(ex.map(lambda i: ask(prompt, 0.8, 1000 + i, npredict=NPRED),
+                outs = list(ex.map(lambda i: ask(prompt, 0.8, 1000 + i, npredict=NPRED,
+                                                 template_kwargs=tk(model)),
                                    range(k)))
         cands = [(extract_code(txt), tr) for txt, tr in outs]
         n_trunc = sum(1 for _, tr in cands if tr)

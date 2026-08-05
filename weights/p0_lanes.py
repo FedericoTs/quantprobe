@@ -200,11 +200,17 @@ def stop_server(proc):
     time.sleep(3)
 
 
-def ask(prompt, temp, seed, npredict=NPRED):
+def ask(prompt, temp, seed, npredict=NPRED, template_kwargs=None):
     import urllib.request
-    body = json.dumps({"messages": [{"role": "user", "content": prompt}],
-                       "max_tokens": npredict, "temperature": temp,
-                       "top_p": 0.95 if temp > 0 else 1.0, "seed": seed}).encode()
+    payload = {"messages": [{"role": "user", "content": prompt}],
+               "max_tokens": npredict, "temperature": temp,
+               "top_p": 0.95 if temp > 0 else 1.0, "seed": seed}
+    if template_kwargs:
+        # Qwen3.5 ignores the Qwen3-era /no_think soft switch (measured: the 4B burned its
+        # full budget thinking on 84% of grid tasks). The server-side chat_template_kwargs
+        # is the real off switch.
+        payload["chat_template_kwargs"] = template_kwargs
+    body = json.dumps(payload).encode()
     req = urllib.request.Request(f"http://127.0.0.1:{PORT}/v1/chat/completions", data=body,
                                  headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=900) as fh:
