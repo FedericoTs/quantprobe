@@ -65,15 +65,20 @@ def run_row(model, task, log, concurrent=4):
          "--tasks", task, "--gen_kwargs", GEN[task],
          "--apply_chat_template", "--seed", "0",
          "--output_path", out_dir(model, task), "--log_samples"],
-        capture_output=True, text=True, env=env, timeout=6 * 3600)
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        env=env, timeout=6 * 3600)
     stop_server(proc)
     gpu_state(f"{model}/{task} post", log)
     ok = done(model, task)
     log(f"[{model}/{task}] rc={r.returncode} results={'saved' if ok else 'MISSING'} "
         f"({(time.time()-t0)/60:.0f}m)")
     if not ok:
+        # The tail is the ONLY diagnostic for a failed row - it must survive a child that
+        # emits bytes the parent cannot decode. (It did not: the parent's text=True used
+        # cp1252, the reader thread died mid-stream, and stdout came back None.)
         tailp = os.path.join(DATA, f"ev1_fail_{model}_{task}.txt")
-        open(tailp, "w", encoding="utf-8").write((r.stdout + r.stderr)[-4000:])
+        blob = (r.stdout or "") + (r.stderr or "") or "(no output captured)"
+        open(tailp, "w", encoding="utf-8").write(blob[-4000:])
         log(f"  failure tail -> {tailp}")
 
 
