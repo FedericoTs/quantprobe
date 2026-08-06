@@ -88,40 +88,44 @@ def build():
     import sys
     sys.path.insert(0, HERE)
     import brand
-    BG, PANEL, EDGE = brand.BG, brand.PANEL, brand.EDGE
     INK, SUB, MUT = brand.INK, brand.SUB, brand.MUT
-    TEAL, ORANGE = brand.TEAL_HI, brand.RAM
-    W, colw, x0, y0, rh = 1560, 168, 300, 230, 92
-    H = y0 + rh * (len(BENCHES) + 1) + 220
+    TEAL, ORANGE = brand.TEAL, brand.RAM
+    W, colw, x0, y0, rh = 1600, 172, 340, 300, 130
+    H = y0 + rh * (len(BENCHES) + 1) + 260
     s = [brand.svg_open(W, H),
-         brand.header(W, "CAPABILITY TABLE - ONE 2016 MACHINE",
-                      f'model <tspan fill="{ORANGE}">x strategy</tspan>, measured - GTX 1060 6GB',
-                      "pass rate on hidden plus tests - lanes16 = verified best-of-16 "
-                      "(selection never sees the exam)")]
+         brand.header(W, "ONE 2016 GPU - GTX 1060 6GB",
+                      f'model <tspan fill="{ORANGE}">x strategy</tspan>, measured',
+                      "solve rate on hidden plus tests - lanes16 = verified best-of-16 "
+                      "(picked by visible tests, scored on hidden ones)")]
+    SHORT = {"0.6B": "0.6B", "4B": "4B", "7B": "7B", "30B": "30B coder"}
     for j, (m, st) in enumerate(COLS):
         cxx = x0 + j * colw + colw / 2
-        s.append(f'<text x="{cxx}" y="{y0+34}" text-anchor="middle" fill="{INK}" font-size="18" font-weight="bold">{NAMES[m]}</text>')
+        s.append(f'<text x="{cxx}" y="{y0+40}" text-anchor="middle" fill="{INK}" font-size="26" font-weight="bold">{SHORT[m]}</text>')
         stl = "lanes16" if st == "lanes" else "single"
-        s.append(f'<text x="{cxx}" y="{y0+60}" text-anchor="middle" fill="{ORANGE if st=="lanes" else MUT}" font-size="15">{stl}</text>')
+        s.append(f'<text x="{cxx}" y="{y0+72}" text-anchor="middle" fill="{ORANGE if st=="lanes" else MUT}" font-size="20">{stl}</text>')
     for i, (b, label) in enumerate(BENCHES):
-        yy = y0 + rh * (i + 1)
-        s.append(brand.panel(40, yy, W - 80, rh - 10))
-        s.append(f'<text x="60" y="{yy+54}" fill="{SUB}" font-size="17">{label}</text>')
+        yy = y0 + rh * (i + 1) - 20
+        s.append(brand.panel(60, yy, W - 120, rh - 16))
+        s.append(f'<text x="90" y="{yy+56}" fill="{SUB}" font-size="24">{label.split(" (")[0]}</text>')
+        s.append(f'<text x="90" y="{yy+88}" fill="{MUT}" font-size="18">{label.split("(")[1].rstrip(")")}</text>')
         best = max((grid[(b, m, st)]["rate"] for m, st in COLS if grid[(b, m, st)]), default=0)
         for j, (m, st) in enumerate(COLS):
             c = grid[(b, m, st)]
             cxx = x0 + j * colw + colw / 2
             if c is None:
-                s.append(f'<text x="{cxx}" y="{yy+58}" text-anchor="middle" fill="{MUT}" font-size="22">-</text>')
+                s.append(f'<text x="{cxx}" y="{yy+72}" text-anchor="middle" fill="{MUT}" font-size="30">-</text>')
             else:
                 hero = abs(c["rate"] - best) < 1e-9
                 col = TEAL if hero else INK
-                s.append(f'<text x="{cxx}" y="{yy+58}" text-anchor="middle" fill="{col}" '
-                         f'font-size="{30 if hero else 24}" font-weight="bold">{c["rate"]:.1f}</text>')
-    fy = y0 + rh * (len(BENCHES) + 1) + 40
-    s += [f'<text x="60" y="{fy}" fill="{TEAL}" font-size="19" font-weight="bold">the teal cell is not the biggest model - verified test-time compute beats parameter count on this box</text>',
-          f'<text x="60" y="{fy+32}" fill="{MUT}" font-size="14">30B lanes absent by staked prior evidence (U-39 MoE batching cap), not omission - misses stay on the table</text>',
-          brand.footer(W, H, "every cell cites a committed grid measurement (weights/data/grid_*.json)"),
+                if hero:
+                    s.append(f'<rect x="{cxx-62}" y="{yy+22}" width="124" height="72" rx="12" '
+                             f'fill="none" stroke="{TEAL}" stroke-width="2.5"/>')
+                s.append(f'<text x="{cxx}" y="{yy+72}" text-anchor="middle" fill="{col}" '
+                         f'font-size="{42 if hero else 34}" font-weight="bold">{c["rate"]:.1f}</text>')
+    fy = y0 + rh * (len(BENCHES) + 1) + 30
+    s += [f'<text x="80" y="{fy}" fill="{TEAL}" font-size="28" font-weight="bold">the boxed cell is never the biggest model - verification beats size on this box</text>',
+          f'<text x="80" y="{fy+40}" fill="{MUT}" font-size="19">30B lanes absent by staked prior evidence (U-39 MoE batching cap), not omission</text>',
+          brand.footer(W, H, "every cell cites weights/data/grid_*.json"),
           '</svg>']
     brand.save("eval_table.svg", "".join(s))
     print("-> docs/EVAL_TABLE.md")

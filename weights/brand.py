@@ -1,39 +1,42 @@
-"""quantprobe media brand kit - one place for the share-asset look.
+"""quantprobe media brand kit v2 - the share-asset design system.
 
-Palette is derived from the repo's own identity files, not invented:
-- assets/quantprobe-icon.svg:   teal #14b8a6 on tile #14181f, near-white #e6fffa
-- assets/quantprobe-wordmark.svg: the tier gradient - VRAM #e8a87c -> RAM #d97757 ->
-  disk #a84b32 ("the bar is the probe: one column through the memory tiers it prices")
-Every share asset gets: the pixel-Q logo, a kicker line, the tier-gradient hairline, and the
-receipt footer. Dark single-theme by choice - these are X/Reddit screenshot objects.
+Identity source of truth: assets/quantprobe-wordmark.svg (the CURRENT logo - pixel qp
+letterforms sharing one bar coloured by the memory-tier gradient). The old pixel-Q icon is
+retired from media. Palette derives from the wordmark plus a bright teal data ink.
+
+Design rules (social-first):
+- type ramp: nothing below 18px at 1600w; kicker 20 / title 58 / subtitle 24 / section 26 /
+  body 22 / KPI 72 / hero 110. Numbers are the heroes; words are captions.
+- one hero element per asset at 3-4x the scale of anything else.
+- margins 80px; generous air beats extra panels; max ~3 receipt chips.
+- data strokes >= 5px, points >= 12px radius - X compresses screenshots.
+- dark single-theme by choice (screenshot objects), grid lifted enough to survive JPEG.
 """
 from __future__ import annotations
 import os, re
 
-BG, PANEL, EDGE = "#14181f", "#1b202a", "#2b3240"
-INK, SUB, MUT = "#f2f3f5", "#a9b1bf", "#6e7684"
-TEAL, TEAL_HI, TEAL_PALE = "#14b8a6", "#2dd4bf", "#e6fffa"
+BG, PANEL, EDGE, GRID = "#14181f", "#1c222c", "#394355", "#2a3340"
+INK, SUB, MUT = "#f5f6f8", "#b3bccb", "#7d879c"
+TEAL, TEAL_DEEP = "#2dd4bf", "#14b8a6"
 VRAM, RAM, DISK = "#e8a87c", "#d97757", "#a84b32"
 FONT = "Segoe UI, Arial, sans-serif"
 
-_ICON_CACHE = None
+_WM = None
 
 
-def logo(x, y, size):
-    """The pixel-Q icon, inlined from assets/quantprobe-icon.svg (single source of truth)."""
-    global _ICON_CACHE
-    if _ICON_CACHE is None:
+def wordmark(x, y, width):
+    """The CURRENT logo, inlined whole from assets/quantprobe-wordmark.svg (348x216)."""
+    global _WM
+    if _WM is None:
         p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                         "assets", "quantprobe-icon.svg")
+                         "assets", "quantprobe-wordmark.svg")
         src = open(p, encoding="utf-8").read()
-        _ICON_CACHE = "".join(re.findall(r'<rect x="[^/]*?/>', src))
-    k = size / 128
-    return (f'<g transform="translate({x},{y}) scale({k})">'
-            f'<rect width="128" height="128" rx="20" fill="{PANEL}"/>{_ICON_CACHE}</g>')
+        _WM = "".join(re.findall(r'<rect [^/]*?/>', src))
+    k = width / 348
+    return f'<g transform="translate({x},{y}) scale({k})">{_WM}</g>'
 
 
-def tier_bar(x, y, w, h=6):
-    """The signature: one bar through the memory tiers."""
+def tier_bar(x, y, w, h=8):
     third = w / 3
     return (f'<rect x="{x}" y="{y}" width="{third}" height="{h}" fill="{VRAM}"/>'
             f'<rect x="{x+third}" y="{y}" width="{third}" height="{h}" fill="{RAM}"/>'
@@ -41,26 +44,43 @@ def tier_bar(x, y, w, h=6):
 
 
 def header(W, kicker, title, subtitle=""):
-    s = [logo(60, 42, 84),
-         f'<text x="164" y="70" fill="{MUT}" font-size="15" letter-spacing="5">{kicker}</text>',
-         f'<text x="164" y="112" fill="{INK}" font-size="42" font-weight="bold">{title}</text>']
+    """Wordmark left, text block right of it, tier bar underneath. Height ~230."""
+    s = [wordmark(80, 56, 150),
+         f'<text x="266" y="92" fill="{MUT}" font-size="20" letter-spacing="4">{kicker}</text>',
+         f'<text x="266" y="152" fill="{INK}" font-size="58" font-weight="bold">{title}</text>']
     if subtitle:
-        s.append(f'<text x="60" y="164" fill="{SUB}" font-size="17">{subtitle}</text>')
-    s.append(tier_bar(60, 178, W - 120, 4))
+        s.append(f'<text x="80" y="216" fill="{SUB}" font-size="24">{subtitle}</text>')
+    s.append(tier_bar(80, 238, W - 160, 5))
     return "".join(s)
 
 
+HEADER_H = 270
+
+
 def footer(W, H, receipt):
-    return (tier_bar(60, H - 92, W - 120, 3)
-            + f'<text x="60" y="{H-52}" fill="{INK}" font-size="19" font-weight="bold">quantprobe'
-              f'  <tspan fill="{TEAL_HI}">falsification-tested laws for local LLMs</tspan></text>'
-            + f'<text x="{W-60}" y="{H-52}" text-anchor="end" fill="{MUT}" font-size="14">'
-              f'github.com/FedericoTs/quantprobe</text>'
-            + f'<text x="60" y="{H-26}" fill="{MUT}" font-size="13">{receipt}</text>')
+    return (tier_bar(80, H - 106, W - 160, 4)
+            + f'<text x="80" y="{H-58}" fill="{INK}" font-size="24" font-weight="bold">quantprobe'
+              f'  <tspan fill="{TEAL}" font-weight="normal">github.com/FedericoTs/quantprobe</tspan></text>'
+            + f'<text x="{W-80}" y="{H-58}" text-anchor="end" fill="{MUT}" font-size="19">{receipt}</text>')
 
 
-def panel(x, y, w, h, stroke=EDGE, sw=1):
-    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{PANEL}" stroke="{stroke}" stroke-width="{sw}"/>'
+FOOTER_H = 140
+
+
+def panel(x, y, w, h, stroke="#343d4d", sw=1.5, fill=None):
+    return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" '
+            f'fill="{fill or PANEL}" stroke="{stroke}" stroke-width="{sw}"/>')
+
+
+def chip(x, y, w, title, value, sub, color):
+    """A receipt chip: label / big number / one-line source."""
+    return (panel(x, y, w, 172, stroke=color, sw=2)
+            + f'<text x="{x+w/2}" y="{y+44}" text-anchor="middle" fill="{color}" '
+              f'font-size="19" letter-spacing="3">{title}</text>'
+            + f'<text x="{x+w/2}" y="{y+108}" text-anchor="middle" fill="{INK}" '
+              f'font-size="52" font-weight="bold">{value}</text>'
+            + f'<text x="{x+w/2}" y="{y+146}" text-anchor="middle" fill="{SUB}" '
+              f'font-size="18">{sub}</text>')
 
 
 def svg_open(W, H):
