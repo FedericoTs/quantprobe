@@ -34,17 +34,27 @@ def main(bench, bench_label, takeaway):
                       f'16 verified tries <tspan fill="{TEAL}">beat model size</tspan>',
                       f"{bench_label} - arrows: single shot -> best-of-16 (picked on visible tests, scored on hidden)")]
     px0, px1, py0, py1 = 190, W - 110, H - 260, 350
-    xmin, xmax = 1, 60
-    ymin, ymax = 15, 97
+    # axis bounds FROM the data, padded - a hard-coded xmin put MBPP's 0.4s point off-canvas
+    # and its arrow launched from outside the frame (caught on render review, 2026-08-06)
+    walls, rates = [], []
+    for key, _, _ in MODELS:
+        for mode in ("single", "lanes"):
+            c = cell(bench, key, mode)
+            if c:
+                walls.append(c[0]); rates.append(c[1])
+    xmin, xmax = min(walls) * 0.7, max(walls) * 1.5
+    ymin, ymax = max(0, min(rates) - 12), min(100, max(rates) + 9)
     def X(w):
         return px0 + (px1 - px0) * (math.log10(w / xmin)) / math.log10(xmax / xmin)
     def Y(r):
         return py0 - (py0 - py1) * (r - ymin) / (ymax - ymin)
-    for gy in range(20, 100, 20):
+    gy0 = int(math.ceil(ymin / 20.0)) * 20
+    for gy in range(gy0, int(ymax) + 1, 20):
         s.append(f'<line x1="{px0}" y1="{Y(gy)}" x2="{px1}" y2="{Y(gy)}" stroke="{GRID}" stroke-width="1.5"/>'
                  f'<text x="{px0-20}" y="{Y(gy)+8}" text-anchor="end" fill="{MUT}" font-size="22">{gy}%</text>')
-    for gx in (1, 3, 10, 30):
-        s.append(f'<text x="{X(gx)}" y="{py0+42}" text-anchor="middle" fill="{MUT}" font-size="22">{gx}s</text>')
+    for gx in (0.3, 1, 3, 10, 30):
+        if xmin <= gx <= xmax:
+            s.append(f'<text x="{X(gx)}" y="{py0+42}" text-anchor="middle" fill="{MUT}" font-size="22">{gx:g}s</text>')
     s.append(f'<text x="{(px0+px1)/2}" y="{py0+88}" text-anchor="middle" fill="{SUB}" font-size="23">median seconds per task (log) - all 16 candidates + selection charged</text>')
     s.append(f'<text x="115" y="{(py0+py1)/2}" fill="{SUB}" font-size="23" transform="rotate(-90 115 {(py0+py1)/2})" text-anchor="middle">tasks solved</text>')
     s.append('<defs><marker id="arr" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 12 6 L 0 12 z" fill="context-stroke"/></marker></defs>')
