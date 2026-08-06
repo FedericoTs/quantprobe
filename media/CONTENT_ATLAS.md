@@ -111,3 +111,59 @@ cite-or-refuse, misses at full size, render-review before shipping.
   marked in tasks.
 - Sequencing: interleave one trust piece (lens 6/7/9) between every two flex pieces (lens
   3/4) - credibility compounds reach.
+
+---
+
+## Addendum (2026-08-06) — the second sweep: +12 from existing data, and the measure-to-unlock menu
+
+### More from data already on disk (47-58)
+47. ● **The candidate-agreement histogram**: P0's records hold 16 candidates x 113 tasks - how
+    many lanes pass base tests per task is the k-scaling preview WITHOUT measuring k=32.
+48. ● **The systems regime map**: size vs tok/s with SYSTEM classes - our placement rows,
+    colibri/rabbit expert-streaming (their published 744B ~1 word/s), airllm layer-streaming
+    (0.5-2), BigMoeOnEdge phone (2.2), Kimi rig (0.03) - honest frame: streaming buys
+    EXISTENCE beyond RAM at ~100x speed cost; placement buys SPEED inside it. The tier law
+    as an ecosystem picture.
+49. ● **The ollama tax**: audit-ollama's measured defaults-vs-tuned gap (task #45 data).
+50. ● **Acceptance physics**: speculation acceptance rates by domain/model/K (77-93% band)
+    from preregs #67-#71 - why drafts die on prose and fly on code.
+51. ● **Which experts actually fire**: exp52's activation-skew heatmap + the static-pinning
+    refutation (1.7x-worse-than-oracle, and the oracle does not transfer).
+52. ● **--no-mmap, explained with measurements**: exp100's warm/cold residency arms.
+53. ● **The per-task difficulty spectrum**: rank all 535 tasks by how many of 7 configs solve
+    them - from the 149 everyone solves to the 55 nobody does.
+54. ● **Wrong-winner anatomy**: P0's 22 near-misses - what visible tests missed that hidden
+    ones caught; the case for test quality as the real bottleneck.
+55. ● **Which models age with context**: speed-retention-at-depth across the ladder (the 7B
+    keeps 34% at 16K, the flagship keeps 91% at 4K).
+56. ● **T1-T4 capability tiers**: the business-task ladder by model, including the t4l1
+    recall-compromise story as the methodology sidebar.
+57. ● **The contribution map**: the hardware table's measured/external/spec census as a
+    "territory validated" graphic that updates with every contributor.
+58. ● **The escaping-bug field guide**: four Windows-harness casualties, one page (developer
+    catnip; humanizes the rigor).
+
+### Measure-to-unlock (each run names its chart before it starts)
+- **M1 - THE GAUNTLET** (top pick, ~3h GPU): one model, one machine, every lever stacked in
+  one clean session: stock defaults -> quantprobe placement -> format swap -> -fa -> KV q8 at
+  depth -> speculation/MTP -> lanes. Output: the waterfall chart "from N to M tok/s, every
+  step measured", plus the same run at 4B. The single strongest viral asset available to us.
+- **M2 - the k-curve** (~3h): k in {1,2,4,8,16,32} on the 4B/HE+ - accuracy(k) and cost(k),
+  the Law-7 exchange-rate curve, saturation visible.
+- **M3 - the diversity dial** (~2h): lanes at temp {0.4, 0.8, 1.2} - does variance or volume
+  drive the verification gain?
+- **M4 - CPU-only mirror row** (~2h): the grid's 4B/7B columns re-run pure-CPU - "what the
+  GPU actually buys" on one chart (and the first CPU-strategy datapoints).
+- **M5 - the colibri-class head-to-head ON THIS BOX** (multi-evening, new runtimes):
+  ktransformers/rabbit vs our stock-llama.cpp placements on the same 35B/117B files, same
+  machine state per system - upgrades regime-map claims from cited to measured. Consent-level
+  effort; staked separately if greenlit.
+- Already queued and feeding content: qladder (ours-vs-naive centerpiece), depth-sweep
+  completion, Grid-v2 benches, k=32/collapse arms, U-42 PCIe balance.
+
+### The three comparison formats, ruled on
+- **Ours vs naive quantization**: staked (qladder), the Pareto centerpiece.
+- **Ours vs streaming systems (colibri class)**: regime map NOW from published external
+  numbers (honest citations); head-to-head M5 only if greenlit - never compare our measured
+  vs their marketed without saying which is which.
+- **The full-stack squeeze**: M1's gauntlet - quantize, place, tune, verify, one waterfall.
