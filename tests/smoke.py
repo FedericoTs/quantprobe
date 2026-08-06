@@ -3003,6 +3003,29 @@ def t_decon_screen_mutation_directions_pinned():
     return None
 
 
+def t_sandbox_side_effects_stay_in_temp():
+    """Candidate code writes files (2026-08-06: 44 junk artifacts - test.db, pickles, a
+    Dockerfile - appeared in the repo ROOT because the sandbox inherited our cwd). Both
+    executors must confine side-effects to a temp dir that dies with the run."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(root, "weights"))
+    try:
+        from p0_lanes import run_candidate, expected_outputs
+        canary = os.path.join(os.getcwd(), "smoke_sandbox_canary.txt")
+        if os.path.exists(canary):
+            os.remove(canary)
+        code = ("def f(x):\n"
+                "    open('smoke_sandbox_canary.txt', 'w').write('leaked')\n"
+                "    return x + 1\n")
+        n, tot = run_candidate(code, "f", [[1]], [2])
+        assert n == 1, "sandbox no longer executes correct code"
+        assert not os.path.exists(canary), \
+            "SANDBOX LEAK: candidate code wrote into the working directory"
+    finally:
+        sys.path.pop(0)
+    return None
+
+
 def t_media_svgs_have_png_twins():
     """Standard process (2026-08-06): every media asset ships SVG + PNG - X and Reddit take
     PNGs. An orphan SVG in media/ is an asset that cannot be posted, and this test refuses it."""

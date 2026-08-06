@@ -42,12 +42,16 @@ LEVELS = ["easy", "medium", "hard-but-testable"]
 
 
 def run_asserts(code, asserts_src, timeout=EXEC_TIMEOUT):
-    """True iff code + asserts execute cleanly. Candidate text is hostile input."""
+    """True iff code + asserts execute cleanly. Candidate text is hostile input - and it
+    WRITES FILES: B4's generated code left 44 artifacts in the repo root before cwd
+    isolation (2026-08-06). Side-effects now land in a temp dir and die with it."""
+    import tempfile
     child = "import math, re, json, itertools, collections, functools, datetime\n" \
             + code + "\n" + asserts_src + "\nprint('PB_OK')\n"
     try:
-        p = subprocess.run([sys.executable, "-c", child], capture_output=True, text=True,
-                           timeout=timeout)
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            p = subprocess.run([sys.executable, "-c", child], capture_output=True, text=True,
+                               timeout=timeout, cwd=td)
         return "PB_OK" in p.stdout
     except Exception:
         return False

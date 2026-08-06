@@ -85,8 +85,11 @@ def _run_pickled(code, entry, inputs, timeout):
         with open(jp, "wb") as fh:
             pickle.dump(dict(code=code, entry=entry, inputs=inputs), fh)
         try:
+            # cwd=td: candidate code WRITES FILES (2026-08-06: 44 junk files - test.db,
+            # pickles, even a Dockerfile - appeared in the repo root because the sandbox
+            # inherited our cwd). Side-effects land in the temp dir and die with it.
             subprocess.run([sys.executable, "-c", _CHILD, jp, op],
-                           capture_output=True, text=True, timeout=timeout)
+                           capture_output=True, text=True, timeout=timeout, cwd=td)
         except subprocess.TimeoutExpired:
             return None
         if not os.path.isfile(op):
