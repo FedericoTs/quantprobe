@@ -14,7 +14,7 @@ import argparse, json, os, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE)); sys.path.insert(0, HERE)
 from p0_lanes import start_server, stop_server, gpu_state   # noqa: E402
-from gridbench import MODELS                                 # noqa: E402
+from gridbench import MODELS, THINKING_FAMILY                # noqa: E402
 
 DATA = os.path.join(HERE, "data")
 LOCKS = [os.path.join(DATA, n) for n in (".p0_lock", ".autotune_lock", ".grid_lock", ".phaseb_lock")]
@@ -47,7 +47,11 @@ def run_row(model, task, log, concurrent=4):
         log(f"[{model}/{task}] already complete - skipped (resume)")
         return
     gpu_state(f"{model}/{task} pre", log)
-    proc, _ = start_server(MODELS[model], concurrent, ctx_per_slot=4096)
+    # Protocol v2 (amended in the prereg BEFORE re-runs): thinking off SERVER-SIDE via
+    # --reasoning off. v1's "thinking-as-served" buried thought in reasoning_content, which
+    # lm-eval never sees - budgets burned invisibly, answers truncated, scores were floors.
+    extra = ("--reasoning", "off") if model in THINKING_FAMILY else ()
+    proc, _ = start_server(MODELS[model], concurrent, ctx_per_slot=4096, extra=extra)
     if proc is None:
         log(f"[{model}/{task}] SERVER FAILED - row recorded unrunnable")
         return

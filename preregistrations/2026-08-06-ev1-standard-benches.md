@@ -44,3 +44,20 @@ later via our harness on the same items (EV-1b), where lm-eval has no equivalent
   **KR-E3:** any row with >10% empty/truncated responses is DEGRADED and marked.
 
 Raw under `weights/data/ev1_*`. Verdicts + the table/media updates as rows land.
+
+---
+
+## AMENDMENT (protocol v2, 2026-08-06, before any v2 row ran)
+
+Night-1 v1 exposed the thinking-as-served protocol's failure mode within five rows:
+llama-server routes thought into `reasoning_content`, which lm-eval never reads - so
+thinking-family models burned their token budgets INVISIBLY and the scored answers were
+truncated stumps (MATH-500 samples end mid-sentence at ~200 visible tokens). KR-E3 applies:
+every v1 row is DEGRADED, archived under `weights/data/ev1_protocol_v1_degraded/`, and
+published only as floors with this mechanism attached. IFEval's separate failure was a
+missing `langdetect` dependency - installed.
+
+**Protocol v2, staked before re-running:** thinking-family servers run `--reasoning off`
+(b10098's server-side switch) - budgets stay 2048, and EV-1 becomes protocol-COHERENT with
+the grid (both thinking-off), restoring cross-table comparability that v1 had explicitly
+given up. All night-1 rows re-run under v2; P-E1/P-E2 score against v2 numbers only.
