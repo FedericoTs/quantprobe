@@ -14,7 +14,16 @@ the wordmark. Regenerate any asset by re-running its generator; never hand-edit 
 | [chart_kpi_model_ladder.svg](chart_kpi_model_ladder.svg) | what runs at what speed on the reference box | `weights/make_kpi_charts.py` | ladder logs |
 | [chart_kpi_batching_inversion.svg](chart_kpi_batching_inversion.svg) | the U-38/U-39 batching curves — model choice inverts with user count | `weights/make_kpi_charts.py` | prereg logs |
 | [chart_kpi_draft_cliff.svg](chart_kpi_draft_cliff.svg) | X-1's speculation draft-length cliff | `weights/make_kpi_charts.py` | prereg logs |
+| [prediction_vs_reality.svg](prediction_vs_reality.svg) | the trust chart: predicted vs measured log-log, 14-row ladder at 9.0% median, both out-of-sample externals, and the -67% disk miss plotted at full size | `weights/make_pred_vs_reality.py` | `weights/data/ladder_PRE_v124_2dc97d41_backup.json`, register E-08/E-13, prereg #66 |
+| [stuck_boost_state.svg](stuck_boost_state.svg) | the stuck boost state: 21.58 -> 15.56 -> 21.68 t/s with the ruled-out ladder (load, thermal, our own patches) beside it | `weights/make_stuck_boost.py` | preregs #60/#61, `weights/data/prereg61_coldboot.log` |
+| [stuck_boost_reddit.svg](stuck_boost_reddit.svg) | r/LocalLLaMA cut of the same data: reader-centric headline, the nvidia-smi self-check ON the canvas, n=1 scope in the subtitle | `weights/make_stuck_boost.py --reddit` | same as above |
 
 Coming with the program: the quality-ladder Pareto chart (KLD vs size with tok/s per point),
 Grid-v2 table rows (GSM8K/IFEval/GPQA/AIME), per-phase tuned-model columns, and the Maple
 predict-then-measure card. Every asset lands here the day its verdict is scored.
+
+**Publication rule (standing, Federico 2026-08-07):** every asset is committed and pushed the
+moment it renders clean - never held back for a "launch". Anything in this folder must be
+linkable online immediately, so a post, a reply or an issue can point at a raw URL without a
+build step. Raw PNGs live at
+`https://raw.githubusercontent.com/FedericoTs/quantprobe/master/media/<name>.png`.
