@@ -10,6 +10,7 @@ the wordmark. Regenerate any asset by re-running its generator; never hand-edit 
 |---|---|---|---|
 | [card_flagship.svg](card_flagship.svg) | speed report card: 30B MoE at 20.7 t/s on a 2016 GTX 1060, predicted-vs-measured badge, binding constraint, exact flags | `weights/make_report_card.py` | `weights/data/card_flagship.json` |
 | [eval_table.svg](eval_table.svg) | the capability table: model × strategy on one machine; the best cell is a lanes column, not the biggest model | `weights/make_eval_table.py` | `weights/data/grid_*.json` |
+| [verification_vector_humaneval.svg](verification_vector_humaneval.svg) + [mbpp](verification_vector_mbpp.svg) | accuracy vs wall-clock, single→lanes arrows: the 4B's arrowhead crossing the 30B line | `weights/make_verification_vector.py` | `weights/data/grid_*.json` |
 | [chart_kpi_model_ladder.svg](chart_kpi_model_ladder.svg) | what runs at what speed on the reference box | `weights/make_kpi_charts.py` | ladder logs |
 | [chart_kpi_batching_inversion.svg](chart_kpi_batching_inversion.svg) | the U-38/U-39 batching curves — model choice inverts with user count | `weights/make_kpi_charts.py` | prereg logs |
 | [chart_kpi_draft_cliff.svg](chart_kpi_draft_cliff.svg) | X-1's speculation draft-length cliff | `weights/make_kpi_charts.py` | prereg logs |
