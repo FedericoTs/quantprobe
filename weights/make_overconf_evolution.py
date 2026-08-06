@@ -61,31 +61,37 @@ def main():
     s = [brand.svg_open(W, H),
          brand.header(W, "PHASE B DATA ENGINE - CUMULATIVE, FROM THE RUN LOG",
                       f'the overconfidence rate <tspan fill="{TEAL}">settles, and stays</tspan>',
-                      "running share of self-written test sets with wrong expected values - "
-                      "every checkpoint the run logged, nothing smoothed")]
+                      "running share of self-written test sets with wrong expected values - every "
+                      "checkpoint the run logged, nothing smoothed")]
     px0, px1, py0, py1 = 190, W - 90, H - 250, 340
     xmax = 5000.0
-    ymin, ymax = 0.0, 80.0
+    # axis window FROM the data (standard process, 2026-08-06): a 0-100 axis flattens a
+    # 54-58% band into a line and hides the settling structure. Zoomed, and DECLARED on the
+    # chart - truncation shown is honesty, truncation hidden is spin.
+    allr = [r for _, r in f1 + f2]
+    ymin = max(0, int(min(allr)) - 4)
+    ymax = min(100, int(max(allr)) + 5)
     def X(n):
         return px0 + (px1 - px0) * n / xmax
     def Y(r):
         return py0 - (py0 - py1) * (r - ymin) / (ymax - ymin)
-    for gy in range(0, 81, 20):
+    for gy in range(ymin + (5 - ymin % 5) % 5, int(ymax) + 1, 5):
         s.append(f'<line x1="{px0}" y1="{Y(gy)}" x2="{px1}" y2="{Y(gy)}" stroke="{GRID}" stroke-width="1.5"/>'
                  f'<text x="{px0-18}" y="{Y(gy)+8}" text-anchor="end" fill="{MUT}" font-size="21">{gy}%</text>')
     for gx in (1000, 2000, 3000, 4000, 5000):
         s.append(f'<text x="{X(gx)}" y="{py0+40}" text-anchor="middle" fill="{MUT}" font-size="21">{gx:,}</text>')
     s.append(f'<text x="{(px0+px1)/2}" y="{py0+84}" text-anchor="middle" fill="{SUB}" font-size="22">test sets written (cumulative attempts)</text>')
-    for pts, col, lw in ((f1, brand.VRAM, 5), (f2, brand.RAM, 5)):
+    s.append(f'<text x="{px0-18}" y="{py1-16}" text-anchor="end" fill="{MUT}" font-size="17">y: {ymin}-{ymax}%</text>')
+    for pts, col, lw, dash in ((f1, brand.VRAM, 5, ""), (f2, TEAL, 5, ' stroke-dasharray="14,10"')):
         poly = " ".join(f"{X(n)},{Y(r)}" for n, r in pts)
-        s.append(f'<polyline points="{poly}" fill="none" stroke="{col}" stroke-width="{lw}" stroke-linejoin="round"/>')
+        s.append(f'<polyline points="{poly}" fill="none" stroke="{col}" stroke-width="{lw}" stroke-linejoin="round"{dash}/>')
         n, r = pts[-1]
         s.append(f'<circle cx="{X(n)}" cy="{Y(r)}" r="12" fill="{col}" stroke="{BG}" stroke-width="4"/>')
     n1, r1 = f1[-1]
     n2, r2 = f2[-1]
     s.append(f'<text x="{X(n1)-16}" y="{Y(r1)-56}" text-anchor="end" fill="{brand.VRAM}" font-size="27" font-weight="bold">Qwen3.5-4B - {r1:.1f}%</text>')
     s.append(f'<text x="{X(n1)-16}" y="{Y(r1)-28}" text-anchor="end" fill="{SUB}" font-size="19">4,866 checked - 31 logged checkpoints</text>')
-    s.append(f'<text x="{X(n2)+24}" y="{Y(r2)+50}" fill="{brand.RAM}" font-size="27" font-weight="bold">Qwen3-Coder-30B - {r2:.1f}%</text>')
+    s.append(f'<text x="{X(n2)+24}" y="{Y(r2)+50}" fill="{TEAL}" font-size="27" font-weight="bold">Qwen3-Coder-30B (dashed) - {r2:.1f}%</text>')
     s.append(f'<text x="{X(n2)+24}" y="{Y(r2)+78}" fill="{SUB}" font-size="19">492 checked, its OWN solutions - 4 checkpoints, 7.5x larger</text>')
     s.append(f'<text x="{px0+14}" y="{py1-30}" fill="{INK}" font-size="29" font-weight="bold">two models, 7.5x apart in size, one flat line - overconfidence is not a scale problem</text>')
     s += [brand.footer(W, H, "parsed from weights/data/phaseb_gen.log checkpoints - v2 repair-loop curve joins when B4b lands"),
