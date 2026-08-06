@@ -1,0 +1,55 @@
+[quantprobe] no hardware flags: auto-detected this machine (vram 6GB@192 | ram 16GB@48 | disk 0.5 GB/s). Pass --machine/flags to estimate a different box.
+[quantprobe] calibration applied [ram 24.4 GB/s measured; disk 0.47 GB/s measured] (2026-07-31, state 2dc97d41)
+[quantprobe] anchored: CPU x1.19, GPU x1.03 from your calibrate anchor runs [tier ratios; --no-anchors disables]
+
+quantprobe plan - custom model @ 2.18-bit on THIS machine [auto-detected - run `quantprobe hw` for details]
+  model 6.0 GB | active 0.43 GB/token | est. quality cost x1.10 (depth-aware recipe)
+
+  *   75.4 tok/s  hybrid: attention->VRAM, experts->RAM   [pins 6GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let auto-placement decide]
+      47.4 tok/s  pure CPU (GPU idle)
+       3.2 tok/s  layer-by-layer streaming (one layer resident)   [one layer resident (0.19 GB of 6.0 GB); needs a layer-streaming runtime (airllm/accelerate-class) - llama.cpp has no such mode; MoE PENALTY: this reads ALL experts every token, not just the active ones - the expert-offload rows above move far fewer bytes and this row should not be preferred on a MoE unless VRAM genuinely cannot hold their resident set; UPPER BOUND - two costs are unpriced: host-to-device PCIe transfer of every layer every token (we have no measured PCIe anchor and will not invent one), and the streaming-efficiency gap C-23 measured at 1.82x on llama.cpp (0.2505 GB/s achieved against 0.452-0.459 raw). Expect materially slower]
+
+  binding constraint: CAPACITY-BOUND (VRAM) - this configuration is 0.6 GB over the VRAM boundary, and crossing it is worth 2.4x.
+    cross it by      shaving the file (next quant step down / tighter probed band / pruned variant) -> ~178.9 tok/s, or fitting 6.7 GB of VRAM -> ~160.3 tok/s
+    until then       system RAM bandwidth is where the time goes (75% of the token) - but making it faster does not solve the reason you are on this placement
+    other levers     a faster GPU memory bus: <=1.33x (25%) | faster storage, more I/O lanes: NO effect (0% of the token) | more/faster CPU threads: NO effect (0% of the token)
+    scope            DECODE only. Prefill has a different binding constraint (compute) which this classification does not model: on the CPU-expert MoE placement -ub 2048 measured +73% on prefill and 0% on decode, while on an all-in-VRAM row the same flag measured -39% prefill (prereg #19). Neither number is a prediction for this row.
+    serving          MULTI-USER (measured, U-39, one Pascal box): batching does NOT
+      survive this placement - routed-expert reads from system RAM do not amortise
+      across streams (aggregate 19.7 -> 40.0 tok/s from 1 -> 32 streams, a 2.0x cap,
+      against 9.5x for a dense model in VRAM on the same box). One user: this row is
+      the right call. Many users: a dense model that fits VRAM inverts the choice -
+      measured 219 vs 40 aggregate at 32 streams. Prefill is the exception and batches
+      fine here (45 -> 225 tok/s by 8 streams): compute amortises, expert bandwidth
+      does not.
+
+  speculation: pays ONLY when output copies its context (edits, refactors, RAG quoting)
+  - on novel generation the ngram drafter produces 0 drafts and changes nothing (D-10,
+  independently replicated on an RTX 3090). Details below.
+
+  run it:  llama-server -m model.gguf -ngl 99 -ot "exps=CPU" --no-mmap -b 4096 -ub 4096 --threads 4
+           (--threads 4 = this machine's LOGICAL cores; llama.cpp's own auto-detect may pick
+           physical-only and cost 2x on CPU-bound decode - verify with your fork if unsure)
+
+  prompt speed: `-b 4096 -ub 4096` is the sized safe batch for this card; prereg #19 swept this placement at ub 512/1024/2048 only (199.9 / 277.2 / 345.9 pp2048) and measured no cell at this ubatch, so no percentage is quoted for it. It costs nothing on generation (18.5 -> 18.8) and applies because your experts sit in RAM: they then cross PCIe once per batch instead of once per token. Do NOT set it when a model is fully in VRAM - measured there, the same flag LOSES 39%.
+  L-26 (out of sample; predictions staked in weights/data/prereg92b_ub_oos.log before the run):
+  at -b 4096 -ub 4096 this placement measured 360.76 tok/s
+  AT pp4096. The prefill law sec/tok = A + X/C held at C=256 (-0.27%) and C=4096 (-8.2%,
+  in band). READ THE COMPARISON CAREFULLY: the published ub-2048 number, 345.89, is a
+  pp2048 measurement (prereg #19) - a different prompt length - and the pp4096-at-ub2048
+  control was never run, so the ~+4% between them is what the law implies, not a measured
+  A/B. -ub is a CAP: on prompts of 2048 tokens or fewer this flag changes nothing. The law
+  is validated TO C=4096 and not past it (the asymptote bends below 1/A), so do not raise
+  the batch further on its authority.
+  upgrade advisor - WON'T HELP HERE: +16 GB RAM: re-evaluated, does not move this placement | NVMe SSD: disk I/O is 0% of this token
+  tier-boundary advisor: this config is 0.6 GB over the VRAM boundary - shave it (next quant step down / tighter probed band / pruned variant) -> ~178.9 tok/s (x2.4)
+
+  note: MoE partial expert offload (measured +12.4% decode, ~2-3x prefill) needs this
+  model's layer count to emit exact -ot flags - re-run with --gguf <file> to unlock it.
+
+  concurrency: every number above is SINGLE-STREAM. Measured with 8 parallel slots, aggregate
+  throughput is ~2x higher and saturates by about 4 slots (pre-registration #26). The same
+  ratio appeared on every placement AND on a dense control, so it is a ceiling we do not model -
+  read our figures as one user's speed, not a server's capacity.
+
+  (eta bands fitted from published measurements; estimates +/-25%. Hybrid needs --no-mmap.)
