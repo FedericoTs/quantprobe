@@ -3003,6 +3003,19 @@ def t_decon_screen_mutation_directions_pinned():
     return None
 
 
+def t_media_svgs_have_png_twins():
+    """Standard process (2026-08-06): every media asset ships SVG + PNG - X and Reddit take
+    PNGs. An orphan SVG in media/ is an asset that cannot be posted, and this test refuses it."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    media = os.path.join(root, "media")
+    if not os.path.isdir(media):
+        return
+    orphans = [f for f in os.listdir(media) if f.endswith(".svg")
+               and not os.path.isfile(os.path.join(media, f[:-4] + ".png"))]
+    assert not orphans, f"media SVGs missing PNG twins (run their generator or brand.render_png): {orphans}"
+    return None
+
+
 def t_hardware_doc_matches_the_code():
     """docs/HARDWARE.md is GENERATED from detect.py's tables; if someone edits either side
     alone, the doc lies about the tool. Regenerate in memory and compare. (Absent doc = fail:

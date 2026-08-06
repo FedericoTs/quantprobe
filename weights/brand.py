@@ -90,6 +90,44 @@ def svg_open(W, H):
 
 MEDIA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "media")
 
+_CHROME_CANDIDATES = [
+    os.environ.get("QP_CHROME", ""),
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "/usr/bin/google-chrome", "/usr/bin/chromium-browser",
+]
+
+
+def _chrome():
+    for c in _CHROME_CANDIDATES:
+        if c and os.path.isfile(c):
+            return c
+    return None
+
+
+def render_png(svg_path):
+    """PNG twin via headless Chrome, sized from the SVG's own viewBox. Standard process
+    (Federico, 2026-08-06): every media image ships PNG as well as SVG - X and Reddit take
+    PNGs, and an asset that cannot be posted is not an asset."""
+    import subprocess
+    src = open(svg_path, encoding="utf-8").read()
+    m = re.search(r'viewBox="0 0 (\d+) (\d+)"', src)
+    w, h = (m.group(1), m.group(2)) if m else ("1600", "1200")
+    png = os.path.splitext(svg_path)[0] + ".png"
+    c = _chrome()
+    if not c:
+        print(f"WARNING: no Chrome found - PNG twin NOT rendered for {os.path.basename(svg_path)}")
+        return None
+    subprocess.run([c, "--headless", "--disable-gpu", "--hide-scrollbars",
+                    f"--screenshot={png}", f"--window-size={w},{h}",
+                    "file:///" + svg_path.replace(os.sep, "/")],
+                   capture_output=True, timeout=60)
+    if os.path.isfile(png):
+        print("media ->", png)
+        return png
+    print(f"WARNING: PNG render produced no file for {os.path.basename(svg_path)}")
+    return None
+
 
 def save(name, body_svg):
     os.makedirs(MEDIA, exist_ok=True)
@@ -97,4 +135,5 @@ def save(name, body_svg):
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(body_svg)
     print("media ->", out)
+    render_png(out)
     return out
