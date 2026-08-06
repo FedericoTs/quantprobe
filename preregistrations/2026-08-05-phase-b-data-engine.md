@@ -76,3 +76,27 @@ substantive. Scale does not fix hallucinated arithmetic - verification does.
 
 Screen note upheld: 12 of 500 committee problems (2.4%) echoed protected-bench idioms and
 were excluded - generated text is not exempt from the law.
+
+---
+
+## FINAL VERDICT (Phase B closed, 2026-08-06): P-B1 PASS at 3,626 - P-B2 FAIL at 424, published
+
+| gate | bar | final | verdict |
+|---|---|---|---|
+| P-B1 verified samples | >= 3,000 | **3,626** (2,142 + 1,060 + 424 committee refs) | **PASS** |
+| P-B2 committee problems | >= 500 | 424 (201 v1 + 223 v2) | **FAIL - published as a miss** |
+| KR-B2 drop rate | <= 30% | v1 59.8%, v2 55.4% | **blocked both arms; diagnosis below** |
+| KR-B1 screen every batch | - | held on all three arms | PASS |
+
+**The three-link finding this phase leaves behind, each link measured:**
+1. **Scale does not fix hallucinated tests** - 54.7% (4B, n=4,866+2,451) vs 55.7% (30B, n=982),
+   stable across every checkpoint of three runs.
+2. **Introspection barely dents it** - one repair pass without execution feedback recovered
+   **7.3%** of failures (20/273). A model cannot find its own wrong literals by re-reading.
+3. **Execution catches all of it** - which is why every one of the 3,626 corpus samples
+   carries tests that passed the null/mutation/reference gauntlet in OUR sandbox.
+
+P-B2's miss stands un-retried: a third generation arm would be bar-shopping. The committee
+feed's 424 problems are corpus-grade (all gates passed); the SUPPLY goal was wrong, not the
+data. Phase C proceeds on P-B1. Corpus: weights/data/phaseb_corpus.jsonl + _b.jsonl,
+committed. Chart: media/overconf_evolution (three arms, one log).
