@@ -70,3 +70,5 @@ tools/kernelprobe/*
 weights/data/*_gate_*.log
 weights/data/release_*.log
 weights/data/*_server.log
+
+!weights/data/phaseb_corpus*.jsonl

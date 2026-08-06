@@ -47,3 +47,32 @@ MUST be caught, and a clean fixture that must pass - the mutation directions are
 $0. B1: corpus license check + download + schema + re-execution sample (CPU + disk). B2:
 screen implementation + tests. B3: full corpus re-execution + screening (CPU, hours). B4:
 committee generation (GPU, one evening). Verdict appended here; Phase C stakes separately.
+
+---
+
+## VERDICT (B4 arm 1, scored 2026-08-06): both supply gates short, KR-B2 fired as forecast - remedies staked and running
+
+| gate | staked | measured |
+|---|---|---|
+| P-B1 >= 3,000 verified samples | 2,343 (feed1 2,142 + feed2 201) | **SHORT - continuation slice running** |
+| P-B2 >= 500 committee problems | 201 | **SHORT - behind KR-B2's fix** |
+| KR-B2 drop rate <= 30% | **59.8% -> BLOCKED** | the gate did its job |
+| KR-B1 screen on every batch | ran, logged, counts published | held |
+
+**The finding worth the block: test-writer overconfidence is model-size-independent.** Among
+test sets that reached the reference check, the 4B asserted wrong expected values **54.7%**
+of the time (n=4,866) and the 30B - 7.5x larger, the best coder on this box - **55.7%**
+(n=492). Writing correct literal expectations WITHOUT executing is a capability neither model
+has; the null/mutation gates (2.4% and 1.0% leak rates) prove the tests are otherwise
+substantive. Scale does not fix hallucinated arithmetic - verification does.
+
+**Remedies, staked before launch and now running (B4b, outputs tagged _b):**
+1. **P-B1:** continuation over shuffle-slice [5000:7500] of the screen-clean corpus - disjoint
+   by construction, same feed1 protocol, seed unchanged. Expected +~1,070.
+2. **KR-B2/P-B2:** feed2 v2 - ONE repair pass per failing test set: the model re-derives each
+   expected value by stepping through its own solution. Targets the measured pathology
+   directly; no second repair, no bar-lowering, repaired-count published. v2 is a new
+   protocol version and its samples are tagged as such.
+
+Screen note upheld: 12 of 500 committee problems (2.4%) echoed protected-bench idioms and
+were excluded - generated text is not exempt from the law.

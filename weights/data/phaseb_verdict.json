@@ -1,0 +1,26 @@
+{
+ "feed1_kept": 2142,
+ "feed1_dropped": {
+  "no_fn": 0,
+  "gen_fail": 17,
+  "null_passed": 117,
+  "ref_failed": 2660,
+  "screen": 64
+ },
+ "feed2_kept": 201,
+ "feed2_dropped": {
+  "parse": 8,
+  "no_fn": 0,
+  "gen_fail": 0,
+  "ref_failed": 274,
+  "null_passed": 2,
+  "mut_passed": 3,
+  "screen": 12
+ },
+ "total": 2343,
+ "PB1_ge_3000": false,
+ "PB2_ge_500": false,
+ "KRB2_drop_rate": 0.598,
+ "KRB2_blocks": true,
+ "probe": false
+}

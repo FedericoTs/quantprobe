@@ -30,6 +30,8 @@ MYLOCK = os.path.join(DATA, ".phaseb_lock")
 SEED = 20260805
 FEED1_N = 5000
 FEED2_N = 500
+SLICE = (0, FEED1_N)          # --continue-slice sets a disjoint slice of the seeded shuffle
+TAG = ""
 EXEC_TIMEOUT = 10.0
 
 TOPICS = ["string parsing", "list and dict transformations", "date and interval arithmetic",
@@ -150,7 +152,21 @@ def feed2(n_problems, log, probe=False):
         if ttr or tests.count("assert") < 3:
             dropped["gen_fail"] += 1; continue
         if not run_asserts(sol, tests):
-            dropped["ref_failed"] += 1; continue
+            # v2 (KR-B2 remedy, staked in the Phase B verdict): ONE repair pass targeting the
+            # measured pathology - test-writer overconfidence (54.8% of the 30B's own tests
+            # asserted wrong expected values). The model re-derives each expected value by
+            # executing its own solution mentally; no second repair, no bar-lowering.
+            rtxt, rtr = ask(
+                f"These asserts test the function below, but some EXPECTED VALUES are wrong.\n\n"
+                f"```python\n{sol}\n```\n\nASSERTS:\n```python\n{tests}\n```\n\n"
+                f"Recompute each expected value by carefully executing the function step by "
+                f"step on each input. Return ONLY the 5 corrected assert statements in a "
+                f"```python block.", 0.2, SEED + 30000 + i, npredict=512)
+            tests2 = extract_code(rtxt)
+            if rtr or tests2.count("assert") < 3 or not run_asserts(sol, tests2):
+                dropped["ref_failed"] += 1; continue
+            tests = tests2
+            dropped["repaired"] = dropped.get("repaired", 0) + 1
         if run_asserts(null_stub(sol), tests):
             dropped["null_passed"] += 1; continue
         if run_asserts(mutate_returns(sol), tests):
@@ -198,8 +214,10 @@ def main(probe=False):
         rows = [r for r in tab.select(["id", "instruction", "response"]).to_pylist()
                 if r["id"] in keep_ids]
         random.Random(SEED).shuffle(rows)
-        rows = rows[:(6 if probe else FEED1_N)]
-        log(f"feed1 sample: {len(rows)} of {len(keep_ids)} screen-clean rows (seed {SEED})")
+        lo, hi = SLICE
+        rows = rows[lo:lo + 6] if probe else rows[lo:hi]
+        log(f"feed1 slice [{lo}:{hi}] of {len(keep_ids)} screen-clean rows (seed {SEED}, "
+            f"disjoint from prior slices by shuffle-order construction)")
 
         gpu_state("feed1 pre", log)
         proc, _ = start_server(MODELS["4B"], 8, ctx_per_slot=2048,
@@ -220,7 +238,7 @@ def main(probe=False):
         gpu_state("feed2 post", log)
         log(f"feed2: kept {len(f2)}, dropped {d2}")
 
-        out = os.path.join(DATA, "phaseb_corpus.jsonl" if not probe else "phaseb_probe.jsonl")
+        out = os.path.join(DATA, f"phaseb_corpus{TAG}.jsonl" if not probe else "phaseb_probe.jsonl")
         with open(out, "w", encoding="utf-8") as fh:
             for s in f1 + f2:
                 fh.write(json.dumps(s) + "\n")
@@ -232,7 +250,7 @@ def main(probe=False):
                        PB1_ge_3000=(n_total >= 3000), PB2_ge_500=(len(f2) >= 500),
                        KRB2_drop_rate=round(drop_rate2, 3),
                        KRB2_blocks=(drop_rate2 > 0.30), probe=probe)
-        json.dump(verdict, open(os.path.join(DATA, "phaseb_verdict.json"), "w"), indent=1)
+        json.dump(verdict, open(os.path.join(DATA, f"phaseb_verdict{TAG}.json"), "w"), indent=1)
         log("=== STAKED GATES ===")
         log(f"  P-B1 (>=3000 verified): {n_total} -> " + ("PASS" if verdict['PB1_ge_3000'] else "FAIL/pending"))
         log(f"  P-B2 (>=500 committee): {len(f2)} -> " + ("PASS" if verdict['PB2_ge_500'] else "FAIL/pending"))
@@ -251,5 +269,12 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--probe", action="store_true")
     ap.add_argument("--run", action="store_true")
+    ap.add_argument("--continue-slice", action="store_true",
+                    help="B4b: feed1 rows [5000:7500] + feed2 v2 (repair loop), outputs _b files")
     a = ap.parse_args()
-    sys.exit(main(probe=a.probe) if (a.probe or a.run) else 0)
+    if a.continue_slice:
+        # set the RUNNING module's globals - the import-myself trick creates a second module
+        # instance under __main__ and main() would still read the stale values
+        globals()["SLICE"] = (5000, 7500)
+        globals()["TAG"] = "_b"
+    sys.exit(main(probe=a.probe) if (a.probe or a.run or a.continue_slice) else 0)

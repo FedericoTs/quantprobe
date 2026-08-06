@@ -1,0 +1,80 @@
+20:19:15 screen loaded: 27,836 grams (KR-B1 satisfied for this run)
+20:19:15 feed1 sample: 6 of 46110 screen-clean rows (seed 20260805)
+20:19:15 [gpu feed1 pre] 32, 139 MHz, 647 MiB
+20:19:44   [feed1] 1/6 kept 1 dropped {'no_fn': 0, 'gen_fail': 0, 'null_passed': 0, 'ref_failed': 0, 'screen': 0}
+20:19:49   [feed1] 2/6 kept 2 dropped {'no_fn': 0, 'gen_fail': 0, 'null_passed': 0, 'ref_failed': 0, 'screen': 0}
+20:19:52 [gpu feed1 post] 41, 1885 MHz, 647 MiB
+20:19:52 feed1: kept 2, dropped {'no_fn': 0, 'gen_fail': 0, 'null_passed': 0, 'ref_failed': 0, 'screen': 0}
+20:19:52 [gpu feed2 pre] 41, 1885 MHz, 647 MiB
+20:21:24 [gpu feed2 post] 50, 1088 MHz, 647 MiB
+20:21:24 feed2: kept 0, dropped {'parse': 0, 'no_fn': 0, 'ref_failed': 1, 'null_passed': 0, 'mut_passed': 1, 'screen': 0}
+20:21:24 === STAKED GATES ===
+20:21:24   P-B1 (>=3000 verified): 2 -> FAIL/pending
+20:21:24   P-B2 (>=500 committee): 0 -> FAIL/pending
+20:21:24   KR-B2 (drop rate): 100.0% -> BLOCKS
+20:22:18 screen loaded: 27,836 grams (KR-B1 satisfied for this run)
+20:22:18 feed1 sample: 6 of 46110 screen-clean rows (seed 20260805)
+20:22:18 [gpu feed1 pre] 44, 139 MHz, 647 MiB
+20:22:47   [feed1] 1/6 kept 1 dropped {'no_fn': 0, 'gen_fail': 0, 'null_passed': 0, 'ref_failed': 0, 'screen': 0}
+20:22:52   [feed1] 2/6 kept 2 dropped {'no_fn': 0, 'gen_fail': 0, 'null_passed': 0, 'ref_failed': 0, 'screen': 0}
+20:22:56 [gpu feed1 post] 50, 1860 MHz, 647 MiB
+20:22:56 feed1: kept 2, dropped {'no_fn': 0, 'gen_fail': 0, 'null_passed': 0, 'ref_failed': 0, 'screen': 0}
+20:22:56 [gpu feed2 pre] 50, 1860 MHz, 647 MiB
+20:23:57   [feed2] 1/2 kept 1 dropped {'parse': 0, 'no_fn': 0, 'gen_fail': 0, 'ref_failed': 0, 'null_passed': 0, 'mut_passed': 0, 'screen': 0}
+20:24:00 [gpu feed2 post] 54, 1860 MHz, 647 MiB
+20:24:00 feed2: kept 1, dropped {'parse': 0, 'no_fn': 0, 'gen_fail': 0, 'ref_failed': 0, 'null_passed': 0, 'mut_passed': 0, 'screen': 0}
+20:24:00 === STAKED GATES ===
+20:24:00   P-B1 (>=3000 verified): 3 -> FAIL/pending
+20:24:00   P-B2 (>=500 committee): 1 -> FAIL/pending
+20:24:00   KR-B2 (drop rate): 50.0% -> BLOCKS
+20:24:21 screen loaded: 27,836 grams (KR-B1 satisfied for this run)
+20:24:22 feed1 sample: 5000 of 46110 screen-clean rows (seed 20260805)
+20:24:22 [gpu feed1 pre] 51, 177 MHz, 637 MiB
+20:24:39 screen loaded: 27,836 grams (KR-B1 satisfied for this run)
+20:24:39 feed1 sample: 5000 of 46110 screen-clean rows (seed 20260805)
+20:24:39 [gpu feed1 pre] 49, 139 MHz, 646 MiB
+20:54:31   [feed1] 300/5000 kept 117 dropped {'no_fn': 0, 'gen_fail': 1, 'null_passed': 9, 'ref_failed': 166, 'screen': 7}
+21:03:52   [feed1] 400/5000 kept 158 dropped {'no_fn': 0, 'gen_fail': 1, 'null_passed': 9, 'ref_failed': 225, 'screen': 7}
+21:13:08   [feed1] 500/5000 kept 205 dropped {'no_fn': 0, 'gen_fail': 1, 'null_passed': 14, 'ref_failed': 273, 'screen': 7}
+21:21:33   [feed1] 600/5000 kept 246 dropped {'no_fn': 0, 'gen_fail': 1, 'null_passed': 14, 'ref_failed': 329, 'screen': 10}
+21:58:51   [feed1] 1000/5000 kept 415 dropped {'no_fn': 0, 'gen_fail': 3, 'null_passed': 26, 'ref_failed': 536, 'screen': 20}
+22:08:12   [feed1] 1100/5000 kept 453 dropped {'no_fn': 0, 'gen_fail': 5, 'null_passed': 30, 'ref_failed': 591, 'screen': 21}
+22:38:06   [feed1] 1400/5000 kept 571 dropped {'no_fn': 0, 'gen_fail': 7, 'null_passed': 36, 'ref_failed': 763, 'screen': 23}
+22:47:55   [feed1] 1500/5000 kept 620 dropped {'no_fn': 0, 'gen_fail': 7, 'null_passed': 39, 'ref_failed': 811, 'screen': 23}
+23:15:08   [feed1] 1800/5000 kept 749 dropped {'no_fn': 0, 'gen_fail': 8, 'null_passed': 48, 'ref_failed': 970, 'screen': 25}
+23:33:18   [feed1] 2000/5000 kept 836 dropped {'no_fn': 0, 'gen_fail': 8, 'null_passed': 52, 'ref_failed': 1077, 'screen': 27}
+23:42:57   [feed1] 2100/5000 kept 878 dropped {'no_fn': 0, 'gen_fail': 8, 'null_passed': 55, 'ref_failed': 1132, 'screen': 27}
+00:11:05   [feed1] 2400/5000 kept 1003 dropped {'no_fn': 0, 'gen_fail': 9, 'null_passed': 62, 'ref_failed': 1294, 'screen': 32}
+00:20:07   [feed1] 2500/5000 kept 1047 dropped {'no_fn': 0, 'gen_fail': 9, 'null_passed': 64, 'ref_failed': 1348, 'screen': 32}
+00:29:47   [feed1] 2600/5000 kept 1089 dropped {'no_fn': 0, 'gen_fail': 10, 'null_passed': 65, 'ref_failed': 1403, 'screen': 33}
+00:39:13   [feed1] 2700/5000 kept 1129 dropped {'no_fn': 0, 'gen_fail': 11, 'null_passed': 67, 'ref_failed': 1458, 'screen': 35}
+01:07:27   [feed1] 3000/5000 kept 1261 dropped {'no_fn': 0, 'gen_fail': 11, 'null_passed': 71, 'ref_failed': 1617, 'screen': 40}
+01:16:45   [feed1] 3100/5000 kept 1302 dropped {'no_fn': 0, 'gen_fail': 11, 'null_passed': 75, 'ref_failed': 1670, 'screen': 42}
+01:25:29   [feed1] 3200/5000 kept 1343 dropped {'no_fn': 0, 'gen_fail': 11, 'null_passed': 77, 'ref_failed': 1724, 'screen': 45}
+01:44:16   [feed1] 3400/5000 kept 1434 dropped {'no_fn': 0, 'gen_fail': 12, 'null_passed': 83, 'ref_failed': 1820, 'screen': 51}
+01:53:46   [feed1] 3500/5000 kept 1482 dropped {'no_fn': 0, 'gen_fail': 12, 'null_passed': 84, 'ref_failed': 1871, 'screen': 51}
+02:02:27   [feed1] 3600/5000 kept 1519 dropped {'no_fn': 0, 'gen_fail': 12, 'null_passed': 85, 'ref_failed': 1930, 'screen': 54}
+02:12:09   [feed1] 3700/5000 kept 1564 dropped {'no_fn': 0, 'gen_fail': 14, 'null_passed': 88, 'ref_failed': 1979, 'screen': 55}
+02:31:15   [feed1] 3900/5000 kept 1639 dropped {'no_fn': 0, 'gen_fail': 14, 'null_passed': 92, 'ref_failed': 2099, 'screen': 56}
+02:40:26   [feed1] 4000/5000 kept 1680 dropped {'no_fn': 0, 'gen_fail': 14, 'null_passed': 96, 'ref_failed': 2152, 'screen': 58}
+02:49:04   [feed1] 4100/5000 kept 1732 dropped {'no_fn': 0, 'gen_fail': 14, 'null_passed': 99, 'ref_failed': 2196, 'screen': 59}
+03:27:06   [feed1] 4500/5000 kept 1897 dropped {'no_fn': 0, 'gen_fail': 15, 'null_passed': 107, 'ref_failed': 2420, 'screen': 61}
+03:35:44   [feed1] 4600/5000 kept 1951 dropped {'no_fn': 0, 'gen_fail': 15, 'null_passed': 109, 'ref_failed': 2464, 'screen': 61}
+03:45:34   [feed1] 4700/5000 kept 2006 dropped {'no_fn': 0, 'gen_fail': 15, 'null_passed': 110, 'ref_failed': 2507, 'screen': 62}
+03:55:08   [feed1] 4800/5000 kept 2049 dropped {'no_fn': 0, 'gen_fail': 16, 'null_passed': 113, 'ref_failed': 2560, 'screen': 62}
+04:04:00   [feed1] 4900/5000 kept 2097 dropped {'no_fn': 0, 'gen_fail': 17, 'null_passed': 115, 'ref_failed': 2609, 'screen': 62}
+04:13:18 [gpu feed1 post] 68, 1455 MHz, 661 MiB
+04:13:18 feed1: kept 2142, dropped {'no_fn': 0, 'gen_fail': 17, 'null_passed': 117, 'ref_failed': 2660, 'screen': 64}
+04:13:18 [gpu feed2 pre] 68, 1455 MHz, 661 MiB
+05:35:39   [feed2] 200/500 kept 79 dropped {'parse': 3, 'no_fn': 0, 'gen_fail': 0, 'ref_failed': 109, 'null_passed': 2, 'mut_passed': 0, 'screen': 7}
+06:35:18   [feed2] 350/500 kept 142 dropped {'parse': 5, 'no_fn': 0, 'gen_fail': 0, 'ref_failed': 193, 'null_passed': 2, 'mut_passed': 1, 'screen': 7}
+06:55:38   [feed2] 400/500 kept 164 dropped {'parse': 6, 'no_fn': 0, 'gen_fail': 0, 'ref_failed': 218, 'null_passed': 2, 'mut_passed': 2, 'screen': 8}
+07:37:17 [gpu feed2 post] 61, 1480 MHz, 683 MiB
+07:37:17 feed2: kept 201, dropped {'parse': 8, 'no_fn': 0, 'gen_fail': 0, 'ref_failed': 274, 'null_passed': 2, 'mut_passed': 3, 'screen': 12}
+07:37:17 === STAKED GATES ===
+07:37:17   P-B1 (>=3000 verified): 2343 -> FAIL/pending
+07:37:17   P-B2 (>=500 committee): 201 -> FAIL/pending
+07:37:17   KR-B2 (drop rate): 59.8% -> BLOCKS
+07:39:43 screen loaded: 27,836 grams (KR-B1 satisfied for this run)
+07:39:43 feed1 slice [5000:7500] of 46110 screen-clean rows (seed 20260805, disjoint from prior slices by shuffle-order construction)
+07:39:43 [gpu feed1 pre] 43, 139 MHz, 674 MiB
