@@ -171,3 +171,22 @@ cite-or-refuse, misses at full size, render-review before shipping.
   verification vector on abstract reasoning, ladder x single-vs-lanes, exact-match, on the
   1060. Low absolute scores expected and stated; the lanes delta is the finding. Companion
   framing: Phase C's loop as the $0 self-improving harness.
+
+### The evolution family (2026-08-06 sweep - cumulative curves from sequence data we already log)
+- **34b.** ● **Overconfidence, cumulative** (SHIPPED): ~55% flat across 5,000 attempts, both
+  models, nothing smoothed - the endpoint pair proven stable, not lucky.
+- **60.** ● **Watch 88.4% emerge**: the grid's per-task records in run order give cumulative
+  solve-rate curves for all 13 config-bench cells - every capability number we publish shown
+  settling, with early-run volatility visible and honest.
+- **61.** ● **The machine's night**: GPU clock/temp states across a full measurement night
+  (grid_run.log gpu-state lines) - the thermal-evolution strip that feeds the stuck-boost
+  story.
+- **62.** ● **Candidate-agreement running mean** (P0 records): how many of 16 lanes pass
+  visible tests, cumulatively - the k-scaling preview as a curve.
+- **63.** ○ **The prereg hit-rate curve**: cumulative staked-prediction accuracy over prereg
+  number - did the project get better at predicting itself? (needs hit/miss classification
+  assembly across ~90 preregs; meta-science lens flagship.)
+- **Process rule adopted:** every long runner logs cumulative ledgers at fixed intervals
+  (feed runs already do; gridbench logs per-25) so EVERY future campaign gets its evolution
+  chart for free - and endpoint parsers gate on sample counts, because the probe-summary 0%
+  bug is the kind of lie only render review catches.
