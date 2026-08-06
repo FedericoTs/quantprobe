@@ -167,3 +167,7 @@ cite-or-refuse, misses at full size, render-review before shipping.
   numbers (honest citations); head-to-head M5 only if greenlit - never compare our measured
   vs their marketed without saying which is which.
 - **The full-stack squeeze**: M1's gauntlet - quantize, place, tune, verify, one waterfall.
+- **59.** ◐ **ARC on a budget** (task #82): ARC-AGI-1's demo pairs ARE visible tests - the
+  verification vector on abstract reasoning, ladder x single-vs-lanes, exact-match, on the
+  1060. Low absolute scores expected and stated; the lanes delta is the finding. Companion
+  framing: Phase C's loop as the $0 self-improving harness.
