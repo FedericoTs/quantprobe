@@ -1015,6 +1015,26 @@ row only with n>=2 and provenance.
 
 `reviewed`
 
+### E-15 — Pokee-Isaac 28B (announced 2026-08-05): the 10M-context claim, priced the day it shipped
+
+640 BYTES PER POSITION. That is the entire state budget the claim leaves: 24 GB (4090-class)
+minus ~16.1 GB of Q4-class 28B weights minus ~1.5 GB of runtime buffers is ~6.4 GB, spread
+over 10,000,000 positions. A standard GQA cache for a 28B-class dense model costs ~192 KB per
+position at f16 - so the claim REQUIRES roughly **307x state compression** (154x even with q8
+KV). No cache quantization reaches that; a sliding window alone cannot pass real long-range
+retrieval. VERDICT: the claim is not impossible - it is a **forced architecture reveal**. The
+"non-pure decoder-only architecture" they mention must be SSM/linear-hybrid or extreme latent
+compression, which is exactly the regime L-24 voids for standard-attention laws. Their RULER
+93.3 at 10M is internal and unverified, and is cited as such. Method note: this is the E-12
+treatment (price the claim without the hardware) applied at announcement speed - the
+arithmetic was publishable the day the model was.
+
+**Question to answer:** when weights or a paper exist, measure the real bytes/position and
+score it against the 640-byte budget. The open sibling (pokee_research_7b GGUF) is the
+runnable path to a grid row meanwhile.
+
+`scored as arithmetic`
+
 ---
 
 ## How something gets into this register

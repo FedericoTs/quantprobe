@@ -1653,6 +1653,15 @@
    "why": "First AMD, first Vulkan, first non-CUDA datapoint, submitted by an independent user (RX 5700 XT, RDNA1/gfx1010, Windows 11, llama.cpp b10242). Qwen2.5-7B-Instruct Q4_0 (2-part split), dense 7.6B, all in VRAM: predicted 73.1, measured 73.18 +/- 0.16 tok/s (+0.1%) - the C-02 floor landing on the line on foreign silicon. Same submission hand-tested two published levers: Q4_0 vs Q5_K_M +18.4% (our Pascal FORMAT_EBW ratio implies +15.6% - the format ordering transfers to RDNA1 within 3 points), and ngram-simple no-gain on novel generation (D-10 reproduced externally). Honesty clause: the payload exposed two shipped bugs fixed same day in v1.26.3 (split-GGUF autospec failure -> prediction ran the degraded file-size-calibrated fallback; model spec arrived as None/None), so this validates what the deployed pipeline printed for the user, not an input-audited clean path; calibrate-grade hardware numbers in the payload suggest their anchors were live, unconfirmed. n=1, no C-14 machine-state audit possible.",
    "question_to_answer": "ANSWERED 2026-08-05 in the issue thread: commands = hw --measure + calibrate + bench, calibrate live, GPU flags passed manually because detection is nvidia-smi-only. Remaining: their promised v1.26.3 re-run (input-audited datapoint #2). NEW GAP FILED: AMD GPU detection (their transcript shows GPU:none on an RX 5700 XT).",
    "priority": "high - the loop is live; every friction or ambiguity in this first exchange shapes whether a second contributor ever appears"
+  },
+  {
+   "id": "E-15",
+   "kind": "external",
+   "status": "scored as arithmetic - the claim is a forced architecture reveal, not an impossibility",
+   "repo": "https://console.pokee.ai/model (closed weights; announced 2026-08-05)",
+   "why": "Pokee-Isaac 28B claims a 10M-token context on one RTX-4090-class GPU (internal RULER 93.3 at full length). Our arithmetic, no hardware needed: 24 GB minus ~16.1 GB of Q4-class 28B weights minus ~1.5 GB runtime buffers leaves ~6.4 GB of state budget, which at 10M positions is 640 BYTES per position. A standard GQA 28B-class cache (48 layers x 8 KV heads x 128 dim, f16) costs ~192 KB/pos - so the claim REQUIRES ~307x state compression (154x even at q8 KV). No KV quantization gets there; sliding-window alone cannot pass real long-range retrieval. Verdict: the claim is not impossible - it is a forced reveal that the \"non-pure decoder-only architecture\" must be SSM/linear-hybrid or extreme latent compression, i.e. the regime our L-24 explicitly voids for standard-attention laws. The RULER numbers are internal and unverified; stated as such. This is the E-12 method applied at announcement speed: the law prices the claim the day it ships.",
+   "question_to_answer": "When weights or a paper land: measure kvp directly from the checkpoint (or their stated state size), and score our 640-bytes/pos budget against their actual mechanism. If they open-source, the pokee_research_7b GGUF path (bartowski) is the runnable sibling for a grid row.",
+   "priority": "low until artifacts exist - the arithmetic is published; nothing further is checkable today"
   }
  ]
 }
