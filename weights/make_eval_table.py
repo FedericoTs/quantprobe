@@ -85,16 +85,19 @@ def build():
     with open(os.path.join(DOCS, "EVAL_TABLE.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(md))
 
-    BG, PANEL, EDGE = "#0c0d12", "#14161f", "#262a3a"
-    INK, SUB, MUT = "#f2f2f0", "#b9bcc9", "#7c8093"
-    TEAL, ORANGE, BLUE = "#5dcaa5", "#f5a623", "#85b7eb"
-    W, colw, x0, y0, rh = 1560, 168, 300, 210, 92
-    H = y0 + rh * (len(BENCHES) + 1) + 210
-    s = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" font-family="Segoe UI, Arial, sans-serif">',
-         f'<rect width="{W}" height="{H}" fill="{BG}"/>',
-         f'<text x="60" y="64" fill="{MUT}" font-size="16" letter-spacing="5">CAPABILITY TABLE - ONE 2016 MACHINE</text>',
-         f'<text x="60" y="120" fill="{INK}" font-size="42" font-weight="bold">model <tspan fill="{ORANGE}">x strategy</tspan>, measured - GTX 1060 6GB</text>',
-         f'<text x="60" y="156" fill="{SUB}" font-size="17">pass rate on hidden plus tests - lanes16 = verified best-of-16 (selection never sees the exam)</text>']
+    import sys
+    sys.path.insert(0, HERE)
+    import brand
+    BG, PANEL, EDGE = brand.BG, brand.PANEL, brand.EDGE
+    INK, SUB, MUT = brand.INK, brand.SUB, brand.MUT
+    TEAL, ORANGE = brand.TEAL_HI, brand.RAM
+    W, colw, x0, y0, rh = 1560, 168, 300, 230, 92
+    H = y0 + rh * (len(BENCHES) + 1) + 220
+    s = [brand.svg_open(W, H),
+         brand.header(W, "CAPABILITY TABLE - ONE 2016 MACHINE",
+                      f'model <tspan fill="{ORANGE}">x strategy</tspan>, measured - GTX 1060 6GB',
+                      "pass rate on hidden plus tests - lanes16 = verified best-of-16 "
+                      "(selection never sees the exam)")]
     for j, (m, st) in enumerate(COLS):
         cxx = x0 + j * colw + colw / 2
         s.append(f'<text x="{cxx}" y="{y0+34}" text-anchor="middle" fill="{INK}" font-size="18" font-weight="bold">{NAMES[m]}</text>')
@@ -102,7 +105,7 @@ def build():
         s.append(f'<text x="{cxx}" y="{y0+60}" text-anchor="middle" fill="{ORANGE if st=="lanes" else MUT}" font-size="15">{stl}</text>')
     for i, (b, label) in enumerate(BENCHES):
         yy = y0 + rh * (i + 1)
-        s.append(f'<rect x="40" y="{yy}" width="{W-80}" height="{rh-10}" rx="12" fill="{PANEL}" stroke="{EDGE}"/>')
+        s.append(brand.panel(40, yy, W - 80, rh - 10))
         s.append(f'<text x="60" y="{yy+54}" fill="{SUB}" font-size="17">{label}</text>')
         best = max((grid[(b, m, st)]["rate"] for m, st in COLS if grid[(b, m, st)]), default=0)
         for j, (m, st) in enumerate(COLS):
@@ -116,14 +119,12 @@ def build():
                 s.append(f'<text x="{cxx}" y="{yy+58}" text-anchor="middle" fill="{col}" '
                          f'font-size="{30 if hero else 24}" font-weight="bold">{c["rate"]:.1f}</text>')
     fy = y0 + rh * (len(BENCHES) + 1) + 40
-    s += [f'<text x="60" y="{fy}" fill="{TEAL}" font-size="19" font-weight="bold">the bold column is not the biggest model - verified test-time compute beats parameter count on this box</text>',
-          f'<text x="60" y="{fy+34}" fill="{MUT}" font-size="14">30B lanes absent by staked prior evidence (U-39 MoE batching cap), not omission - misses stay on the table</text>',
-          f'<text x="60" y="{fy+82}" fill="{SUB}" font-size="18" font-weight="bold">quantprobe - <tspan fill="{TEAL}">github.com/FedericoTs/quantprobe</tspan> <tspan fill="{MUT}" font-size="14">- every cell cites a committed measurement</tspan></text>',
+    s += [f'<text x="60" y="{fy}" fill="{TEAL}" font-size="19" font-weight="bold">the teal cell is not the biggest model - verified test-time compute beats parameter count on this box</text>',
+          f'<text x="60" y="{fy+32}" fill="{MUT}" font-size="14">30B lanes absent by staked prior evidence (U-39 MoE batching cap), not omission - misses stay on the table</text>',
+          brand.footer(W, H, "every cell cites a committed grid measurement (weights/data/grid_*.json)"),
           '</svg>']
-    out = os.path.join(DATA, "eval_table.svg")
-    with open(out, "w", encoding="utf-8") as fh:
-        fh.write("".join(s))
-    print("-> docs/EVAL_TABLE.md +", out)
+    brand.save("eval_table.svg", "".join(s))
+    print("-> docs/EVAL_TABLE.md")
 
 
 if __name__ == "__main__":

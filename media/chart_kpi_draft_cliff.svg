@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 400" font-family="Segoe UI,system-ui,sans-serif">
+<rect width="760" height="400" fill="#ffffff"/>
+<text x="62" y="30" font-size="16" font-weight="650" fill="#16181d">Speculation draft length is a KERNEL decision, not an acceptance decision</text>
+<text x="62" y="49" font-size="11.5" fill="#5c6066">same 7B, same prompt, byte-identical output - only --spec-ngram-simple-size-m changes (X-1, staked)</text>
+<line x1="76" y1="344.0" x2="610" y2="344.0" stroke="#eeedea"/>
+<text x="68" y="348.0" font-size="10" fill="#5c6066" text-anchor="end">0</text>
+<line x1="76" y1="254.7" x2="610" y2="254.7" stroke="#eeedea"/>
+<text x="68" y="258.7" font-size="10" fill="#5c6066" text-anchor="end">50</text>
+<line x1="76" y1="165.3" x2="610" y2="165.3" stroke="#eeedea"/>
+<text x="68" y="169.3" font-size="10" fill="#5c6066" text-anchor="end">100</text>
+<line x1="76" y1="76.0" x2="610" y2="76.0" stroke="#eeedea"/>
+<text x="68" y="80.0" font-size="10" fill="#5c6066" text-anchor="end">150</text>
+<line x1="76" y1="303.3" x2="610" y2="303.3" stroke="#475569" stroke-dasharray="4 3"/>
+<text x="615" y="307.3" font-size="9.5" fill="#475569">off: 22.8</text>
+<rect x="76" y="76" width="190.7" height="268" fill="#b91c1c" opacity="0.05"/>
+<line x1="266.7" y1="76" x2="266.7" y2="344" stroke="#475569" stroke-dasharray="3 3" opacity="0.6"/>
+<text x="171.4" y="90" font-size="9.5" fill="#b91c1c" text-anchor="middle">slow kernel - strictly dominated</text>
+<text x="272.7" y="90" font-size="9.5" fill="#15803d">fast kernel (verify width &gt;= 9)</text>
+<path d="M76.0,256.6 L152.3,252.5 L228.6,257.9 L304.9,185.9 L381.1,168.5 L457.4,121.9 L533.7,125.1 L610.0,108.0" fill="none" stroke="#0f766e" stroke-width="2.4"/>
+<circle cx="76.0" cy="256.6" r="3.6" fill="#0f766e"/>
+<text x="76.0" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">4</text>
+<circle cx="152.3" cy="252.5" r="3.6" fill="#0f766e"/>
+<text x="152.3" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">6</text>
+<circle cx="228.6" cy="257.9" r="3.6" fill="#0f766e"/>
+<text x="228.6" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">7</text>
+<circle cx="304.9" cy="185.9" r="3.6" fill="#0f766e"/>
+<text x="304.9" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">8</text>
+<circle cx="381.1" cy="168.5" r="3.6" fill="#0f766e"/>
+<text x="381.1" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">9</text>
+<circle cx="457.4" cy="121.9" r="3.6" fill="#0f766e"/>
+<text x="457.4" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">12</text>
+<circle cx="533.7" cy="125.1" r="3.6" fill="#0f766e"/>
+<text x="533.7" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">16</text>
+<circle cx="610.0" cy="108.0" r="3.6" fill="#0f766e"/>
+<text x="610.0" y="360.0" font-size="10" fill="#16181d" text-anchor="middle">24</text>
+<text x="304.9" y="175.9" font-size="11" font-weight="650" fill="#15803d" text-anchor="middle">88.5</text>
+<text x="228.6" y="247.9" font-size="11" font-weight="650" fill="#b91c1c" text-anchor="middle">48.2</text>
+<text x="610.0" y="98.0" font-size="11" font-weight="650" fill="#0f766e" text-anchor="middle">132.1 = 5.8x</text>
+<text x="380.0" y="392" font-size="10.5" fill="#5c6066" text-anchor="middle">draft length m (verify width = m + 1)</text>
+<text x="14" y="200.0" font-size="10.5" fill="#5c6066" transform="rotate(-90 14 200.0)" text-anchor="middle">decode tok/s</text>
+</svg>
