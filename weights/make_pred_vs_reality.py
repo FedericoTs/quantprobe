@@ -1,8 +1,12 @@
 """Prediction-vs-reality - the trust chart. Log-log scatter of predicted vs measured tok/s.
 
 Sources (all committed):
-- weights/data/ladder_PRE_v124_2dc97d41_backup.json - the CLEAN 14-row reference ladder
-  (the 20260731_1913 re-run is contaminated from row 9 and is NOT plotted - overlap law).
+- weights/data/unattended_20260801_002809_ladder_result.json - the 14-row ladder measured
+  under the quiesced-machine protocol the README publishes (median |err| 8.4%). The earlier
+  PRE_v124 reference reads 9.0% on the same rows; the README calls that move "unchanged
+  inside our +/-1 point noise floor", and the charts cite the same dataset as the README so
+  one number exists in public. The 20260731_1913 re-run is contaminated from row 9 and is NOT
+  plotted at all (overlap law).
 - E-08 (register): RTX 5070, pred 58.1 vs 54-57 measured; 9B floor 45.7 vs 71-76.
 - E-13 (register): RX 5700 XT, pred 73.1 vs 73.18 +/- 0.16.
 - U-06 anchor (prereg #66): 35B Q8_0 disk-streaming, pred 2.0 vs 0.66 (-67%) - THE miss,
@@ -29,7 +33,9 @@ def py(v):
 
 def main():
     rows = json.load(open(os.path.join(os.path.dirname(__file__), "data",
-                                       "ladder_PRE_v124_2dc97d41_backup.json")))
+                                       "unattended_20260801_002809_ladder_result.json")))
+    errs = sorted(abs(r["predicted"] / r["measured"] - 1) * 100 for r in rows)
+    med = errs[len(errs) // 2] if len(errs) % 2 else (errs[len(errs)//2-1] + errs[len(errs)//2]) / 2
     s = [B.svg_open(W, H),
          B.header(W, "EVERY POINT A COMMITTED MEASUREMENT · MISSES AT FULL SIZE",
                   "Predicted vs measured",
@@ -125,14 +131,14 @@ def main():
 
     # right column: KPI chips
     CX, CW = 1010, 500
-    s.append(B.chip(CX, 380, CW, "MEDIAN ERROR, 14-ROW LADDER", "9.0%",
+    s.append(B.chip(CX, 380, CW, "MEDIAN ERROR, 14-ROW LADDER", f"{med:.1f}%",
                     "one law + one calibration, 0.5B to 35B", B.TEAL))
     s.append(B.chip(CX, 590, CW, "FIRST FOREIGN SILICON (AMD)", "+0.1%",
                     "RX 5700 XT, Vulkan - preset GPU constants", B.TEAL_DEEP))
     s.append(B.chip(CX, 800, CW, "THE MISS, ON THE CHART", "-67%",
                     "disk tier over-promised - relabeled, not hidden", B.DISK))
 
-    s.append(B.footer(W, H, "ladder cal 2dc97d41 · E-08/E-13 register · prereg #66 disk anchor"))
+    s.append(B.footer(W, H, "ladder 2026-08-01 quiesced run · E-08/E-13 register · prereg #66 disk anchor"))
     s.append("</svg>")
     B.save("prediction_vs_reality.svg", "".join(s))
 

@@ -17,7 +17,7 @@ STAGES = [
     ("2", "REBUILD", ["quantize around", "what you found"], "quantprobe quantize",
      "-13.2% ppl\nat equal bytes", True),
     ("3", "PLACE", ["split across", "VRAM / RAM / disk"], "quantprobe plan",
-     "9.0% median\nprediction error", True),
+     "8.4% median\nprediction error", True),
     ("4", "RUN", ["launch with the", "flags that fit"], "quantprobe run",
      "2.2x prefill\nvs naive -ngl", True),
     ("5", "SERVE", ["many sessions,", "an API, a container"], "quantprobe serve",
