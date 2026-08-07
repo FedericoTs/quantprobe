@@ -17,6 +17,9 @@ the wordmark. Regenerate any asset by re-running its generator; never hand-edit 
 | [prediction_vs_reality.svg](prediction_vs_reality.svg) | the trust chart: predicted vs measured log-log, 14-row ladder at 9.0% median, both out-of-sample externals, and the -67% disk miss plotted at full size | `weights/make_pred_vs_reality.py` | `weights/data/ladder_PRE_v124_2dc97d41_backup.json`, register E-08/E-13, prereg #66 |
 | [stuck_boost_state.svg](stuck_boost_state.svg) | the stuck boost state: 21.58 -> 15.56 -> 21.68 t/s with the ruled-out ladder (load, thermal, our own patches) beside it | `weights/make_stuck_boost.py` | preregs #60/#61, `weights/data/prereg61_coldboot.log` |
 | [stuck_boost_reddit.svg](stuck_boost_reddit.svg) | r/LocalLLaMA cut of the same data: reader-centric headline, the nvidia-smi self-check ON the canvas, n=1 scope in the subtitle | `weights/make_stuck_boost.py --reddit` | same as above |
+| [pipeline.svg](pipeline.svg) | the six stages - probe, rebuild, place, run, serve, prove - with a measured number on each and the one unshipped stage drawn as unshipped | `weights/make_pipeline.py` | one figure per stage, sourced below |
+| [fragility_fingerprint.svg](fragility_fingerprint.svg) | why a quantization recipe cannot be reused: Mistral breaks at the FRONT (27x), every Qwen at the BACK | `weights/make_fragility.py` | `quantprobe/recipes/*.json` (band probe, wikitext-2 held out) |
+| [depth_vs_uniform.svg](depth_vs_uniform.svg) | same bytes (+0.48%), better model: ppl -13.2%, KLD median -39.6%, top-token +5.13 pts, decode +6.6% - with the staked speed MISS at full size | `weights/make_depth_vs_uniform.py` | prereg 2026-08-04-a2a-depth-aware-vs-uniform |
 
 Coming with the program: the quality-ladder Pareto chart (KLD vs size with tok/s per point),
 Grid-v2 table rows (GSM8K/IFEval/GPQA/AIME), per-phase tuned-model columns, and the Maple
