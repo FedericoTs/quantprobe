@@ -44,6 +44,13 @@ GEN = {"gsm8k_cot_zeroshot": "max_gen_toks=2048",
 #    thumb on the scale.
 SYSTEM_INSTRUCTION = ("Solve the problem. Put your final answer inside \\boxed{}.")
 
+# ...but ONLY on tasks that are graded by extracting a boxed answer. IFEval grades literal
+# instruction compliance ("respond in all lowercase", "no commas", "wrap the whole reply in
+# quotes"), so a standing system instruction to box the answer is a competing instruction and
+# would depress the score for a reason that has nothing to do with the model. GSM8K extracts
+# from its own "The answer is X" convention and GPQA is multiple choice; neither wants it.
+BOXED_TASKS = {"math500_boxed", "aime24", "aime25"}
+
 # Tasks carrying few-shot examples need them delivered as chat turns when a chat template is
 # applied; lm-eval refuses the combination otherwise. (math500_boxed is zero-shot - the answer
 # format is asked for in the prompt instead of demonstrated, which is cheaper and clearer.)
@@ -87,9 +94,10 @@ def run_row(model, task, log, concurrent=4, limit=None, tag=""):
            f"num_concurrent={concurrent},max_retries=3,tokenized_requests=False,timeout=600",
            "--tasks", task, "--gen_kwargs", GEN[task],
            "--include_path", TASK_PATH,
-           "--system_instruction", SYSTEM_INSTRUCTION,
            "--apply_chat_template", "--seed", "0",
            "--output_path", out_dir(model, task, tag), "--log_samples"]
+    if task in BOXED_TASKS:
+        cmd += ["--system_instruction", SYSTEM_INSTRUCTION]
     if task in FEWSHOT_TASKS:
         cmd.append("--fewshot_as_multiturn")
     if limit:
