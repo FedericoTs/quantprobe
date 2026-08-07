@@ -1853,6 +1853,26 @@ def resolve_hw(args, announce=True):
     vc = agg_cap(vc) or 0; vb = agg_bw(vb, 0.85) or 0
     rc = rc or 16; rb = rb or 40
     db = agg_bw(db, 0.75) or 0.5
+    # A card with capacity but no bandwidth is not a machine - it is a missing flag. Passing
+    # ANY hw flag skips auto-detect (you are describing a different box), and RAM/disk carry
+    # fallbacks while VRAM fell through to 0 - so `plan --vram 24` (sizing a card you do not
+    # own yet) divided by zero three frames down. Borrow THIS box's detected GPU bandwidth and
+    # SAY so - a stated borrowed number beats both a crash and a silent invention.
+    if vc > 0 and vb <= 0:
+        from . import detect as detmod
+        try:
+            auto, _ = detmod.detect()
+        except Exception:
+            auto = {}
+        vb = agg_bw(auto.get("vram_bw"), 0.85) or 0
+        if vb <= 0:
+            raise SystemExit(
+                f"--vram {vc:g} was given without --vram-bw, and no GPU was detected here to "
+                f"borrow a bandwidth from.\nPass --vram-bw GB/s (the card's spec figure is "
+                f"fine) so the VRAM tier has a rate.")
+        if announce:
+            print(f"[quantprobe] --vram {vc:g} given without --vram-bw: using {vb:g} GB/s "
+                  f"detected on THIS box. Pass --vram-bw to model a different card.")
     return vc, vb, rc, rb, db, geta, gl, hw
 
 

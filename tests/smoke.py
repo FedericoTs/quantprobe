@@ -1799,6 +1799,23 @@ def t_c11_depth_aware_dense_split():
     assert shallow / 48 * 8.37 <= 6 * 0.9 - 1.0, "shallow emit overcommits the budget"
 
 
+def t_partial_hw_flags_still_yield_a_vram_rate():
+    # Passing ANY hardware flag skips auto-detect, and VRAM bandwidth fell through to 0 while
+    # RAM/disk carried fallbacks - so `plan --vram 24` (sizing a card you do not own yet, the
+    # single most natural use of the flag) raised ZeroDivisionError inside evaluate(). The
+    # contract: capacity given without a rate must produce a rate (borrowed and announced) or
+    # an actionable refusal - never a traceback, and never a silent zero.
+    from quantprobe.plan import resolve_hw
+
+    class A:
+        machine = None; vram = 24; vram_bw = None
+        ram = None; ram_bw = None; disk_bw = None
+    vc, vb, rc, rb, db, _geta, _gl, _hw = resolve_hw(A(), announce=False)
+    assert vc == 24, f"explicit --vram must survive resolution, got {vc}"
+    assert vb > 0, "VRAM capacity without a bandwidth is not a machine - it divided by zero"
+    assert rc > 0 and rb > 0 and db > 0, "RAM/disk fallbacks must still hold"
+
+
 def t_u17_iq_cpu_pricing():
     # U-17 (prereg #66): iq_share must slow every RAM weight read by the calibrated per-byte
     # penalty (pure-CPU arm 14.1 -> 11.44 at share 0.962); iq_share=0 (presets) must be untouched.
