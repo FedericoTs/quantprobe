@@ -1523,6 +1523,20 @@
    "claim": "EXPERT-COHERENT SAMPLING. U-39 showed MoE batching caps ~2x because lanes route to DIFFERENT experts; the residual 2x exists because lanes sometimes overlap. Make the overlap deliberate: for best-of-N on a MoE, share a greedy prefix and diverge late (or bias sampling toward agreement) so parallel samples summon overlapping expert sets per step - shared reads make the batch cheaper BECAUSE the answers agree more. Tension to measure: diversity (voting value) vs coherence (bandwidth value). Protocol sketch: batched-bench-style N=8 on the 30B offload placement, arms = independent seeds vs shared-prefix-diverge-at-75%, measure aggregate tok/s + answer diversity on suite tasks. No literature found for steering the SAMPLER to maximise expert overlap across a batch.",
    "priority": "medium - one evening; pairs with the X-2 predicate-picked best-of-N pilot",
    "predicted_effect": "STAKED AT REGISTRATION, before any run. P1: shared-prefix-diverge-late arms reach aggregate >=1.2x the independent-seed arms at N=8 on the 30B offload placement. P2: answer diversity on suite tasks stays >=70% of the independent-seed arms' diversity (else the bandwidth win bought agreement, not hedging). KR: if expert-overlap steering yields <1.1x aggregate, routing decorrelates too fast for sampler-level coherence and the idea dies."
+  },
+  {
+   "id": "U-42",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "speculative",
+   "claim": "Our Phase B generator screens for correctness but never grades DIFFICULTY, and never calibrates the synthetic distribution against a real one - so the corpus may be large and easy.",
+   "hypothesis": "BigBang's critic (E-17) scores correctness, difficulty, scalability and diversity, and calibrates the evolving synthetic distribution against held-out REAL tasks. Adding difficulty grading and a real-task anchor to our feed should raise the training value per sample: a 3,626-sample corpus that is uniformly easy teaches less than a smaller one graded across a difficulty spread.",
+   "predicted_effect": "unknown magnitude; the testable form is that Phase C SFT on a difficulty-graded subset beats SFT on an equal-sized random subset of the same corpus",
+   "cost": "CPU only for the grading pass; one extra Phase C arm to score it",
+   "why_it_is_promising": "It is the one part of the BigBang method that is described clearly enough to reimplement, it costs no GPU to build, and it attacks a real weakness we already know about - our screen answers 'is this correct and uncontaminated', never 'is this worth learning from'. Also gives Phase C a controlled comparison instead of a single arm.",
+   "protocol": "Grade the committed 3,626-sample corpus for difficulty (execution-based proxies first: solve rate across the k candidates we already logged, test count, solution length). Split into difficulty bands. Phase C arm A: SFT on a stratified difficulty-spread subset. Arm B: SFT on an equal-sized random subset. Same tokens, same steps, same seed. Score both on the frozen grid. Stake the bands and the expected direction BEFORE training.",
+   "priority": "high for Phase C - it converts a single planned arm into a controlled experiment for almost no extra cost",
+   "evidence": "E-17 (method described, not released); Phase B corpus weights/data/phaseb_corpus*.jsonl (3,626 screened samples, per-candidate outcomes already logged)"
   }
  ],
  "external": [
@@ -1675,6 +1689,18 @@
    "question_to_answer": "Does Sobol variance attribution, measured, agree with the binding constraint our law derives? Agreement validates the classifier on a second basis; disagreement is a finding and the classifier is re-derived.",
    "wired_into": "prereg 2026-08-07-doe-flag-screening (staked); ROADMAP item; autotune successor design",
    "priority": "high - cheap, falsifiable, and improves a shipped command"
+  },
+  {
+   "id": "E-17",
+   "kind": "external",
+   "status": "reviewed 2026-08-08 - model + harness public, framework withheld",
+   "repo": "huggingface.co/endless-frontier/BigBang-v1 + github.com/endless-frontier/BigBang-v1 (Apache-2.0, harness only) + endlessfrontier.tech",
+   "why": "THE VERIFICATION ASYMMETRY, IN A PROJECT THAT BRANDS ITSELF ON VERIFIABILITY. BigBang-v1 is Qwen3.6-35B-A3B post-trained on ~10,000 examples built by an adversarial self-evolving loop (generator agents propose+solve escalating problems; critic agents score correctness, difficulty, scalability, diversity, calibrated against held-out real research tasks). It claims aggregate performance between DeepSeek V4 Flash (284B) and V4 Pro (1.6T). The grading is SPLIT: SWE-Bench Pro and SciCode-Verified run the official execution harnesses (code runs or it does not), while BrowseComp, xbench and FrontierScience are scored by an OpenAI-compatible JUDGE MODEL. The headline that travels - exceeding a 1.6T model on FrontierScience Research - sits on the model-judged half, under a banner reading 'verifiable frontier tasks'. Our Phase B measured models getting correctness wrong ~55% with scale not fixing it (4B 54.7%, 30B 55.7%), but that was models WRITING THEIR OWN TESTS for code; a judge scoring against a reference answer is an easier task, so our number RAISES this question rather than settling it. Recorded as an asymmetry to watch, not a refutation.",
+   "magnitude": "~10k examples claimed to move a 35B-A3B into the 284B-1.6T band; half the evidence is execution-graded, half is model-graded",
+   "scope": "reported by the project; we have verified none of the benchmark numbers and cannot - the framework, the critic implementation and the training methodology are all unreleased. The public repo is a results README plus a search/visit/code_exec agent harness (E2B sandbox, 500 calls per trajectory)",
+   "question_to_answer": "On the model-judged benchmarks, how much of the reported gain survives an execution-grounded or human-adjudicated regrade? Unanswerable from outside until the critic ships.",
+   "wired_into": "U-42 (difficulty-graded generation, the technique worth taking); Phase B corpus design; agent-harness reference for the credibility-harness track",
+   "priority": "medium - the technique is worth more to us than the claim"
   }
  ]
 }
