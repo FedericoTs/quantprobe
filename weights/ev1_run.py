@@ -22,18 +22,43 @@ MYLOCK = os.path.join(DATA, ".ev1_lock")
 PORT = 8093
 
 GEN = {"gsm8k_cot_zeroshot": "max_gen_toks=2048",
-       "hendrycks_math500": "max_gen_toks=2048",
+       "math500_boxed": "max_gen_toks=3072",
        "aime24": "max_gen_toks=4096", "aime25": "max_gen_toks=4096",
        "ifeval": "max_gen_toks=2048",
        "gpqa_main_zeroshot": "max_gen_toks=2048"}
 
+# Protocol v3 (amended in the prereg BEFORE any v3 row ran). Two fixes, both forced by reading
+# the v2 outputs rather than the v2 exit codes:
+#
+# 1. hendrycks_math500 -> minerva_math500. SAME 500 items (both pull HuggingFaceH4/MATH-500),
+#    but hendrycks' process_results slices the answer as "everything between the FIRST $ and
+#    the LAST $" of the response and never inspects \boxed{} in the model's output at all. Any
+#    model that shows its work in LaTeX therefore scores 0 by construction - which is exactly
+#    what we measured: 89.4% of 0.6B responses carried a \boxed answer, scorer said 0.00%.
+#    minerva_math500 extracts properly and adds a sympy-equivalence metric.
+# 2. SYSTEM_INSTRUCTION, applied uniformly to every model and every generative task. AIME's
+#    extractor is fine (it tries $...$, then \boxed, then is_equiv) - but nothing in its
+#    zero-shot prompt ASKS for either, so the 4B wrote a bare "Answer: 49" in 30 of 30 items
+#    and scored 0 while the 0.6B happened to box out of habit. Standardising the answer format
+#    is what every published AIME/MATH eval does; stating it here keeps it protocol, not a
+#    thumb on the scale.
+SYSTEM_INSTRUCTION = ("Solve the problem. Put your final answer inside \\boxed{}.")
 
-def out_dir(model, task):
-    return os.path.join(DATA, "ev1", model, task)
+# Tasks carrying few-shot examples need them delivered as chat turns when a chat template is
+# applied; lm-eval refuses the combination otherwise. (math500_boxed is zero-shot - the answer
+# format is asked for in the prompt instead of demonstrated, which is cheaper and clearer.)
+FEWSHOT_TASKS = set()
+
+# Our task definitions live in the repo so any row here is reproducible by a stranger.
+TASK_PATH = os.path.join(HERE, "lm_eval_tasks")
 
 
-def done(model, task):
-    d = out_dir(model, task)
+def out_dir(model, task, tag=""):
+    return os.path.join(DATA, "ev1" + tag, model, task)
+
+
+def done(model, task, tag=""):
+    d = out_dir(model, task, tag)
     if not os.path.isdir(d):
         return False
     for root, _, files in os.walk(d):
@@ -42,8 +67,8 @@ def done(model, task):
     return False
 
 
-def run_row(model, task, log, concurrent=4):
-    if done(model, task):
+def run_row(model, task, log, concurrent=4, limit=None, tag=""):
+    if not limit and done(model, task):
         log(f"[{model}/{task}] already complete - skipped (resume)")
         return
     gpu_state(f"{model}/{task} pre", log)
@@ -56,20 +81,25 @@ def run_row(model, task, log, concurrent=4):
         log(f"[{model}/{task}] SERVER FAILED - row recorded unrunnable")
         return
     env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+    cmd = [sys.executable, "-m", "lm_eval", "--model", "local-chat-completions",
+           "--model_args",
+           f"model={model},base_url=http://127.0.0.1:{PORT}/v1/chat/completions,"
+           f"num_concurrent={concurrent},max_retries=3,tokenized_requests=False,timeout=600",
+           "--tasks", task, "--gen_kwargs", GEN[task],
+           "--include_path", TASK_PATH,
+           "--system_instruction", SYSTEM_INSTRUCTION,
+           "--apply_chat_template", "--seed", "0",
+           "--output_path", out_dir(model, task, tag), "--log_samples"]
+    if task in FEWSHOT_TASKS:
+        cmd.append("--fewshot_as_multiturn")
+    if limit:
+        cmd += ["--limit", str(limit)]
     t0 = time.time()
-    r = subprocess.run(
-        [sys.executable, "-m", "lm_eval", "--model", "local-chat-completions",
-         "--model_args",
-         f"model={model},base_url=http://127.0.0.1:{PORT}/v1/chat/completions,"
-         f"num_concurrent={concurrent},max_retries=3,tokenized_requests=False,timeout=600",
-         "--tasks", task, "--gen_kwargs", GEN[task],
-         "--apply_chat_template", "--seed", "0",
-         "--output_path", out_dir(model, task), "--log_samples"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-        env=env, timeout=6 * 3600)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", env=env, timeout=6 * 3600)
     stop_server(proc)
     gpu_state(f"{model}/{task} post", log)
-    ok = done(model, task)
+    ok = done(model, task, tag)
     log(f"[{model}/{task}] rc={r.returncode} results={'saved' if ok else 'MISSING'} "
         f"({(time.time()-t0)/60:.0f}m)")
     if not ok:
@@ -82,7 +112,7 @@ def run_row(model, task, log, concurrent=4):
         log(f"  failure tail -> {tailp}")
 
 
-def main(night):
+def main(night, probe=0):
     for l in LOCKS:
         if os.path.isdir(l):
             print(f"REFUSED: {l} exists"); return 3
@@ -97,15 +127,24 @@ def main(night):
     try:
         subprocess.run(["taskkill", "/F", "/IM", "llama-server.exe"], capture_output=True)
         time.sleep(2)
+        if probe:
+            # Checkpoint before the night owns the box: v2 was stopped only after five rows
+            # had already been spent proving a protocol wrong. A protocol change gets a
+            # 20-item smoke on BOTH families first - scores land in ev1_probe/, never in the
+            # scored tree, so a probe can never be mistaken for a published row.
+            for model, task in (("0.6B", "math500_boxed"), ("4B", "aime24")):
+                run_row(model, task, log, limit=probe, tag="_probe")
+            log(f"probe pass complete (limit={probe})")
+            return 0
         if night == 1:
-            rows = ([("0.6B", t) for t in ("hendrycks_math500", "aime24", "aime25", "ifeval",
+            rows = ([("0.6B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
                                             "gsm8k_cot_zeroshot")]
-                    + [("4B", t) for t in ("aime24", "aime25", "ifeval", "hendrycks_math500")])
+                    + [("4B", t) for t in ("aime24", "aime25", "ifeval", "math500_boxed")])
         else:
             rows = ([("4B", "gsm8k_cot_zeroshot")]
-                    + [("7B", t) for t in ("hendrycks_math500", "aime24", "aime25", "ifeval",
+                    + [("7B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
                                             "gsm8k_cot_zeroshot")]
-                    + [("30B", t) for t in ("hendrycks_math500", "aime24", "aime25", "ifeval",
+                    + [("30B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
                                              "gsm8k_cot_zeroshot")]
                     + [(m, "gpqa_main_zeroshot") for m in ("0.6B", "4B", "7B", "30B")])
         for model, task in rows:
@@ -125,5 +164,9 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--night1", action="store_true")
     ap.add_argument("--night2", action="store_true")
+    ap.add_argument("--probe", type=int, default=0,
+                    help="validate a protocol change on N items per task before a night runs")
     a = ap.parse_args()
+    if a.probe:
+        sys.exit(main(1, probe=a.probe))
     sys.exit(main(1 if a.night1 else 2) if (a.night1 or a.night2) else 0)

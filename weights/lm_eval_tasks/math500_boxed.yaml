@@ -1,0 +1,40 @@
+# MATH-500, scored the way lm-eval already scores AIME successfully.
+#
+# WHY THIS TASK EXISTS (prereg #93 amendment, protocol v3 - declared BEFORE any row ran):
+# The stock `hendrycks_math500` slices the candidate answer as "everything between the FIRST $
+# and the LAST $ of the response" and never inspects \boxed{} in the model output at all, so
+# any model that shows its work in LaTeX scores 0 by construction. Measured on our own run:
+# 89.4% of responses carried a well-formed \boxed answer, the task scored 0.00%.
+# The stock `minerva_math500` corrupts the REFERENCE answer instead - its unit-stripping does
+# naive substring replacement, so the "ft" inside \left is deleted and
+# `\left( 3, \frac{\pi}{2} \right)` becomes `\le(3,\frac{\pi}{2}\right)`.
+#
+# This task changes NOTHING about the data (same HuggingFaceH4/MATH-500, all 500 items) and
+# introduces NO new scoring code: extraction and comparison are lm-eval's own
+# last_boxed_only_string / remove_boxed / is_equiv - the identical pair its aime24/aime25
+# tasks use. Only the wiring differs, and it differs because the stock wiring is provably
+# broken. Both numbers get published: the stock 0.00% with its mechanism, and this one.
+task: math500_boxed
+dataset_path: HuggingFaceH4/MATH-500
+dataset_name: default
+output_type: generate_until
+training_split: null
+validation_split: null
+test_split: test
+doc_to_text: "Problem: {{problem}}\n\nSolve the problem. Put your final answer inside \\boxed{}."
+doc_to_target: "{{answer}}"
+process_results: !function math500_utils.process_results
+generation_kwargs:
+  until:
+    - "Problem:"
+  do_sample: false
+  temperature: 0
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+  - metric: emitted_boxed
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 1.0
