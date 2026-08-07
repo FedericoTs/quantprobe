@@ -18,6 +18,7 @@ Close-first discipline: nothing new opens while a staked test sits unscored.
 | 10 | Lane pilots **X-2/X-3** (predicate-picked best-of-16; 16-vote on t4a2) | evening | C |
 | 11 | Distribution loops (leaderboard → interactive matrix → HF badge → launch post) | rolling | B |
 | 12 | **S-1** specialist distillation — awaiting explicit go | days | C |
+| 13 | **DoE flag screening** (prereg #95, E-16) — Morris elementary effects to rank which knobs actually matter and which interact, then Sobol variance attribution to check our **binding-constraint classifier against measured variance** for the first time. Method and tooling by **[bigattichouse](https://github.com/bigattichouse)**: [`llama-optimize`](https://github.com/bigattichouse/llama-optimize) + [`robust`](https://github.com/bigattichouse/robust) (Morris/Sobol/Taguchi in C, CC0-1.0). Turns `autotune` from search into screen-then-optimise, and can put a scope label on a line we ship in `plan` | evening + GPU | A |
 
 Parked with reasons: t4a2/t4c1 need a faster box or bigger budget; U-40 needs llama.cpp
 surgery; older backlog (#47–51, #53, #55–57) slots behind the above.

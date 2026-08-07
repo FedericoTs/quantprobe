@@ -1662,6 +1662,19 @@
    "why": "Pokee-Isaac 28B claims a 10M-token context on one RTX-4090-class GPU (internal RULER 93.3 at full length). Our arithmetic, no hardware needed: 24 GB minus ~16.1 GB of Q4-class 28B weights minus ~1.5 GB runtime buffers leaves ~6.4 GB of state budget, which at 10M positions is 640 BYTES per position. A standard GQA 28B-class cache (48 layers x 8 KV heads x 128 dim, f16) costs ~192 KB/pos - so the claim REQUIRES ~307x state compression (154x even at q8 KV). No KV quantization gets there; sliding-window alone cannot pass real long-range retrieval. Verdict: the claim is not impossible - it is a forced reveal that the \"non-pure decoder-only architecture\" must be SSM/linear-hybrid or extreme latent compression, i.e. the regime our L-24 explicitly voids for standard-attention laws. The RULER numbers are internal and unverified; stated as such. This is the E-12 method applied at announcement speed: the law prices the claim the day it ships.",
    "question_to_answer": "When weights or a paper land: measure kvp directly from the checkpoint (or their stated state size), and score our 640-bytes/pos budget against their actual mechanism. If they open-source, the pokee_research_7b GGUF path (bartowski) is the runnable sibling for a grid row.",
    "priority": "low until artifacts exist - the arithmetic is published; nothing further is checkable today"
+  },
+  {
+   "id": "E-16",
+   "kind": "external",
+   "status": "reviewed - 2026-08-07, author flagged both repos directly",
+   "repo": "github.com/bigattichouse/llama-optimize + github.com/bigattichouse/robust (CC0-1.0)",
+   "author_credit": "bigattichouse - llama-optimize (llama.cpp flag tuning by Design of Experiments) and robust (the general DoE toolkit under it: Morris screening, Sobol variance attribution, Taguchi arrays, in C, public domain)",
+   "why": "A SECOND INDEPENDENT TOOL CONVERGES ON OUR MACHINE-STATE DISCIPLINE, AND CARRIES A METHOD WE DO NOT HAVE. (1) Convergence: llama-optimize waits for GPU cooling between runs and records start temperature per run, as a matter of course. We published the stuck-boost result (preregs #60/#61, -28% from a lower boost state) the same week - two projects independently concluding that a benchmark without machine-state hygiene measures the state, not the config. (2) The method gap: our autotune (#71) is a fixed-budget flag search. Theirs is a two-stage DoE funnel - Morris elementary effects (~R(k+1) runs) to rank knobs by mu* and flag interactions via sigma, then Taguchi orthogonal arrays (L25/L125) for main effects in 25-125 runs instead of thousands. Morris does not just search faster, it EMITS A FINDING: which flags matter here, in what order, and which interact. (3) robust adds Sobol first/total-order variance attribution with bootstrap CIs - the empirical counterpart to our binding-constraint classifier, which currently derives which resource binds from the law and has never been checked against measured variance decomposition. Same knob set as ours (-ngl, -ub, -t, KV type, -ot, expert offload, MTP/ngram, concurrency) and vendor-agnostic across ROCm and CUDA.",
+   "magnitude": "method upgrade for autotune (thousands of runs -> 25-125), plus an independent validation route for the binding-constraint classification",
+   "scope": "reported by the projects; we have measured none of it. robust is CC0-1.0 (public domain), so vendoring or binding carries no licence friction",
+   "question_to_answer": "Does Sobol variance attribution, measured, agree with the binding constraint our law derives? Agreement validates the classifier on a second basis; disagreement is a finding and the classifier is re-derived.",
+   "wired_into": "prereg 2026-08-07-doe-flag-screening (staked); ROADMAP item; autotune successor design",
+   "priority": "high - cheap, falsifiable, and improves a shipped command"
   }
  ]
 }
