@@ -23,7 +23,9 @@ PORT = 8093
 
 GEN = {"gsm8k_cot_zeroshot": "max_gen_toks=2048",
        "math500_boxed": "max_gen_toks=3072",
-       "aime24": "max_gen_toks=4096", "aime25": "max_gen_toks=4096",
+       # 8192 here is NOT what governs length - see CTX_PER_SLOT below. Kept generous so the
+       # harness is never the binding limit; the server is, deliberately and measurably.
+       "aime24_boxed": "max_gen_toks=8192", "aime25_boxed": "max_gen_toks=8192",
        "ifeval": "max_gen_toks=2048",
        "gpqa_main_zeroshot": "max_gen_toks=2048"}
 
@@ -49,7 +51,7 @@ SYSTEM_INSTRUCTION = ("Solve the problem. Put your final answer inside \\boxed{}
 # quotes"), so a standing system instruction to box the answer is a competing instruction and
 # would depress the score for a reason that has nothing to do with the model. GSM8K extracts
 # from its own "The answer is X" convention and GPQA is multiple choice; neither wants it.
-BOXED_TASKS = {"math500_boxed", "aime24", "aime25"}
+BOXED_TASKS = {"math500_boxed", "aime24_boxed", "aime25_boxed"}
 
 # Tasks carrying few-shot examples need them delivered as chat turns when a chat template is
 # applied; lm-eval refuses the combination otherwise. (math500_boxed is zero-shot - the answer
@@ -58,6 +60,23 @@ FEWSHOT_TASKS = set()
 
 # Our task definitions live in the repo so any row here is reproducible by a stranger.
 TASK_PATH = os.path.join(HERE, "lm_eval_tasks")
+
+# THE REAL LENGTH LIMIT. A slot's context holds prompt AND generation, so ctx_per_slot - prompt
+# is the true generation ceiling and max_gen_toks above it is decorative. Measured directly:
+# one AIME item ran 11,386 chars at max_gen_toks=4096 and 10,970 at 8192 - unchanged, because
+# both runs were actually stopped by ctx_per_slot=4096 (~3,900 tokens after the prompt).
+# Raising the harness budget alone was a fix that fixed nothing.
+#
+# Long-reasoning tasks therefore get a wider slot, paid for by halving concurrency so total KV
+# (slots x ctx) stays flat and the placement does not move - changing VRAM pressure mid-suite
+# would break C-14 (one machine state per comparison) far more expensively than truncation does.
+CTX_PER_SLOT = {"aime24_boxed": 8192, "aime25_boxed": 8192, "math500_boxed": 8192}
+CONCURRENT = {"aime24_boxed": 2, "aime25_boxed": 2, "math500_boxed": 2}
+
+
+def slot_plan(task):
+    """(ctx_per_slot, concurrent) for a task. Product is constant, so KV footprint is too."""
+    return CTX_PER_SLOT.get(task, 4096), CONCURRENT.get(task, 4)
 
 
 def out_dir(model, task, tag=""):
@@ -74,7 +93,7 @@ def done(model, task, tag=""):
     return False
 
 
-def build_cmd(model, task, concurrent=4, limit=None, tag=""):
+def build_cmd(model, task, concurrent=None, limit=None, tag=""):
     """The lm-eval invocation for one row, as data so it can be asserted without a GPU.
 
     Extracted because the last protocol change - scoping the boxed-answer instruction to the
@@ -82,6 +101,7 @@ def build_cmd(model, task, concurrent=4, limit=None, tag=""):
     invisible until a row has already been spent on it. IFEval grades literal instruction
     compliance, so a stray system instruction there is a silent scoring bug, not a crash.
     """
+    concurrent = concurrent or slot_plan(task)[1]
     cmd = [sys.executable, "-m", "lm_eval", "--model", "local-chat-completions",
            "--model_args",
            f"model={model},base_url=http://127.0.0.1:{PORT}/v1/chat/completions,"
@@ -104,15 +124,17 @@ def server_extra(model):
     return ("--reasoning", "off") if model in THINKING_FAMILY else ()
 
 
-def run_row(model, task, log, concurrent=4, limit=None, tag=""):
+def run_row(model, task, log, concurrent=None, limit=None, tag=""):
     if not limit and done(model, task):
         log(f"[{model}/{task}] already complete - skipped (resume)")
         return
-    gpu_state(f"{model}/{task} pre", log)
+    ctx, conc = slot_plan(task)
+    concurrent = concurrent or conc
+    gpu_state(f"{model}/{task} pre (ctx {ctx} x {concurrent} slots)", log)
     # Protocol v2 (amended in the prereg BEFORE re-runs): thinking off SERVER-SIDE via
     # --reasoning off. v1's "thinking-as-served" buried thought in reasoning_content, which
     # lm-eval never sees - budgets burned invisibly, answers truncated, scores were floors.
-    proc, _ = start_server(MODELS[model], concurrent, ctx_per_slot=4096,
+    proc, _ = start_server(MODELS[model], concurrent, ctx_per_slot=ctx,
                            extra=server_extra(model))
     if proc is None:
         log(f"[{model}/{task}] SERVER FAILED - row recorded unrunnable")
@@ -163,7 +185,7 @@ def main(night, probe=0):
             # the cheapest model, and the cheapest task runs on every model. The expensive
             # failure this exists to prevent is a 30B row dying at hour 12 of a 15-hour night
             # for a reason a 3-item run would have shown in two minutes.
-            rows = ([("0.6B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
+            rows = ([("0.6B", t) for t in ("math500_boxed", "aime24_boxed", "aime25_boxed", "ifeval",
                                             "gsm8k_cot_zeroshot")]
                     + [(m, "gsm8k_cot_zeroshot") for m in ("4B", "7B", "30B")])
             for model, task in rows:
@@ -171,14 +193,14 @@ def main(night, probe=0):
             log(f"probe cross complete (limit={probe}, {len(rows)} cells)")
             return 0
         if night == 1:
-            rows = ([("0.6B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
+            rows = ([("0.6B", t) for t in ("math500_boxed", "aime24_boxed", "aime25_boxed", "ifeval",
                                             "gsm8k_cot_zeroshot")]
-                    + [("4B", t) for t in ("aime24", "aime25", "ifeval", "math500_boxed")])
+                    + [("4B", t) for t in ("aime24_boxed", "aime25_boxed", "ifeval", "math500_boxed")])
         else:
             rows = ([("4B", "gsm8k_cot_zeroshot")]
-                    + [("7B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
+                    + [("7B", t) for t in ("math500_boxed", "aime24_boxed", "aime25_boxed", "ifeval",
                                             "gsm8k_cot_zeroshot")]
-                    + [("30B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
+                    + [("30B", t) for t in ("math500_boxed", "aime24_boxed", "aime25_boxed", "ifeval",
                                              "gsm8k_cot_zeroshot")]
                     + [(m, "gpqa_main_zeroshot") for m in ("0.6B", "4B", "7B", "30B")])
         for model, task in rows:

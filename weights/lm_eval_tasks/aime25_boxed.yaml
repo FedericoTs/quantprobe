@@ -1,0 +1,29 @@
+# AIME 2025, same treatment as aime24_boxed - see that file for the full rationale.
+#
+# AIME25 also carries a second job: it is the CONTAMINATION CONTROL for AIME24. Same format,
+# same difficulty class, released later, so a model scoring far higher on '24 than on '25 is
+# showing memorisation rather than reasoning. That comparison is only meaningful if both rows
+# are scored identically and both report their ungradeable rate - hence this file.
+task: aime25_boxed
+dataset_path: math-ai/aime25
+output_type: generate_until
+training_split: null
+validation_split: null
+test_split: test
+doc_to_text: "Problem: {{problem}}\n\nSolve the problem. Put your final answer inside \\boxed{}."
+doc_to_target: "{{answer}}"
+process_results: !function math500_utils.process_results
+generation_kwargs:
+  until:
+    - "Problem:"
+  do_sample: false
+  temperature: 0
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+  - metric: emitted_boxed
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 1.0

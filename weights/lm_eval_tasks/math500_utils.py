@@ -17,6 +17,14 @@ from lm_eval.tasks.hendrycks_math.utils import (  # noqa: F401
 )
 
 
+def _gold(doc):
+    """AIME ships the answer under 'Answer', MATH-500 under 'answer'."""
+    for k in doc:
+        if k.lower() == "answer":
+            return str(doc[k])
+    raise KeyError("no answer field in doc")
+
+
 def process_results(doc, results):
     response = results[0]
     boxed = last_boxed_only_string(response)
@@ -29,7 +37,7 @@ def process_results(doc, results):
     if candidate is None:
         return {"exact_match": 0, "emitted_boxed": 0}
     try:
-        correct = int(bool(is_equiv(candidate, doc["answer"])))
+        correct = int(bool(is_equiv(candidate, _gold(doc))))
     except Exception:
         correct = 0
     return {"exact_match": correct, "emitted_boxed": 1}

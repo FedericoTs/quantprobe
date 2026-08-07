@@ -1840,7 +1840,7 @@ def t_ev1_flags_route_to_the_right_tasks():
     _sys.path.insert(0, os.path.join(root, "weights"))
     import ev1_run as E
 
-    TASKS = ("math500_boxed", "aime24", "aime25", "ifeval", "gsm8k_cot_zeroshot")
+    TASKS = ("math500_boxed", "aime24_boxed", "aime25_boxed", "ifeval", "gsm8k_cot_zeroshot")
     for model in ("0.6B", "4B", "7B", "30B"):
         for task in TASKS:
             cmd = E.build_cmd(model, task)
@@ -1850,7 +1850,7 @@ def t_ev1_flags_route_to_the_right_tasks():
             assert E.TASK_PATH in cmd, f"{model}/{task}: --include_path missing (our task won't resolve)"
             assert "max_gen_toks" in joined, f"{model}/{task}: no generation budget"
             boxed = "--system_instruction" in cmd
-            if task in ("math500_boxed", "aime24", "aime25"):
+            if task in ("math500_boxed", "aime24_boxed", "aime25_boxed"):
                 assert boxed, f"{model}/{task}: boxed-graded task lost its answer-format instruction"
             else:
                 assert not boxed, \
@@ -1864,8 +1864,22 @@ def t_ev1_flags_route_to_the_right_tasks():
     assert E.server_extra("30B") == (), "30B is not a thinking model - flag would be rejected"
 
     # a probe must never write into the scored tree
-    assert "_probe" in " ".join(E.build_cmd("0.6B", "aime24", tag="_probe"))
-    assert E.out_dir("0.6B", "aime24") != E.out_dir("0.6B", "aime24", "_probe")
+    assert "_probe" in " ".join(E.build_cmd("0.6B", "aime24_boxed", tag="_probe"))
+    assert E.out_dir("0.6B", "aime24_boxed") != E.out_dir("0.6B", "aime24_boxed", "_probe")
+
+    # THE REAL length limit is the server slot, not max_gen_toks: one AIME item measured
+    # 11,386 chars at max_gen_toks=4096 and 10,970 at 8192 - unchanged, because both were
+    # stopped by ctx_per_slot=4096. Assert the knob that actually binds, and that widening it
+    # keeps slots x ctx constant so VRAM pressure (and therefore the placement) does not move.
+    base_ctx, base_conc = E.slot_plan("ifeval")
+    for task in ("aime24_boxed", "aime25_boxed", "math500_boxed"):
+        ctx, conc = E.slot_plan(task)
+        assert ctx >= 8192, f"{task}: ctx_per_slot {ctx} truncates long reasoning"
+        assert ctx * conc == base_ctx * base_conc, \
+            f"{task}: total KV moved ({ctx}x{conc} vs {base_ctx}x{base_conc}) - changes the " \
+            f"placement mid-suite and breaks one-machine-state comparability"
+        assert f"num_concurrent={conc}" in " ".join(E.build_cmd("0.6B", task)), \
+            f"{task}: harness concurrency must match the server's slot count"
 
 
 def t_scoring_never_depends_on_math_verify():

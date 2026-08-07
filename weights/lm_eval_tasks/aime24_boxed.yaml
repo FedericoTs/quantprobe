@@ -1,0 +1,37 @@
+# AIME 2024, scored identically to the stock task but with the ungradeable rate REPORTED.
+#
+# WHY (prereg #93 amendment, protocol v3.1 - declared BEFORE any row ran): stock aime24's
+# extraction is already correct (it slices $...$ but then OVERRIDES with \boxed{} when present,
+# which is exactly the step hendrycks_math500 is missing). What it cannot tell you is WHY a
+# response scored 0. Measured on our own probe: 1 of 3 AIME items ran to ~11k characters and
+# stopped mid-sentence without ever reaching an answer. That is not a wrong answer, it is an
+# exhausted budget - and the stock task reports the two identically.
+#
+# So: same dataset, same extraction (lm-eval's last_boxed_only_string / remove_boxed), same
+# comparator (lm-eval's is_equiv), plus emitted_boxed. No scoring logic of ours. On the
+# MATH-500 row the same metric already paid for itself - it showed 23/500 ungradeable, 21 of
+# them truncated, which is the difference between "46% correct" and "46% correct with a
+# visible 50.6% ceiling".
+task: aime24_boxed
+dataset_path: Maxwell-Jia/AIME_2024
+output_type: generate_until
+training_split: null
+validation_split: null
+test_split: train
+doc_to_text: "Problem: {{Problem}}\n\nSolve the problem. Put your final answer inside \\boxed{}."
+doc_to_target: "{{Answer}}"
+process_results: !function math500_utils.process_results
+generation_kwargs:
+  until:
+    - "Problem:"
+  do_sample: false
+  temperature: 0
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+  - metric: emitted_boxed
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 1.0
