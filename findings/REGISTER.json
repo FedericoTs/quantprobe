@@ -1525,11 +1525,11 @@
    "predicted_effect": "STAKED AT REGISTRATION, before any run. P1: shared-prefix-diverge-late arms reach aggregate >=1.2x the independent-seed arms at N=8 on the 30B offload placement. P2: answer diversity on suite tasks stays >=70% of the independent-seed arms' diversity (else the bandwidth win bought agreement, not hedging). KR: if expert-overlap steering yields <1.1x aggregate, routing decorrelates too fast for sampler-level coherence and the idea dies."
   },
   {
-   "id": "U-42",
+   "id": "U-43",
    "kind": "untried",
    "status": "untested",
    "confidence": "speculative",
-   "claim": "Our Phase B generator screens for correctness but never grades DIFFICULTY, and never calibrates the synthetic distribution against a real one - so the corpus may be large and easy.",
+   "claim": "[renumbered from U-42: that id was already taken by the PCIe direction/balance idea in the working queue, registered or not] Our Phase B generator screens for correctness but never grades DIFFICULTY, and never calibrates the synthetic distribution against a real one - so the corpus may be large and easy.",
    "hypothesis": "BigBang's critic (E-17) scores correctness, difficulty, scalability and diversity, and calibrates the evolving synthetic distribution against held-out REAL tasks. Adding difficulty grading and a real-task anchor to our feed should raise the training value per sample: a 3,626-sample corpus that is uniformly easy teaches less than a smaller one graded across a difficulty spread.",
    "predicted_effect": "unknown magnitude; the testable form is that Phase C SFT on a difficulty-graded subset beats SFT on an equal-sized random subset of the same corpus",
    "cost": "CPU only for the grading pass; one extra Phase C arm to score it",
@@ -1699,7 +1699,7 @@
    "magnitude": "~10k examples claimed to move a 35B-A3B into the 284B-1.6T band; half the evidence is execution-graded, half is model-graded",
    "scope": "reported by the project; we have verified none of the benchmark numbers and cannot - the framework, the critic implementation and the training methodology are all unreleased. The public repo is a results README plus a search/visit/code_exec agent harness (E2B sandbox, 500 calls per trajectory)",
    "question_to_answer": "On the model-judged benchmarks, how much of the reported gain survives an execution-grounded or human-adjudicated regrade? Unanswerable from outside until the critic ships.",
-   "wired_into": "U-42 (difficulty-graded generation, the technique worth taking); Phase B corpus design; agent-harness reference for the credibility-harness track",
+   "wired_into": "U-43 (difficulty-graded generation, the technique worth taking); Phase B corpus design; agent-harness reference for the credibility-harness track",
    "priority": "medium - the technique is worth more to us than the claim"
   }
  ]
