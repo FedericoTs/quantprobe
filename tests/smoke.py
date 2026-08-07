@@ -1830,6 +1830,44 @@ def t_math500_scorer_reads_the_boxed_answer():
         f"no boxed answer must read as UNGRADEABLE, not merely wrong: {r}"
 
 
+def t_ev1_flags_route_to_the_right_tasks():
+    # EV-1 v3. Every cell of the night, asserted without a GPU. The failures this catches are
+    # SILENT ones - a stray "put your answer in \boxed{}" on IFEval does not crash, it just
+    # competes with the instructions IFEval is grading and quietly lowers the score, which
+    # then reads as a capability finding. Three rows were already spent on that class of bug.
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import ev1_run as E
+
+    TASKS = ("math500_boxed", "aime24", "aime25", "ifeval", "gsm8k_cot_zeroshot")
+    for model in ("0.6B", "4B", "7B", "30B"):
+        for task in TASKS:
+            cmd = E.build_cmd(model, task)
+            joined = " ".join(cmd)
+            assert task in cmd, f"{model}/{task}: task missing from argv"
+            assert "--apply_chat_template" in cmd, f"{model}/{task}: chat template not applied"
+            assert E.TASK_PATH in cmd, f"{model}/{task}: --include_path missing (our task won't resolve)"
+            assert "max_gen_toks" in joined, f"{model}/{task}: no generation budget"
+            boxed = "--system_instruction" in cmd
+            if task in ("math500_boxed", "aime24", "aime25"):
+                assert boxed, f"{model}/{task}: boxed-graded task lost its answer-format instruction"
+            else:
+                assert not boxed, \
+                    f"{model}/{task}: system instruction leaked onto a task that is NOT graded " \
+                    f"by boxed extraction - on IFEval this silently competes with the rubric"
+
+    # server flags: thinking off only for the family that has thinking to turn off
+    assert E.server_extra("0.6B") == ("--reasoning", "off")
+    assert E.server_extra("4B") == ("--reasoning", "off")
+    assert E.server_extra("7B") == (), "7B is not a thinking model - flag would be rejected"
+    assert E.server_extra("30B") == (), "30B is not a thinking model - flag would be rejected"
+
+    # a probe must never write into the scored tree
+    assert "_probe" in " ".join(E.build_cmd("0.6B", "aime24", tag="_probe"))
+    assert E.out_dir("0.6B", "aime24") != E.out_dir("0.6B", "aime24", "_probe")
+
+
 def t_scoring_never_depends_on_math_verify():
     # math_verify returns False for EVERYTHING on this box - verify(42, 42) is False, because
     # parse() returns [] when its timeout wrapper cannot spawn a subprocess (WinError 87). A

@@ -74,20 +74,14 @@ def done(model, task, tag=""):
     return False
 
 
-def run_row(model, task, log, concurrent=4, limit=None, tag=""):
-    if not limit and done(model, task):
-        log(f"[{model}/{task}] already complete - skipped (resume)")
-        return
-    gpu_state(f"{model}/{task} pre", log)
-    # Protocol v2 (amended in the prereg BEFORE re-runs): thinking off SERVER-SIDE via
-    # --reasoning off. v1's "thinking-as-served" buried thought in reasoning_content, which
-    # lm-eval never sees - budgets burned invisibly, answers truncated, scores were floors.
-    extra = ("--reasoning", "off") if model in THINKING_FAMILY else ()
-    proc, _ = start_server(MODELS[model], concurrent, ctx_per_slot=4096, extra=extra)
-    if proc is None:
-        log(f"[{model}/{task}] SERVER FAILED - row recorded unrunnable")
-        return
-    env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+def build_cmd(model, task, concurrent=4, limit=None, tag=""):
+    """The lm-eval invocation for one row, as data so it can be asserted without a GPU.
+
+    Extracted because the last protocol change - scoping the boxed-answer instruction to the
+    tasks that are graded by extracting a boxed answer - is exactly the kind of edit that is
+    invisible until a row has already been spent on it. IFEval grades literal instruction
+    compliance, so a stray system instruction there is a silent scoring bug, not a crash.
+    """
     cmd = [sys.executable, "-m", "lm_eval", "--model", "local-chat-completions",
            "--model_args",
            f"model={model},base_url=http://127.0.0.1:{PORT}/v1/chat/completions,"
@@ -102,6 +96,29 @@ def run_row(model, task, log, concurrent=4, limit=None, tag=""):
         cmd.append("--fewshot_as_multiturn")
     if limit:
         cmd += ["--limit", str(limit)]
+    return cmd
+
+
+def server_extra(model):
+    """Server flags for one model. v2: thinking off SERVER-SIDE for the thinking family."""
+    return ("--reasoning", "off") if model in THINKING_FAMILY else ()
+
+
+def run_row(model, task, log, concurrent=4, limit=None, tag=""):
+    if not limit and done(model, task):
+        log(f"[{model}/{task}] already complete - skipped (resume)")
+        return
+    gpu_state(f"{model}/{task} pre", log)
+    # Protocol v2 (amended in the prereg BEFORE re-runs): thinking off SERVER-SIDE via
+    # --reasoning off. v1's "thinking-as-served" buried thought in reasoning_content, which
+    # lm-eval never sees - budgets burned invisibly, answers truncated, scores were floors.
+    proc, _ = start_server(MODELS[model], concurrent, ctx_per_slot=4096,
+                           extra=server_extra(model))
+    if proc is None:
+        log(f"[{model}/{task}] SERVER FAILED - row recorded unrunnable")
+        return
+    env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+    cmd = build_cmd(model, task, concurrent, limit, tag)
     t0 = time.time()
     r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
                        errors="replace", env=env, timeout=6 * 3600)
@@ -137,12 +154,21 @@ def main(night, probe=0):
         time.sleep(2)
         if probe:
             # Checkpoint before the night owns the box: v2 was stopped only after five rows
-            # had already been spent proving a protocol wrong. A protocol change gets a
-            # 20-item smoke on BOTH families first - scores land in ev1_probe/, never in the
-            # scored tree, so a probe can never be mistaken for a published row.
-            for model, task in (("0.6B", "math500_boxed"), ("4B", "aime24")):
+            # had already been spent proving a protocol wrong. Scores land in ev1_probe/,
+            # never in the scored tree, so a probe can never be mistaken for a published row.
+            #
+            # A CROSS, not a matrix. Two dimensions can break independently - the task config
+            # (prompt, scorer, extra flags) and the model path (server flags, chat template,
+            # placement) - so we walk each once instead of paying 20 cells. Every task runs on
+            # the cheapest model, and the cheapest task runs on every model. The expensive
+            # failure this exists to prevent is a 30B row dying at hour 12 of a 15-hour night
+            # for a reason a 3-item run would have shown in two minutes.
+            rows = ([("0.6B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
+                                            "gsm8k_cot_zeroshot")]
+                    + [(m, "gsm8k_cot_zeroshot") for m in ("4B", "7B", "30B")])
+            for model, task in rows:
                 run_row(model, task, log, limit=probe, tag="_probe")
-            log(f"probe pass complete (limit={probe})")
+            log(f"probe cross complete (limit={probe}, {len(rows)} cells)")
             return 0
         if night == 1:
             rows = ([("0.6B", t) for t in ("math500_boxed", "aime24", "aime25", "ifeval",
