@@ -1799,6 +1799,49 @@ def t_c11_depth_aware_dense_split():
     assert shallow / 48 * 8.37 <= 6 * 0.9 - 1.0, "shallow emit overcommits the budget"
 
 
+def t_math500_scorer_reads_the_boxed_answer():
+    # EV-1 protocol v3. The stock hendrycks_math500 slices the candidate answer as "everything
+    # between the FIRST $ and the LAST $" of the response, so a model that reasons in LaTeX
+    # scores 0 no matter what it answered (measured: 89.4% emitted a well-formed boxed answer,
+    # task reported 0.00%). These cases pin the fix AND its direction - case 3 is a response
+    # whose body is full of $...$ spans, exactly the shape the stock extractor mangles.
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights", "lm_eval_tasks"))
+    import math500_utils as M
+
+    def score(resp, gold):
+        return M.process_results({"answer": gold}, [resp])
+
+    r = score(r"The answer is $\boxed{42}$.", "42")
+    assert r == {"exact_match": 1, "emitted_boxed": 1}, f"plain correct answer: {r}"
+
+    r = score(r"So $\boxed{126}$.", "42")
+    assert r == {"exact_match": 0, "emitted_boxed": 1}, f"wrong answer must be graded, not skipped: {r}"
+
+    latex_heavy = (r"We have $r = \sqrt{0^2 + 3^2} = 3$ and $\theta = \arctan(3/0)$, "
+                   r"so $\theta = \frac{\pi}{2}$. Final: $\boxed{(3, \frac{\pi}{2})}$")
+    r = score(latex_heavy, r"\left( 3, \frac{\pi}{2} \right)")
+    assert r["exact_match"] == 1, \
+        "the stock 'first $ to last $' slice is back - LaTeX-heavy solutions score 0 again"
+
+    r = score("The answer is 49.", "49")
+    assert r == {"exact_match": 0, "emitted_boxed": 0}, \
+        f"no boxed answer must read as UNGRADEABLE, not merely wrong: {r}"
+
+
+def t_scoring_never_depends_on_math_verify():
+    # math_verify returns False for EVERYTHING on this box - verify(42, 42) is False, because
+    # parse() returns [] when its timeout wrapper cannot spawn a subprocess (WinError 87). A
+    # scorer that silently answers "not equivalent" to every question would zero every math row
+    # while looking healthy, so our scoring path must never reach for it.
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    src = open(os.path.join(root, "weights", "lm_eval_tasks", "math500_utils.py"),
+               encoding="utf-8").read()
+    assert "math_verify" not in src, \
+        "math500_utils must not import math_verify - it returns False for every pair here"
+
+
 def t_partial_hw_flags_still_yield_a_vram_rate():
     # Passing ANY hardware flag skips auto-detect, and VRAM bandwidth fell through to 0 while
     # RAM/disk carried fallbacks - so `plan --vram 24` (sizing a card you do not own yet, the
