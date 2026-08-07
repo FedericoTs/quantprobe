@@ -1701,6 +1701,19 @@
    "question_to_answer": "On the model-judged benchmarks, how much of the reported gain survives an execution-grounded or human-adjudicated regrade? Unanswerable from outside until the critic ships.",
    "wired_into": "U-43 (difficulty-graded generation, the technique worth taking); Phase B corpus design; agent-harness reference for the credibility-harness track",
    "priority": "medium - the technique is worth more to us than the claim"
+  },
+  {
+   "id": "E-18",
+   "kind": "external",
+   "status": "reviewed 2026-08-08 - independent convergence on our harness-beats-size thesis",
+   "repo": "x.com/danpacary/status/2085794035197960418 (Daniel Isaac, M4 Max 128GB, 2026-08-07)",
+   "author_credit": "@danpacary - the sequential-repair arm and the 'same exam, only the harness changed' design are his",
+   "why": "SAME CONCLUSION AS P0, OPPOSITE METHOD, DIFFERENT HARDWARE. One coding exam (emit lexer/parser/evaluator for an expression language, graded by executing 19 HIDDEN tests) across five models on an M4 Max, then ONE repair round after showing each model its own failures: Qwen3.6-27B 16GB 53->100, Ornith-1.0-35B 20GB 56->92, Qwen3.6-35B-A3B MoE 21GB 47->58, Laguna-XS 22GB 63->74, Laguna-S 93GB 96->100. His summary - 'the 93 GB model was never smarter, it tolerated a worse harness' and 'one retry moved scores further than 6x the memory did' - is our Phase A/B thesis phrased better than we have phrased it. We reached it via 16 PARALLEL candidates (4B 76.8 -> 88.4, passing a 30B at 87.8); he reached it via ONE SEQUENTIAL repair. Neither controlled for budget, so the two have never been compared on one axis - which is prereg #96. Also notable: his MoE row moved least (+11 vs +47 for the dense 27B), hinting small-active-parameter models repair worse.",
+   "magnitude": "five models, one task, hidden-test graded; his n is small (one-shot n=5, repair n=2, 19 tests, one task) so the per-model jumps carry heavy variance - the DIRECTION is the datapoint, not the percentages",
+   "scope": "reported by him, Apple Silicon, models we do not have; we have measured none of it",
+   "question_to_answer": "At equal token budget, does width (parallel candidates) or depth (sequential execution-grounded repair) buy more? Staked as prereg #96.",
+   "wired_into": "prereg 2026-08-08-width-vs-depth (#96); P0's public claims; the lanes advice in plan",
+   "priority": "high - it is the cheapest open question we have and it can overturn our own framing"
   }
  ]
 }
