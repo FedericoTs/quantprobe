@@ -69,8 +69,9 @@ README reshape and are wired into it; the rest are post-ready standalone.
 
 **What is left needs measurement, not build-hours:**
 
-- **5** speculation regime map - the 2x3 grid is measured but scattered across preregs #67-#71;
-  needs collation, not new data.
+- **5** speculation regime map - BUILT as `speculation_map`. The collation turned out to be
+  the asset: twelve cells on one box, 2.41x down to 0.61x, with llama.cpp's own default
+  among the losses. Drawn on a log axis about 1.00x because these are ratios.
 - **6** KV depth tax - waiting on the queued 8K-32K sweep.
 - **7** the 9%-collision ledger - `phaseb_screen_ledger.json` is committed; buildable now, but
   it needs a careful frame so it reads as a caution about everyone's data rather than a boast.
