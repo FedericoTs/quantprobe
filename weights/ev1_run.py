@@ -21,13 +21,34 @@ LOCKS = [os.path.join(DATA, n) for n in (".p0_lock", ".autotune_lock", ".grid_lo
 MYLOCK = os.path.join(DATA, ".ev1_lock")
 PORT = 8093
 
-GEN = {"gsm8k_cot_zeroshot": "max_gen_toks=2048",
-       "math500_boxed": "max_gen_toks=3072",
-       # 8192 here is NOT what governs length - see CTX_PER_SLOT below. Kept generous so the
-       # harness is never the binding limit; the server is, deliberately and measurably.
-       "aime24_boxed": "max_gen_toks=8192", "aime25_boxed": "max_gen_toks=8192",
-       "ifeval": "max_gen_toks=2048",
-       "gpqa_main_zeroshot": "max_gen_toks=2048"}
+# A slot's context holds PROMPT + GENERATION. Asking for max_gen_toks == ctx_per_slot leaves
+# ZERO room for the prompt, and the row wedges: 30B AIME24 ran 90 minutes, stopped advancing,
+# and the watchdog killed it at 102m. MATH-500 survived the identical slot plan only because
+# its budget (3072) left 5120 tokens of headroom. Budgets are therefore DERIVED from the slot
+# with a reserve, never written next to it and left to drift apart.
+PROMPT_RESERVE = 1024          # measured AIME prompts run a few hundred tokens; 1024 is slack
+
+
+def gen_budget(task):
+    ctx = CTX_PER_SLOT.get(task, 4096)
+    return min(_GEN_WANT.get(task, 2048), ctx - PROMPT_RESERVE)
+
+
+_GEN_WANT = {"gsm8k_cot_zeroshot": 2048, "math500_boxed": 3072,
+             "aime24_boxed": 8192, "aime25_boxed": 8192,
+             "ifeval": 2048, "gpqa_main_zeroshot": 2048}
+
+
+class _GenMap(dict):
+    """GEN[task] stays a string for every caller, but the number is derived, not declared."""
+    def __getitem__(self, task):
+        return f"max_gen_toks={gen_budget(task)}"
+
+    def __contains__(self, task):
+        return task in _GEN_WANT
+
+
+GEN = _GenMap()
 
 # Protocol v3 (amended in the prereg BEFORE any v3 row ran). Two fixes, both forced by reading
 # the v2 outputs rather than the v2 exit codes:

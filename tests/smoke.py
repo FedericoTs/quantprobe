@@ -1888,6 +1888,18 @@ def t_ev1_flags_route_to_the_right_tasks():
         assert f"num_concurrent={conc}" in " ".join(E.build_cmd("0.6B", task)), \
             f"{task}: harness concurrency must match the server's slot count"
 
+    # A slot's context holds PROMPT + GENERATION. max_gen_toks == ctx_per_slot leaves zero room
+    # for the prompt and the row WEDGES - 30B AIME24 ran 90 minutes, stopped advancing, and the
+    # watchdog killed it at 102m. MATH-500 survived the identical slot plan only because its
+    # budget left 5,120 tokens of headroom. Budgets must be DERIVED from the slot, never
+    # declared beside it where the two can drift apart.
+    for task in TASKS:
+        ctx, _ = E.slot_plan(task)
+        budget = int(E.GEN[task].split("=")[1])
+        assert ctx - budget >= E.PROMPT_RESERVE, \
+            f"{task}: budget {budget} of ctx {ctx} leaves {ctx-budget} tokens for the prompt " \
+            f"(need >= {E.PROMPT_RESERVE}) - this is the wedge that killed 30B AIME24"
+
     # The HTTP timeout must cover the LONGEST budget at a 3 t/s floor. 600s bought ~4,900
     # tokens at the 30B's measured 8.2 t/s against AIME's 8,192-token budget - every long item
     # timed out, retried 3x, and a 166-minute row produced rc=1 and nothing else.
