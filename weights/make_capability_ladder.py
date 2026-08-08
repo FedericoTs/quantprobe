@@ -124,15 +124,11 @@ def main():
             y += ROWH
         y += GROUP_GAP
 
-    # Hand-wrapped: one long line ran past the 1600px canvas and clipped its own last words.
-    notes = ["GSM8K is reported as flexible-extract. Its strict-match filter demands the literal "
-             "sentence “The answer is N.”, which the zero-shot",
-             "prompt never asks for - 0 of 3,957 responses matched it, on any model (C-25). "
-             "GPQA is part of this suite and has not run yet: no cell is shown"
-             " because none was measured."]
-    for i, line in enumerate(notes):
-        s.append(f'<text x="80" y="{y + 6 + i * 26}" fill="{B.MUT}" '
-                 f'font-size="18">{line}</text>')
+    note = ("GSM8K is reported as flexible-extract. Its strict-match filter demands the "
+            "literal sentence “The answer is N.”, which the zero-shot prompt never "
+            "asks for - 0 of 3,957 responses matched it, on any model (C-25). GPQA is part of "
+            "this suite and has not run yet: no cell is shown because none was measured.")
+    s.append(B.paragraph(80, y + 6, note, 18, B.MUT, W - 160))
 
     s.append(B.footer(W, H, "prereg 2026-08-06-ev1-standard-benches · "
                             "weights/data/ev1/**/results_*.json"))

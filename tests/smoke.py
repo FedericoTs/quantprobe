@@ -3137,6 +3137,53 @@ def t_shipped_markdown_carries_no_invisible_control_characters():
     return None
 
 
+def t_no_shipped_chart_has_text_running_off_its_canvas():
+    """A clipped sentence is a silent defect: the asset looks finished and says less than it says.
+
+    Twice on 2026-08-09 an asset shipped with its last words past the right edge - and the
+    second time was AFTER the first had been fixed by hand, which is the argument for a rule
+    instead of remembering. brand.wrap now does the wrapping and this checks the output, both
+    using brand.CHAR_W so authoring and checking cannot drift apart.
+
+    The estimate is deliberately conservative rather than exact: without a font engine there is
+    no true advance width, so this catches gross overruns (the failure that actually happened)
+    and stays quiet on tight-but-fine lines. Tolerance is generous for the same reason - a
+    guard that cries wolf on every chart gets switched off.
+    """
+    import re as _re
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import brand as B
+
+    media = os.path.join(root, "media")
+    bad = []
+    for name in sorted(os.listdir(media)):
+        if not name.endswith(".svg"):
+            continue
+        src = open(os.path.join(media, name), encoding="utf-8").read()
+        vb = _re.search(r'viewBox="0 0 (\d+) (\d+)"', src)
+        if not vb:
+            continue
+        cw = int(vb.group(1))
+        for tag in _re.finditer(r'<text ([^>]*)>(.*?)</text>', src, _re.S):
+            attrs, inner = tag.group(1), tag.group(2)
+            if 'text-anchor' in attrs:            # right/centre anchored: grows leftward
+                continue
+            mx = _re.search(r'\bx="(-?[\d.]+)"', attrs)
+            ms = _re.search(r'font-size="(\d+)"', attrs)
+            if not mx or not ms:
+                continue
+            txt = _re.sub(r'<[^>]+>', '', inner)
+            width = len(txt) * int(ms.group(1)) * B.CHAR_W
+            # 1.18x slack absorbs the per-glyph error in a character-count estimate.
+            if float(mx.group(1)) + width > cw * 1.18:
+                bad.append(f"{name}: {txt[:56]!r} runs to "
+                           f"~{float(mx.group(1)) + width:.0f}px on a {cw}px canvas")
+    assert not bad, "chart text runs off the canvas:\n  " + "\n  ".join(bad[:6])
+    return None
+
+
 def t_a_server_log_is_never_opened_in_a_mode_that_destroys_the_last_one():
     """The server logs are the only record of in-session decode throughput. Do not truncate.
 

@@ -83,6 +83,45 @@ def chip(x, y, w, title, value, sub, color):
               f'font-size="18">{sub}</text>')
 
 
+
+# Segoe UI/Arial average advance is close to 0.50 em for mixed-case prose; 0.52 gives a little
+# safety. Used both to WRAP text when authoring and to CHECK it in tests/smoke.py, so the two
+# agree by construction.
+CHAR_W = 0.52
+
+
+def fits(text, size, avail_px):
+    return len(text) * size * CHAR_W <= avail_px
+
+
+def wrap(text, size, avail_px):
+    """Greedy word wrap to a pixel budget. Returns a list of lines.
+
+    Exists because hand-wrapping is the wrong tool: two assets shipped with their last words
+    clipped off the right edge of the canvas on 2026-08-09, and the second one happened AFTER
+    the first was fixed by hand. A rule beats remembering.
+    """
+    budget = max(1, int(avail_px / (size * CHAR_W)))
+    out, line = [], ""
+    for word in text.split():
+        cand = f"{line} {word}".strip()
+        if len(cand) > budget and line:
+            out.append(line)
+            line = word
+        else:
+            line = cand
+    if line:
+        out.append(line)
+    return out
+
+
+def paragraph(x, y, text, size, fill, avail_px, leading=None):
+    """Wrapped <text> elements starting at (x, y). Returns an SVG string."""
+    lead = leading or int(size * 1.45)
+    return "".join(
+        f'<text x="{x}" y="{y + i * lead}" fill="{fill}" font-size="{size}">{line}</text>'
+        for i, line in enumerate(wrap(text, size, avail_px)))
+
 def svg_open(W, H):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
             f'font-family="{FONT}"><rect width="{W}" height="{H}" fill="{BG}"/>')
