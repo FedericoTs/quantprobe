@@ -90,8 +90,16 @@ TASK_PATH = os.path.join(HERE, "lm_eval_tasks")
 # Long-reasoning tasks therefore get a wider slot, paid for by halving concurrency so total KV
 # (slots x ctx) stays flat and the placement does not move - changing VRAM pressure mid-suite
 # would break C-14 (one machine state per comparison) far more expensively than truncation does.
-CTX_PER_SLOT = {"aime24_boxed": 8192, "aime25_boxed": 8192, "math500_boxed": 8192}
-CONCURRENT = {"aime24_boxed": 2, "aime25_boxed": 2, "math500_boxed": 2}
+# AIME goes to ONE slot. 30B/aime24 deadlocked at 8192x2 after generating all 30 answers:
+# server showed 30/30 completions and released every task, lm-eval held NO tcp connection to
+# 8093 and burned 0.00s CPU over 60s - nothing pending to time out, so waiting could not
+# recover it. MATH-500 survived the identical 8192x2 plan; the only difference is generation
+# LENGTH (3072 vs 7168 budget), which points at long concurrent generations, not the slots.
+# One in-flight request removes the race entirely. slots x ctx stays 16384 either way, so KV
+# footprint and placement do not move - the C-14 comparability the smoke test enforces holds.
+# Cost is wall-clock: serial instead of 2-way, on a 30-item set.
+CTX_PER_SLOT = {"aime24_boxed": 16384, "aime25_boxed": 16384, "math500_boxed": 8192}
+CONCURRENT = {"aime24_boxed": 1, "aime25_boxed": 1, "math500_boxed": 2}
 
 
 def slot_plan(task):
