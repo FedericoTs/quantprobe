@@ -142,8 +142,13 @@ def run_row(model, task, log, concurrent=None, limit=None, tag=""):
     env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
     cmd = build_cmd(model, task, concurrent, limit, tag)
     t0 = time.time()
+    # 6h was not enough and killed a row 103 minutes from the finish line. The 30B MATH-500
+    # row runs 500 items at ~8 tok/s on a split placement with concurrency halved to 2 for
+    # context - measured 1.08 items/min, i.e. ~7.7h. A timeout shorter than the work is not a
+    # safety net, it is a silent row-shredder: six GPU-hours spent, nothing saved, and the
+    # runner moves on. Sized to 12h with the arithmetic recorded so the next person can check it.
     r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                       errors="replace", env=env, timeout=6 * 3600)
+                       errors="replace", env=env, timeout=12 * 3600)
     stop_server(proc)
     gpu_state(f"{model}/{task} post", log)
     ok = done(model, task, tag)
