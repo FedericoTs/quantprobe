@@ -159,10 +159,17 @@ HEARTBEAT_MIN = 15      # how often a healthy row reports that it is still movin
 
 
 def _progress():
-    """A monotone count of finished generations, read from the live server logs.
+    """A monotone count of server progress TICKS, read from the live server logs.
 
     Deliberately measures the SERVER, not the harness: lm-eval prints nothing until a row
-    completes, so the only honest evidence that work is happening is requests retiring.
+    completes, so the only honest evidence that work is happening comes from the server.
+
+    `print_timing` is emitted roughly every 3s WHILE a slot decodes, not once per finished
+    request - so this counts ticks, not generations. That is the better watchdog signal, and
+    the distinction is not pedantic: at one slot an AIME answer can run 8192 tokens (~9 min),
+    so a completion counter would sit frozen through a perfectly healthy generation and a
+    stall detector built on it would either fire on healthy rows or have to wait out the
+    longest legal answer before trusting silence. Ticks catch a wedge mid-generation instead.
     """
     n = 0
     for p in glob.glob(os.path.join(DATA, "p0_server_*.log")):
@@ -193,7 +200,7 @@ def run_watched(cmd, env, proc, model, task, log, t0):
             last_n, last_move = n, now
         if now - last_beat >= HEARTBEAT_MIN * 60:
             last_beat = now
-            log(f"  [{model}/{task}] alive: {n} generations done, "
+            log(f"  [{model}/{task}] alive: {n} progress ticks, "
                 f"{(now-t0)/60:.0f}m elapsed, last progress {(now-last_move)/60:.0f}m ago")
         if now - last_move >= STALL_MIN * 60:
             child.kill()
@@ -201,11 +208,11 @@ def run_watched(cmd, env, proc, model, task, log, t0):
             stop_server(proc)
             gpu_state(f"{model}/{task} post (STALLED)", log)
             log(f"[{model}/{task}] STALLED - no progress for {STALL_MIN}m after "
-                f"{(now-t0)/60:.0f}m and {n} generations. Row killed, night continues. "
+                f"{(now-t0)/60:.0f}m and {n} progress ticks. Row killed, night continues. "
                 f"Nothing was written: lm-eval saves only on completion.")
             open(os.path.join(DATA, f"ev1_fail_{model}_{task}.txt"), "w",
                  encoding="utf-8").write(f"STALLED after {(now-t0)/60:.0f} min, "
-                                         f"{n} generations\n{(out or '')[-2000:]}\n"
+                                         f"{n} progress ticks\n{(out or '')[-2000:]}\n"
                                          f"{(err or '')[-2000:]}")
             return None
     out, err = child.communicate()
