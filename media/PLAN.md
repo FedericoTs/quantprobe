@@ -49,3 +49,36 @@ Stuck-boost (1) and format ladder (2) first - highest relatability per build-hou
 prediction-vs-reality (3) and the size-speed map (4) as the trust + contrast pair; the rest
 as their data or restyle slots open. One asset per post; every asset carries the receipt
 footer and lands here the day it renders clean.
+
+## Status, 2026-08-09 — the data-ready queue is EMPTY
+
+Built, indexed in `media/README.md`, and live on raw GitHub:
+
+| # | asset | what it turned out to say |
+|---|---|---|
+| 1 | `stuck_boost_state` + `stuck_boost_reddit` | the r/LocalLLaMA cut carries the self-check ON the canvas |
+| 2 | `format_ladder_v2` | the spread is the hook; **"IQ is slow" being false** is the value |
+| 3 | `prediction_vs_reality` | 8.4% median, the -67% disk miss at full size |
+| 4 | `size_vs_speed` | the **inversion**, not the trend: +26% bytes, 4.2x faster |
+| — | `pipeline` | the six stages, with `serve` drawn as unshipped |
+| — | `fragility_fingerprint` | the fragile band MOVES: Mistral front 27x, every Qwen back |
+| — | `depth_vs_uniform` | same bytes, better model - with P3's staked speed MISS |
+
+Three of them (`pipeline`, `fragility_fingerprint`, `depth_vs_uniform`) were built for the
+README reshape and are wired into it; the rest are post-ready standalone.
+
+**What is left needs measurement, not build-hours:**
+
+- **5** speculation regime map - the 2x3 grid is measured but scattered across preregs #67-#71;
+  needs collation, not new data.
+- **6** KV depth tax - waiting on the queued 8K-32K sweep.
+- **7** the 9%-collision ledger - `phaseb_screen_ledger.json` is committed; buildable now, but
+  it needs a careful frame so it reads as a caution about everyone's data rather than a boast.
+- **8** batching inversion restyle - **deliberately parked**: it advertises multi-session
+  serving we do not ship. It lands with `serve`, not before. The strongest chart in the deck
+  must not write a cheque the tool cannot cash.
+- **10/11** quality-ladder Pareto and the EV-1 capability rows - both gated on the GPU queue.
+- **NEW** the difficulty-band chart from U-43: 73% of the bulk corpus sits in the two easiest
+  quartiles, validated against 397 declared-level samples. Data committed
+  (`weights/data/phaseb_difficulty.json`); it becomes a chart when Phase C gives it a
+  before/after to sit beside.
