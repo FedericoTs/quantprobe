@@ -147,8 +147,22 @@ def run_row(model, task, log, concurrent=None, limit=None, tag=""):
     # context - measured 1.08 items/min, i.e. ~7.7h. A timeout shorter than the work is not a
     # safety net, it is a silent row-shredder: six GPU-hours spent, nothing saved, and the
     # runner moves on. Sized to 12h with the arithmetic recorded so the next person can check it.
-    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                       errors="replace", env=env, timeout=12 * 3600)
+    # A timeout must cost ONE ROW, not the night. Uncaught, TimeoutExpired walks out of here,
+    # out of the row loop, past the finally that kills the server, and terminates the run - so
+    # a single slow row silently cancels every row queued behind it AND skips the failure-tail
+    # write below, because that line sits after the one that raised. Caught, recorded, skipped.
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", env=env, timeout=12 * 3600)
+    except subprocess.TimeoutExpired as e:
+        stop_server(proc)
+        gpu_state(f"{model}/{task} post (TIMED OUT)", log)
+        log(f"[{model}/{task}] TIMED OUT after {(time.time()-t0)/60:.0f}m - row skipped, "
+            f"night continues. Nothing was written: lm-eval saves only on completion.")
+        open(os.path.join(DATA, f"ev1_fail_{model}_{task}.txt"), "w",
+             encoding="utf-8").write(f"TIMEOUT after {(time.time()-t0)/60:.0f} min\n"
+                                     f"{(e.stdout or b'')[-2000:]!r}\n{(e.stderr or b'')[-2000:]!r}")
+        return
     stop_server(proc)
     gpu_state(f"{model}/{task} post", log)
     ok = done(model, task, tag)
