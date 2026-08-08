@@ -1537,6 +1537,34 @@
    "protocol": "Grade the committed 3,626-sample corpus for difficulty (execution-based proxies first: solve rate across the k candidates we already logged, test count, solution length). Split into difficulty bands. Phase C arm A: SFT on a stratified difficulty-spread subset. Arm B: SFT on an equal-sized random subset. Same tokens, same steps, same seed. Score both on the frozen grid. Stake the bands and the expected direction BEFORE training.",
    "priority": "high for Phase C - it converts a single planned arm into a controlled experiment for almost no extra cost",
    "evidence": "E-17 (method described, not released); Phase B corpus weights/data/phaseb_corpus*.jsonl (3,626 screened samples, per-candidate outcomes already logged)"
+  },
+  {
+   "id": "U-44",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "speculative",
+   "claim": "The KV linear structure may be a property of MATCHED GEOMETRY rather than of a shared family - and we happen to hold the pair that separates the two.",
+   "hypothesis": "E-19 fits its mapper within model families. Our Qwen2.5-7B (28 layers) and Qwen3-Coder-30B-A3B (48 layers) share kv_heads=4 and head_dim=128 across DIFFERENT generations and a dense/MoE boundary. If a ridge mapper still explains a large share of target KV variance there, the structure is geometric and the technique generalises far past families. If variance explained collapses, the family constraint is real and their scope statement is confirmed from outside.",
+   "predicted_effect": "unknown; the informative part is the DIRECTION, and both directions publish",
+   "cost": "CPU-heavy, GPU-light: dump KV from both models over a shared calibration set, strip RoPE, fit ridge per head, report variance explained. No training.",
+   "why_it_is_promising": "It answers a question the authors explicitly did not test, with models already on disk and no new hardware. A negative bounds the phenomenon and costs the same as a positive.",
+   "protocol": "Shared prompt set, identical token positions. Dump per-layer K/V from both models, strip RoPE from keys, select top-k predictive source layers per target layer, fit ridge on a train split, report variance explained per layer and per head on a HELD-OUT split. STAKE the variance threshold that counts as structure BEFORE fitting - a fit with enough free parameters explains anything.",
+   "priority": "high - cheap, falsifiable, answers an open question in a paper published this month",
+   "evidence": "E-19; GGUF headers read 2026-08-08: 7B kv_heads=4 head_dim=128 (28 layers), 30B kv_heads=4 head_dim=128 (48 layers); 0.6B (kv_heads=8) and 4B (head_dim=256) do NOT match and are excluded"
+  },
+  {
+   "id": "U-45",
+   "kind": "untried",
+   "status": "untested",
+   "confidence": "speculative",
+   "claim": "If KV transfers across different MODELS, it should transfer nearly free across two QUANTIZATIONS of the same model - which would let prefill and decode run on different quants, each picked for the resource that actually binds it.",
+   "hypothesis": "E-19's hard case is two different models. The easy case nobody has published is one model at two quantizations: identical architecture, weights differing only by quantization error, so KV states should differ only by that error and may need no mapper at all. That unlocks a split only our findings suggest - L-12 has PREFILL compute-bound (65-67% of FLOP ceiling) while Law 4 has DECODE bandwidth-bound, two different binding resources, and our format ladder places quants differently against each. Q2_K carries structurally more unpack ALU per weight than Q4_0 (8 vs 4 dp4a per 16 weights, prereg #55) and measures 65 vs 119 GB/s effective. So the quant best for a compute-bound prefill is not the quant best for a bandwidth-bound decode, and today you must pick one file for both.",
+   "predicted_effect": "unknown; the staked form is that prefill-on-A + KV transfer + decode-on-B beats either quant run end to end, at equal quality",
+   "cost": "no new models: the A2A arms are a BYTE-MATCHED pair of the same model at two bit allocations, already built and committed",
+   "why_it_is_promising": "It is their result combined with two of ours, and neither half alone suggests it. It is also the cheapest form of their experiment - same architecture means the mapper may reduce to the identity, so arm 0 costs nothing.",
+   "protocol": "Arm 0: IDENTITY transfer (no mapper) between the A2A uniform-Q2_K and depth-aware arms; measure accuracy retention directly. If retention is high, measure prefill t/s and decode t/s separately per quant and test whether the best pair beats the best single file. STAKE the retention threshold before measuring.",
+   "priority": "high - novel, cheap, and falls out of findings we already own",
+   "evidence": "E-19; L-12 (prefill compute-bound); prereg #55 (Q2_K unpack ALU); L-15/L-16 format ladder (Q4_0 119 vs Q2_K 65 GB/s); prereg 2026-08-04 A2A byte-matched arms"
   }
  ],
  "external": [
@@ -1714,6 +1742,18 @@
    "question_to_answer": "At equal token budget, does width (parallel candidates) or depth (sequential execution-grounded repair) buy more? Staked as prereg #96.",
    "wired_into": "prereg 2026-08-08-width-vs-depth (#96); P0's public claims; the lanes advice in plan",
    "priority": "high - it is the cheapest open question we have and it can overturn our own framing"
+  },
+  {
+   "id": "E-19",
+   "kind": "external",
+   "status": "reviewed 2026-08-08 - precondition CHECKED against our own GGUF headers, not assumed",
+   "repo": "arXiv:2608.03893 - Cross-Model KV Cache Transfer in LLM Families: A Closed-Form Linear Mapping for Prefill Reuse (Heo, Shafipour, Zhao, Golub, Kamani, Borkar, Chandran, Zardoshti, Darvish Rouhani)",
+   "why": "IT CUTS PREFILL FLOPS INSTEAD OF SPEEDING THEM UP - the one direction our own L-12 left open. L-12 measured batched prefill converging to 405-445 t/s on this card, 65-67% of its FLOP ceiling, and concluded prefill here is CLOSED except for levers that cut the FLOPs themselves. This is exactly such a lever: swapping models mid-conversation normally forces the receiver to repay prefill from scratch, and they map the source's KV in instead. The finding is that cross-model KV carries substantial LINEAR structure between matched-KV pairs - Qwen3 14B->32B, one source layer explains 56% of variance in target keys and 32% in values, rising to 79%/65% with several source layers. A per-head closed-form ridge mapper (top-k predictive source layers concatenated, RoPE stripped so the fit is position-free and reusable across context lengths, fitted on 500 FineWeb-Edu sequences of 1024 tokens) retains 73-98% of standalone-prefill accuracy on four of six pairs and runs 2.7-25x faster than re-prefill. Two pairs degrade sharply and the paper reports that plainly; an MLP recovers up to +37pp HellaSwag on those.",
+   "magnitude": "2.7-25x vs re-prefill; 73-98% accuracy retention on 4/6 pairs; precondition is matched KV head count and per-head dimension",
+   "scope": "their models, their hardware; we have measured none of it. Their pairs are WITHIN a family - the cross-generation case is untested by them and is exactly what we hold",
+   "question_to_answer": "Is the linear structure a FAMILY property, or does matched KV geometry suffice? Our Qwen2.5-7B and Qwen3-Coder-30B both carry kv_heads=4, head_dim=128 across different generations and a dense/MoE boundary - a case the paper does not cover.",
+   "wired_into": "U-44 (cross-generation transfer, the pair we hold); U-45 (cross-QUANT transfer + the prefill/decode quant asymmetry); L-12's one open direction",
+   "priority": "high - the first credible attack on a wall we published as closed"
   }
  ]
 }
