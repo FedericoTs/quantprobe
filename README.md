@@ -6,13 +6,27 @@
 
 <p align="center"><em>the bar is the probe: one column through the memory tiers it prices — VRAM, RAM, disk.</em></p>
 
-Predicts how fast an LLM will run on your machine — **before you download it** — then hands you the exact llama.cpp command, or does the whole thing itself (`quantprobe auto`: detect → pick → fetch → launch). It **self-calibrates to your hardware**, finds free speed in what you already own (format choice, expert offload, speculation, batch lanes), and if nothing fits well enough it builds a quantization tuned to your specific model and hardware. Then it proves the result: speed re-measured on demand, quality scored by KL divergence, the recommended config put through **40 machine-checked business tasks**, and every user's `bench --contribute` run feeding a public [validation atlas](docs/HARDWARE_TABLE.md) — because **every claim here was pre-registered before measurement, and the misses are published at the same size as the hits.**
+### Will this model run on my machine, and how fast?
+
+**Answered in one second, before you download anything — then rebuilt so it runs better.**
+
+<p align="center">
+  <img src="media/pipeline.png" width="900" alt="Six stages: probe, rebuild, place, run, serve, prove — each with a measured number">
+</p>
+
+Most tools help you pick a quantization someone else built. This one **measures your model, then builds a file that exists only for your hardware** — it probes each layer to find where the model actually breaks, protects that band and crushes the rest, places the result across VRAM/RAM/disk, emits the exact llama.cpp command (or launches it for you with `quantprobe auto`), and then proves the result: speed re-measured on demand, quality scored by KL divergence, the config put through **40 machine-checked business tasks**, and every `bench --contribute` run feeding a public [validation atlas](docs/HARDWARE_TABLE.md). Because **every claim here was pre-registered before measurement, and the misses are published at the same size as the hits.**
 
 [**Quickstart**](#quickstart) · [**Browser version**](https://federicots.github.io/quantprobe/) · [**What runs on what**](docs/MATRIX.md) · [**Commands**](#commands) · [**The laws**](LAWS.md) · [**When it won't help**](#when-quantprobe-wont-help-you)
 
 ![smoke](https://github.com/FedericoTs/quantprobe/actions/workflows/smoke.yml/badge.svg) ![pypi](https://img.shields.io/pypi/v/quantprobe?color=0f766e) ![license](https://img.shields.io/badge/license-MIT-0f766e) ![models](https://img.shields.io/badge/validated-7B_→_744B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
 
 **Validated, not vibes.** 14-model ladder at **8.4% median error** on measured hardware · every printed all-in-VRAM number a documented **floor** (real speed ≥0.90× on 13/13 benchmarks, typically 1.1–1.8× higher) · retrodicts third-party results it never trained on ([airllm's 30× spread, DGX Spark reports, a 1.56 TB Kimi rig](docs/MATRIX.md)) · **every prediction staked before measuring, and the misses published at the same size as the hits.**
+
+<p align="center">
+  <img src="media/prediction_vs_reality.png" width="820" alt="Predicted vs measured tok/s, log-log: the 14-model ladder, two out-of-sample external GPUs, and the -67% disk-tier miss plotted at full size">
+</p>
+
+The miss is on the chart at the same size as the hits, because that is the only version of this plot worth trusting.
 
 ## Quickstart
 
@@ -58,11 +72,27 @@ One pipeline, end to end — most tools ship the first line only:
 - **Anchors predictions to *your* machine** — run `quantprobe calibrate` once and two benchmark runs on your own GGUF scale every prediction. That path passed the gate it pre-registered before any number existed (prereg #64): leave-one-out median error **19% → 5.8%** across 5 arms; ~12% median on the full ladder, misses erring low. `--no-anchors` restores the plain law.
 - **Emits the exact command**, including the `-ot` regex most guides get wrong.
 - **Finds free speed in what you already have** — [partial expert offload](#free-speed-you-probably-already-have) and [prompt-lookup speculation](#free-speed-part-two-if-you-write-code) need no new download.
-- **Builds layer-aware quantizations** — measures which layers of *your* model break under compression, then protects them (−9% perplexity at the same file size).
+- **Builds layer-aware quantizations** — measures which layers of *your* model break under compression, then protects them (−9% perplexity at the same file size). [Why a recipe cannot be reused ↓](#why-your-model-needs-its-own-recipe)
 - **Audits a running Ollama install** — `quantprobe audit-ollama` reads the placement Ollama actually chose, prices it against the planner's, and refuses to compare while VRAM is contended (a measurement discipline most benchmarks skip).
 - **Proves quality, not just speed** — perplexity *and* full-distribution KL divergence via llama.cpp's own `--kl-divergence`, because we measured perplexity moving 23% while the model changed its chosen token on 27% of positions.
 - **Tells you when to stop** — it declines the expensive path on machines that don't need it.
 - Runs on stock [llama.cpp](https://github.com/ggml-org/llama.cpp). No custom runtime, nothing to build.
+
+## Why your model needs its own recipe
+
+<p align="center">
+  <img src="media/fragility_fingerprint.png" width="860" alt="Perplexity cost of quantizing each band of layers: Mistral breaks at the front (27x), every Qwen breaks at the back">
+</p>
+
+The fragile layers **move between models**. Mistral-7B breaks at the *front* — its first eight layers cost **27× more** perplexity than its median band — while Qwen2.5-7B, Qwen3-30B and Qwen3.5-35B all break at the *back*. Architecture family does not predict it; weight statistics point the wrong way. Protect the wrong band and you spend bits where they buy nothing, which is why `quantprobe probe` measures **your** model before `quantprobe quantize` builds anything. Raw bands: [`quantprobe/recipes/`](quantprobe/recipes/).
+
+And the payoff, at **equal file size** (+0.48%, inside the staked ±2% gate):
+
+<p align="center">
+  <img src="media/depth_vs_uniform.png" width="860" alt="Same bytes, better model: perplexity -13.2%, KL divergence -39.6%, same-top-token +5.13 points, decode +6.6%">
+</p>
+
+Bytes are the budget; *where the protection goes* is the treatment. The speed panel carries a **staked miss** — we predicted decode would be unchanged (±3%) and it came in +6.6% faster, which is a good outcome and a failed prediction, published at the same size as the wins. Full stake and verdict: [prereg 2026-08-04](preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md).
 
 ## Does the cheap quant actually do the work?
 
