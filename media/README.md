@@ -21,6 +21,7 @@ the wordmark. Regenerate any asset by re-running its generator; never hand-edit 
 | [fragility_fingerprint.svg](fragility_fingerprint.svg) | why a quantization recipe cannot be reused: Mistral breaks at the FRONT (27x), every Qwen at the BACK | `weights/make_fragility.py` | `quantprobe/recipes/*.json` (band probe, wikitext-2 held out) |
 | [depth_vs_uniform.svg](depth_vs_uniform.svg) | same bytes (+0.48%), better model: ppl -13.2%, KLD median -39.6%, top-token +5.13 pts, decode +6.6% - with the staked speed MISS at full size | `weights/make_depth_vs_uniform.py` | prereg 2026-08-04-a2a-depth-aware-vs-uniform |
 | [format_ladder_v2.svg](format_ladder_v2.svg) | same gigabytes, 2.6x the decode speed - and the correction that "IQ is slow" is false: IQ4_NL 117.0 sits beside Q4_0 119.1, the divide is CODEBOOK vs not | `weights/make_format_ladder2.py` | `quantprobe/spec.py` FORMAT_EBW (L-15/L-16, preregs #52/#70) |
+| [size_vs_speed.svg](size_vs_speed.svg) | size does not predict speed: 15 measured rows on one box, 240x speed range, and the inversion in the middle - a 30B MoE at 11.26 GB decodes 4.2x faster than a 14B dense at 8.99 GB | `weights/make_size_speed.py` | ladder 2026-08-01 + prereg #66 disk anchor; file sizes read from disk at render time |
 
 Coming with the program: the quality-ladder Pareto chart (KLD vs size with tok/s per point),
 Grid-v2 table rows (GSM8K/IFEval/GPQA/AIME), per-phase tuned-model columns, and the Maple
