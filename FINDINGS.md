@@ -11,9 +11,9 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 28 |
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
-| Open contradictions | 24 |
-| Untried levers | 27 |
-| External work to study | 11 |
+| Open contradictions | 25 |
+| Untried levers | 35 |
+| External work to study | 19 |
 
 ## Established laws
 
@@ -519,7 +519,7 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 **Next action:** Run the identical sweep on ANY modern GPU. It costs one command and decides whether this is a law or a museum piece. Until then quantprobe must not model concurrency - it can only disclose it.
 
-`open` · `measured` · scope: GTX 1060 6GB, llama-batched-bench, npp 512 / ntg 128. A 2016 card without tensor cores is exactly where a batched-decode ceiling would appear first. · evidence: prereg #26 (parallel-slots); weights/data/prereg26_parallel_slots.log · wired into: `disclosed in the CLI; NOT modelled`
+`OVERTURNED 2026-08-04 by the U-38 sweep` · `measured` · scope: GTX 1060 6GB, llama-batched-bench, npp 512 / ntg 128. A 2016 card without tensor cores is exactly where a batched-decode ceiling would appear first. · evidence: prereg #26 (parallel-slots); weights/data/prereg26_parallel_slots.log · wired into: `disclosed in the CLI; NOT modelled`
 
 ### C-07 — CPU decode speed depends ~40% on the OpenMP runtime the binary was BUILT with - a variable no hardware spec exposes and the tool cannot currently see.
 
@@ -643,6 +643,13 @@ Where the code, the law and the measurements do not agree yet. Ranked by how muc
 
 `resolved` · `measured` · scope: One drive, one box, two file sizes. The 1-in-8 residual-warm rate is specific to this machine's cache state and is NOT a general constant - what generalises is the direction (cache only ever inflates) and the estimator that follows from it. N=5 is a cost/confidence choice, not a measured optimum. The warm-fraction disclosure is post-hoc and unconfirmed on an independent run. · evidence: weights/exp97_warm_cache_guard.py + weights/data/exp97_warm_cache_guard.json; raw-read baseline weights/data/exp94_access_pattern.json; the live catch is in the 2026-08-01 verify.py failure recorded in the session commits · wired into: `quantprobe/detect.py measure_disk (minimum of N, detail= returns the draws and warm count), quantprobe/calibrate.py and detect.run() now print the draws instead of asking the user to judge them. Guarded by tests/smoke.py t_p97_disk_probe_returns_the_cold_draw_not_the_warm_one, which is fixture-free and mutation-verified: it fails against the pre-#97 single-sample code by construction. DELIBERATELY NOT DONE: nudging the probe toward the ~0.25 GB/s llama.cpp actually achieves (C-23). That gap is a runtime inefficiency and belongs in the law, not in a probe measuring the device; letting a mis-measured probe cancel an unmodelled cost is the mutually-consistent-presets trap C-17 exists to warn about.`
 
+### C-25 — A BENCHMARK'S HEADLINE NUMBER CAN BE A PROPERTY OF ITS SCORER RATHER THAN OF ANY MODEL, AND THE TELL IS A UNIFORM EXACT ZERO ACROSS UNRELATED MODEL SIZES. Three independent instances inside one eval suite, each of which cost a spent row before it was noticed by hand: (1) hendrycks MATH-500 extracts the candidate answer as everything between the FIRST $ and the LAST $ of the response and never inspects \boxed{} - the 0.6B scored 0.00% while 89.4% of its answers carried a well-formed boxed value; (2) zero-shot AIME's prompt requests no answer format at all, so the 4B wrote a bare 'Answer: 49' in 30 of 30 items and scored 0 while the 0.6B happened to box out of habit; (3) lm-eval's gsm8k_cot_zeroshot strict-match filter requires the literal sentence 'The answer is N.', which that task's own doc_to_text ('Q: {question}
+A: Let's think step by step.') never asks for - the pattern is inherited from the FEW-SHOT variant, where the exemplars demonstrated it, and stripping the exemplars removes the only thing that established the convention. MEASURED on case 3: 0 of 3,957 responses across three unrelated models (0.6B, 4B, 7B) match the strict pattern - not a low rate, exactly zero - while flexible-extract on the identical responses gives 36.8% / 81.7% / 79.9%. Inspected samples confirm the models answer correctly in prose ('Therefore, Janet makes $18 every day at the farmers' market.'). THE GENERALISATION IS THE VALUE: real capability differences do not line up on 0.0000 across a 0.6B and a 30B. A format mismatch produces exactly that, because the extractor never fires at all, and that sharpness is what makes the rule mechanical rather than a judgement call. NOT OUR BUG in case 3 - gsm8k-cot-zeroshot ships this way in lm-evaluation-harness 0.4.12 and anyone reporting its strict-match on a chat model is reporting a zero they did not earn.
+
+**Magnitude:** 0 of 3,957 responses match strict-match across 0.6B/4B/7B; the same responses score 36.8/81.7/79.9% under flexible-extract
+
+`resolved` · `measured` · scope: Three tasks in one suite on one harness version. The uniform-zero RULE is a heuristic with a stated false-negative: a scorer that is merely biased rather than totally broken produces low nonzero scores and slips through. It also cannot distinguish an artifact from a genuine capability wall - which is why the guard refuses and demands a human verdict rather than substituting a metric on its own. Two models are not enough to trigger it; coincidence is possible at n=2. · evidence: weights/data/ev1/{0.6B,4B,7B}/gsm8k_cot_zeroshot/**/samples_*.jsonl and results_*.json; the strict pattern is filter_list[0] of lm_eval/tasks/gsm8k/gsm8k-cot-zeroshot.yaml (metadata version 3.0). Cases 1 and 2 are recorded in the EV-1 protocol v3 amendment and weights/lm_eval_tasks/math500_utils.py. · wired into: `weights/ev1_report.py - check_publishable() raises SuspectMetric on any metric that is exactly 0.0 across >= 3 models unless the mechanism is recorded in ARTIFACTS, and REPORTED pins one publishable metric per task with the reason attached (GSM8K -> flexible-extract). Guarded by tests/smoke.py t_a_metric_that_is_zero_for_every_model_is_never_published, mutation-verified in three directions: neutering the guard, reverting GSM8K to strict-match, and an over-eager guard that fires on ragged real scores all turn the test red.`
+
 ## Untried levers
 
 Staked predictions written BEFORE measuring, so a miss is visible. Ordered by expected value.
@@ -687,7 +694,55 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Protocol:** llama-bench -m <7B Q4_K_M> -ngl 99 -n 64 -p 0 -r 3 -np {1,2,4,8,16}, aggregate tok/s per N, on an idle box. Plot aggregate vs N and locate the knee.
 
-`open` · `suggestive` · cost: ~15 minutes on the 1060; llama-bench supports -np directly, no new harness
+`scored 2026-08-04 - REFUTED AS STAKED, and the sweep found something the model did not predict` · `suggestive` · cost: ~15 minutes on the 1060; llama-bench supports -np directly, no new harness
+
+### U-43 — [renumbered from U-42: that id was already taken by the PCIe direction/balance idea in the working queue, registered or not] Our Phase B generator screens for correctness but never grades DIFFICULTY, and never calibrates the synthetic distribution against a real one - so the corpus may be large and easy.
+
+**Hypothesis:** BigBang's critic (E-17) scores correctness, difficulty, scalability and diversity, and calibrates the evolving synthetic distribution against held-out REAL tasks. Adding difficulty grading and a real-task anchor to our feed should raise the training value per sample: a 3,626-sample corpus that is uniformly easy teaches less than a smaller one graded across a difficulty spread.
+
+**Predicted effect (staked):** unknown magnitude; the testable form is that Phase C SFT on a difficulty-graded subset beats SFT on an equal-sized random subset of the same corpus
+
+**Why it is promising:** It is the one part of the BigBang method that is described clearly enough to reimplement, it costs no GPU to build, and it attacks a real weakness we already know about - our screen answers 'is this correct and uncontaminated', never 'is this worth learning from'. Also gives Phase C a controlled comparison instead of a single arm.
+
+**Protocol:** Grade the committed 3,626-sample corpus for difficulty (execution-based proxies first: solve rate across the k candidates we already logged, test count, solution length). Split into difficulty bands. Phase C arm A: SFT on a stratified difficulty-spread subset. Arm B: SFT on an equal-sized random subset. Same tokens, same steps, same seed. Score both on the frozen grid. Stake the bands and the expected direction BEFORE training.
+
+`untested` · `speculative` · evidence: E-17 (method described, not released); Phase B corpus weights/data/phaseb_corpus*.jsonl (3,626 screened samples, per-candidate outcomes already logged) · cost: CPU only for the grading pass; one extra Phase C arm to score it
+
+### U-44 — The KV linear structure may be a property of MATCHED GEOMETRY rather than of a shared family - and we happen to hold the pair that separates the two.
+
+**Hypothesis:** E-19 fits its mapper within model families. Our Qwen2.5-7B (28 layers) and Qwen3-Coder-30B-A3B (48 layers) share kv_heads=4 and head_dim=128 across DIFFERENT generations and a dense/MoE boundary. If a ridge mapper still explains a large share of target KV variance there, the structure is geometric and the technique generalises far past families. If variance explained collapses, the family constraint is real and their scope statement is confirmed from outside.
+
+**Predicted effect (staked):** unknown; the informative part is the DIRECTION, and both directions publish
+
+**Why it is promising:** It answers a question the authors explicitly did not test, with models already on disk and no new hardware. A negative bounds the phenomenon and costs the same as a positive.
+
+**Protocol:** Shared prompt set, identical token positions. Dump per-layer K/V from both models, strip RoPE from keys, select top-k predictive source layers per target layer, fit ridge on a train split, report variance explained per layer and per head on a HELD-OUT split. STAKE the variance threshold that counts as structure BEFORE fitting - a fit with enough free parameters explains anything.
+
+`untested` · `speculative` · evidence: E-19; GGUF headers read 2026-08-08: 7B kv_heads=4 head_dim=128 (28 layers), 30B kv_heads=4 head_dim=128 (48 layers); 0.6B (kv_heads=8) and 4B (head_dim=256) do NOT match and are excluded · cost: CPU-heavy, GPU-light: dump KV from both models over a shared calibration set, strip RoPE, fit ridge per head, report variance explained. No training.
+
+### U-45 — If KV transfers across different MODELS, it should transfer nearly free across two QUANTIZATIONS of the same model - which would let prefill and decode run on different quants, each picked for the resource that actually binds it.
+
+**Hypothesis:** E-19's hard case is two different models. The easy case nobody has published is one model at two quantizations: identical architecture, weights differing only by quantization error, so KV states should differ only by that error and may need no mapper at all. That unlocks a split only our findings suggest - L-12 has PREFILL compute-bound (65-67% of FLOP ceiling) while Law 4 has DECODE bandwidth-bound, two different binding resources, and our format ladder places quants differently against each. Q2_K carries structurally more unpack ALU per weight than Q4_0 (8 vs 4 dp4a per 16 weights, prereg #55) and measures 65 vs 119 GB/s effective. So the quant best for a compute-bound prefill is not the quant best for a bandwidth-bound decode, and today you must pick one file for both.
+
+**Predicted effect (staked):** unknown; the staked form is that prefill-on-A + KV transfer + decode-on-B beats either quant run end to end, at equal quality
+
+**Why it is promising:** It is their result combined with two of ours, and neither half alone suggests it. It is also the cheapest form of their experiment - same architecture means the mapper may reduce to the identity, so arm 0 costs nothing.
+
+**Protocol:** Arm 0: IDENTITY transfer (no mapper) between the A2A uniform-Q2_K and depth-aware arms; measure accuracy retention directly. If retention is high, measure prefill t/s and decode t/s separately per quant and test whether the best pair beats the best single file. STAKE the retention threshold before measuring.
+
+`untested` · `speculative` · evidence: E-19; L-12 (prefill compute-bound); prereg #55 (Q2_K unpack ALU); L-15/L-16 format ladder (Q4_0 119 vs Q2_K 65 GB/s); prereg 2026-08-04 A2A byte-matched arms · cost: no new models: the A2A arms are a BYTE-MATCHED pair of the same model at two bit allocations, already built and committed
+
+### U-46 — LAW 3 SAYS FRAGILITY IS 'MEASURABLE, NOT PREDICTABLE'. It ruled out STATIC signals - architecture family and weight statistics - and never tested a cheap FUNCTIONAL one. Per-layer effective rank, from a handful of forward passes with no quantization at all, may predict the fragile band the 30-minute probe finds.
+
+**Hypothesis:** Law 3's negative rests on two exclusions: architecture family (Mistral and Qwen are near-twins and land at opposite ends of the depth axis) and weight statistics (kurtosis points the WRONG way on Gemma). Both are properties of the weights at rest. Our own rank-robustness work suspects the state variable of quantization is EFFECTIVE RANK, not bit-count - a property of what a layer DOES, measurable from activations without quantizing anything. If per-layer effective rank ranks the bands the way the probe does, fragility becomes predictable from a signal costing seconds instead of a 30-minute quantize-and-perplexity loop.
+
+**Predicted effect (staked):** binary and unforgiving: the SHAPE (front-fragile vs back-fragile) is called correctly for all four atlas models, or the idea is dead. No partial credit.
+
+**Why it is promising:** It is E-19's discovery shape (structure where opacity was assumed) aimed at OUR OWN declared closed door, in the one area where we hold ground truth nobody else has: the depth-fragility atlas. If it lands, Law 3 is amended BY US from 'measurable' to 'predictable from a cheap functional signal', the probe collapses from 30 minutes to a forward pass, and `quantprobe quantize` can build a depth-aware file for a model it has never seen. If it fails, Law 3 is strengthened - it will have survived an attack on the exclusion it never actually tested.
+
+**Protocol:** STAKE FIRST, IN WRITING, BEFORE LOOKING AT A SINGLE BAND DELTA: (1) the exact rank statistic and how it is estimated, (2) the decision rule mapping per-layer rank to a predicted fragile band, (3) the calibration text and token count. Then score SHAPE ONLY (front vs back), not magnitude. HOLD MISTRAL OUT ENTIRELY - it is the 27x outlier that breaks every other rule, so it is the test, not the training set. Ground truth: quantprobe/recipes/*.json - Mistral-7B front-fragile 27.0x, Qwen2.5-7B back 2.53x, Qwen3-30B back 3.68x, Qwen3.5-35B back 2.89x.
+
+`untested` · `speculative` · evidence: LAWS.md Law 3 (the negative claim and its two exclusions); quantprobe/recipes/*.json (the four measured fragile bands); [[rank-robustness-law]] (effective rank as the state variable of quantization); E-19 (the discovery pattern being copied) · cost: CPU/GPU-light - forward passes plus linear algebra on four models already on disk. No quantization, no training, no new downloads.
 
 ### U-07 — Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.
 
@@ -725,6 +780,18 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 `open` · `inferred - the form fits 18 rows on one device and has never been asked about a second` · evidence: prereg #89 section 8 names this as the honest next test and section 9 calls it the binding constraint; the one-row desktop arm in weights/data/exp53_two_resource_disk_tier.json (implied 0.806 GB/s effective against ~3 GB/s advertised, +51% overshoot at the datasheet rate) · cost: high if measured here - this box has no UFS phone and the disk tier needs a model larger than RAM. Low if the second device is obtained the way #53's first one was: a published table with per-token flash-byte instrumentation and a stated drive spec. The cheapest honest version is to ask for one (C-06's replication ask) rather than to fit one. · wired into: `nothing - it is the gate D-27's surviving form has to clear before it may be wired.`
 
+### U-40 — DRAFT-DRIVEN EXPERT PREFETCH. On the expert-offload placement the per-step cost is the SURPRISE of which experts token t+1 wants - the RAM read sits on the critical path because routing is only known after step t. But the ngram drafter already guesses tokens t+1..t+8 for free, and the router is cheap to run on drafted tokens. Run it, learn the probable expert set, and issue RAM->VRAM prefetch DURING step t. Wrong drafts waste a prefetch; correctness untouched (the real router still decides). Nearest literature: Pre-gated MoE (retrains a gate predictor), PowerInfer-class static-heat prefetch. Using the SPECULATION DRAFTS as the prefetch oracle - no retraining, no auxiliary model - appears novel. KILL RULES TO STAKE AT BUILD TIME: (a) router-on-draft expert hit-rate must beat static hot-expert caching's hit-rate on the same corpus, else this is caching with extra steps; (b) end-to-end tok/s must beat the U-39 curve at N=1 by >=15% or the PCIe traffic cost ate the win.
+
+**Predicted effect (staked):** STAKED AT REGISTRATION, before any build. P1: router-on-drafts expert hit-rate beats static hot-expert caching's hit-rate on the same corpus by >=10 points (else this is caching with extra steps). P2: end-to-end single-stream tok/s on the offload placement beats the U-39 N=1 figure (19.67) by >=15%. KR: if PCIe prefetch traffic makes decode SLOWER than no-prefetch at equal hit-rate, the mechanism is net-negative on this bus and dies.
+
+`open - needs llama.cpp surgery (prefetch hook); staked before any build` · `mechanism argued, unmeasured`
+
+### U-41 — EXPERT-COHERENT SAMPLING. U-39 showed MoE batching caps ~2x because lanes route to DIFFERENT experts; the residual 2x exists because lanes sometimes overlap. Make the overlap deliberate: for best-of-N on a MoE, share a greedy prefix and diverge late (or bias sampling toward agreement) so parallel samples summon overlapping expert sets per step - shared reads make the batch cheaper BECAUSE the answers agree more. Tension to measure: diversity (voting value) vs coherence (bandwidth value). Protocol sketch: batched-bench-style N=8 on the 30B offload placement, arms = independent seeds vs shared-prefix-diverge-at-75%, measure aggregate tok/s + answer diversity on suite tasks. No literature found for steering the SAMPLER to maximise expert overlap across a batch.
+
+**Predicted effect (staked):** STAKED AT REGISTRATION, before any run. P1: shared-prefix-diverge-late arms reach aggregate >=1.2x the independent-seed arms at N=8 on the 30B offload placement. P2: answer diversity on suite tasks stays >=70% of the independent-seed arms' diversity (else the bandwidth win bought agreement, not hedging). KR: if expert-overlap steering yields <1.1x aggregate, routing decorrelates too fast for sampler-level coherence and the idea dies.
+
+`open - measurable with stock tools; stake bands before running` · `mechanism argued, unmeasured`
+
 ### U-06 — The disk-streaming tier has ~7x available that our fork verdict (D-05) explicitly does not cover.
 
 **Hypothesis:** D-05 concluded a custom runtime buys 1-6%, but scoped that to the VRAM/host-resident regimes. antirez/ds4 reports order-of-magnitude gains on streaming, where the bottleneck is I/O scheduling rather than bandwidth accounting.
@@ -736,6 +803,18 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Protocol:** reproduce ds4's approach on the reference box's SATA MX500; compare against our stream-from-disk tier
 
 `untested` · `speculative` · evidence: prereg #66: FIRST DATAPOINT - 35B Q8_0 (36.9GB) streaming through 16GB RAM measured 0.66 tok/s vs the tools 2.0 prediction (-67%, over-promise). Inside the 7x outright-kill band, so the tier survives, but its constants are now known-miscalibrated with a real anchor to re-derive from. The disk row ships labeled unvalidated. · cost: 1 day to characterise
+
+### U-39 — Batching does NOT survive expert offload the way it survives dense-in-VRAM. Staked in preregistrations/2026-08-04-u39-moe-batching.md BEFORE any batched MoE measurement on this box.
+
+**Predicted effect (staked):** STAKED 2026-08-04 in preregistrations/2026-08-04-u39-moe-batching.md BEFORE the sweep. P1: MoE agg(8)/agg(1) in [1.0, 2.5]. P2: agg(32)/agg(16) < 1.5 (no dense-style jump). KR-A refutation: agg(32)/agg(1) > 6 would kill the mechanism and make the box a multi-user 30B server. KR-B validity: dense 7B anchor >= 150 aggregate at N=16 in the same session. KR-C validity: attention placement must hold in VRAM across the swept N range.
+
+`scored 2026-08-04 - CONFIRMED AS STAKED (P1 and P2 hold, KR-A did not fire)` · `measured, one box, one session, dense anchor replicated 3x` · evidence: preregistrations/2026-08-04-u39-moe-batching.md ; weights/data/u39_moe_sweep.log ; weights/data/u39_dense_anchor.log ; weights/data/u39_dense_edge.log
+
+### X-1 — VERIFY-WIDTH SURFING: speculation's verify pass is a fused multi-token step, so the U-38 kernel cliff (mat-vec <=8 rows, mat-mat >=9) should make draft length a KERNEL decision, not an acceptance decision. Staked in preregistrations/2026-08-04-x1-verify-width-cliff.md before any draft-length sweep.
+
+**Predicted effect (staked):** STAKED 2026-08-04 in preregistrations/2026-08-04-x1-verify-width-cliff.md BEFORE any draft-length sweep. P1: tok/s jumps >=1.25x between m=7 and m=8/9 (verify width crossing 8->9) with acceptance moving <=10 points across that step. P2 control: consecutive ratios below the boundary (m=4->6->7) all <=1.15. KR-1: acceptance moving >10 points across the jump makes the arm unscoreable for mechanism. KR-2 refutation: no consecutive-m ratio anywhere in {4..24} reaching 1.2 kills the transfer hypothesis.
+
+`scored 2026-08-04 - CONFIRMED AS STAKED (P1 and P2 hold; KR-1 settled by arithmetic bound)` · `measured, one box, locked solo-provenance session, outputs byte-identical across arms` · evidence: preregistrations/2026-08-04-x1-verify-width-cliff.md ; weights/data/x1_prompt.txt ; weights/data/x1_m0.log ; weights/data/x1_m4.log ; weights/data/x1_m6.log ; weights/data/x1_m7.log ; weights/data/x1_m8.log ; weights/data/x1_m9.log ; weights/data/x1_m12.log ; weights/data/x1_m16.log ; weights/data/x1_m24.log
 
 ### U-13 — Q2_K's min-term dp4a can be removed WITHOUT multi-row blocking: precompute per-16-weight activation sums ONCE PER TOKEN into a side buffer (128 floats for K=2048 - L1-cache resident, every row reads the same values), then apply the min as a scalar FMA. Halves the group dp4a count at llama.cpp's existing 1-row-per-block geometry. This is the H-REOPEN idea from KERNEL_BREAKTHROUGH_BRAINSTORM.md and corrects #55's 'the two fixes are mutually exclusive' - there is a third fix. [CLOSED by prereg #56: the min-term dp4a costs 0.9-1.8% at real 1-row geometry (hides in memory latency), and the side buffer is 15% SLOWER. No patch, no upstream filing.]
 
@@ -987,53 +1066,69 @@ THE SHARPEST AVAILABLE TEST OF C-23, AND AN UNPROMPTED RETRODICTION HIT. airllm 
 
 `open`
 
-### E-13 — Issue #1 (2026-08-04): the first datapoint through the tool's own contribute loop - RX 5700 XT, RDNA1/Vulkan, +0.1%
+### E-12 — https://github.com/FareedKhan-dev/kimi-k3-in-c
 
-THE CONTRIBUTION LOOP WORKED AND THE FIRST FOREIGN-SILICON POINT LANDED ON THE LINE. An
-independent user (github.com/FedericoTs/quantprobe/issues/1) ran `bench --contribute` v1.25.0 on
-hardware this project has never touched - AMD RX 5700 XT (RDNA1, gfx1010), Vulkan backend,
-Windows 11, llama.cpp b10242: the first AMD, first Vulkan, first non-CUDA datapoint. Qwen2.5-7B-
-Instruct Q4_0 (2-part split GGUF), dense 7.6B, all in VRAM: predicted 73.1, measured 73.18 +/-
-0.16 tok/s (+0.1%). The C-02 floor landed exactly on the line on a vendor none of the constants
-were measured on. TWO OF OUR PUBLISHED LEVERS WERE HAND-TESTED IN THE SAME SUBMISSION: Q5_K_M on
-the same card measured 61.8 -> Q4_0 +18.4% faster, against +15.6% implied by our Pascal-measured
-FORMAT_EBW ratio (119.1/103.0) - the format ORDERING transfers to RDNA1 within 3 points; and
-ngram-simple on novel generation measured 60.4 (no gain), reproducing D-10's zero-draft result
-externally. HONESTY CLAUSE, at equal prominence: the same payload exposed two shipped bugs (fixed
-same day, v1.26.3) - the split GGUF defeated autospec, so the prediction ran the degraded
-fallback path (defaults corrected by file-size calibration against ONE part's size), and the
-payload's model side arrived as `total=None active=None`. The +0.1% therefore validates what the
-deployed pipeline actually printed for this user, which is the claim that matters to a user, but
-WHICH internal path produced 73.1 is not reconstructable from the payload; the hardware line's
-calibrate-grade precision (ram_bw=21.96, disk_bw=3.38) suggests their anchors were live,
-unconfirmed. n=1, and no C-14 machine-state audit is possible on a box we do not own.
+TWO SEPARATE RESULTS, AND THE FIRST ONE IS A CORRECTION TO THE CLAIM AS IT REACHED US. The project was relayed to us as 'running Kimi at 10 tok/s'. Its README does not say that. It reports SECONDS PER TOKEN: quoting the raw README, 'Laptop ~32 s/token', 'Server ~19-21 s/token', and a literal run line '8 tokens in 261.5 s, 32.69 s/token average'. That is 0.031-0.053 TOKENS per second. The claim as relayed is 200-320x the reported figure, and the direction of the error is the reciprocal - s/token read as tok/s. We made the same mistake in this session's first pass and flagged the preset ladder as 'backwards' because speed appeared to FALL as RAM rose; under the correct units it rises monotonically, which is the expected direction and a signal the repo's own numbers are internally consistent. SECOND, AND THE REASON THIS IS A REGISTER ENTRY: the ladder DISCRIMINATES between Law 4 and the obvious rival model, and Law 4 wins. Architecture: 2.78T params, 93 layers, 896 routed experts, 16 active per token, experts at 4-bit, 1.56 TB checkpoint. Solving the checkpoint size for the expert/trunk split (0.5*Ex + 2*(2780-Ex) = 1560) gives experts 2667B / 1.33 TB and trunk 113B. Active experts are 16/896 of 2667B = 47.6B, i.e. 23.8 GB MUST MOVE PER TOKEN, and it moves from disk in every preset. LAW 4 PREDICTS: bytes/token is CONSTANT across presets, because which 16 of 896 experts a token needs changes every token, so the working set over a generation is the whole 1.33 TB expert store and NO preset caches a meaningful fraction of it. Therefore adding RAM should buy almost nothing. THE RIVAL MODEL - 'it is slow because it does not fit in RAM, so add RAM' - predicts speed should scale with resident set: 8.2 GB -> 128 GB is 15.6x more memory. MEASURED: 32.69 -> ~20 s/token = 1.63x. That is far nearer Law 4's 'nearly nothing' than the rival's 15.6x, and it is the whole point of the tiered model: when the binding resource is streaming bandwidth against a store you cannot cache, memory capacity is not the lever. Inverting Law 4 on each preset gives the implied effective read bandwidth: 0.73, 0.81, 0.99, 1.19 GB/s (laptop -> server). Those are physically ordinary for SCATTERED 4-bit expert reads across a 1.56 TB file on NVMe, and they sit in the same band as our own measured streaming tier (0.476 GB/s achieved on this box against 3.5 GB/s sequential; C-17/C-23). HONEST LIMIT ON THE STRENGTH OF THIS: the per-preset bandwidths are DERIVED from the measurements, not independently measured, so that half is a consistency check with one free parameter per row and is weak evidence on its own. The load-bearing result is the 1.63x vs 15.6x discrimination, which uses no free parameter. WHAT IT WOULD ACTUALLY TAKE to reach the 10 tok/s the claim asserted: 23.8 GB/token x 10 = 238 GB/s sustained against a 1.33 TB store. A DGX Spark has the bandwidth (273 GB/s) but holds 8.6% of the experts; an H100 has 3350 GB/s and holds 6.0%. You need roughly 16x H100 or ~11x Spark before the store is resident - at which point 10 tok/s is easy and the C code is irrelevant. No single-box configuration reaches it, which is exactly the kind of claim Law 4 settles without owning the hardware.
 
-**Question to answer:** From the contributor (asked in the issue reply): exact invocation, and
-whether `calibrate` had run. A re-run on v1.26.3 would carry the full spec and upgrade this from
-pipeline-output validation to input-audited validation. RDNA1/Vulkan eta becomes a calibration
-row only with n>=2 and provenance.
+**Question to answer:** CLOSED 2026-08-04: docs/data has no per-token byte counter, but it has something better - the stated per-token byte totals (108.81 trunk + ~25.8 experts) plus expert-cache hit-rate traces (expert-cache-capacity.txt: LRU/Belady/pinned). Remaining open thread -> C-23: this is still a non-mmap explicit-read runtime; their memory-ladder.tsv under cgroup caps is a second datapoint on streaming efficiency once normalised for the cap.
 
-`reviewed`
+`scored - unit-error half stands; BYTE MODEL CORRECTED 2026-08-04 against the repo's own docs/data`
 
-### E-15 — Pokee-Isaac 28B (announced 2026-08-05): the 10M-context claim, priced the day it shipped
+### E-13 — https://github.com/FedericoTs/quantprobe/issues/1
 
-640 BYTES PER POSITION. That is the entire state budget the claim leaves: 24 GB (4090-class)
-minus ~16.1 GB of Q4-class 28B weights minus ~1.5 GB of runtime buffers is ~6.4 GB, spread
-over 10,000,000 positions. A standard GQA cache for a 28B-class dense model costs ~192 KB per
-position at f16 - so the claim REQUIRES roughly **307x state compression** (154x even with q8
-KV). No cache quantization reaches that; a sliding window alone cannot pass real long-range
-retrieval. VERDICT: the claim is not impossible - it is a **forced architecture reveal**. The
-"non-pure decoder-only architecture" they mention must be SSM/linear-hybrid or extreme latent
-compression, which is exactly the regime L-24 voids for standard-attention laws. Their RULER
-93.3 at 10M is internal and unverified, and is cited as such. Method note: this is the E-12
-treatment (price the claim without the hardware) applied at announcement speed - the
-arithmetic was publishable the day the model was.
+First AMD, first Vulkan, first non-CUDA datapoint, submitted by an independent user (RX 5700 XT, RDNA1/gfx1010, Windows 11, llama.cpp b10242). Qwen2.5-7B-Instruct Q4_0 (2-part split), dense 7.6B, all in VRAM: predicted 73.1, measured 73.18 +/- 0.16 tok/s (+0.1%) - the C-02 floor landing on the line on foreign silicon. Same submission hand-tested two published levers: Q4_0 vs Q5_K_M +18.4% (our Pascal FORMAT_EBW ratio implies +15.6% - the format ordering transfers to RDNA1 within 3 points), and ngram-simple no-gain on novel generation (D-10 reproduced externally). Honesty clause: the payload exposed two shipped bugs fixed same day in v1.26.3 (split-GGUF autospec failure -> prediction ran the degraded file-size-calibrated fallback; model spec arrived as None/None), so this validates what the deployed pipeline printed for the user, not an input-audited clean path; calibrate-grade hardware numbers in the payload suggest their anchors were live, unconfirmed. n=1, no C-14 machine-state audit possible.
 
-**Question to answer:** when weights or a paper exist, measure the real bytes/position and
-score it against the 640-byte budget. The open sibling (pokee_research_7b GGUF) is the
-runnable path to a grid row meanwhile.
+**Question to answer:** ANSWERED 2026-08-05 in the issue thread: commands = hw --measure + calibrate + bench, calibrate live, GPU flags passed manually because detection is nvidia-smi-only. Remaining: their promised v1.26.3 re-run (input-audited datapoint #2). NEW GAP FILED: AMD GPU detection (their transcript shows GPU:none on an RX 5700 XT).
 
-`scored as arithmetic`
+`reviewed - contributor transcript received 2026-08-05: calibrate CONFIRMED (state 5f301396), GPU anchor SKIPPED (AMD undetected) so the +0.1% ran on PRESET GPU constants with hand-passed flags; v1.26.3 re-run promised after their clean rebuild`
+
+### E-15 — https://console.pokee.ai/model (closed weights; announced 2026-08-05)
+
+Pokee-Isaac 28B claims a 10M-token context on one RTX-4090-class GPU (internal RULER 93.3 at full length). Our arithmetic, no hardware needed: 24 GB minus ~16.1 GB of Q4-class 28B weights minus ~1.5 GB runtime buffers leaves ~6.4 GB of state budget, which at 10M positions is 640 BYTES per position. A standard GQA 28B-class cache (48 layers x 8 KV heads x 128 dim, f16) costs ~192 KB/pos - so the claim REQUIRES ~307x state compression (154x even at q8 KV). No KV quantization gets there; sliding-window alone cannot pass real long-range retrieval. Verdict: the claim is not impossible - it is a forced reveal that the "non-pure decoder-only architecture" must be SSM/linear-hybrid or extreme latent compression, i.e. the regime our L-24 explicitly voids for standard-attention laws. The RULER numbers are internal and unverified; stated as such. This is the E-12 method applied at announcement speed: the law prices the claim the day it ships.
+
+**Question to answer:** When weights or a paper land: measure kvp directly from the checkpoint (or their stated state size), and score our 640-bytes/pos budget against their actual mechanism. If they open-source, the pokee_research_7b GGUF path (bartowski) is the runnable sibling for a grid row.
+
+`scored as arithmetic - the claim is a forced architecture reveal, not an impossibility`
+
+### E-16 — github.com/bigattichouse/llama-optimize + github.com/bigattichouse/robust (CC0-1.0)
+
+A SECOND INDEPENDENT TOOL CONVERGES ON OUR MACHINE-STATE DISCIPLINE, AND CARRIES A METHOD WE DO NOT HAVE. (1) Convergence: llama-optimize waits for GPU cooling between runs and records start temperature per run, as a matter of course. We published the stuck-boost result (preregs #60/#61, -28% from a lower boost state) the same week - two projects independently concluding that a benchmark without machine-state hygiene measures the state, not the config. (2) The method gap: our autotune (#71) is a fixed-budget flag search. Theirs is a two-stage DoE funnel - Morris elementary effects (~R(k+1) runs) to rank knobs by mu* and flag interactions via sigma, then Taguchi orthogonal arrays (L25/L125) for main effects in 25-125 runs instead of thousands. Morris does not just search faster, it EMITS A FINDING: which flags matter here, in what order, and which interact. (3) robust adds Sobol first/total-order variance attribution with bootstrap CIs - the empirical counterpart to our binding-constraint classifier, which currently derives which resource binds from the law and has never been checked against measured variance decomposition. Same knob set as ours (-ngl, -ub, -t, KV type, -ot, expert offload, MTP/ngram, concurrency) and vendor-agnostic across ROCm and CUDA.
+
+**Question to answer:** Does Sobol variance attribution, measured, agree with the binding constraint our law derives? Agreement validates the classifier on a second basis; disagreement is a finding and the classifier is re-derived.
+
+`reviewed - 2026-08-07, author flagged both repos directly` · scope: reported by the projects; we have measured none of it. robust is CC0-1.0 (public domain), so vendoring or binding carries no licence friction · evidence: prereg #95 (2026-08-07-doe-flag-screening) stakes the Morris screening design on our card: which llama.cpp flags carry the effect, which interact, and whether the binding constraint Law 4 reports is confirmed by a second, independent method. Design credit bigattichouse; hardware, flag set and staked predictions are ours. Not yet run - GPU queue. · wired into: `prereg 2026-08-07-doe-flag-screening (staked); ROADMAP item; autotune successor design`
+
+### E-17 — huggingface.co/endless-frontier/BigBang-v1 + github.com/endless-frontier/BigBang-v1 (Apache-2.0, harness only) + endlessfrontier.tech
+
+THE VERIFICATION ASYMMETRY, IN A PROJECT THAT BRANDS ITSELF ON VERIFIABILITY. BigBang-v1 is Qwen3.6-35B-A3B post-trained on ~10,000 examples built by an adversarial self-evolving loop (generator agents propose+solve escalating problems; critic agents score correctness, difficulty, scalability, diversity, calibrated against held-out real research tasks). It claims aggregate performance between DeepSeek V4 Flash (284B) and V4 Pro (1.6T). The grading is SPLIT: SWE-Bench Pro and SciCode-Verified run the official execution harnesses (code runs or it does not), while BrowseComp, xbench and FrontierScience are scored by an OpenAI-compatible JUDGE MODEL. The headline that travels - exceeding a 1.6T model on FrontierScience Research - sits on the model-judged half, under a banner reading 'verifiable frontier tasks'. Our Phase B measured models getting correctness wrong ~55% with scale not fixing it (4B 54.7%, 30B 55.7%), but that was models WRITING THEIR OWN TESTS for code; a judge scoring against a reference answer is an easier task, so our number RAISES this question rather than settling it. Recorded as an asymmetry to watch, not a refutation.
+
+**Question to answer:** On the model-judged benchmarks, how much of the reported gain survives an execution-grounded or human-adjudicated regrade? Unanswerable from outside until the critic ships.
+
+`reviewed 2026-08-08 - model + harness public, framework withheld` · scope: reported by the project; we have verified none of the benchmark numbers and cannot - the framework, the critic implementation and the training methodology are all unreleased. The public repo is a results README plus a search/visit/code_exec agent harness (E2B sandbox, 500 calls per trajectory) · wired into: `U-43 (difficulty-graded generation, the technique worth taking); Phase B corpus design; agent-harness reference for the credibility-harness track`
+
+### E-18 — x.com/danpacary/status/2085794035197960418 (Daniel Isaac, M4 Max 128GB, 2026-08-07)
+
+SAME CONCLUSION AS P0, OPPOSITE METHOD, DIFFERENT HARDWARE. One coding exam (emit lexer/parser/evaluator for an expression language, graded by executing 19 HIDDEN tests) across five models on an M4 Max, then ONE repair round after showing each model its own failures: Qwen3.6-27B 16GB 53->100, Ornith-1.0-35B 20GB 56->92, Qwen3.6-35B-A3B MoE 21GB 47->58, Laguna-XS 22GB 63->74, Laguna-S 93GB 96->100. His summary - 'the 93 GB model was never smarter, it tolerated a worse harness' and 'one retry moved scores further than 6x the memory did' - is our Phase A/B thesis phrased better than we have phrased it. We reached it via 16 PARALLEL candidates (4B 76.8 -> 88.4, passing a 30B at 87.8); he reached it via ONE SEQUENTIAL repair. Neither controlled for budget, so the two have never been compared on one axis - which is prereg #96. Also notable: his MoE row moved least (+11 vs +47 for the dense 27B), hinting small-active-parameter models repair worse.
+
+**Question to answer:** At equal token budget, does width (parallel candidates) or depth (sequential execution-grounded repair) buy more? Staked as prereg #96.
+
+`reviewed 2026-08-08 - independent convergence on our harness-beats-size thesis` · scope: reported by him, Apple Silicon, models we do not have; we have measured none of it · evidence: prereg #96 (2026-08-08-width-vs-depth) stakes the arm that neither side ran: one fixed token budget spent on WIDTH (our P0: 16 parallel candidates, 4B 76.8 -> 88.4 HumanEval+) versus DEPTH (@danpacary's sequential repair, 53% -> 100%). Both reached the same headline from opposite directions and neither controlled for budget. Not yet run - GPU queue. · wired into: `prereg 2026-08-08-width-vs-depth (#96); P0's public claims; the lanes advice in plan`
+
+### E-19 — arXiv:2608.03893 - Cross-Model KV Cache Transfer in LLM Families: A Closed-Form Linear Mapping for Prefill Reuse (Heo, Shafipour, Zhao, Golub, Kamani, Borkar, Chandran, Zardoshti, Darvish Rouhani)
+
+IT CUTS PREFILL FLOPS INSTEAD OF SPEEDING THEM UP - the one direction our own L-12 left open. L-12 measured batched prefill converging to 405-445 t/s on this card, 65-67% of its FLOP ceiling, and concluded prefill here is CLOSED except for levers that cut the FLOPs themselves. This is exactly such a lever: swapping models mid-conversation normally forces the receiver to repay prefill from scratch, and they map the source's KV in instead. The finding is that cross-model KV carries substantial LINEAR structure between matched-KV pairs - Qwen3 14B->32B, one source layer explains 56% of variance in target keys and 32% in values, rising to 79%/65% with several source layers. A per-head closed-form ridge mapper (top-k predictive source layers concatenated, RoPE stripped so the fit is position-free and reusable across context lengths, fitted on 500 FineWeb-Edu sequences of 1024 tokens) retains 73-98% of standalone-prefill accuracy on four of six pairs and runs 2.7-25x faster than re-prefill. Two pairs degrade sharply and the paper reports that plainly; an MLP recovers up to +37pp HellaSwag on those.
+
+**Question to answer:** Is the linear structure a FAMILY property, or does matched KV geometry suffice? Our Qwen2.5-7B and Qwen3-Coder-30B both carry kv_heads=4, head_dim=128 across different generations and a dense/MoE boundary - a case the paper does not cover.
+
+`reviewed 2026-08-08 - precondition CHECKED against our own GGUF headers, not assumed` · scope: their models, their hardware; we have measured none of it. Their pairs are WITHIN a family - the cross-generation case is untested by them and is exactly what we hold · wired into: `U-44 (cross-generation transfer, the pair we hold); U-45 (cross-QUANT transfer + the prefill/decode quant asymmetry); L-12's one open direction`
+
+### E-20 — Jackrong/DeepSeek-V4-Pro-Qwen3.5-9B-MTP-GGUF
+
+A DENSE model carrying an MTP head is the discriminator our own published mechanism needs. Prereg #71 measured MTP on the MoE split and found K=2 paid 1.114x (93.2% acceptance - the first positive MoE-split speculation this box ever measured) while K=4 COLLAPSED to 0.61x. We explained the collapse as a UNION TAX: verifying K drafted tokens at once forces the union of their routed experts to be resident, and on a split placement that union spills. If that explanation is right, a dense model has no expert union to pay and must NOT collapse the same way at K=4. If it collapses anyway, our published mechanism is wrong and the cause is something we have not identified.
+
+**Question to answer:** Does K=4 MTP collapse on a DENSE model? And does the published 95.28% hold under our protocol?
+
+`staked` · scope: One model, one box, one MTP implementation. A dense 9B at Q4_K_M (5.78 GB) sits all-in-VRAM on 12 GB, so this tests the mechanism WITHOUT the split placement that produced the original collapse - which is the point, and also the limitation: a null result rules out the union tax as the sole cause, it does not prove residency was the whole story. · evidence: prereg #94 (2026-08-07-deepseek-v4-pro-9b-mtp), staked BEFORE the download starts. Three tests ride on one download: the dense MTP discriminator above, a Law 4 placement prediction on a new dense 9B shape, and an independent check of the card's published 95.28%. · wired into: `Nothing yet - BLOCKED on a user-approved download (~10.4 GB for the Q3_K_M + Q4_K_M pair). The prereg is staked so the predictions cannot move after the file lands.`
 
 ---
 

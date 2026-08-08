@@ -3107,6 +3107,74 @@ def t_docs_are_strict_utf8_or_pages_dies():
     return None
 
 
+def t_shipped_markdown_carries_no_invisible_control_characters():
+    """Valid UTF-8 is not the same as readable text, and the difference is invisible in review.
+
+    A backspace (0x08) reached findings/REGISTER.json and FINDINGS.md on 2026-08-09, because a
+    text fragment containing a LaTeX command crossed a shell heredoc and its backslash was
+    consumed as an escape: the register said the extractor "never inspects \\boxed{}" and the
+    published file said it never inspects "oxed{}". Perfectly valid UTF-8, renders as garbage,
+    and survives every check that only asks whether the bytes decode.
+
+    Tab and newline are the only control characters markdown has any use for.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    bad = []
+    for base in ("docs", ".", "findings"):
+        d = os.path.join(root, base)
+        if not os.path.isdir(d):
+            continue
+        for name in sorted(os.listdir(d)):
+            if not (name.endswith(".md") or name.endswith(".json")):
+                continue
+            text = open(os.path.join(d, name), encoding="utf-8", errors="replace").read()
+            for i, ch in enumerate(text):
+                if ord(ch) < 32 and ch not in "\n\t\r":
+                    bad.append(f"{base}/{name} offset {i}: {hex(ord(ch))} "
+                               f"near {text[max(0, i - 25):i + 12]!r}")
+                    break
+    assert not bad, "control characters in shipped text: " + "; ".join(bad)
+    return None
+
+
+def t_findings_md_is_regenerable_and_matches_the_register():
+    """FINDINGS.md is GENERATED, so a generator that cannot run means docs silently go stale.
+
+    That is not hypothetical. `priority` is written as an int by early entries and as a
+    descriptive sentence by every recent one; render() sorted on the raw value, so the moment
+    both forms coexisted in one section the sort raised TypeError. Nothing noticed, because the
+    drift check runs FIRST and exits non-zero on any uncited pre-registration - so the crash
+    downstream of it was never reached. FINDINGS.md sat three days stale (last written
+    2026-08-06) while entries kept landing in the register.
+
+    Two failures compounding: a guard that exits early hides everything behind it, and a
+    generated file that nobody diffs is indistinguishable from a current one. This asserts the
+    generator runs AND that what it produces is what is committed.
+    """
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, root)
+    import findings as F
+
+    reg = F.load()
+    problems = F.validate(reg)
+    assert not problems, "register has drifted: " + "; ".join(problems[:4])
+
+    # Mixed priority forms must not crash the sort - the actual regression, pinned.
+    ranks = [F.priority_rank(e) for e in reg["untried"]]
+    assert all(isinstance(r, float) for r in ranks), "priority_rank returned a non-sortable value"
+    assert F.priority_rank({"priority": 1}) < F.priority_rank({"priority": "low - someday"}), \
+        "int and string priorities do not order against each other"
+    sorted(reg["untried"], key=F.priority_rank)      # raises TypeError pre-fix
+
+    produced = F.render(reg)
+    on_disk = open(os.path.join(root, "FINDINGS.md"), encoding="utf-8").read()
+    norm = lambda s: s.replace("\r\n", "\n").strip()
+    assert norm(produced) == norm(on_disk), \
+        "FINDINGS.md does not match the register - run `python findings.py` and commit the result"
+    return None
+
+
 def t_business_no_verdict_from_an_empty_staked_set():
     """0/0 is not 0%. A tier-only results file has no staked tasks; scoring one printed
     "KILL RULE FIRED (0.0%)" over an empty denominator - a confident verdict about evidence
@@ -3380,6 +3448,61 @@ def t_version_string_has_one_source_of_truth():
     assert m2, "no __version__ literal in quantprobe/__init__.py"
     assert m.group(1) == m2.group(1), \
         f"version desync: pyproject {m.group(1)} vs __init__ {m2.group(1)}"
+    return None
+
+
+def t_a_metric_that_is_zero_for_every_model_is_never_published():
+    """A uniform 0.0 across unrelated model sizes is a scorer artifact, and must not ship.
+
+    Three-for-three so far: hendrycks MATH-500 (0.00% while 89.4% of answers carried a boxed
+    value), zero-shot AIME (no format requested, so the 4B wrote a bare "Answer: 49" in 30 of
+    30), and GSM8K cot_zeroshot strict-match, which demands the literal sentence "The answer
+    is N." that its own prompt never asks for - 0 of 3,957 responses across 0.6B/4B/7B matched.
+
+    Each was found by hand, after a row had been spent. This makes it mechanical. The guard
+    REFUSES rather than corrects: it cannot know whether a uniform zero is an artifact or a
+    genuine wall, and quietly picking the friendlier filter would be the same error pointed
+    the other way. Mutation-checked in both directions - a guard that cannot fail proves
+    nothing, and a guard that fires on real scores would push us to publish the wrong metric.
+    """
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import ev1_report as R
+
+    # 1. FIRES on an undiagnosed uniform zero - the failing input, constructed.
+    bad = {(m, "newbench"): {"exact_match,strict-match": 0.0, "sample_len": 30}
+           for m in ("0.6B", "4B", "30B")}
+    try:
+        R.check_publishable(bad)
+        raise AssertionError("undiagnosed uniform zero was allowed through - the guard is dead")
+    except R.SuspectMetric as e:
+        assert "newbench" in str(e) and "0.0 on all 3 models" in str(e), \
+            f"guard fired but does not say what to look at: {e}"
+
+    # 2. SILENT on ragged real scores - no false positive that would relabel a genuine result.
+    good = {("0.6B", "b"): {"exact_match,none": 0.0},          # one model CAN score zero
+            ("4B", "b"):   {"exact_match,none": 0.333},
+            ("30B", "b"):  {"exact_match,none": 0.772}}
+    assert R.check_publishable(good) == [], "fired on ragged scores - would suppress real data"
+
+    # 3. Two models are not enough. Coincidence is possible at n=2; at n=3 across a 0.6B and a
+    #    30B it is not, and demanding three is what keeps the rule from crying wolf on a pair.
+    pair = {(m, "c"): {"acc,none": 0.0} for m in ("0.6B", "4B")}
+    assert R.check_publishable(pair) == [], "fired on only two models"
+
+    # 4. A DIAGNOSED zero passes, and is still reported as flagged rather than forgotten.
+    diagnosed = {(m, "gsm8k_cot_zeroshot"): {"exact_match,strict-match": 0.0}
+                 for m in ("0.6B", "4B", "7B")}
+    flagged = R.check_publishable(diagnosed)
+    assert ("gsm8k_cot_zeroshot", "exact_match,strict-match", 3) in flagged, \
+        "a diagnosed artifact must still be surfaced, not silently dropped"
+
+    # 5. The headline metric for GSM8K is the one that measures the model.
+    metric, why = R.REPORTED["gsm8k_cot_zeroshot"]
+    assert metric == "exact_match,flexible-extract", \
+        f"GSM8K would publish {metric}, which is 0.0 for every model by construction"
+    assert "artifact" in why.lower(), "the reason for the choice must travel with it"
     return None
 
 

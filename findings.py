@@ -109,6 +109,33 @@ def validate(reg):
     return problems
 
 
+def priority_rank(entry):
+    """Sortable rank for a `priority` that may be an int OR a descriptive string.
+
+    Both forms are in the register and both are legitimate: early entries wrote 1/2/3, and
+    everything recent writes a sentence ("high - cheap, falsifiable, and improves a shipped
+    command") because the REASON is worth more than the digit. Sorting them together with a
+    bare key crashes on int-vs-str comparison, and it crashed here for real - masked, because
+    the drift check exits before render() runs, so the generator had been unable to write
+    FINDINGS.md for as long as the two forms have coexisted and nothing said so.
+
+    Rank maps both onto the same scale so the mixed section orders sensibly instead of
+    exploding. Unparseable strings sort mid-table rather than last: an entry whose priority we
+    cannot read is not thereby unimportant.
+    """
+    p = entry.get("priority", 99)
+    if isinstance(p, bool):
+        return 5.0
+    if isinstance(p, (int, float)):
+        return float(p)
+    head = str(p).strip().lower()
+    for word, rank in (("closed", 9.0), ("high", 1.0), ("medium", 2.0),
+                       ("med", 2.0), ("low", 3.0)):
+        if head.startswith(word):
+            return rank
+    return 5.0
+
+
 def render(reg):
     L = ["# Findings register",
          "",
@@ -132,10 +159,8 @@ def render(reg):
         if not rows:
             continue
         L += [f"## {title}", "", blurb, ""]
-        if section == "untried":
-            rows = sorted(rows, key=lambda e: e.get("priority", 99))
-        if section == "contradictions":
-            rows = sorted(rows, key=lambda e: e.get("priority", 99))
+        if section in ("untried", "contradictions"):
+            rows = sorted(rows, key=priority_rank)
         for e in rows:
             head = f"### {e['id']} — {e.get('repo') or e['claim']}"
             L += [head, ""]
