@@ -77,7 +77,11 @@ README reshape and are wired into it; the rest are post-ready standalone.
 - **8** batching inversion restyle - **deliberately parked**: it advertises multi-session
   serving we do not ship. It lands with `serve`, not before. The strongest chart in the deck
   must not write a cheque the tool cannot cash.
-- **10/11** quality-ladder Pareto and the EV-1 capability rows - both gated on the GPU queue.
+- **10** quality-ladder Pareto - still gated on the GPU queue.
+- **11** EV-1 capability rows - BUILT as `capability_ladder`, rendering live from the
+  results on disk. 16 of 21 rows banked; the five outstanding 30B/GPQA cells draw as
+  explicit gaps, so the asset is honest at every stage and simply gets denser as the
+  night lands. RE-RENDER when the night completes - the committed PNG is a snapshot.
 - **NEW** the difficulty-band chart from U-43: 73% of the bulk corpus sits in the two easiest
   quartiles, validated against 397 declared-level samples. Data committed
   (`weights/data/phaseb_difficulty.json`); it becomes a chart when Phase C gives it a
