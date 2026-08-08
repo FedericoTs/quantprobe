@@ -1882,6 +1882,52 @@ def t_ev1_flags_route_to_the_right_tasks():
             f"{task}: harness concurrency must match the server's slot count"
 
 
+def t_a_failing_row_cannot_cancel_the_night():
+    # 2026-08-08: subprocess.TimeoutExpired was uncaught in run_row. Uncaught, it walks out of
+    # the row loop, past the finally that drops the lock, and TERMINATES THE RUN - so one slow
+    # row cancels every row queued behind it, silently, with no failure tail (that write sits
+    # after the line that raises). Caught 25 minutes before it would have killed eight rows.
+    # The contract this pins: a row may fail; the night may not die with it.
+    import subprocess as _sp
+    import sys as _sys
+    import tempfile
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import ev1_run as E
+
+    saved = (E.start_server, E.stop_server, E.gpu_state, E.done, E.DATA, _sp.run)
+    calls = []
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            E.DATA = td
+            E.start_server = lambda *a, **k: (object(), None)
+            E.stop_server = lambda *a, **k: None
+            E.gpu_state = lambda *a, **k: None
+            E.done = lambda *a, **k: False          # never "already complete"
+            def boom(*a, **k):
+                raise _sp.TimeoutExpired(cmd="lm_eval", timeout=1)
+            _sp.run = boom
+
+            # must RETURN, not raise - that is the whole contract
+            E.run_row("0.6B", "ifeval", lambda s: calls.append(s))
+
+            tails = [f for f in os.listdir(td) if f.startswith("ev1_fail_")]
+            assert tails, "a timed-out row must leave a failure tail on disk"
+            assert any("TIMED OUT" in c for c in calls), \
+                f"the timeout must be logged, got: {calls}"
+            assert any("Nothing was written" in c for c in calls), \
+                "the log must say no partial results exist - a timed-out row has none"
+    finally:
+        (E.start_server, E.stop_server, E.gpu_state, E.done, E.DATA, _sp.run) = saved
+
+    # and the cap must exceed the slowest row we have actually measured (30B MATH-500 ~7.7h)
+    import re as _re
+    src = open(os.path.join(root, "weights", "ev1_run.py"), encoding="utf-8").read()
+    m = _re.search(r"timeout=(\d+)\s*\*\s*3600", src)
+    assert m and int(m.group(1)) >= 8, \
+        f"row timeout {m.group(1) if m else '?'}h is under the measured 7.7h worst row"
+
+
 def t_scoring_never_depends_on_math_verify():
     # math_verify returns False for EVERYTHING on this box - verify(42, 42) is False, because
     # parse() returns [] when its timeout wrapper cannot spawn a subprocess (WinError 87). A
