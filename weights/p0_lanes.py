@@ -177,7 +177,20 @@ def start_server(gguf, np_, ctx_per_slot=1024, extra=()):
            + ["-c", str(ctx_per_slot * np_), "-np", str(np_), "--port", str(PORT),
               "--host", "127.0.0.1"] + list(extra))
     logp = os.path.join(DATA, f"p0_server_{os.path.basename(gguf)[:20]}_np{np_}.log")
-    proc = subprocess.Popen(cmd, stdout=open(logp, "w"), stderr=subprocess.STDOUT)
+    # APPEND, never truncate. The log name keys on (model, slots), so re-running a row with the
+    # same slot plan reopened the same path - and "w" silently destroyed the previous session.
+    # That is not a diagnostic loss: these logs carry the ONLY record of in-session decode
+    # throughput (the `tg = N t/s` lines), so the 30B's MATH-500 speed was gone by the time
+    # anyone looked, while its accuracy sat safely in results_*.json. Evidence for the number
+    # and evidence for the score must not have different lifetimes.
+    #
+    # Appending mixes sessions unless the boundaries are explicit, so each start writes a
+    # banner: a reader splits on it and never medians two machine states together.
+    with open(logp, "a", encoding="utf-8") as fh:
+        fh.write(f"\n=== SESSION START {time.strftime('%Y-%m-%d %H:%M:%S')} "
+                 f"model={os.path.basename(gguf)} np={np_} ctx_per_slot={ctx_per_slot} "
+                 f"extra={' '.join(map(str, extra)) or 'none'} ===\n")
+    proc = subprocess.Popen(cmd, stdout=open(logp, "a"), stderr=subprocess.STDOUT)
     import urllib.request
     for _ in range(180):
         time.sleep(2)

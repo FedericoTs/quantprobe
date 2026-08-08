@@ -3137,6 +3137,36 @@ def t_shipped_markdown_carries_no_invisible_control_characters():
     return None
 
 
+def t_a_server_log_is_never_opened_in_a_mode_that_destroys_the_last_one():
+    """The server logs are the only record of in-session decode throughput. Do not truncate.
+
+    start_server() names the log by (model, slots), so re-running a row with the same slot plan
+    reopens the same path - and `open(logp, "w")` erased the previous session. The 30B's
+    MATH-500 log was 12 lines by the time anyone read it, overwritten by a later short-lived
+    start, so its accuracy survived in results_*.json while the speed at which it produced
+    those answers did not. Evidence for the score and evidence for the number must not have
+    different lifetimes.
+
+    Appending is only safe if session boundaries are explicit - otherwise a reader medians two
+    machine states together, which is the C-14 violation the lock discipline exists to prevent.
+    """
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    src = open(os.path.join(root, "weights", "p0_lanes.py"), encoding="utf-8").read()
+    import re as _re
+    i = src.find("def start_server(")
+    assert i > 0, "start_server not found - this guard is pointed at the wrong file"
+    body = src[i:i + 2500]
+    truncating = _re.findall(r"open\(\s*logp\s*,\s*[\"']w[\"']", body)
+    assert not truncating, \
+        "start_server opens the server log in truncating mode - a re-run destroys the previous " \
+        "session's throughput evidence"
+    assert _re.search(r"open\(\s*logp\s*,\s*[\"']a[\"']", body), \
+        "start_server no longer appends to the server log"
+    assert "SESSION START" in body, \
+        "appended sessions need an explicit banner, or a reader will median two machine states"
+    return None
+
+
 def t_findings_md_is_regenerable_and_matches_the_register():
     """FINDINGS.md is GENERATED, so a generator that cannot run means docs silently go stale.
 
