@@ -1912,6 +1912,47 @@ def t_ev1_flags_route_to_the_right_tasks():
             f"{task}: HTTP timeout {mt.group(1) if mt else '?'}s cannot cover budget {budget} at 3 t/s"
 
 
+def t_every_runner_guards_against_every_other_lock():
+    # Surveyed 2026-08-08, mid-EV-1-night: the copy-pasted lock lists had DRIFTED.
+    # autotune_sweep checked 2 of 5 and phaseb_gen checked 4 - so with EV-1 holding the box
+    # and a 30B row in flight, autotune_sweep would have started and contended for the GPU.
+    # That is the overlap that voided the 2026-07-31 ladder. One list, shared, or this fails.
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import runner as R
+
+    for f in ("autotune_sweep.py", "ev1_run.py", "phaseb_gen.py"):
+        p = os.path.join(root, "weights", f)
+        if not os.path.exists(p):
+            continue
+        src = open(p, encoding="utf-8").read()
+        assert "runner" in src and "owns_the_box" in src, \
+            f"{f} still hand-rolls its lock discipline - use runner.owns_the_box so the " \
+            f"guarded set cannot drift again"
+
+    # and the shared guard must actually refuse on somebody else's lock
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        os.mkdir(os.path.join(td, ".p0_lock"))            # someone else owns the box
+        try:
+            with R.owns_the_box(".ev1_lock", td, kill=False):
+                raise AssertionError("started while another runner held a lock")
+        except R.BoxBusy:
+            pass
+        assert not os.path.isdir(os.path.join(td, ".ev1_lock")), "left a lock behind on refusal"
+
+    # own lock is released even when the body raises - a stale lock blocks every future run
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            with R.owns_the_box(".ev1_lock", td, kill=False):
+                raise ValueError("boom")
+        except ValueError:
+            pass
+        assert not os.path.isdir(os.path.join(td, ".ev1_lock")), \
+            "lock survived an exception - the box would look busy forever"
+
+
 def t_a_failing_row_cannot_cancel_the_night():
     # 2026-08-08: subprocess.TimeoutExpired was uncaught in run_row. Uncaught, it walks out of
     # the row loop, past the finally that drops the lock, and TERMINATES THE RUN - so one slow

@@ -20,9 +20,8 @@ import argparse, itertools, json, os, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
+import runner  # noqa: E402
 DATA = os.path.join(HERE, "data")
-LOCKS = [os.path.join(DATA, ".p0_lock"), os.path.join(DATA, ".autotune_lock")]
-MYLOCK = os.path.join(DATA, ".autotune_lock")
 LLAMA = os.environ.get("QUANTPROBE_LLAMA_DIR",
                        "C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098")
 GGUF = "D:/evo-compress-data/gguf"
@@ -156,14 +155,15 @@ def spearman(pairs):
 
 def run(dry=False):
     os.makedirs(DATA, exist_ok=True)
-    for l in LOCKS:
-        if os.path.isdir(l) and l != MYLOCK:
-            print(f"REFUSED: {l} exists - another measurement owns the box"); return 3
+    # Lock discipline is shared (weights/runner.py) so the guarded set cannot drift. It had:
+    # this file checked 2 of 5 locks, so it would have started during an EV-1 night.
+    ctx = None
     if not dry:
         try:
-            os.mkdir(MYLOCK)
-        except FileExistsError:
-            print(f"REFUSED: {MYLOCK} exists"); return 3
+            ctx = runner.owns_the_box(".autotune_lock", DATA, kill=False)
+            ctx.__enter__()
+        except runner.BoxBusy as e:
+            print(e); return 3
     logp = os.path.join(DATA, "autotune_run.log")
     lf = open(logp, "a", encoding="utf-8")
     def log(s):
@@ -242,11 +242,8 @@ def run(dry=False):
                     f"P2 rho={o['spearman_priceable']} (n={o['priceable_n']})")
         return 0
     finally:
-        if not dry:
-            try:
-                os.rmdir(MYLOCK)
-            except OSError:
-                pass
+        if ctx is not None:
+            ctx.__exit__(None, None, None)   # releases the lock, even on exception
         lf.close()
 
 

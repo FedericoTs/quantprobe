@@ -24,9 +24,8 @@ from p0_lanes import start_server, stop_server, ask, gpu_state, extract_code   #
 from gridbench import MODELS, tk                                                # noqa: E402
 import decon                                                                     # noqa: E402
 
+import runner  # noqa: E402
 DATA = os.path.join(HERE, "data")
-LOCKS = [os.path.join(DATA, n) for n in (".p0_lock", ".autotune_lock", ".grid_lock")]
-MYLOCK = os.path.join(DATA, ".phaseb_lock")
 SEED = 20260805
 FEED1_N = 5000
 FEED2_N = 500
@@ -192,13 +191,13 @@ SCREEN = None
 
 def main(probe=False):
     global SCREEN
-    for l in LOCKS:
-        if os.path.isdir(l):
-            print(f"REFUSED: {l} exists"); return 3
+    # Shared lock discipline (weights/runner.py): this file guarded 4 of 5 and missed
+    # .ev1_lock, so it could have started mid-EV-1-night and contended for the GPU.
     try:
-        os.mkdir(MYLOCK)
-    except FileExistsError:
-        print(f"REFUSED: {MYLOCK} exists"); return 3
+        ctx = runner.owns_the_box(".phaseb_lock", DATA, kill=False)
+        ctx.__enter__()
+    except runner.BoxBusy as e:
+        print(e); return 3
     logp = os.path.join(DATA, "phaseb_gen.log")
     lf = open(logp, "a", encoding="utf-8")
     def log(s):
@@ -261,11 +260,8 @@ def main(probe=False):
         log(f"  KR-B2 (drop rate): {drop_rate2:.1%} -> " + ("BLOCKS" if verdict['KRB2_blocks'] else "ok"))
         return 0
     finally:
-        subprocess.run(["taskkill", "/F", "/IM", "llama-server.exe"], capture_output=True)
-        try:
-            os.rmdir(MYLOCK)
-        except OSError:
-            pass
+        runner.kill_orphans()
+        ctx.__exit__(None, None, None)       # releases the lock, even on exception
         lf.close()
 
 

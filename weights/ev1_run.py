@@ -15,10 +15,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE)); sys.path.insert(0, HERE)
 from p0_lanes import start_server, stop_server, gpu_state   # noqa: E402
 from gridbench import MODELS, THINKING_FAMILY                # noqa: E402
+import runner                                                # noqa: E402
 
 DATA = os.path.join(HERE, "data")
-LOCKS = [os.path.join(DATA, n) for n in (".p0_lock", ".autotune_lock", ".grid_lock", ".phaseb_lock")]
-MYLOCK = os.path.join(DATA, ".ev1_lock")
 PORT = 8093
 
 # A slot's context holds PROMPT + GENERATION. Asking for max_gen_toks == ctx_per_slot leaves
@@ -257,20 +256,16 @@ def run_row(model, task, log, concurrent=None, limit=None, tag=""):
 
 
 def main(night, probe=0):
-    for l in LOCKS:
-        if os.path.isdir(l):
-            print(f"REFUSED: {l} exists"); return 3
+    # Lock discipline lives in runner.py so the guarded set cannot drift. It had: this file
+    # checked all five locks while autotune_sweep checked two, so autotune could start during
+    # an EV-1 night and contend for the GPU - the overlap that voided the 2026-07-31 ladder.
+    log, close_log = runner.make_log(os.path.join(DATA, "ev1_run.log"))
     try:
-        os.mkdir(MYLOCK)
-    except FileExistsError:
-        print(f"REFUSED: {MYLOCK} exists"); return 3
-    lf = open(os.path.join(DATA, "ev1_run.log"), "a", encoding="utf-8")
-    def log(s):
-        line = f"{time.strftime('%H:%M:%S')} {s}"
-        print(line, flush=True); lf.write(line + "\n"); lf.flush()
+        ctx = runner.owns_the_box(".ev1_lock", DATA)
+        ctx.__enter__()
+    except runner.BoxBusy as e:
+        print(e); close_log(); return 3
     try:
-        subprocess.run(["taskkill", "/F", "/IM", "llama-server.exe"], capture_output=True)
-        time.sleep(2)
         if probe:
             # Checkpoint before the night owns the box: v2 was stopped only after five rows
             # had already been spent proving a protocol wrong. Scores land in ev1_probe/,
@@ -305,12 +300,8 @@ def main(night, probe=0):
         log(f"night {night} pass complete")
         return 0
     finally:
-        subprocess.run(["taskkill", "/F", "/IM", "llama-server.exe"], capture_output=True)
-        try:
-            os.rmdir(MYLOCK)
-        except OSError:
-            pass
-        lf.close()
+        ctx.__exit__(None, None, None)     # kills orphans and releases the lock
+        close_log()
 
 
 if __name__ == "__main__":
