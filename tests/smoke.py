@@ -1888,6 +1888,17 @@ def t_ev1_flags_route_to_the_right_tasks():
         assert f"num_concurrent={conc}" in " ".join(E.build_cmd("0.6B", task)), \
             f"{task}: harness concurrency must match the server's slot count"
 
+    # The HTTP timeout must cover the LONGEST budget at a 3 t/s floor. 600s bought ~4,900
+    # tokens at the 30B's measured 8.2 t/s against AIME's 8,192-token budget - every long item
+    # timed out, retried 3x, and a 166-minute row produced rc=1 and nothing else.
+    import re as _re3
+    for task in TASKS:
+        joined = " ".join(E.build_cmd("30B", task))
+        budget = int(E.GEN[task].split("=")[1])
+        mt = _re3.search(r"timeout=(\d+)", joined)
+        assert mt and int(mt.group(1)) * 3 >= budget, \
+            f"{task}: HTTP timeout {mt.group(1) if mt else '?'}s cannot cover budget {budget} at 3 t/s"
+
 
 def t_a_failing_row_cannot_cancel_the_night():
     # 2026-08-08: subprocess.TimeoutExpired was uncaught in run_row. Uncaught, it walks out of

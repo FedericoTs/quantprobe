@@ -102,10 +102,17 @@ def build_cmd(model, task, concurrent=None, limit=None, tag=""):
     compliance, so a stray system instruction there is a silent scoring bug, not a crash.
     """
     concurrent = concurrent or slot_plan(task)[1]
+    # The HTTP timeout must cover the SLOWEST model finishing the LONGEST budget, or the row
+    # fails without measuring anything: 600s buys ~4,900 tokens at the 30B's measured 8.2 t/s,
+    # AIME budgets 8,192 - every long item timed out, retried 3x, and 166 minutes produced
+    # rc=1. Sized from the budget at a 3 t/s floor (well under any measured rate), min 600.
+    budget = int(GEN[task].split("=")[1])
+    req_timeout = max(600, -(-budget // 3))     # ceil division: the floor-rate guarantee must hold exactly
     cmd = [sys.executable, "-m", "lm_eval", "--model", "local-chat-completions",
            "--model_args",
            f"model={model},base_url=http://127.0.0.1:{PORT}/v1/chat/completions,"
-           f"num_concurrent={concurrent},max_retries=3,tokenized_requests=False,timeout=600",
+           f"num_concurrent={concurrent},max_retries=3,tokenized_requests=False,"
+           f"timeout={req_timeout}",
            "--tasks", task, "--gen_kwargs", GEN[task],
            "--include_path", TASK_PATH,
            "--apply_chat_template", "--seed", "0",
