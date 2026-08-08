@@ -1808,7 +1808,14 @@ def t_math500_scorer_reads_the_boxed_answer():
     import sys as _sys
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     _sys.path.insert(0, os.path.join(root, "weights", "lm_eval_tasks"))
-    import math500_utils as M
+    try:
+        import math500_utils as M
+    except ImportError:
+        # lm-evaluation-harness is a RESEARCH dependency, not a package dependency - CI installs
+        # `pip install .` and has no reason to carry it. Skipped, never silently passed: this
+        # guard is the reason our MATH rows are not 0.00%, so a green tick without lm_eval
+        # present would be a lie about what was checked.
+        return "SKIP: lm_eval not installed (research dep, not a package dep - runs locally)"
 
     def score(resp, gold):
         return M.process_results({"answer": gold}, [resp])
@@ -1896,6 +1903,8 @@ def t_a_failing_row_cannot_cancel_the_night():
     import ev1_run as E
 
     saved = (E.start_server, E.stop_server, E.gpu_state, E.done, E.DATA, _sp.run)
+    saved_watch = (E.STALL_MIN, E._progress)
+    saved_popen = _sp.Popen
     calls = []
     try:
         with tempfile.TemporaryDirectory() as td:
@@ -1904,28 +1913,42 @@ def t_a_failing_row_cannot_cancel_the_night():
             E.stop_server = lambda *a, **k: None
             E.gpu_state = lambda *a, **k: None
             E.done = lambda *a, **k: False          # never "already complete"
-            def boom(*a, **k):
-                raise _sp.TimeoutExpired(cmd="lm_eval", timeout=1)
-            _sp.run = boom
+            # a child that runs forever and never advances the progress counter = wedged
+            E.STALL_MIN = 0.02                      # ~1.2s, so the test is not a sleep
+            E._progress = lambda: 7                 # frozen: no forward progress, ever
+            E.run_watched.__globals__["subprocess"] = _sp
 
-            # must RETURN, not raise - that is the whole contract
+            class _Wedged:
+                returncode = None
+                def poll(self): return None
+                def kill(self): type(self).returncode = -9
+                def communicate(self): return ("out", "err")
+            _sp.Popen = lambda *a, **k: _Wedged()
+
+            # must RETURN, not raise, and must not hang - that is the whole contract
             E.run_row("0.6B", "ifeval", lambda s: calls.append(s))
 
             tails = [f for f in os.listdir(td) if f.startswith("ev1_fail_")]
-            assert tails, "a timed-out row must leave a failure tail on disk"
-            assert any("TIMED OUT" in c for c in calls), \
-                f"the timeout must be logged, got: {calls}"
+            assert tails, "a killed row must leave a failure tail on disk"
+            assert any("STALLED" in c for c in calls), \
+                f"the stall must be logged, got: {calls}"
             assert any("Nothing was written" in c for c in calls), \
-                "the log must say no partial results exist - a timed-out row has none"
+                "the log must say no partial results exist - a killed row has none"
     finally:
         (E.start_server, E.stop_server, E.gpu_state, E.done, E.DATA, _sp.run) = saved
+        E.STALL_MIN, E._progress = saved_watch
+        _sp.Popen = saved_popen
 
-    # and the cap must exceed the slowest row we have actually measured (30B MATH-500 ~7.7h)
+    # NO WALL-CLOCK CAP may come back. A cap is wrong in both directions - it killed a healthy
+    # 30B row 103 minutes from the end, and would have let a wedged row burn six hours doing
+    # nothing. Rows are watched for PROGRESS instead: never interrupt work that is flowing,
+    # catch work that has stopped in ~25 minutes.
     import re as _re
     src = open(os.path.join(root, "weights", "ev1_run.py"), encoding="utf-8").read()
-    m = _re.search(r"timeout=(\d+)\s*\*\s*3600", src)
-    assert m and int(m.group(1)) >= 8, \
-        f"row timeout {m.group(1) if m else '?'}h is under the measured 7.7h worst row"
+    assert not _re.search(r"subprocess\.run\([^)]*timeout=\d+\s*\*\s*3600", src, _re.S), \
+        "a wall-clock cap on a row is back - watch progress, do not cap duration"
+    assert "def run_watched" in src and "STALL_MIN" in src, \
+        "the progress watchdog is gone; a row could now hang forever unnoticed"
 
 
 def t_scoring_never_depends_on_math_verify():
@@ -1951,7 +1974,16 @@ def t_partial_hw_flags_still_yield_a_vram_rate():
     class A:
         machine = None; vram = 24; vram_bw = None
         ram = None; ram_bw = None; disk_bw = None
-    vc, vb, rc, rb, db, _geta, _gl, _hw = resolve_hw(A(), announce=False)
+    # Two legal outcomes, and a traceback is not one of them. On a box with a GPU the rate is
+    # borrowed and announced; on a GPU-less runner there is nothing to borrow from, so the
+    # contract is a clean actionable refusal naming the flag to pass. Either is fine. What must
+    # never happen again is the original ZeroDivisionError three frames down, or a silent 0.
+    try:
+        vc, vb, rc, rb, db, _geta, _gl, _hw = resolve_hw(A(), announce=False)
+    except SystemExit as e:
+        assert "--vram-bw" in str(e), \
+            f"refusal must name the flag that fixes it, got: {e}"
+        return "SKIP: no GPU here to borrow a VRAM bandwidth from - refusal path checked instead"
     assert vc == 24, f"explicit --vram must survive resolution, got {vc}"
     assert vb > 0, "VRAM capacity without a bandwidth is not a machine - it divided by zero"
     assert rc > 0 and rb > 0 and db > 0, "RAM/disk fallbacks must still hold"

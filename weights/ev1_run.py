@@ -9,7 +9,7 @@ existing results dir. Windows lesson baked in: the child gets PYTHONUTF8=1 becau
 lm-eval's results table prints U+2191 and cp1252 dies AFTER saving results.
 """
 from __future__ import annotations
-import argparse, json, os, subprocess, sys, time
+import argparse, glob, json, os, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE)); sys.path.insert(0, HERE)
@@ -119,6 +119,64 @@ def build_cmd(model, task, concurrent=None, limit=None, tag=""):
     return cmd
 
 
+STALL_MIN = 25          # no forward progress for this long = wedged, not slow
+HEARTBEAT_MIN = 15      # how often a healthy row reports that it is still moving
+
+
+def _progress():
+    """A monotone count of finished generations, read from the live server logs.
+
+    Deliberately measures the SERVER, not the harness: lm-eval prints nothing until a row
+    completes, so the only honest evidence that work is happening is requests retiring.
+    """
+    n = 0
+    for p in glob.glob(os.path.join(DATA, "p0_server_*.log")):
+        try:
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                n += fh.read().count("print_timing")
+        except OSError:
+            pass
+    return n
+
+
+def run_watched(cmd, env, proc, model, task, log, t0):
+    """Run a row with NO wall-clock cap, killed only if progress actually stops.
+
+    A cap is wrong in both directions - it killed a healthy 30B row 103 minutes from the end,
+    and it would have let a wedged row burn the same six hours doing nothing. Progress is the
+    right signal: a row that is moving is never interrupted, and a row that is stuck is caught
+    in ~25 minutes instead of hours. Returns the CompletedProcess, or None if it was killed
+    (row skipped, night continues).
+    """
+    child = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             text=True, encoding="utf-8", errors="replace", env=env)
+    last_n, last_move, last_beat = _progress(), time.time(), time.time()
+    while child.poll() is None:
+        time.sleep(30)
+        now, n = time.time(), _progress()
+        if n > last_n:
+            last_n, last_move = n, now
+        if now - last_beat >= HEARTBEAT_MIN * 60:
+            last_beat = now
+            log(f"  [{model}/{task}] alive: {n} generations done, "
+                f"{(now-t0)/60:.0f}m elapsed, last progress {(now-last_move)/60:.0f}m ago")
+        if now - last_move >= STALL_MIN * 60:
+            child.kill()
+            out, err = child.communicate()
+            stop_server(proc)
+            gpu_state(f"{model}/{task} post (STALLED)", log)
+            log(f"[{model}/{task}] STALLED - no progress for {STALL_MIN}m after "
+                f"{(now-t0)/60:.0f}m and {n} generations. Row killed, night continues. "
+                f"Nothing was written: lm-eval saves only on completion.")
+            open(os.path.join(DATA, f"ev1_fail_{model}_{task}.txt"), "w",
+                 encoding="utf-8").write(f"STALLED after {(now-t0)/60:.0f} min, "
+                                         f"{n} generations\n{(out or '')[-2000:]}\n"
+                                         f"{(err or '')[-2000:]}")
+            return None
+    out, err = child.communicate()
+    return subprocess.CompletedProcess(cmd, child.returncode, out, err)
+
+
 def server_extra(model):
     """Server flags for one model. v2: thinking off SERVER-SIDE for the thinking family."""
     return ("--reasoning", "off") if model in THINKING_FAMILY else ()
@@ -147,21 +205,13 @@ def run_row(model, task, log, concurrent=None, limit=None, tag=""):
     # context - measured 1.08 items/min, i.e. ~7.7h. A timeout shorter than the work is not a
     # safety net, it is a silent row-shredder: six GPU-hours spent, nothing saved, and the
     # runner moves on. Sized to 12h with the arithmetic recorded so the next person can check it.
-    # A timeout must cost ONE ROW, not the night. Uncaught, TimeoutExpired walks out of here,
-    # out of the row loop, past the finally that kills the server, and terminates the run - so
-    # a single slow row silently cancels every row queued behind it AND skips the failure-tail
-    # write below, because that line sits after the one that raised. Caught, recorded, skipped.
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", env=env, timeout=12 * 3600)
-    except subprocess.TimeoutExpired as e:
-        stop_server(proc)
-        gpu_state(f"{model}/{task} post (TIMED OUT)", log)
-        log(f"[{model}/{task}] TIMED OUT after {(time.time()-t0)/60:.0f}m - row skipped, "
-            f"night continues. Nothing was written: lm-eval saves only on completion.")
-        open(os.path.join(DATA, f"ev1_fail_{model}_{task}.txt"), "w",
-             encoding="utf-8").write(f"TIMEOUT after {(time.time()-t0)/60:.0f} min\n"
-                                     f"{(e.stdout or b'')[-2000:]!r}\n{(e.stderr or b'')[-2000:]!r}")
+    # NO WALL-CLOCK CAP. A cap is the wrong instrument in both directions: it killed a healthy
+    # 30B row 103 minutes from the finish, and it would happily let a wedged row burn the same
+    # six hours making zero progress. What matters is not how long a row has taken - it is
+    # whether it is STILL MOVING. So: watch progress, kill only on a stall, and never interrupt
+    # work that is flowing. (Federico, 2026-08-08.)
+    r = run_watched(cmd, env, proc, model, task, log, t0)
+    if r is None:
         return
     stop_server(proc)
     gpu_state(f"{model}/{task} post", log)
