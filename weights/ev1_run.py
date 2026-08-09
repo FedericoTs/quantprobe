@@ -2,6 +2,7 @@
 
   python weights/ev1_run.py --night1    # 0.6B then 4B x {math500, aime24, aime25, ifeval}, + gsm8k on 0.6B
   python weights/ev1_run.py --night2    # 7B, 30B rows + gsm8k completions + gpqa attempt
+  python weights/ev1_run.py --night3    # prereg #98: Q35 naive vs ours, interleaved by task
 
 Prereg 2026-08-06-ev1-standard-benches. Protocol pinned there: lm-eval 0.4.12,
 thinking-as-served, temp 0, full sets, one model row per server session, resume by
@@ -369,9 +370,12 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--night1", action="store_true")
     ap.add_argument("--night2", action="store_true")
+    ap.add_argument("--night3", action="store_true",
+                    help="prereg #98: Q35 naive vs depth-aware, arms interleaved by task")
     ap.add_argument("--probe", type=int, default=0,
                     help="validate a protocol change on N items per task before a night runs")
     a = ap.parse_args()
     if a.probe:
         sys.exit(main(1, probe=a.probe))
-    sys.exit(main(1 if a.night1 else 2) if (a.night1 or a.night2) else 0)
+    night = 1 if a.night1 else 2 if a.night2 else 3 if a.night3 else 0
+    sys.exit(main(night) if night else 0)
