@@ -42,7 +42,7 @@ STAKED BEFORE RUNNING (2026-08-01):
   python weights/exp96b_fault_latency.py
 """
 from __future__ import annotations
-import json, os, subprocess, time
+import json, os, subprocess, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
@@ -108,9 +108,15 @@ def flush_cache():
 def bench(tag, base):
     cmd = [BIN, "-m", MODEL, "-ngl", "0", "-t", "4", "-n", str(NGEN), "-p", "0", "-r", "1",
            "-o", "json"]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    w = watch(1800, stop=lambda: p.poll() is not None)
-    out, err = p.communicate(timeout=120)
+    # Output to a FILE, never a pipe - the C-27 deadlock. See exp96_fault_latency for the
+    # mechanism; bounded here by watch()'s 1800s timeout rather than infinite, so it would
+    # have returned a measurement window containing a stalled child rather than hanging.
+    with tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace") as fh:
+        p = subprocess.Popen(cmd, stdout=fh, stderr=subprocess.STDOUT)
+        w = watch(1800, stop=lambda: p.poll() is not None)
+        p.wait()
+        fh.seek(0)
+        out = fh.read()
     k = dkey(w)
     net = max(0.0, (w["drives"][k] - base)) if k else 0.0
     tok = None

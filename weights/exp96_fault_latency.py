@@ -48,7 +48,7 @@ lever - no cache manipulation, no new variable.
   python weights/exp96_fault_latency.py
 """
 from __future__ import annotations
-import json, os, subprocess, time
+import json, os, subprocess, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
@@ -117,9 +117,17 @@ def main():
     for i in range(RUNS):
         cmd = [BIN, "-m", MODEL, "-ngl", "0", "-b", "2048", "-ub", "2048", "-t", "4",
                "-n", str(NGEN), "-p", "0", "-r", "1", "-o", "json"]
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        w = watch(2400, stop=lambda: p.poll() is not None)
-        out, err = p.communicate(timeout=120)
+        # Output to a FILE, never a pipe. Waiting on p.poll() while the pipe goes unread is
+        # the C-27 deadlock: the buffer fills, the child blocks in write(), poll() never
+        # changes, and communicate() below is never reached. Here it was bounded by watch()'s
+        # own 2400s timeout rather than infinite - which is arguably worse than a hang, because
+        # the run returns a measurement window that silently contains a stalled child.
+        with tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace") as fh:
+            p = subprocess.Popen(cmd, stdout=fh, stderr=subprocess.STDOUT)
+            w = watch(2400, stop=lambda: p.poll() is not None)
+            p.wait()
+            fh.seek(0)
+            out = fh.read()
         k = dkey(w)
         net = (w["drives"][k] - base) if k else 0.0
         tok = None

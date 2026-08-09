@@ -3193,6 +3193,64 @@ def t_a_correct_answer_before_a_truncated_tail_still_scores():
     return None
 
 
+def t_no_runner_polls_a_pipe_it_never_drains():
+    """Repo-wide: never wait on a child's exit while its output pipe goes unread.
+
+    The shape is Popen(stdout=PIPE) -> a loop on .poll() -> communicate() AFTER the loop. The
+    pipe fills, the child blocks in write(), .poll() never changes, and communicate() is never
+    reached. It cost four 30B AIME rows and two misdiagnoses (C-27), and an audit found the
+    same pattern in two more files, so a comment in one docstring is not enough.
+
+    The check is positional rather than a keyword count, because every offender DOES call
+    communicate - just too late. What matters is whether a .poll() sits between the Popen and
+    the drain. Files listed in ALLOWED have been read and fixed; the list is here so that
+    adding to it is a deliberate act with a reason attached, not a silent widening.
+    """
+    import ast as _ast
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ALLOWED = {}          # empty: every site drains before it waits
+
+    def is_popen_with_pipe(node):
+        if not isinstance(node, _ast.Call):
+            return False
+        fn = node.func
+        nm = fn.attr if isinstance(fn, _ast.Attribute) else getattr(fn, "id", "")
+        if nm != "Popen":
+            return False
+        # PIPE may arrive as subprocess.PIPE, a bare PIPE, or the -1 it equals
+        return any("PIPE" in _ast.dump(kw.value) for kw in node.keywords)
+
+    offenders = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__", ".venv", "build")]
+        for name in filenames:
+            if not name.endswith(".py"):
+                continue
+            rel = os.path.relpath(os.path.join(dirpath, name), root).replace("\\", "/")
+            src = open(os.path.join(dirpath, name), encoding="utf-8", errors="replace").read()
+            try:
+                tree = _ast.parse(src)
+            except SyntaxError:
+                continue
+            # AST, not regex: this guard's OWN docstring contains the words "Popen(stdout=PIPE)"
+            # and ".poll()", and a text scan duly reported the guard as an offender. Prose that
+            # describes a defect is not the defect.
+            lines = src.splitlines()
+            for node in _ast.walk(tree):
+                if not is_popen_with_pipe(node):
+                    continue
+                after = "\n".join(lines[node.lineno:])
+                drain = min((p for p in (after.find(".communicate("),
+                                         after.find(".stdout.read("),
+                                         after.find("Thread(")) if p != -1), default=len(after))
+                poll = after.find(".poll()")
+                if poll != -1 and poll < drain and rel not in ALLOWED:
+                    offenders.append(f"{rel}:{node.lineno} polls before draining its PIPE")
+    assert not offenders, \
+        "a child's exit is awaited while its pipe goes unread (C-27):\n  " + "\n  ".join(offenders)
+    return None
+
+
 def t_a_chatty_child_cannot_deadlock_the_watchdog():
     """A child that writes more than a pipe buffer holds must still finish.
 
