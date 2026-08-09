@@ -1,0 +1,135 @@
+{
+  "results": {
+    "aime24_boxed": {
+      "name": "aime24_boxed",
+      "alias": "aime24_boxed",
+      "sample_len": 30,
+      "exact_match,none": 0.0,
+      "exact_match_stderr,none": 0.0,
+      "emitted_boxed,none": 0.8,
+      "emitted_boxed_stderr,none": 0.07427813527082075
+    }
+  },
+  "group_subtasks": {},
+  "configs": {
+    "aime24_boxed": {
+      "task": "aime24_boxed",
+      "dataset_path": "Maxwell-Jia/AIME_2024",
+      "test_split": "train",
+      "doc_to_text": "Problem: {{Problem}}\n\nSolve the problem. Put your final answer inside \\boxed{}.",
+      "doc_to_target": "{{Answer}}",
+      "unsafe_code": false,
+      "process_results": "def process_results(doc, results):\n    response = results[0]\n    boxed = last_boxed_only_string(response)\n    candidate = None\n    if boxed is not None:\n        try:\n            candidate = remove_boxed(boxed)\n        except Exception:\n            candidate = None\n    if candidate is None:\n        return {\"exact_match\": 0, \"emitted_boxed\": 0}\n    try:\n        correct = int(bool(is_equiv(candidate, _gold(doc))))\n    except Exception:\n        correct = 0\n    return {\"exact_match\": correct, \"emitted_boxed\": 1}\n",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "fewshot_config": {
+        "sampler": "default",
+        "split": null,
+        "process_docs": null,
+        "fewshot_indices": null,
+        "samples": null,
+        "doc_to_text": "Problem: {{Problem}}\n\nSolve the problem. Put your final answer inside \\boxed{}.",
+        "doc_to_choice": null,
+        "doc_to_target": "{{Answer}}",
+        "gen_prefix": null,
+        "fewshot_delimiter": "\n\n",
+        "target_delimiter": " "
+      },
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "exact_match",
+          "aggregation": "mean",
+          "higher_is_better": true
+        },
+        {
+          "metric": "emitted_boxed",
+          "aggregation": "mean",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "until": [
+          "Problem:"
+        ],
+        "do_sample": false,
+        "temperature": 0.0,
+        "max_gen_toks": 8192
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "metadata": {
+        "version": 1.0,
+        "model": "0.6B",
+        "base_url": "http://127.0.0.1:8093/v1/chat/completions",
+        "num_concurrent": 2,
+        "max_retries": 3,
+        "tokenized_requests": false,
+        "timeout": 600,
+        "config_source": "C:\\Users\\Federico\\Documents\\evo-compress\\.claude\\worktrees\\law5-prefill\\weights\\lm_eval_tasks\\aime24_boxed.yaml"
+      }
+    }
+  },
+  "versions": {
+    "aime24_boxed": 1.0
+  },
+  "n-shot": {
+    "aime24_boxed": 0
+  },
+  "higher_is_better": {
+    "aime24_boxed": {
+      "exact_match": true,
+      "emitted_boxed": true
+    }
+  },
+  "n-samples": {
+    "aime24_boxed": {
+      "original": 30,
+      "effective": 30
+    }
+  },
+  "config": {
+    "model": "local-chat-completions",
+    "model_args": {
+      "model": "0.6B",
+      "base_url": "http://127.0.0.1:8093/v1/chat/completions",
+      "num_concurrent": 2,
+      "max_retries": 3,
+      "tokenized_requests": false,
+      "timeout": 600
+    },
+    "batch_size": 1,
+    "batch_sizes": [],
+    "device": "cuda:0",
+    "use_cache": null,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "gen_kwargs": {
+      "max_gen_toks": 8192
+    },
+    "random_seed": 0,
+    "numpy_seed": 0,
+    "torch_seed": 0,
+    "fewshot_seed": 0
+  },
+  "git_hash": "v1.25.0-86-gf764710",
+  "date": 1786079761.3496983,
+  "pretty_env_info": "PyTorch version: 2.5.1+cu121\nIs debug build: False\nCUDA used to build PyTorch: 12.1\nROCM used to build PyTorch: N/A\n\nOS: Microsoft Windows 10 Home\nGCC version: Could not collect\nClang version: Could not collect\nCMake version: Could not collect\nLibc version: N/A\n\nPython version: 3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)] (64-bit runtime)\nPython platform: Windows-10-10.0.19045-SP0\nIs CUDA available: True\nCUDA runtime version: 12.9.41\r\nCUDA_MODULE_LOADING set to: LAZY\nGPU models and configuration: GPU 0: NVIDIA GeForce GTX 1060 6GB\nNvidia driver version: 582.28\ncuDNN version: Could not collect\nHIP runtime version: N/A\nMIOpen runtime version: N/A\nIs XNNPACK available: True\n\nCPU:\nArchitecture=9\r\r\nCurrentClockSpeed=3801\r\r\nDeviceID=CPU0\r\r\nFamily=205\r\r\nL2CacheSize=1024\r\r\nL2CacheSpeed=\r\r\nManufacturer=GenuineIntel\r\r\nMaxClockSpeed=3801\r\r\nName=Intel(R) Core(TM) i5-7600K CPU @ 3.80GHz\r\r\nProcessorType=3\r\r\nRevision=\n\nVersions of relevant libraries:\n[pip3] numpy==2.5.1\n[pip3] torch==2.5.1+cu121\n[conda] Could not collect",
+  "transformers_version": "5.14.1",
+  "lm_eval_version": "0.4.12",
+  "upper_git_hash": null,
+  "task_hashes": {
+    "aime24_boxed": "eded64b1bcf5441e8774ceced89eb461d7d5c03969580083a35bc8f98cc79899"
+  },
+  "model_source": "local-chat-completions",
+  "model_name": "0.6B",
+  "model_name_sanitized": "0.6B",
+  "system_instruction": "Solve the problem. Put your final answer inside \\boxed{}.",
+  "system_instruction_sha": "7cbd474f0e5bbb797c080b71662b22eb0d193f5346d55d328d3869066ff71afe",
+  "fewshot_as_multiturn": true,
+  "chat_template": "",
+  "chat_template_sha": null,
+  "total_evaluation_time_seconds": "571.0955082"
+}

@@ -72,3 +72,10 @@ weights/data/release_*.log
 weights/data/*_server.log
 
 !weights/data/phaseb_corpus*.jsonl
+# KR-E1 of prereg 2026-08-06 stakes that EV-1 result JSONs are COMMITTED RAW. The
+# weights/data/* rule above excludes them, because its exceptions only match files
+# directly in weights/data and these live several directories down. 17 files, 0.1 MB.
+!weights/data/ev1/
+weights/data/ev1/**
+!weights/data/ev1/**/
+!weights/data/ev1/**/results_*.json
