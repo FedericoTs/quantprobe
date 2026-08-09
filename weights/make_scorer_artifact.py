@@ -47,6 +47,12 @@ CASES = [
      "0.0%",
      "33.3%",
      "the same model, asked for the format"),
+    ("AIME 2024  OUR OWN extractor",
+     "the LAST \\boxed{} - unbalanced if generation was cut off",
+     "\\boxed{116} - correct - then 683 repeats, truncated mid-token",
+     "33.3%",
+     "50.0%",
+     "the last WELL-FORMED box"),
 ]
 
 
@@ -57,16 +63,16 @@ def main():
     got = {(m, t): v for (m, t), d in rows.items() for k, v in d.items()
            if k == R.REPORTED.get(t, ("", ""))[0]}
     assert abs(got[("0.6B", "math500_boxed")] * 100 - 46.4) < 0.05, "MATH-500 0.6B moved"
-    assert abs(got[("4B", "aime24_boxed")] * 100 - 33.3) < 0.05, "AIME24 4B moved"
+    assert abs(got[("4B", "aime24_boxed")] * 100 - 50.0) < 0.05, "AIME24 4B moved"
 
     CH, GAP = 214, 26
-    H = B.HEADER_H + 196 + len(CASES) * (CH + GAP) + 186 + B.FOOTER_H
+    H = B.HEADER_H + 196 + len(CASES) * (CH + GAP) + 300 + B.FOOTER_H
 
     s = [B.svg_open(W, H),
-         B.header(W, "MEASURED · lm-evaluation-harness 0.4.12 · THREE TASKS, ONE FAILURE MODE",
+         B.header(W, "MEASURED · lm-evaluation-harness 0.4.12 · FOUR TASKS, ONE FAILURE MODE",
                   "The zero that is not the model's fault",
-                  "A benchmark score can be a property of its scorer. When it is, the tell is "
-                  "sharp - and cheap to check.")]
+                  "A benchmark score can be a property of its scorer. One of the four below is "
+                  "ours - and our own detector missed it.")]
 
     y = B.HEADER_H + 16
     s.append(B.panel(PAD, y, W - 2 * PAD, 150, stroke=B.TEAL, sw=2))
@@ -106,7 +112,7 @@ def main():
 
     y += 14
     s.append(f'<text x="{PAD}" y="{y}" fill="{B.INK}" font-size="26" font-weight="bold">'
-             f'The rule that falls out of it</text>')
+             f'The rule, and its blind spot</text>')
     for i, line in enumerate([
             "A metric that is EXACTLY 0.0 across unrelated model sizes is a format mismatch, "
             "not a difficulty wall. Real capability",
@@ -114,10 +120,21 @@ def main():
             "The extractor simply never fired."]):
         s.append(f'<text x="{PAD}" y="{y+40+i*28}" fill="{B.SUB}" font-size="21">'
                  f'{esc(line)}</text>')
+    # The fourth case is ours, and the rule above would have sailed straight past it. Saying so
+    # is the whole point: a detector built for the loud version of a failure is not a detector
+    # for the failure. Publishing the rule without its blind spot would be the same overclaim
+    # this chart is about.
+    s.append(B.paragraph(PAD, y + 116, esc(
+        "That rule missed the fourth case - our own. Those rows read 33.3% and 36.7%, not zero: "
+        "the loss was five items hidden inside a plausible score. A uniform zero is the LOUD "
+        "version of this failure. The quiet version needs a per-item check, and it is cheap - a "
+        "response that plainly contains a well-formed answer while the scorer calls it "
+        "ungradeable is a scorer bug, every time."), 20, B.INK, W - 2 * PAD))
     # Say this ON the chart, not only in the source. Without it the asset reads as a dunk on a
     # harness thousands of people rely on, and the actual mechanism - a filter that is correct
     # for the variant it came from - is the more useful and more interesting thing.
-    s.append(B.paragraph(PAD, y + 108, esc(
+    # Below the blind-spot block, which runs three lines at 29px leading from y+116.
+    s.append(B.paragraph(PAD, y + 226, esc(
         "Not a bug report. GSM8K strict-match is right for the FEW-SHOT variant it came from, "
         "where the exemplars taught the model to write that sentence. Zero-shot inherited the "
         "filter, not the exemplars."), 19, B.MUT, W - 2 * PAD))
