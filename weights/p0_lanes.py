@@ -186,6 +186,14 @@ def start_server(gguf, np_, ctx_per_slot=1024, extra=()):
     #
     # Appending mixes sessions unless the boundaries are explicit, so each start writes a
     # banner: a reader splits on it and never medians two machine states together.
+    #
+    # EVERY READER OF THIS FILE MUST SPLIT ON THAT BANNER. Writing it is not enough - the night
+    # monitor kept counting `stop processing` across the whole file and duly reported a freshly
+    # started aime25 row as "30 done", having borrowed aime24's completions from the session
+    # above it. Counting since the last banner is the rule:
+    #     awk '/SESSION START/{n=0} /stop processing/{n++} END{print n+0}' <log>
+    # (ev1_run._progress is the deliberate exception: it wants a monotone tick count across
+    # everything, because it is a stall detector and only cares whether the number moves.)
     with open(logp, "a", encoding="utf-8") as fh:
         fh.write(f"\n=== SESSION START {time.strftime('%Y-%m-%d %H:%M:%S')} "
                  f"model={os.path.basename(gguf)} np={np_} ctx_per_slot={ctx_per_slot} "
