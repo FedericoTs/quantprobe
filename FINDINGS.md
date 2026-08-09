@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
 | Open contradictions | 29 |
-| Untried levers | 36 |
+| Untried levers | 37 |
 | External work to study | 19 |
 
 ## Established laws
@@ -775,6 +775,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** It is cheap - two rows of 30 items - and it turns a floor into a number on the model the capability ladder highlights. It also discriminates a decoding pathology from a capability limit, which is exactly the distinction C-25 says gets collapsed.
 
 `staked, awaiting GPU and approval` · `measured floor, unmeasured ceiling`
+
+### U-48 — DOES A DEPTH-AWARE QUANTIZATION RECIPE MOVE BENCHMARK SCORES, OR ONLY PERPLEXITY? Every quality claim this project makes about its recipe rests on KLD or perplexity against held-out text. That is a proxy, and a reader is entitled to ask whether it survives contact with the benchmarks people actually quote. It is genuinely unclear: a recipe can reduce divergence from the fp16 model while leaving task accuracy untouched, because accuracy is a coarse threshold sitting on top of the distribution. This is the byte-matched, same-source, same-machine, same-harness pair that answers it - the controlled experiment the EV-1 capability ladder explicitly is NOT.
+
+**Predicted effect (staked):** STAKED BEFORE EITHER ARM RAN (prereg #98). P1 CONFIRMED: ours beats naive on MATH-500 by >= 2.0 pts and is not worse by more than 1.0 pt on GSM8K or IFEval. P2 REFUTED: naive wins MATH-500 by >= 2.0 pts, or ours loses by >1.0 pt on two or more of the powered three - the outcome that retires the recipe as a quality claim, and it ships if it happens. P3 NULL: every powered benchmark differs by < 2.0 pts, meaning the recipe moves KLD but not accuracy at this size. P3 is stated as a prediction precisely so it cannot later be used as an excuse ('we only ever claimed perplexity').
+
+**Why it is promising:** Staked in prereg #98 (2026-08-09-quant-recipe-vs-naive-benchmarks) BEFORE either arm was evaluated. It is the only comparison in the whole suite where exactly one variable changes: same weights, same Q8_0 source file, same quantizer binary, same card, same protocol, same day. The OURS arm already exists with its build command recorded verbatim; only the naive arm needed building. It also directly answers the question a sceptic asks about the product.
+
+`staked 2026-08-09, naive arm building, neither arm evaluated` · `unmeasured`
 
 ### U-07 — Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.
 

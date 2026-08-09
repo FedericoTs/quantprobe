@@ -88,3 +88,40 @@ model-specific by construction (Law 3), and this is a single instance of applyin
 cannot separate "protecting the right layers" from "spending more bits on attention and the
 token embedding", because the recipe does both. Isolating those needs a third arm and is out
 of scope here; it is named so nobody mistakes this for the decomposition.
+
+
+---
+
+## AMENDMENT (2026-08-09, naive arm built, BEFORE any benchmark item was evaluated)
+
+**KR-1 FAILED. The arms are NOT byte-matched, and this is a size-confounded comparison.**
+
+| arm | bytes | vs ours |
+|---|---|---|
+| OURS depth-aware | 13,272,701,568 | - |
+| NAIVE plain Q2_K | 12,939,594,368 | **-2.51%** |
+
+Band was +/-1.50%. Build took 1,046 s.
+
+**No re-pick is possible without a worse confound, and that is why this is a disclosure
+rather than a second attempt.** A base inside the window would have to land between 12.18 and
+12.55 GB. llama.cpp's tiers are coarser than the tolerance: Q2_K is the largest K-quant below
+Q3_K_S, and Q3_K_S is roughly 15% larger. The only thing in the window is IQ3_XXS at 3.06 bpw
+- a **codebook** format. Swapping format family to fix 2.5% of bytes would introduce exactly
+the confound L-15 says dominates, so it is not a fix, it is a different experiment.
+
+**How this comparison must now be read.** OURS carries a 2.51% byte premium. The direction is
+conservative for the sceptic and unfavourable to us: any win OURS posts is partly bought with
+more space, so a confirmed P1 means *"the recipe plus 2.5% more bytes"*, not *"the recipe"*.
+A refuted P2 would be correspondingly stronger, since OURS would be losing while spending more.
+
+**Thresholds are UNCHANGED.** Moving P1's 2.0-point bar after a kill rule failed is moving the
+goalposts, and the whole point of writing KR-1 down was to make this moment cost something.
+
+**Row order fixed now:** MATH-500, GSM8K, IFEval, then AIME 2024, AIME 2025. The three
+verdict-bearing benchmarks run first, so an interrupted run still decides the question. This
+is sequencing, not scope - all five still run, and AIME is still excluded from the verdict
+under the power argument above.
+
+**Cost, stated so it is a decision and not a surprise:** roughly 12 hours per arm on this card
+at 30B-class speeds, about a day for the pair.
