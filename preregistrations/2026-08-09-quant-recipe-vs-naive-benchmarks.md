@@ -125,3 +125,34 @@ under the power argument above.
 
 **Cost, stated so it is a decision and not a surprise:** roughly 12 hours per arm on this card
 at 30B-class speeds, about a day for the pair.
+
+
+---
+
+## COST CORRECTION (2026-08-09 17:50, one row in flight, no scores seen)
+
+**My cost estimate above was wrong by 1.6x and is corrected here rather than quietly left.**
+
+I wrote "roughly 12 hours per arm, about a day for the pair". The real figure, derived from
+the EV-1 rows this box has already measured on a comparable 30B-A3B at Q2_K-class, is:
+
+| benchmark | 30B measured | 35B estimate (x1.05) |
+|---|---|---|
+| MATH-500 | 484 min | 508 min (8.5 h) |
+| GSM8K | 222 min | 233 min (3.9 h) |
+| IFEval | 208 min | 218 min (3.6 h) |
+| AIME 2024 | 96 min | 101 min (1.7 h) |
+| AIME 2025 | 99 min | 104 min (1.7 h) |
+
+**~19.4 h per arm. ~38.8 h - about 1.6 days - for the pair.**
+
+Where the estimate went wrong: I priced the pair off GSM8K and IFEval, which are the rows I
+had watched most recently, and MATH-500 is by far the longest row in the suite at 484 minutes.
+Its answers are long and its budget is 3,072 tokens. Anchoring on the rows most available to
+memory rather than the one that dominates the total is an ordinary estimation error, and the
+fix is that the numbers were on disk the whole time and I did not look until the run was live.
+
+**SCOPE IS UNCHANGED. All five benchmarks still run.** Dropping AIME would save 6.8 h and
+cost nothing for the verdict, since AIME is already excluded from P1/P2/P3 on power grounds -
+but trimming scope to save my own wall-clock is Federico's call, not mine, and it is offered
+rather than taken. If he says trim, the amendment lands before any result is read.
