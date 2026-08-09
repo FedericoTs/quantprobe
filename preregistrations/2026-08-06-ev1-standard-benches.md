@@ -61,3 +61,45 @@ missing `langdetect` dependency - installed.
 (b10098's server-side switch) - budgets stay 2048, and EV-1 becomes protocol-COHERENT with
 the grid (both thinking-off), restoring cross-table comparability that v1 had explicitly
 given up. All night-1 rows re-run under v2; P-E1/P-E2 score against v2 numbers only.
+
+---
+
+## AMENDMENT (2026-08-09, AFTER rows were measured - KR-E1 BREACH, DECLARED)
+
+**KR-E1 said: "scorer is lm-eval as pinned - no post-hoc metric edits; result JSONs committed
+raw." The C-26 extractor fix is a post-hoc metric edit. It was made after seeing the numbers,
+and it raised a headline. Declaring it rather than arguing it is fine.**
+
+What happened. math500_utils took the LAST oxed in a response, inheriting lm-eval's
+last_boxed_only_string, which returns None when that box is unbalanced. Qwen3.5-4B reaches the
+correct answer on AIME and then repeats it into the token cap - one response carries 683
+occurrences of the same boxed value - so the trailing fragment is truncated and unbalanced, and
+a response whose boxed value is EXACTLY the gold answer scored zero. Fixed by taking the last
+WELL-FORMED box.
+
+| row | as run (KR-E1, lm-eval as pinned) | re-graded (C-26) |
+|---|---|---|
+| 4B / AIME 2024 | 33.3% | **50.0%** |
+| 4B / AIME 2025 | 36.7% | **50.0%** |
+| the other 8 boxed rows | unchanged | unchanged |
+
+Across all 10 banked boxed rows (1,180 items): 9 answers rescued, 0 lost.
+
+**Why it is reported as primary anyway, and what that costs.** The as-run number is known to be
+wrong in a specific, inspectable way - the model produced the correct answer and the scorer
+failed to read it. Publishing a number we know to be wrong in order to honour a procedural rule
+serves nobody. But the rule exists because "we fixed the scorer and the score went up" is
+exactly what a thumb on the scale sounds like, and no amount of good faith distinguishes the
+two from outside. So:
+
+- The raw lm-eval result JSONs are **untouched on disk**, exactly as KR-E1 requires.
+- Re-grading happens in ev1_report.rescore_boxed, beside them, never over them.
+- Every row carries `_rescued` / `_lost` provenance.
+- **Both numbers appear here**, and the correction is stated on the chart itself.
+- The correction moved 8 of 10 rows by exactly zero. A scorer change that improved everything
+  would deserve no trust; one that fires only where a described defect occurs is checkable.
+
+A reader who takes KR-E1 strictly should read 33.3% and 36.7% and is given what they need to.
+
+**P-E1 and P-E2 are scored against the RE-GRADED numbers, with this breach attached.** Scoring
+a ladder prediction on scores we know to be misread would test the scorer, not the ladder.

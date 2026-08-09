@@ -180,11 +180,13 @@ def main():
          "sentence “The answer is N.”, which the zero-shot prompt never asks for - "
          "0 of 3,957 responses matched it, on any model (C-25). GPQA is part of this suite and "
          "has not run yet: no cell is shown because none was measured."),
-        ("Boxed rows are re-graded from the logged samples with the current extractor. It "
-         "previously took the LAST " + chr(92) + "boxed, so a model that repeated itself into "
-         "the token cap had its correct answer discarded with the truncated fragment after it: "
-         "9 answers rescued, 0 lost, 8 of 10 rows unchanged. Only the 4B loops, and only "
-         "on AIME."),
+        ("KR-E1 BREACH, DECLARED: the pre-registration said no post-hoc metric edits, and "
+         "these boxed rows are re-graded. The extractor took the LAST " + chr(92) + "boxed, so "
+         "a model that repeated its correct answer into the token cap had it discarded with "
+         "the truncated fragment after it. AS RUN the 4B scores 33.3% and 36.7% on AIME; "
+         "RE-GRADED, 50.0% and 50.0%. 9 answers rescued, 0 lost, 8 of 10 rows unchanged - and "
+         "the raw lm-eval JSONs are untouched on disk. A reader who takes the stake strictly "
+         "should read the as-run pair."),
         ("NOT STRICTLY COMPARABLE ON AIME: the 0.6B, 4B and 7B rows ran a 7,168-token "
          "generation budget; the 30B row ran 8,192 after the slot plan changed to clear a "
          "deadlock. The larger model had 14% more room to think, so any gap it shows is an "
