@@ -1986,6 +1986,7 @@ def t_a_failing_row_cannot_cancel_the_night():
                 returncode = None
                 def poll(self): return None
                 def kill(self): type(self).returncode = -9
+                def wait(self): return type(self).returncode
                 def communicate(self): return ("out", "err")
             _sp.Popen = lambda *a, **k: _Wedged()
 
@@ -3189,6 +3190,64 @@ def t_a_correct_answer_before_a_truncated_tail_still_scores():
     # 5. Ordinary responses are untouched - the last box still wins when it is well-formed.
     r = M.process_results({"answer": "42"}, ["First " + box + "{7}, on reflection " + box + "{42}."])
     assert r["exact_match"] == 1, "the LAST well-formed box must win, not the first"
+    return None
+
+
+def t_a_chatty_child_cannot_deadlock_the_watchdog():
+    """A child that writes more than a pipe buffer holds must still finish.
+
+    This is the bug that cost four 30B AIME rows. run_watched took stdout=PIPE and stderr=PIPE
+    and then polled in a sleep loop, reading nothing until communicate() after exit - so the OS
+    pipe filled, lm-eval blocked in write(), stopped issuing HTTP requests, and sat at 0.00s
+    CPU with zero sockets while llama-server idled. It was misdiagnosed twice, once as an
+    lm-eval concurrency bug and once as a slot-plan problem; an entire attempt was spent
+    running ctx 16384 x 1 slot, which wedged anyway at 24 of 30 items.
+
+    Windows pipe buffers are a few KB to 64 KB, so 2 MB is far past any of them. Against the
+    pre-fix code this test hangs rather than fails, which is the honest shape of the defect -
+    hence the timeout, so a regression shows up as a red test instead of a hung suite.
+    """
+    import sys as _sys
+    import threading
+    import time as _time
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import ev1_run as E
+
+    saved = (E.DATA, E._progress, E.stop_server, E.gpu_state, E.STALL_MIN)
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        E.DATA = td
+        E._progress = lambda: 0                 # frozen: never counts as forward progress
+        E.stop_server = lambda *a, **k: None
+        E.gpu_state = lambda *a, **k: None
+        E.STALL_MIN = 90                        # long enough that the stall path cannot fire
+        chatty = ("import sys\n"
+                  "sys.stdout.write('x' * 2_000_000)\n"
+                  "sys.stdout.flush()\n")
+        result = {}
+
+        def go():
+            # capture the exception too: a daemon thread that dies silently would report as a
+            # deadlock, which is a different bug and would send the next reader down the wrong
+            # path exactly as the first misdiagnosis did.
+            try:
+                result["r"] = E.run_watched([_sys.executable, "-c", chatty], os.environ.copy(),
+                                            None, "M", "T", lambda *a: None, _time.time())
+            except BaseException as exc:                     # noqa: BLE001
+                result["exc"] = f"{type(exc).__name__}: {exc}"
+
+        th = threading.Thread(target=go, daemon=True)
+        th.start()
+        th.join(timeout=120)
+        assert not th.is_alive(), \
+            "run_watched did not return - a 2 MB child deadlocked it, which is the pipe-buffer " \
+            "bug that killed four 30B AIME rows"
+        assert "exc" not in result, f"run_watched raised: {result['exc']}"
+        r = result.get("r")
+        assert r is not None and r.returncode == 0, f"chatty child did not succeed: {r}"
+        assert len(r.stdout) > 0, "the child's output was not captured at all"
+    (E.DATA, E._progress, E.stop_server, E.gpu_state, E.STALL_MIN) = saved
     return None
 
 

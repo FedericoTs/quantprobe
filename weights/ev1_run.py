@@ -98,8 +98,17 @@ TASK_PATH = os.path.join(HERE, "lm_eval_tasks")
 # One in-flight request removes the race entirely. slots x ctx stays 16384 either way, so KV
 # footprint and placement do not move - the C-14 comparability the smoke test enforces holds.
 # Cost is wall-clock: serial instead of 2-way, on a 30-item set.
-CTX_PER_SLOT = {"aime24_boxed": 16384, "aime25_boxed": 16384, "math500_boxed": 8192}
-CONCURRENT = {"aime24_boxed": 1, "aime25_boxed": 1, "math500_boxed": 2}
+# AIME IS BACK TO 8192 x 2, THE SAME PLAN EVERY BANKED ROW RAN. The one-slot detour above was
+# a fix for a cause that turned out not to exist: all four 30B AIME failures were a pipe-buffer
+# deadlock in OUR run_watched (see its docstring), not lm-eval and not the slot plan. Attempt 4
+# proved it by wedging at 24 of 30 with num_concurrent=1, where no race is possible.
+#
+# Reverting is not just tidiness. At ctx 16384 the derived budget is 8192, and the 0.6B, 4B and
+# 7B rows already on disk ran 7168 - so leaving it would hand the 30B 14% more room to think
+# than its comparators on the same benchmark, a disparity the chart had to disclose. Same slot
+# plan, same budget, comparable rows.
+CTX_PER_SLOT = {"aime24_boxed": 8192, "aime25_boxed": 8192, "math500_boxed": 8192}
+CONCURRENT = {"aime24_boxed": 2, "aime25_boxed": 2, "math500_boxed": 2}
 
 
 def slot_plan(task):
@@ -181,6 +190,14 @@ def _progress():
     return n
 
 
+def _tail(path, n=4000):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            return fh.read()[-n:]
+    except OSError:
+        return ""
+
+
 def run_watched(cmd, env, proc, model, task, log, t0):
     """Run a row with NO wall-clock cap, killed only if progress actually stops.
 
@@ -189,34 +206,53 @@ def run_watched(cmd, env, proc, model, task, log, t0):
     right signal: a row that is moving is never interrupted, and a row that is stuck is caught
     in ~25 minutes instead of hours. Returns the CompletedProcess, or None if it was killed
     (row skipped, night continues).
+
+    CHILD OUTPUT GOES TO A FILE, NEVER A PIPE. The first version of this function took
+    stdout=PIPE and stderr=PIPE and then polled in a sleep loop, reading nothing until
+    communicate() after exit. That is a pipe-buffer deadlock waiting to happen, and it
+    happened: the OS pipe filled, lm-eval blocked in write(), stopped issuing HTTP requests,
+    and sat at 0.00s CPU with zero sockets open while llama-server idled beside it. Four 30B
+    AIME attempts died that way and were misdiagnosed twice - first as an lm-eval concurrency
+    bug, then as a slot-plan problem, which is why one of them ran at ctx 16384 x 1 slot and
+    wedged anyway at 24 of 30 items. The predecessor, subprocess.run(capture_output=True), had
+    been safe purely because communicate() drains both streams on reader threads; replacing it
+    with a poll loop silently removed that.
+
+    A file has no buffer to fill, needs no reader thread to go wrong, and leaves the harness
+    output on disk for every row instead of only for the ones that fail.
     """
-    child = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             text=True, encoding="utf-8", errors="replace", env=env)
-    last_n, last_move, last_beat = _progress(), time.time(), time.time()
-    while child.poll() is None:
-        time.sleep(30)
-        now, n = time.time(), _progress()
-        if n > last_n:
-            last_n, last_move = n, now
-        if now - last_beat >= HEARTBEAT_MIN * 60:
-            last_beat = now
-            log(f"  [{model}/{task}] alive: {n} progress ticks, "
-                f"{(now-t0)/60:.0f}m elapsed, last progress {(now-last_move)/60:.0f}m ago")
-        if now - last_move >= STALL_MIN * 60:
-            child.kill()
-            out, err = child.communicate()
-            stop_server(proc)
-            gpu_state(f"{model}/{task} post (STALLED)", log)
-            log(f"[{model}/{task}] STALLED - no progress for {STALL_MIN}m after "
-                f"{(now-t0)/60:.0f}m and {n} progress ticks. Row killed, night continues. "
-                f"Nothing was written: lm-eval saves only on completion.")
-            open(os.path.join(DATA, f"ev1_fail_{model}_{task}.txt"), "w",
-                 encoding="utf-8").write(f"STALLED after {(now-t0)/60:.0f} min, "
-                                         f"{n} progress ticks\n{(out or '')[-2000:]}\n"
-                                         f"{(err or '')[-2000:]}")
-            return None
-    out, err = child.communicate()
-    return subprocess.CompletedProcess(cmd, child.returncode, out, err)
+    outp = os.path.join(DATA, f"ev1_child_{model}_{task}.log")
+    fh = open(outp, "w", encoding="utf-8", errors="replace")
+    try:
+        child = subprocess.Popen(cmd, stdout=fh, stderr=subprocess.STDOUT, env=env)
+        last_n, last_move, last_beat = _progress(), time.time(), time.time()
+        while child.poll() is None:
+            time.sleep(30)
+            now, n = time.time(), _progress()
+            if n > last_n:
+                last_n, last_move = n, now
+            if now - last_beat >= HEARTBEAT_MIN * 60:
+                last_beat = now
+                log(f"  [{model}/{task}] alive: {n} progress ticks, "
+                    f"{(now-t0)/60:.0f}m elapsed, last progress {(now-last_move)/60:.0f}m ago")
+            if now - last_move >= STALL_MIN * 60:
+                child.kill()
+                child.wait()
+                fh.close()
+                stop_server(proc)
+                gpu_state(f"{model}/{task} post (STALLED)", log)
+                log(f"[{model}/{task}] STALLED - no progress for {STALL_MIN}m after "
+                    f"{(now-t0)/60:.0f}m and {n} progress ticks. Row killed, night continues. "
+                    f"Nothing was written: lm-eval saves only on completion.")
+                open(os.path.join(DATA, f"ev1_fail_{model}_{task}.txt"), "w",
+                     encoding="utf-8").write(f"STALLED after {(now-t0)/60:.0f} min, "
+                                             f"{n} progress ticks\n{_tail(outp)}")
+                return None
+        rc = child.returncode
+    finally:
+        if not fh.closed:
+            fh.close()
+    return subprocess.CompletedProcess(cmd, rc, _tail(outp), "")
 
 
 def server_extra(model):

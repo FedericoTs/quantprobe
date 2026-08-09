@@ -1,0 +1,20 @@
+=== 30B AIME24 deadlock, attempt 4 (ctx 16384 x 1 slot) - live capture 2026-08-09 02:51:44 ===
+completions: 24 of 30
+server log : p0_server_Qwen3-Coder-30B-A3B-_np1.log
+
+--- last 3 releases, with their generation lengths ---
+114.17.657.513 I slot      release: id  0 | task 85568 | stop processing: n_tokens = 1758, truncated = 0
+120.44.726.716 I slot      release: id  0 | task 87225 | stop processing: n_tokens = 6050, truncated = 0
+122.12.073.943 I slot      release: id  0 | task 93152 | stop processing: n_tokens = 1517, truncated = 0
+
+--- generation length distribution of the 24 that completed ---
+  min 1126 median 2529 p90 8303 max 8355   n=24
+
+--- sockets on 8093 ---
+  TCP    127.0.0.1:8093         0.0.0.0:0              LISTENING       6556
+
+--- the refutation ---
+Attempts 1-3 ran ctx 8192 x 2 slots and wedged; attempt 4 ran ctx 16384 x ONE slot
+and wedged at 24/30. With num_concurrent=1 there is no race between generations, so
+the concurrency explanation is dead. MATH-500 completes 500 items on the same server
+at the same slot plan - the difference between the two tasks is generation LENGTH.
