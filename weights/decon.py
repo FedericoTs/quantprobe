@@ -59,13 +59,25 @@ def screen_one(text, hashes, grams):
 
 
 def screen_batch(samples, hashes, grams):
-    """samples: [str] -> (kept_indices, ledger). The ledger is what gets PUBLISHED."""
+    """samples: [str] -> (kept_indices, ledger). The ledger is what gets PUBLISHED.
+
+    EVERY reason is recorded, not the first 50. The published ledger for
+    bigcode/self-oss-instruct-sc2-exec-filter-50k says excluded=4551 and carries 50 reasons -
+    1.1% of them - and nothing in the file says so. Aggregating those 50 looks exactly like a
+    breakdown of all 4,551: the top ten 8-grams appear to account for 0.7% of exclusions, when
+    what that really measures is 35 of the 50 that happened to be written down.
+
+    A ledger exists to be audited. One that records the count but discards 98.9% of the
+    evidence cannot be, and it invites a reader to over-read the sample - which is exactly what
+    happened when the media plan promised "4,551 exclusions by reason" as a buildable chart.
+    4,551 short strings is nothing to store.
+    """
     kept, excluded = [], []
     for i, s in enumerate(samples):
         ok, why = screen_one(s, hashes, grams)
         (kept.append(i) if ok else excluded.append((i, why)))
     return kept, dict(total=len(samples), kept=len(kept), excluded=len(excluded),
-                      reasons=excluded[:50])
+                      reasons=excluded, reasons_complete=True)
 
 
 def selftest():

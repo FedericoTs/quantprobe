@@ -73,8 +73,16 @@ README reshape and are wired into it; the rest are post-ready standalone.
   the asset: twelve cells on one box, 2.41x down to 0.61x, with llama.cpp's own default
   among the losses. Drawn on a log axis about 1.00x because these are ratios.
 - **6** KV depth tax - waiting on the queued 8K-32K sweep.
-- **7** the 9%-collision ledger - `phaseb_screen_ledger.json` is committed; buildable now, but
-  it needs a careful frame so it reads as a caution about everyone's data rather than a boast.
+- **7** the 9%-collision ledger - **NOT BUILDABLE AS DESCRIBED, and the plan was wrong to say
+  it was.** The headline is solid and citable: 4,551 of 50,661 items in
+  `bigcode/self-oss-instruct-sc2-exec-filter-50k` share an 8-gram with HumanEval or MBPP, and
+  total - kept reconciles exactly. But the promised breakdown "by reason" does not exist -
+  `decon.screen_batch` stored `reasons=excluded[:50]`, so the committed ledger holds why for
+  50 of the 4,551, **1.1%**, and says nothing about the truncation. Aggregating those 50 looks
+  exactly like a breakdown of all of them; it is not one, and a chart built from it would have
+  published a 1.1% sample as if it covered everything. The cap is now removed, so a future
+  screen records every reason - but regenerating THIS ledger needs the 50k corpus re-downloaded
+  (not in the local HF cache), which is a user-gated decision, not a build-hour.
 - **8** batching inversion restyle - **deliberately parked**: it advertises multi-session
   serving we do not ship. It lands with `serve`, not before. The strongest chart in the deck
   must not write a cheque the tool cannot cash.
