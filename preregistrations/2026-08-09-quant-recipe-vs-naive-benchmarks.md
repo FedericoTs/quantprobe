@@ -156,3 +156,39 @@ fix is that the numbers were on disk the whole time and I did not look until the
 cost nothing for the verdict, since AIME is already excluded from P1/P2/P3 on power grounds -
 but trimming scope to save my own wall-clock is Federico's call, not mine, and it is offered
 rather than taken. If he says trim, the amendment lands before any result is read.
+
+
+---
+
+## CORRECTION (2026-08-09 19:30, still no scores read)
+
+**The KR-1 amendment above contains a false statement and I am not leaving it standing.**
+
+It says: *"No re-pick is possible without a worse confound."* That is wrong. A byte-IDENTICAL
+arm is possible, and this project published the method three weeks ago.
+
+`docs/DEEP-DIVE.md` and the arXiv paper both carry it: **Gemma-4-12B, two byte-identical 5.22
+GB files, first-12 FFN blocks protected (12.27 ppl) versus last-12 protected (10.02 ppl) -
+a 2.25 ppl swing from position alone.** The bytes match exactly because the arms protect the
+SAME NUMBER of blocks with the SAME bits, and differ only in WHICH blocks.
+
+Applied here that is a POSITION-SWAPPED arm: protect layers 0-9 with `q4_k` instead of the
+recipe's 30-39, everything else identical. Byte-identical by construction, no format change,
+no tier hunting. The reason I reported KR-1 as unfixable is that I only considered changing
+the naive arm's BASE, and never considered holding the recipe's shape and moving its position.
+
+**The two designs answer different questions and both are worth having:**
+
+| arm pair | isolates | byte-matched |
+|---|---|---|
+| OURS vs NAIVE (running) | does the recipe beat the default command? | no, -2.51% |
+| OURS vs POSITION-SWAPPED | does WHERE the protected bits sit matter? | exactly |
+
+The first is the product question. The second is the science question, and it is the one Law
+3 and the placement thesis actually rest on - which makes its absence here the bigger gap.
+
+**NOT DONE, and deliberately:** the swapped arm is not built. Quantizing is ~17 minutes of
+8-thread CPU work and night 3 is measuring right now; contaminating a running comparison to
+improve a future one is a bad trade and a C-14 violation. Evaluating it would also add ~19
+hours, which is a scope increase and Federico's call. Recorded here so the option survives
+this session, and so the false sentence above is not the last word on it.
