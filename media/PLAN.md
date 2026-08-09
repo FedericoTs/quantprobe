@@ -80,9 +80,16 @@ README reshape and are wired into it; the rest are post-ready standalone.
   must not write a cheque the tool cannot cash.
 - **10** quality-ladder Pareto - still gated on the GPU queue.
 - **11** EV-1 capability rows - BUILT as `capability_ladder`, rendering live from the
-  results on disk. 16 of 21 rows banked; the five outstanding 30B/GPQA cells draw as
-  explicit gaps, so the asset is honest at every stage and simply gets denser as the
-  night lands. RE-RENDER when the night completes - the committed PNG is a snapshot.
+  results on disk and re-graded per C-26. 16 of 21 rows banked; the outstanding 30B/GPQA
+  cells draw as explicit gaps, so the asset is honest at every stage and simply gets denser
+  as the night lands. RE-RENDER when the night completes - the committed PNG is a snapshot.
+  **REFRAMED after Federico pushed back on it.** The first cut was titled "Where size stops
+  buying accuracy" over rows labelled 0.6B/4B/7B/30B, which reads as a controlled scaling
+  test. It is not one: the rows span Qwen2.5/Qwen3/Qwen3.5, three quantization tiers, and a
+  code specialist at sub-4-bit being asked to do competition maths. The lesson is a chart
+  rule, not a one-off - **a row label is a claim.** Labelling four files by parameter count
+  asserts that parameter count is the variable, and here it was the one thing that did not
+  vary alone. Every bar now names its family and quant tier.
 - **NEW** the difficulty-band chart from U-43: 73% of the bulk corpus sits in the two easiest
   quartiles, validated against 397 declared-level samples. Data committed
   (`weights/data/phaseb_difficulty.json`); it becomes a chart when Phase C gives it a
