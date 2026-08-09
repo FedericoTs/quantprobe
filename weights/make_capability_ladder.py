@@ -82,6 +82,14 @@ def sizes():
 def main():
     rows = R.load_rows()
     R.check_publishable(rows)                # refuses on an undiagnosed uniform zero
+    # Protocol-or-refuse, alongside cite-or-refuse: the boxed-answer instruction must
+    # have reached every boxed row and no other. Read back out of the logged prompts,
+    # because the code as it stands says nothing about the code a row was run under.
+    violations = R.verify_prompts()
+    if violations:
+        sep = chr(10) + "  "
+        raise SystemExit("protocol violated in the DATA, not just the code:" + sep
+                         + sep.join(violations))
     gb = sizes()
 
     scored = {}

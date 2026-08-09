@@ -149,6 +149,60 @@ def load_rows(root=None, rescore=True):
     return rows
 
 
+SYSTEM_NEEDLE = "final answer inside"     # distinctive fragment of ev1_run.SYSTEM_INSTRUCTION
+
+
+def verify_prompts(root=None):
+    """Check what the models were ACTUALLY SENT, not what the command was supposed to say.
+
+    The boxed-answer system instruction must reach every boxed row and no other row. IFEval
+    grades literal instruction compliance - "respond in all lowercase", "no commas", "wrap the
+    reply in quotes" - so a standing instruction to box the answer is a competing instruction
+    and would depress the score for a reason that has nothing to do with the model.
+
+    tests/smoke.py already asserts that build_cmd routes the flag correctly. That is INTENT.
+    This is DELIVERY, and the two can diverge: the scoping fix landed mid-campaign, so a row
+    run before it would carry the instruction no matter what the current code says. Reading it
+    back out of the logged prompts is the only way to know, and it is the same discipline that
+    caught the AIME budget disparity - the code as it stands now says nothing about the code a
+    row was run under.
+
+    Returns [] when every row is correct, or a list of violations.
+    """
+    root = root or os.path.join(DATA, "ev1")
+    bad = []
+    for path in sorted(glob.glob(os.path.join(root, "*", "*", "**", "samples_*.jsonl"),
+                                 recursive=True)):
+        parts = path.replace("\\", "/").split("/")
+        model, task = parts[-4], parts[-3]
+        n = hit = 0
+        seen = set()
+        try:
+            with open(path, encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        d = json.loads(line)
+                    except ValueError:
+                        continue
+                    if d.get("doc_id") in seen:
+                        continue
+                    seen.add(d.get("doc_id"))
+                    n += 1
+                    if SYSTEM_NEEDLE in json.dumps(d.get("arguments", "")):
+                        hit += 1
+        except OSError:
+            continue
+        if not n:
+            continue
+        if task in BOXED_TASKS and hit != n:
+            bad.append(f"{model}/{task}: boxed task, but only {hit} of {n} prompts asked for "
+                       f"the answer format")
+        if task not in BOXED_TASKS and hit:
+            bad.append(f"{model}/{task}: NOT a boxed task, yet {hit} of {n} prompts carry the "
+                       f"boxed-answer instruction - a competing instruction on this benchmark")
+    return bad
+
+
 def uniform_zeros(rows, min_models=MIN_MODELS_FOR_ZERO_RULE):
     """[(task, metric, n_models)] for metrics that are exactly 0.0 on every model measured.
 
