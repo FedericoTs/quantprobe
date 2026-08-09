@@ -1,0 +1,7 @@
+17:00:24 [gpu Q35-NAIVE/math500_boxed pre (ctx 8192 x 2 slots)] 39, 607 MHz, 332 MiB
+17:06:48 [gpu Q35-NAIVE/math500_boxed post] 54, 607 MHz, 334 MiB
+17:06:48 [Q35-NAIVE/math500_boxed] rc=0 results=saved (6m)
+17:06:48 [gpu Q35-OURS/math500_boxed pre (ctx 8192 x 2 slots)] 54, 607 MHz, 334 MiB
+17:11:11 [gpu Q35-OURS/math500_boxed post] 54, 607 MHz, 333 MiB
+17:11:11 [Q35-OURS/math500_boxed] rc=0 results=saved (4m)
+17:11:11 probe98 complete

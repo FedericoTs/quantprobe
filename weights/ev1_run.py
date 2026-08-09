@@ -335,7 +335,17 @@ def main(night, probe=0):
                 run_row(model, task, log, limit=probe, tag="_probe")
             log(f"probe cross complete (limit={probe}, {len(rows)} cells)")
             return 0
-        if night == 1:
+        if night == 3:
+            # Prereg #98: ONE VARIABLE. Verdict-bearing rows first (MATH-500, GSM8K, IFEval),
+            # so an interrupted run still decides the question; AIME last, reported but
+            # excluded from the verdict because n=30 gives ~7pp stderr. Arms interleaved by
+            # TASK rather than run end-to-end, so any slow drift in machine state lands on
+            # both arms of each comparison instead of entirely on whichever ran second.
+            rows = []
+            for t in ("math500_boxed", "gsm8k_cot_zeroshot", "ifeval",
+                      "aime24_boxed", "aime25_boxed"):
+                rows += [("Q35-NAIVE", t), ("Q35-OURS", t)]
+        elif night == 1:
             rows = ([("0.6B", t) for t in ("math500_boxed", "aime24_boxed", "aime25_boxed", "ifeval",
                                             "gsm8k_cot_zeroshot")]
                     + [("4B", t) for t in ("aime24_boxed", "aime25_boxed", "ifeval", "math500_boxed")])

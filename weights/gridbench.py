@@ -38,6 +38,16 @@ THINKING_FAMILY = {"0.6B", "4B"}          # Qwen3/Qwen3.5 - soft-switch capable
 MODELS = dict(ROWS)
 MODELS["4B"] = GGUF_4B
 
+# Prereg #98 / U-48: the byte-matched-as-possible quantization recipe pair. SAME Qwen3.5-35B-A3B
+# weights, SAME Q8_0 source file, SAME quantizer binary - the only difference is which layers
+# got which bits. Both are Qwen3.5 and therefore thinking-capable, so BOTH must run
+# --reasoning off or their thought lands in reasoning_content and is scored as a stump. That
+# is protocol v1's failure and it would hit both arms, but not necessarily equally.
+Q35_DIR = "D:/evo-compress-data/gguf/"
+MODELS["Q35-NAIVE"] = Q35_DIR + "Qwen3.5-35B-A3B-naive-q2k.gguf"
+MODELS["Q35-OURS"] = Q35_DIR + "Qwen3.5-35B-A3B-ours-depthaware.gguf"
+THINKING_FAMILY |= {"Q35-NAIVE", "Q35-OURS"}
+
 
 def load_bench(name):
     if name == "mbpp":
