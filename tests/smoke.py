@@ -1931,6 +1931,34 @@ def t_every_runner_guards_against_every_other_lock():
             f"{f} still hand-rolls its lock discipline - use runner.owns_the_box so the " \
             f"guarded set cannot drift again"
 
+    # ANYTHING THAT READS THE LOCKS, not just runners that take them. The test above covered
+    # the three takers and missed verify.py, which CHECKS locks before benchmarking and had
+    # hand-rolled three of the five - so the release gate ran a benchmark while an EV-1 30B
+    # row held the GPU and reported the contaminated 68% spread as a model problem. A file
+    # that names any lock literal must source the set from runner.
+    import re as _re
+    offenders = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__", ".venv", "build")]
+        for name in filenames:
+            if not name.endswith(".py"):
+                continue
+            path = os.path.join(dirpath, name)
+            rel = os.path.relpath(path, root).replace("\\", "/")
+            if rel.endswith("weights/runner.py") or rel.startswith("tests/"):
+                continue                      # the definition itself, and this test
+            src = open(path, encoding="utf-8", errors="replace").read()
+            names = _re.findall(r'["\'](\.\w*_lock)["\']', src)
+            if not names:
+                continue
+            if "LOCK_NAMES" not in src and "owns_the_box" not in src:
+                offenders.append(f"{rel} hand-rolls {sorted(set(names))}")
+            elif set(names) - set(R.LOCK_NAMES):
+                offenders.append(f"{rel} names a lock outside LOCK_NAMES: "
+                                 f"{sorted(set(names) - set(R.LOCK_NAMES))}")
+    assert not offenders, \
+        "lock lists must come from runner.LOCK_NAMES, or they drift:\n  " + "\n  ".join(offenders)
+
     # and the shared guard must actually refuse on somebody else's lock
     import tempfile
     with tempfile.TemporaryDirectory() as td:

@@ -114,8 +114,17 @@ def layer3_e2e(gguf, llama_dir):
     # contamination artifact that failed the release check AND polluted the grid row in
     # flight. A lock present means NOT VERIFIED (assert, not skip): a release cannot be
     # called good on a bench that never legitimately ran.
-    locks = [os.path.join("weights", "data", n)
-             for n in (".p0_lock", ".autotune_lock", ".grid_lock")]
+    #
+    # THE LIST COMES FROM runner.LOCK_NAMES, NOT FROM HERE. This function hand-rolled three of
+    # the five and was missing .ev1_lock, so on 2026-08-09 - with an EV-1 30B row generating -
+    # it sailed past the guard, ran the bench under full GPU contention, and reported a 68%
+    # spread as "measurement too noisy to trust". That is the worst possible outcome: a
+    # contamination artifact wearing the costume of a model problem, in the release gate. The
+    # same drift had already been found in autotune_sweep (2 of 5) and phaseb_gen (4 of 5),
+    # which is why the canonical list exists at all.
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "weights"))
+    import runner as _runner
+    locks = [os.path.join("weights", "data", n) for n in _runner.LOCK_NAMES]
     held = [l for l in locks if os.path.isdir(l)]
     assert not held, (f"measurement lock present ({held[0]}) - another runner owns the box; "
                       f"re-run verify when it finishes. A bench under contention is not evidence.")

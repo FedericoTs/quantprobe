@@ -367,6 +367,16 @@ def pilot(log):
 
 def run():
     os.makedirs(DATA, exist_ok=True)
+    # This took .p0_lock and checked NOTHING ELSE - one of five - so a p0 run would have
+    # started happily while EV-1, the grid, autotune or Phase B held the GPU. It was the worst
+    # offender of the five and had never been surveyed, because the earlier drift check only
+    # looked at files that were obviously "runners". The guarded set comes from
+    # runner.LOCK_NAMES now, so it cannot drift again without the smoke suite saying so.
+    import runner as _runner
+    for name in _runner.LOCK_NAMES:
+        l = os.path.join(DATA, name)
+        if name != ".p0_lock" and os.path.isdir(l):
+            print(f"REFUSED: {l} exists - another measurement owns the box"); return 3
     try:
         os.mkdir(LOCK)                      # mkdir-or-refuse: an existing lock REFUSES
     except FileExistsError:

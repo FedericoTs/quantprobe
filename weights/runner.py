@@ -11,6 +11,21 @@ They had. Surveyed 2026-08-08, mid-EV-1-night:
     phaseb_gen.py      checked 4  - missed .ev1_lock
     autotune_sweep.py  checked 2  - missed .grid_lock, .phaseb_lock, .ev1_lock
 
+RE-SURVEYED 2026-08-09, and the first survey had missed three more - because it looked at the
+files that were obviously "runners" and stopped there:
+
+    verify.py          checked 3  - the RELEASE GATE. Missing .ev1_lock, it ran its benchmark
+                       while an EV-1 30B row generated, got a 68% spread, and reported it as
+                       "measurement too noisy to trust". A contamination artifact wearing the
+                       costume of a model problem, inside the gate that decides releases.
+    gridbench.py       checked 2  - missed .phaseb_lock, .ev1_lock
+    p0_lanes.py        checked 1  - its OWN lock and nothing else. The worst of the six.
+
+The lesson is not "check harder", it is that a survey of a category you define by eye will
+keep missing members. The smoke guard now walks every .py in the repo and flags any file that
+names a lock literal without sourcing the set from here - which is how the last three were
+found, seconds after it was widened.
+
 So with EV-1 holding the box and a 30B row in flight, autotune_sweep would have started
 happily and contended for the GPU - which is precisely the overlap that voided the 2026-07-31
 ladder run and forced it to be deleted rather than explained. The list has to exist once.

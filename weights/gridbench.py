@@ -187,9 +187,15 @@ def selftest():
 
 
 def run():
-    for l in (P0_LOCK, AUTOTUNE_LOCK):
-        if os.path.isdir(l):
-            print(f"REFUSED: {l} exists"); return 3
+    # The guarded set comes from runner.LOCK_NAMES. This checked P0 and AUTOTUNE only, so a
+    # grid run would have started while EV-1 or Phase B held the GPU - the same drift already
+    # found in autotune_sweep (2 of 5) and phaseb_gen (4 of 5), and the overlap that voided the
+    # 2026-07-31 ladder. mkdir-or-refuse is kept: an existing lock REFUSES, never waits.
+    import runner as _runner
+    for name in _runner.LOCK_NAMES:
+        l = os.path.join(DATA, name)
+        if name != ".grid_lock" and os.path.isdir(l):
+            print(f"REFUSED: {l} exists - another measurement owns the box"); return 3
     try:
         os.mkdir(GRID_LOCK)
     except FileExistsError:
