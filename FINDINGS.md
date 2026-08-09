@@ -13,7 +13,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Measured dead ends | 26 |
 | Open contradictions | 29 |
 | Untried levers | 37 |
-| External work to study | 19 |
+| External work to study | 20 |
 
 ## Established laws
 
@@ -1169,6 +1169,14 @@ A DENSE model carrying an MTP head is the discriminator our own published mechan
 **Question to answer:** Does K=4 MTP collapse on a DENSE model? And does the published 95.28% hold under our protocol?
 
 `staked` · scope: One model, one box, one MTP implementation. A dense 9B at Q4_K_M (5.78 GB) sits all-in-VRAM on 12 GB, so this tests the mechanism WITHOUT the split placement that produced the original collapse - which is the point, and also the limitation: a null result rules out the union tax as the sole cause, it does not prove residency was the whole story. · evidence: prereg #94 (2026-08-07-deepseek-v4-pro-9b-mtp), staked BEFORE the download starts. Three tests ride on one download: the dense MTP discriminator above, a Law 4 placement prediction on a new dense 9B shape, and an independent check of the card's published 95.28%. · wired into: `Nothing yet - BLOCKED on a user-approved download (~10.4 GB for the Q3_K_M + Q4_K_M pair). The prereg is staked so the predictions cannot move after the file lands.`
+
+### E-21 — https://eshyperscale.github.io/ - 'Evolution Strategies at the Hyperscale' (EGGROLL)
+
+THEY DERIVE ANALYTICALLY THE THING WE FOUND EMPIRICALLY, FROM THE OTHER DIRECTION. Their Appendix F computes arithmetic intensity (ops per byte moved) for batched inference and compares it to a roofline threshold = FLOPS / bandwidth. That is Law 4's physics stated from the compute side rather than the bandwidth side, and it is the frame our U-38 batching cliff and U-39 MoE cap have been missing. Their formula, reproduced exactly against their own worked example (324 for H100/bf16/m=8192/A=300), generalises to quantized weights by letting activations and weights carry different bytes-per-element.
+
+**Question to answer:** Does the computed roofline crossing predict where our measured batching curves bend? U-38 put the MMVQ->MMQ kernel cliff at width 9 on the 1060, and the crossing computes to 5.8 on that same box - llama.cpp switches to the mat-mat kernel just ABOVE the point where compute starts to matter, which is either a good engineering choice or a coincidence, and we can tell which by computing the crossing for several (model, quant) shapes and checking whether the cliff tracks it.
+
+`reviewed 2026-08-09, three concrete leverage points and one strategic risk` · scope: THEIR RESULT IS ABOUT TRAINING, NOT INFERENCE, and nothing here retrodicts a tok/s figure yet. The three leverage points below are hypotheses with arithmetic behind them, not measurements. The roofline threshold also uses nominal peak FLOPS, which no real kernel reaches, so the true crossing is LOWER than computed - the numbers above are upper bounds on the batch width needed. · evidence: Paper PDF fetched 2026-08-09; arithmetic intensity derivation in Appendix F, speed figures in Appendix E. Our numbers from re-deriving their formula with s_act=2, s_w=0.5 - the generalisation is ours, not theirs, and is arithmetic rather than measurement. · wired into: `Nothing yet. THREE LEVERAGE POINTS, in order of how cheaply they can be tested: (1) QUANTIZATION MOVES THE ROOFLINE, NOT JUST THE BYTE COUNT. At 4 bits the batch width needed to become compute-bound drops roughly 4x versus fp16, because fewer weight bytes per op raises arithmetic intensity. Law 4 currently models quantization purely as fewer bytes; this says it also changes WHICH RESOURCE BINDS. quantprobe already prints the binding constraint - it could print the batch width at which that constraint flips, which is a real advisory nobody else ships. (2) AN ANALYTIC EXPLANATION FOR U-39's MoE 2x CAP. Their 'Gaussian matrix ES' case has arithmetic intensity INDEPENDENT of batch size, because every population member reads its own weight matrix. MoE decode at batch B is the same algebra: tokens route to different experts, so the union of expert bytes read grows with B instead of being amortised. The prediction that falls out is testable and sharp - the cap should lift once B*top_k exceeds the expert count, i.e. around B=16 for a 128-expert top-8 model, because beyond that every expert is read anyway and further batching amortises normally. U-39 measured ~2.0x and stopped; this says where to look for the recovery. (3) A ROOFLINE COLUMN FOR THE BATCHING CHART. media/chart_kpi_batching_inversion already plots measured aggregate throughput against width; overlaying the computed crossing would show whether the bend is a kernel artefact or physics.`
 
 ---
 
