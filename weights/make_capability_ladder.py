@@ -56,7 +56,7 @@ def main():
         scored[(model, task)] = value * 100
 
     live = [b for b in BENCHES if any((m, b[0]) in scored for m in ORDER)]
-    H = B.HEADER_H + sum(ROWH * len(ORDER) + GROUP_GAP + 34 for _ in live) + B.FOOTER_H + 250
+    H = B.HEADER_H + sum(ROWH * len(ORDER) + GROUP_GAP + 34 for _ in live) + B.FOOTER_H + 400
 
     m4 = scored.get((HERO, "math500_boxed"))
     m30 = scored.get(("30B", "math500_boxed"))
@@ -124,11 +124,24 @@ def main():
             y += ROWH
         y += GROUP_GAP
 
-    note = ("GSM8K is reported as flexible-extract. Its strict-match filter demands the "
-            "literal sentence “The answer is N.”, which the zero-shot prompt never "
-            "asks for - 0 of 3,957 responses matched it, on any model (C-25). GPQA is part of "
-            "this suite and has not run yet: no cell is shown because none was measured.")
-    s.append(B.paragraph(80, y + 6, note, 18, B.MUT, W - 160))
+    notes = [
+        ("GSM8K is reported as flexible-extract. Its strict-match filter demands the literal "
+         "sentence “The answer is N.”, which the zero-shot prompt never asks for - "
+         "0 of 3,957 responses matched it, on any model (C-25). GPQA is part of this suite and "
+         "has not run yet: no cell is shown because none was measured."),
+        ("Boxed rows are re-graded from the logged samples with the current extractor. It "
+         "previously took the LAST " + chr(92) + "boxed, so a model that repeated itself into "
+         "the token cap had its correct answer discarded with the truncated fragment after it: "
+         "9 answers rescued, 0 lost, 8 of 10 rows unchanged. Only the 4B loops, and only "
+         "on AIME."),
+        ("NOT STRICTLY COMPARABLE ON AIME: the 0.6B, 4B and 7B rows ran a 7,168-token "
+         "generation budget; the 30B row ran 8,192 after the slot plan changed to clear a "
+         "deadlock. The larger model had 14% more room to think, so the gap it shows is an "
+         "upper bound on its advantage, not a measurement of it."),
+    ]
+    for n in notes:
+        s.append(B.paragraph(80, y + 6, n, 18, B.MUT, W - 160))
+        y += 26 * (len(B.wrap(n, 18, W - 160)) + 0.6)
 
     s.append(B.footer(W, H, "prereg 2026-08-06-ev1-standard-benches · "
                             "weights/data/ev1/**/results_*.json"))

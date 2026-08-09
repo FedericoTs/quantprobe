@@ -3120,12 +3120,16 @@ def t_shipped_markdown_carries_no_invisible_control_characters():
     """
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     bad = []
-    for base in ("docs", ".", "findings"):
+    # media/ is in the list because the third occurrence put a backspace inside an SVG, where
+    # it is not merely ugly: the XML parser rejects char 8 outright, so the chart rendered as
+    # "PCDATA invalid Char value 8" and everything after the offending note was dropped. A
+    # generated file is exactly where this is hardest to notice, and easiest to check.
+    for base in ("docs", ".", "findings", "media"):
         d = os.path.join(root, base)
         if not os.path.isdir(d):
             continue
         for name in sorted(os.listdir(d)):
-            if not (name.endswith(".md") or name.endswith(".json")):
+            if not name.endswith((".md", ".json", ".svg")):
                 continue
             text = open(os.path.join(d, name), encoding="utf-8", errors="replace").read()
             for i, ch in enumerate(text):
@@ -3134,6 +3138,113 @@ def t_shipped_markdown_carries_no_invisible_control_characters():
                                f"near {text[max(0, i - 25):i + 12]!r}")
                     break
     assert not bad, "control characters in shipped text: " + "; ".join(bad)
+    return None
+
+
+def t_a_correct_answer_before_a_truncated_tail_still_scores():
+    """A model that loops into the token cap must not be scored as if it never answered.
+
+    The 4B reaches the right answer on AIME, then repeats "\\boxed{116}" 683 times until
+    generation is cut off mid-token. lm-eval's last_boxed_only_string takes the LAST \\boxed,
+    finds it unbalanced, returns None - and a correct answer scored zero. Measured across the
+    banked rows: 9 answers rescued, 0 lost, and 8 of 10 rows unchanged.
+
+    Both directions are pinned. A scorer that gets more generous is exactly the change that
+    needs a guard against generosity, so this also asserts the extractor still refuses a
+    response whose ONLY box is truncated - there is no correct answer to rescue there, and
+    inventing one would be the thumb on the scale this whole protocol exists to prevent.
+    """
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights", "lm_eval_tasks"))
+    try:
+        import math500_utils as M
+    except ImportError:
+        return "SKIP: lm_eval not installed (research dep, not a package dep - runs locally)"
+
+    bs = chr(92)
+    box = bs + "boxed"
+
+    # 1. THE REAL FAILING INPUT: correct answer, then a repetition loop cut off mid-token.
+    looped = ("The answer is " + box + "{116}." + ("\n\n" + box + "{116}") * 40 + "\n\n" + box
+    )
+    r = M.process_results({"answer": "116"}, [looped])
+    assert r == {"exact_match": 1, "emitted_boxed": 1}, \
+        f"correct answer before a truncated tail must still score: {r}"
+
+    # 2. Cut off after the brace opens - same shape, one character further along.
+    r = M.process_results({"answer": "540"}, [box + "{540}\n\n" + box + "{540"])
+    assert r["exact_match"] == 1, "an unbalanced trailing box must not discard the good one"
+
+    # 3. NOTHING TO RESCUE: the only box is truncated. Must still refuse.
+    r = M.process_results({"answer": "7"}, ["I think the answer is " + box + "{7"])
+    assert r == {"exact_match": 0, "emitted_boxed": 0}, \
+        f"a response with no well-formed box must not be graded: {r}"
+
+    # 4. The generosity guard - a rescued box that is WRONG is still wrong.
+    r = M.process_results({"answer": "116"}, [box + "{999}\n\n" + box])
+    assert r == {"exact_match": 0, "emitted_boxed": 1}, \
+        f"wrong answer must be graded, not rescued: {r}"
+
+    # 5. Ordinary responses are untouched - the last box still wins when it is well-formed.
+    r = M.process_results({"answer": "42"}, ["First " + box + "{7}, on reflection " + box + "{42}."])
+    assert r["exact_match"] == 1, "the LAST well-formed box must win, not the first"
+    return None
+
+
+def t_boxed_rows_are_regraded_with_the_current_extractor():
+    """Rows on disk carry the verdict of whatever extractor was loaded when they ran.
+
+    That is not an abstraction: the extractor was fixed mid-campaign, the rows already banked
+    still held the old verdict, and the row running that night was being graded by the old code
+    held inside its own process. Uniform treatment therefore has to happen offline, from the
+    logged samples, or the suite compares models that were graded by different rules.
+
+    Built on a synthetic row in a temp directory rather than the local corpus, so it runs the
+    same on CI as it does here - and asserts the delta, not just that the code path executes.
+    """
+    import json as _json
+    import sys as _sys
+    import tempfile
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    _sys.path.insert(0, os.path.join(root, "weights", "lm_eval_tasks"))
+    try:
+        import math500_utils  # noqa: F401
+    except ImportError:
+        return "SKIP: lm_eval not installed (research dep, not a package dep - runs locally)"
+    import ev1_report as R
+
+    bs = chr(92)
+    box = bs + "boxed"
+    looped = box + "{116}" + ("\n\n" + box + "{116}") * 30 + "\n\n" + box   # cut off mid-token
+
+    with tempfile.TemporaryDirectory() as td:
+        d = os.path.join(td, "4B", "aime24_boxed", "run")
+        os.makedirs(d)
+        # what lm-eval WROTE at run time: the old extractor scored this zero
+        with open(os.path.join(d, "results_x.json"), "w", encoding="utf-8") as fh:
+            _json.dump({"results": {"aime24_boxed": {"exact_match,none": 0.0,
+                                                     "emitted_boxed,none": 0.0}}}, fh)
+        with open(os.path.join(d, "samples_x.jsonl"), "w", encoding="utf-8") as fh:
+            fh.write(_json.dumps({"doc_id": 0, "doc": {"Answer": "116"}, "target": "116",
+                                  "resps": [[looped]], "exact_match": 0,
+                                  "emitted_boxed": 0}) + "\n")
+
+        raw = R.load_rows(root=td, rescore=False)[("4B", "aime24_boxed")]
+        assert raw["exact_match,none"] == 0.0, "rescore=False must return the untouched verdict"
+
+        fixed = R.load_rows(root=td, rescore=True)[("4B", "aime24_boxed")]
+        assert fixed["exact_match,none"] == 1.0, \
+            f"the correct answer before the truncated tail was not rescued: {fixed}"
+        assert fixed["_rescued"] == 1 and fixed["_lost"] == 0, \
+            f"provenance must record what the correction did: {fixed}"
+
+        # Provenance must never be mistaken for a score by the uniform-zero guard - `_lost`
+        # is 0 on every row when the correction is working, which is the opposite of suspect.
+        assert R.check_publishable({("a", "t"): {"_lost": 0.0}, ("b", "t"): {"_lost": 0.0},
+                                    ("c", "t"): {"_lost": 0.0}}) == [], \
+            "underscore-prefixed provenance tripped the uniform-zero guard"
     return None
 
 

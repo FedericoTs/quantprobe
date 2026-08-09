@@ -26,6 +26,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
@@ -59,8 +60,68 @@ class SuspectMetric(RuntimeError):
     """A metric is uniformly zero and undiagnosed. Publishing it would be a false claim."""
 
 
-def load_rows(root=None):
-    """{(model, task): {metric: value}} for every results_*.json on disk."""
+BOXED_TASKS = {"math500_boxed", "aime24_boxed", "aime25_boxed"}
+
+
+def rescore_boxed(model, task, root=None):
+    """Re-grade a boxed row from its logged samples with the CURRENT extractor.
+
+    Necessary because scoring happened at run time, and the extractor has since been fixed: it
+    took the last \\boxed outright, so a model that looped into the token cap had its correct
+    answer discarded along with the truncated fragment after it (see math500_utils). Rows
+    already on disk carry the old verdict, and the row running tonight is being scored by the
+    old code held in its own process - re-grading offline is the only way every row gets the
+    same treatment.
+
+    Nothing is overwritten. lm-eval's results_*.json stays the raw record; this returns the
+    corrected numbers beside it so the delta is always visible and auditable.
+
+    Returns {"exact_match": .., "emitted_boxed": .., "n": .., "rescued": ..} or None if the
+    samples were not logged.
+    """
+    root = root or os.path.join(DATA, "ev1")
+    files = sorted(glob.glob(os.path.join(root, model, task, "**", "samples_*.jsonl"),
+                             recursive=True))
+    if not files:
+        return None
+    sys.path.insert(0, os.path.join(HERE, "lm_eval_tasks"))
+    try:
+        import math500_utils as M
+    except ImportError:
+        return None
+    n = ok = boxed = rescued = lost = 0
+    seen = set()
+    with open(files[-1], encoding="utf-8") as fh:
+        for line in fh:
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            if d.get("doc_id") in seen:
+                continue                      # one line per (doc, filter); grade each doc once
+            seen.add(d.get("doc_id"))
+            resp = d.get("resps") or [[""]]
+            txt = resp[0][0] if isinstance(resp[0], list) else str(resp[0])
+            r = M.process_results(d["doc"], [txt])
+            n += 1
+            ok += r["exact_match"]
+            boxed += r["emitted_boxed"]
+            was = int(d.get("exact_match") or 0)
+            rescued += (r["exact_match"] == 1 and was == 0)
+            lost += (r["exact_match"] == 0 and was == 1)
+    if not n:
+        return None
+    return {"exact_match": ok / n, "emitted_boxed": boxed / n,
+            "n": n, "rescued": rescued, "lost": lost}
+
+
+def load_rows(root=None, rescore=True):
+    """{(model, task): {metric: value}} for every results_*.json on disk.
+
+    With rescore=True (the default) boxed tasks are re-graded from their logged samples with
+    the current extractor, and the row carries `rescued`/`lost` counts so a reader can see
+    exactly what the correction did. rescore=False returns the untouched lm-eval verdicts.
+    """
     root = root or os.path.join(DATA, "ev1")
     rows = {}
     for p in glob.glob(os.path.join(root, "*", "*", "**", "results_*.json"), recursive=True):
@@ -73,6 +134,18 @@ def load_rows(root=None):
         for _, metrics in blob.get("results", {}).items():
             rows[(model, task)] = {k: v for k, v in metrics.items()
                                    if isinstance(v, (int, float)) and "stderr" not in k}
+    if rescore:
+        for (model, task), metrics in list(rows.items()):
+            if task not in BOXED_TASKS:
+                continue
+            fixed = rescore_boxed(model, task, root)
+            if not fixed:
+                metrics["_rescore_unavailable"] = 1    # samples missing: say so, do not guess
+                continue
+            metrics["exact_match,none"] = fixed["exact_match"]
+            metrics["emitted_boxed,none"] = fixed["emitted_boxed"]
+            metrics["_rescued"] = fixed["rescued"]
+            metrics["_lost"] = fixed["lost"]
     return rows
 
 
@@ -86,7 +159,12 @@ def uniform_zeros(rows, min_models=MIN_MODELS_FOR_ZERO_RULE):
     by_metric = {}
     for (model, task), metrics in rows.items():
         for k, v in metrics.items():
-            if k in ("sample_len", "alias"):
+            # A leading underscore marks PROVENANCE, not a score. The rule is structural rather
+            # than a list of exceptions, because a guard whose blocklist grows every time it
+            # fires stops being a guard. It fired on `lost` the moment re-scoring was added -
+            # correctly by its own logic, and wrongly in substance: "0 answers lost on every
+            # model" is the correction working, not a scorer that never fires.
+            if k in ("sample_len", "alias") or k.startswith("_"):
                 continue
             by_metric.setdefault((task, k), []).append(v)
     out = []

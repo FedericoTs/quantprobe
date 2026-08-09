@@ -16,6 +16,42 @@ from lm_eval.tasks.hendrycks_math.utils import (  # noqa: F401
     remove_boxed,
 )
 
+BOXED = chr(92) + "boxed"        # built from the ordinal: a literal backslash in this project
+                                 # has twice been eaten as an escape in transit
+
+
+def last_well_formed_boxed(response):
+    """The last \\boxed{...} whose braces BALANCE, scanning backwards from the end.
+
+    lm-eval's last_boxed_only_string takes the last \\boxed outright and returns None if it is
+    unbalanced. That is correct for a response that ends normally, and wrong for one that hits
+    the token cap - which is exactly what the 4B does on AIME: it reaches the right answer, then
+    repeats "\\boxed{116}" 683 times until generation is cut off mid-token. The final fragment
+    is unbalanced, the extractor returns None, and a CORRECT answer scores zero.
+
+    Measured over every banked boxed row (10 rows, 1,180 items): taking the last well-formed box
+    rescues 9 answers and loses 0, and changes nothing at all on 8 of the 10 rows. A scorer
+    change that only ever helps would be suspect; one that fires only where the defect occurs
+    is a defect fix. The two rows it moves are the two where a model looped into the cap.
+
+    This is C-25 pointed at our own scorer: the difference between "the model was wrong" and
+    "we failed to read the answer" is worth more than either number.
+    """
+    i = response.rfind(BOXED)
+    while i != -1:
+        j = response.find("{", i)
+        if j != -1:
+            depth = 0
+            for k in range(j, len(response)):
+                if response[k] == "{":
+                    depth += 1
+                elif response[k] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        return response[i:k + 1]
+        i = response.rfind(BOXED, 0, i)
+    return None
+
 
 def _gold(doc):
     """AIME ships the answer under 'Answer', MATH-500 under 'answer'."""
@@ -27,7 +63,7 @@ def _gold(doc):
 
 def process_results(doc, results):
     response = results[0]
-    boxed = last_boxed_only_string(response)
+    boxed = last_well_formed_boxed(response)
     candidate = None
     if boxed is not None:
         try:
