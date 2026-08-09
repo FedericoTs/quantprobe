@@ -32,8 +32,8 @@ CASES = [
     ("GSM8K  cot_zeroshot  strict-match",
      'the literal sentence  "The answer is N."',
      '"Therefore, Janet makes $18 every day at the farmers\' market."',
-     "0 of 3,957 responses matched, across three models",
-     "36.8 / 81.7 / 79.9",
+     "0 of 3,957 across 0.6B/4B/7B; the 30B alone matches 27%",
+     "36.8 / 81.7 / 79.9 / 82.6",
      "flexible-extract, same responses"),
     ("MATH-500  hendrycks extractor",
      "the slice between the FIRST $ and the LAST $",
@@ -66,23 +66,45 @@ def main():
     assert abs(got[("4B", "aime24_boxed")] * 100 - 50.0) < 0.05, "AIME24 4B moved"
 
     CH, GAP = 214, 26
-    H = B.HEADER_H + 196 + len(CASES) * (CH + GAP) + 300 + B.FOOTER_H
+    H = B.HEADER_H + 196 + len(CASES) * (CH + GAP) + 330 + B.FOOTER_H
 
     s = [B.svg_open(W, H),
          B.header(W, "MEASURED · lm-evaluation-harness 0.4.12 · FOUR TASKS, ONE FAILURE MODE",
-                  "The zero that is not the model's fault",
-                  "A benchmark score can be a property of its scorer. One of the four below is "
-                  "ours - and our own detector missed it.")]
+                  "When the scorer picks the winner",
+                  "A benchmark score can be a property of its scorer - and it does not only depress scores. It can invert the ranking.")]
 
+    # THE HERO IS THE INVERSION, not the zero. A metric reading 0.00% is obviously broken and
+    # gets investigated. A metric handing one model a 24.5-point lead looks like a RESULT, and
+    # gets published. Same responses, same benchmark, one filter choice apart.
     y = B.HEADER_H + 16
-    s.append(B.panel(PAD, y, W - 2 * PAD, 150, stroke=B.TEAL, sw=2))
-    s.append(f'<text x="{PAD+38}" y="{y+46}" fill="{B.MUT}" font-size="19" letter-spacing="3">'
-             f'GSM8K STRICT-MATCH · RESPONSES THAT MATCHED WHAT IT ASKED FOR</text>')
-    s.append(f'<text x="{PAD+38}" y="{y+118}" fill="{B.TEAL}" font-size="72" '
-             f'font-weight="bold">0 of 3,957</text>')
-    s.append(f'<text x="{PAD+470}" y="{y+118}" fill="{B.SUB}" font-size="26">'
-             f'across a 0.6B, a 4B and a 7B - not a low rate, exactly zero</text>')
-    y += 196
+    s.append(B.panel(PAD, y, W - 2 * PAD, 210, stroke=B.DISK, sw=2))
+    s.append(f'<text x="{PAD+38}" y="{y+44}" fill="{B.MUT}" font-size="19" letter-spacing="3">'
+             f'GSM8K · THE SAME 1,319 RESPONSES FROM EACH MODEL, SCORED TWO WAYS</text>')
+    s.append(f'<text x="{PAD+38}" y="{y+92}" fill="{B.SUB}" font-size="21">strict-match</text>')
+    s.append(f'<text x="{PAD+300}" y="{y+96}" fill="{B.DISK}" font-size="44" '
+             f'font-weight="bold">0.0%</text>')
+    s.append(f'<text x="{PAD+430}" y="{y+96}" fill="{B.MUT}" font-size="21">Qwen3.5-4B</text>')
+    s.append(f'<text x="{PAD+700}" y="{y+96}" fill="{B.DISK}" font-size="44" '
+             f'font-weight="bold">24.5%</text>')
+    s.append(f'<text x="{PAD+860}" y="{y+96}" fill="{B.MUT}" font-size="21">'
+             f'Qwen3-Coder-30B</text>')
+    s.append(f'<text x="{W-PAD-38}" y="{y+96}" text-anchor="end" fill="{B.DISK}" font-size="22" '
+             f'font-weight="bold">a 24.5-point rout</text>')
+    s.append(f'<text x="{PAD+38}" y="{y+152}" fill="{B.SUB}" font-size="21">'
+             f'flexible-extract</text>')
+    s.append(f'<text x="{PAD+300}" y="{y+156}" fill="{B.TEAL}" font-size="44" '
+             f'font-weight="bold">81.7%</text>')
+    s.append(f'<text x="{PAD+430}" y="{y+156}" fill="{B.MUT}" font-size="21">Qwen3.5-4B</text>')
+    s.append(f'<text x="{PAD+700}" y="{y+156}" fill="{B.TEAL}" font-size="44" '
+             f'font-weight="bold">82.6%</text>')
+    s.append(f'<text x="{PAD+860}" y="{y+156}" fill="{B.MUT}" font-size="21">'
+             f'Qwen3-Coder-30B</text>')
+    s.append(f'<text x="{W-PAD-38}" y="{y+156}" text-anchor="end" fill="{B.TEAL}" font-size="22" '
+             f'font-weight="bold">a dead heat</text>')
+    s.append(f'<text x="{PAD+38}" y="{y+192}" fill="{B.INK}" font-size="19">'
+             f'The 30B is not better at maths. It is better at a sentence: it writes '
+             f'&#8220;The answer is N.&#8221; in 27% of replies. The others, never.</text>')
+    y += 256
 
     for task, wanted, wrote, scored, recovered, how in CASES:
         s.append(B.panel(PAD, y, W - 2 * PAD, CH))
