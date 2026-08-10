@@ -3839,6 +3839,108 @@ def t_a_metric_that_is_zero_for_every_model_is_never_published():
     return None
 
 
+def t_a_prereg_verdict_is_computed_by_code_not_by_eye():
+    """Prereg #98's P1/P2/P3 must fall out of the thresholds, including when none of them fit.
+
+    The failure this guards is not arithmetic, it is judgement: a human looking at "+1.8 on
+    MATH-500" after staking "+2.0" is very likely to call it a win, and a human looking at a
+    result that matches NONE of the three staked outcomes is very likely to round it to the
+    nearest one. Both are unfalsifiable moves that leave no trace. So the thresholds live in
+    code, the outcome space is checked for holes, and KR-5 is a refusal rather than a habit.
+
+    Written and committed while exactly one of the six verdict-bearing rows existed on disk and
+    before any of them had been read.
+    """
+    import sys as _sys
+    import contextlib
+    import io as _io
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import prereg98_score as P
+
+    M = {"math500_boxed": "exact_match,none",
+         "gsm8k_cot_zeroshot": "exact_match,flexible-extract",
+         "ifeval": "prompt_level_strict_acc,none"}
+
+    def rows(**pairs):
+        """rows(math500_boxed=(naive_pct, ours_pct), ...) -> the shape load_rows returns."""
+        out = {}
+        for task, (a, b) in pairs.items():
+            out[(P.NAIVE, task)] = {M[task]: a / 100.0}
+            out[(P.OURS, task)] = {M[task]: b / 100.0}
+        return out
+
+    healthy = lambda arm, task: (500, 0, 0)                              # noqa: E731
+
+    def run(r, health=healthy):
+        with contextlib.redirect_stdout(_io.StringIO()):
+            return P.score(r, health)
+
+    ALL = dict(math500_boxed=(50.0, 50.0), gsm8k_cot_zeroshot=(80.0, 80.0), ifeval=(70.0, 70.0))
+
+    # 1. KR-5 REFUSES on a partial pair. This is the one that matters most while a run is live:
+    #    the MATH-500 pair completing is not the verdict, because P1 also constrains GSM8K and
+    #    IFEval, and a scorer that answered early would make peeking free.
+    half = rows(**ALL)
+    del half[(P.OURS, "ifeval")]
+    out = run(half)
+    assert out["verdict"] is None, "printed a verdict with a benchmark still pending"
+    assert (P.OURS, "ifeval") in out["missing"], f"did not name the missing row: {out['missing']}"
+
+    # 2. P1 confirmed: primary clears +2.0 and nothing else falls more than 1.0 behind.
+    out = run(rows(math500_boxed=(50.0, 52.5), gsm8k_cot_zeroshot=(80.0, 79.5),
+                   ifeval=(70.0, 70.2)))
+    assert out["p1"] and out["verdict"] == ["P1"], f"P1 should be the sole verdict: {out}"
+
+    # 3. MUTATION: the same shape with the primary at +1.8 must NOT confirm. A threshold that
+    #    cannot fail is decoration.
+    out = run(rows(math500_boxed=(50.0, 51.8), gsm8k_cot_zeroshot=(80.0, 79.5),
+                   ifeval=(70.0, 70.2)))
+    assert not out["p1"], "P1 confirmed at +1.8 against a staked bar of +2.0"
+
+    # 4. MUTATION the other way: primary clears, but a secondary drops 1.5. P1's guard must bite.
+    out = run(rows(math500_boxed=(50.0, 53.0), gsm8k_cot_zeroshot=(80.0, 78.5),
+                   ifeval=(70.0, 70.0)))
+    assert not out["p1"], "P1 ignored its own -1.0 guard on the secondaries"
+
+    # 5. P2 via the primary clause, and P2 via the two-losses clause with the primary flat.
+    assert run(rows(math500_boxed=(50.0, 47.5), gsm8k_cot_zeroshot=(80.0, 80.0),
+                    ifeval=(70.0, 70.0)))["p2"], "P2 missed a -2.5 primary"
+    two = run(rows(math500_boxed=(50.0, 49.5), gsm8k_cot_zeroshot=(80.0, 78.5),
+                   ifeval=(70.0, 68.5)))
+    assert two["p2"], "P2 missed two secondaries each losing more than 1.0 pt"
+    assert two["p3"], "P2 and P3 overlap by construction here and both must be reported"
+    assert set(two["verdict"]) == {"P2", "P3"}, f"overlap collapsed to one outcome: {two}"
+
+    # 6. P3: everything inside the null band, and the recipe demonstrably bought no accuracy.
+    out = run(rows(math500_boxed=(50.0, 51.0), gsm8k_cot_zeroshot=(80.0, 79.5),
+                   ifeval=(70.0, 70.8)))
+    assert out["verdict"] == ["P3"], f"a flat result must read as the staked null: {out}"
+
+    # 7. THE HOLE. +2.5 on the primary with a 1.5 secondary loss satisfies none of the three.
+    #    The prereg's outcome space is not exhaustive, and the scorer must say "unclassified"
+    #    rather than pick whichever prediction is closest.
+    out = run(rows(math500_boxed=(50.0, 52.5), gsm8k_cot_zeroshot=(80.0, 78.5),
+                   ifeval=(70.0, 70.0)))
+    assert out["verdict"] == [], f"an unanticipated outcome was rounded to a prediction: {out}"
+
+    # 8. KR-4 drops the benchmark for BOTH arms when EITHER is degraded - dropping it only for
+    #    the arm that tripped would keep the healthy half and quietly select on quality.
+    sick = lambda arm, task: (500, 0, 0) if task != "ifeval" or arm == P.NAIVE else (500, 200, 0)
+    out = run(rows(**ALL), sick)                                          # noqa: E731
+    assert "ifeval" in out["dropped"], "a 40%-empty arm left IFEval in the verdict"
+    assert "ifeval" not in out["deltas"], "the degraded benchmark still contributed a delta"
+
+    # 9. KR-3: an arm whose samples cannot be re-graded is carrying a different scorer than its
+    #    partner. That is an abort, not a caveat with a comparison printed under it.
+    stale = rows(**ALL)
+    stale[(P.OURS, "math500_boxed")]["_rescore_unavailable"] = 1
+    out = run(stale)
+    assert out["verdict"] is None, "compared a re-graded arm against an un-re-graded one"
+    assert out["unregraded"], "the KR-3 abort did not name the row"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
