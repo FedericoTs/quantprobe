@@ -3941,6 +3941,94 @@ def t_a_prereg_verdict_is_computed_by_code_not_by_eye():
     return None
 
 
+def t_the_ceiling_chain_verdict_is_mechanical_and_bands_do_not_round():
+    """Prereg #100's four outcomes fall out of thresholds; the region between bands stays empty.
+
+    #99 proved the failure mode is not arithmetic but rounding: an outcome near a staked band
+    gets read as inside it. #100 has a genuine gap by construction - BF16-OURS in (12, 25] with
+    a healthy OURS-NAIVE margin matches none of P-C1..P-C4 - so the scorer must say BETWEEN
+    STAKED BANDS there, and every threshold edge must bite in both directions.
+
+    Committed while the children were still building and no chain arm had run one item.
+    """
+    import sys as _sys
+    import contextlib
+    import io as _io
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import prereg100_score as P
+
+    M = {"math500_boxed": "exact_match,none",
+         "gsm8k_cot_zeroshot": "exact_match,flexible-extract",
+         "ifeval": "prompt_level_strict_acc,none"}
+
+    def rows(bf16, ours, naive):
+        """Three dicts task->pct into load_rows shape."""
+        out = {}
+        for arm, scores in ((P.BF16, bf16), (P.OURS, ours), (P.NAIVE, naive)):
+            for task, v in scores.items():
+                out[(arm, task)] = {M[task]: v / 100.0}
+        return out
+
+    FLAT = {"gsm8k_cot_zeroshot": 80.0, "ifeval": 75.0}
+    healthy = lambda arm, task: (500, 0, 0)                               # noqa: E731
+
+    def run(r, health=healthy):
+        with contextlib.redirect_stdout(_io.StringIO()):
+            return P.score(r, health)
+
+    def chain(bf16_math, ours_math, naive_math, **over):
+        b = dict(FLAT, math500_boxed=bf16_math); o = dict(FLAT, math500_boxed=ours_math)
+        n = dict(FLAT, math500_boxed=naive_math)
+        for k, (vb, vo, vn) in over.items():
+            b[k], o[k], n[k] = vb, vo, vn
+        return rows(b, o, n)
+
+    # 1. KR-C5: a single missing row means no verdict, and the row is named.
+    half = chain(85.0, 78.0, 60.0)
+    del half[(P.NAIVE, "ifeval")]
+    out = run(half)
+    assert out["verdict"] is None and (P.NAIVE, "ifeval") in out["missing"]
+
+    # 2. P-C1: deficit +8 inside (0,12], margin +18 >= 5.
+    out = run(chain(86.0, 78.0, 60.0))
+    assert out["verdict"] == ["P-C1"], f"expected clean P-C1: {out}"
+
+    # 3. MUTATION: deficit +13 must NOT be P-C1 - and with margin healthy and nothing else
+    #    firing, it is the between-bands hole, reported as such.
+    out = run(chain(91.0, 78.0, 60.0))
+    assert not out["verdict"], f"+13 deficit rounded into a band: {out}"
+
+    # 4. MUTATION the other way: margin +4.9 fails P-C1's second clause.
+    out = run(chain(86.0, 78.0, 73.1))
+    assert "P-C1" not in out["verdict"], "margin below 5 still confirmed P-C1"
+
+    # 5. P-C2 overlaps P-C1 when the deficit sits in (0, 2): both print, neither is chosen.
+    out = run(chain(79.5, 78.0, 60.0, gsm8k_cot_zeroshot=(80.5, 80.0, 70.0),
+                    ifeval=(75.5, 75.0, 65.0)))
+    assert set(out["verdict"]) == {"P-C1", "P-C2"}, f"overlap collapsed: {out}"
+
+    # 6. P-C3: a +30 deficit is the size-class wall.
+    assert run(chain(90.0, 60.0, 40.0))["verdict"] == ["P-C3"]
+
+    # 7. P-C4 both ways: naive matching ours, and ours beating BF16 beyond noise.
+    assert "P-C4" in run(chain(86.0, 60.0, 60.0))["verdict"], "NAIVE == OURS missed"
+    assert "P-C4" in run(chain(75.0, 78.5, 60.0))["verdict"], "OURS > BF16+2 missed"
+
+    # 8. KR-C4 pools health across ALL arms: one sick arm drops the benchmark for the chain.
+    sick = lambda arm, task: (500, 200, 0) if task == "ifeval" and arm == P.NAIVE \
+        else (500, 0, 0)                                                  # noqa: E731
+    out = run(chain(86.0, 78.0, 60.0), sick)
+    assert "ifeval" in out["dropped"] and "ifeval" not in out["d_bf16_ours"]
+
+    # 9. KR-C3: an un-regradable row aborts rather than comparing two scorers.
+    stale = chain(86.0, 78.0, 60.0)
+    stale[(P.OURS, "math500_boxed")]["_rescore_unavailable"] = 1
+    out = run(stale)
+    assert out["verdict"] is None and out["unregraded"]
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
