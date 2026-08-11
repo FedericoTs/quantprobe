@@ -1,0 +1,136 @@
+{
+  "results": {
+    "math500_boxed": {
+      "name": "math500_boxed",
+      "alias": "math500_boxed",
+      "sample_len": 500,
+      "exact_match,none": 0.81,
+      "exact_match_stderr,none": 0.01756180041075899,
+      "emitted_boxed,none": 0.864,
+      "emitted_boxed_stderr,none": 0.015345323649758309
+    }
+  },
+  "group_subtasks": {},
+  "configs": {
+    "math500_boxed": {
+      "task": "math500_boxed",
+      "dataset_path": "HuggingFaceH4/MATH-500",
+      "dataset_name": "default",
+      "test_split": "test",
+      "doc_to_text": "Problem: {{problem}}\n\nSolve the problem. Put your final answer inside \\boxed{}.",
+      "doc_to_target": "{{answer}}",
+      "unsafe_code": false,
+      "process_results": "def process_results(doc, results):\n    response = results[0]\n    boxed = last_well_formed_boxed(response)\n    candidate = None\n    if boxed is not None:\n        try:\n            candidate = remove_boxed(boxed)\n        except Exception:\n            candidate = None\n    if candidate is None:\n        return {\"exact_match\": 0, \"emitted_boxed\": 0}\n    try:\n        correct = int(bool(is_equiv(candidate, _gold(doc))))\n    except Exception:\n        correct = 0\n    return {\"exact_match\": correct, \"emitted_boxed\": 1}\n",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "fewshot_config": {
+        "sampler": "default",
+        "split": null,
+        "process_docs": null,
+        "fewshot_indices": null,
+        "samples": null,
+        "doc_to_text": "Problem: {{problem}}\n\nSolve the problem. Put your final answer inside \\boxed{}.",
+        "doc_to_choice": null,
+        "doc_to_target": "{{answer}}",
+        "gen_prefix": null,
+        "fewshot_delimiter": "\n\n",
+        "target_delimiter": " "
+      },
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "exact_match",
+          "aggregation": "mean",
+          "higher_is_better": true
+        },
+        {
+          "metric": "emitted_boxed",
+          "aggregation": "mean",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "until": [
+          "Problem:"
+        ],
+        "do_sample": false,
+        "temperature": 0.0,
+        "max_gen_toks": 3072
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "metadata": {
+        "version": 1.0,
+        "model": "Q35-OURS",
+        "base_url": "http://127.0.0.1:8093/v1/chat/completions",
+        "num_concurrent": 2,
+        "max_retries": 3,
+        "tokenized_requests": false,
+        "timeout": 1024,
+        "config_source": "C:\\Users\\Federico\\Documents\\evo-compress\\.claude\\worktrees\\law5-prefill\\weights\\lm_eval_tasks\\math500_boxed.yaml"
+      }
+    }
+  },
+  "versions": {
+    "math500_boxed": 1.0
+  },
+  "n-shot": {
+    "math500_boxed": 0
+  },
+  "higher_is_better": {
+    "math500_boxed": {
+      "exact_match": true,
+      "emitted_boxed": true
+    }
+  },
+  "n-samples": {
+    "math500_boxed": {
+      "original": 500,
+      "effective": 500
+    }
+  },
+  "config": {
+    "model": "local-chat-completions",
+    "model_args": {
+      "model": "Q35-OURS",
+      "base_url": "http://127.0.0.1:8093/v1/chat/completions",
+      "num_concurrent": 2,
+      "max_retries": 3,
+      "tokenized_requests": false,
+      "timeout": 1024
+    },
+    "batch_size": 1,
+    "batch_sizes": [],
+    "device": "cuda:0",
+    "use_cache": null,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "gen_kwargs": {
+      "max_gen_toks": 3072
+    },
+    "random_seed": 0,
+    "numpy_seed": 0,
+    "torch_seed": 0,
+    "fewshot_seed": 0
+  },
+  "git_hash": "v1.25.0-142-gb044f5e",
+  "date": 1786326191.6014974,
+  "pretty_env_info": "PyTorch version: 2.5.1+cu121\nIs debug build: False\nCUDA used to build PyTorch: 12.1\nROCM used to build PyTorch: N/A\n\nOS: Microsoft Windows 10 Home\nGCC version: Could not collect\nClang version: Could not collect\nCMake version: Could not collect\nLibc version: N/A\n\nPython version: 3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)] (64-bit runtime)\nPython platform: Windows-10-10.0.19045-SP0\nIs CUDA available: True\nCUDA runtime version: 12.9.41\r\nCUDA_MODULE_LOADING set to: LAZY\nGPU models and configuration: GPU 0: NVIDIA GeForce GTX 1060 6GB\nNvidia driver version: 582.28\ncuDNN version: Could not collect\nHIP runtime version: N/A\nMIOpen runtime version: N/A\nIs XNNPACK available: True\n\nCPU:\nArchitecture=9\r\r\nCurrentClockSpeed=3801\r\r\nDeviceID=CPU0\r\r\nFamily=205\r\r\nL2CacheSize=1024\r\r\nL2CacheSpeed=\r\r\nManufacturer=GenuineIntel\r\r\nMaxClockSpeed=3801\r\r\nName=Intel(R) Core(TM) i5-7600K CPU @ 3.80GHz\r\r\nProcessorType=3\r\r\nRevision=\n\nVersions of relevant libraries:\n[pip3] numpy==2.5.1\n[pip3] torch==2.5.1+cu121\n[conda] Could not collect",
+  "transformers_version": "5.14.1",
+  "lm_eval_version": "0.4.12",
+  "upper_git_hash": null,
+  "task_hashes": {
+    "math500_boxed": "d90a5dba5115bd6586d958ed5a1e11173a1c09b5f1487c074ee11300c38077f7"
+  },
+  "model_source": "local-chat-completions",
+  "model_name": "Q35-OURS",
+  "model_name_sanitized": "Q35-OURS",
+  "system_instruction": "Solve the problem. Put your final answer inside \\boxed{}.",
+  "system_instruction_sha": "7cbd474f0e5bbb797c080b71662b22eb0d193f5346d55d328d3869066ff71afe",
+  "fewshot_as_multiturn": true,
+  "chat_template": "",
+  "chat_template_sha": null,
+  "total_evaluation_time_seconds": "35565.947812"
+}

@@ -192,3 +192,76 @@ The first is the product question. The second is the science question, and it is
 improve a future one is a bad trade and a C-14 violation. Evaluating it would also add ~19
 hours, which is a scope increase and Federico's call. Recorded here so the option survives
 this session, and so the false sentence above is not the last word on it.
+
+
+---
+
+## SCORED (2026-08-11 05:30, all six verdict-bearing rows complete, scored by pre-written code)
+
+**P1 CONFIRMED. P2 refuted. P3 refuted.** Scored by `weights/prereg98_score.py`, which was written
+and committed (a856a47) while five of the six rows did not yet exist and none had been read.
+
+| benchmark | NAIVE | OURS | delta | staked bar |
+|---|---|---|---|---|
+| MATH-500 (primary) | 57.0% | 81.0% | **+24.0** | >= +2.0 |
+| GSM8K | 75.8% | 84.9% | **+9.1** | not worse than -1.0 |
+| IFEval | 72.5% | 84.7% | **+12.2** | not worse than -1.0 |
+
+Row wall-clock: MATH-500 616/593 min, GSM8K 272/287, IFEval 202/191 (NAIVE/OURS).
+
+### The margin is 12x the staked bar, so the artifact was checked before the number was believed
+
+Per C-28 - a check that reads the code tests what you meant; only a check that reads the artifact
+tests what the machine did. All five passed:
+
+- **Response health:** 0.0% empty and 0.0% truncated on all six rows. KR-4 drops nothing.
+- **Prompt parity:** `ev1_report.verify_prompts()` returns no mismatches. Both arms were SENT the
+  same thing, including the boxed-answer system instruction.
+- **Scorer parity:** the C-26 re-grade moved 0 items on both arms (0 rescued, 0 lost), so the
+  extractor fix cannot be an asymmetry between them.
+- **File identity:** the SESSION START banners record `Qwen3.5-35B-A3B-naive-q2k.gguf` and
+  `Qwen3.5-35B-A3B-ours-depthaware.gguf` on their own arms. The arms are not swapped.
+- **KR-1 stands:** ours carries +2.57% bytes. Every win reads as "the recipe PLUS 2.5% more bytes".
+
+### WHAT THE WIN ACTUALLY IS, AND IT IS NOT BETTER ARITHMETIC
+
+The same scorer computes format compliance for both arms, and it reframes the headline:
+
+| | emitted a `\boxed{}` | exact_match | correct GIVEN a box |
+|---|---|---|---|
+| NAIVE | 64.4% | 57.0% | 88.5% |
+| OURS | 86.4% | 81.0% | 93.8% |
+
+**+22.0 of the +24.0 gap is whether the model emitted an answer in the requested format at all.**
+Conditional on emitting one, the arms differ by 5.2 points, not 24. Naive Q2_K did not mostly
+forget how to do maths; it largely lost the ability to follow the answer-format instruction.
+
+The three benchmarks corroborate this and are ordered exactly as the format hypothesis predicts -
+strictest format shows the largest gap, most format-tolerant the smallest:
+
+    MATH-500  strict \boxed{} required, our extractor       +24.0
+    IFEval    measures instruction-following directly       +12.2
+    GSM8K     flexible-extract, format-tolerant by design    +9.1
+
+IFEval is the independent confirmation: it needs no extractor at all and still shows a 12-point
+instruction-following collapse in the naive arm.
+
+**The defensible claim is therefore narrower and more interesting than "our quantization scores
+24 points higher on maths":** naive Q2_K on this MoE substantially damages instruction-following,
+and a depth-aware recipe that spends q4_k on attention and the token embedding preserves it, for
+2.5% more bytes. That is a claim about what low-bit quantization breaks FIRST.
+
+### A re-scoring we are NOT doing
+
+The obvious next move is to re-score MATH-500 with a format-agnostic extractor to see how much of
+the gap survives. **KR-3 forbids it:** any extractor change after the arms have run invalidates
+both. The `emitted_boxed` column above is admissible because the SAME scorer already computed it
+for both arms as a diagnostic; swapping the extractor would be a different experiment and must be
+staked separately, before it is run, or it is post-hoc re-scoring wearing an analysis.
+
+### Limits, unchanged from the top of this document
+
+One model, one family, one size, one bit-depth, one card. This still cannot separate "protecting
+the right layers" from "spending more bits on attention and the token embedding" - the recipe does
+both, and the position-swapped byte-identical arm named in the 19:30 correction is what would
+decompose it. AIME 2024/2025 are running now and remain excluded from the verdict on power.
