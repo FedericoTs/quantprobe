@@ -310,3 +310,49 @@ gap is not an instance of the IFEval one.
 
 **#98's P1 verdict is unchanged** - it never depended on this reading, and it is if anything
 better supported now than it was under my mistaken one.
+
+
+---
+
+## NIGHT COMPLETE (2026-08-11 15:56, all ten rows banked, runner exit 0)
+
+| benchmark | NAIVE | OURS | delta | in the verdict? |
+|---|---|---|---|---|
+| MATH-500 | 57.0% | 81.0% | +24.0 | yes (primary) |
+| GSM8K | 75.8% | 84.9% | +9.1 | yes |
+| IFEval | 72.5% | 84.7% | +12.2 | yes |
+| AIME 2024 | 13.3% | 53.3% | +40.0 | **no - n=30, ~7pp stderr** |
+| AIME 2025 | 6.7% | 36.7% | +30.0 | **no - n=30, ~7pp stderr** |
+
+**AIME stays excluded.** It was excluded on power before any arm ran, and a +40.0 that agrees with
+the verdict is exactly the result that makes re-admitting it tempting. At n=30 those two rows are
+4 and 2 correct answers for NAIVE against 16 and 11 for OURS. The direction agrees with the
+powered three; the magnitudes are not evidence.
+
+### An observation the AIME rows do support, recorded as an observation
+
+The emitted-box rate falls with task difficulty far faster for NAIVE than for OURS:
+
+| | MATH-500 | AIME 2024 | AIME 2025 |
+|---|---|---|---|
+| NAIVE emitted a box | 64.4% | 16.7% | 10.0% |
+| OURS emitted a box | 86.4% | 56.7% | 40.0% |
+| ratio OURS/NAIVE | 1.34x | 3.4x | 4.0x |
+
+This is the C-30 mechanism seen across a difficulty gradient: the naive arm's failure is not
+getting answers wrong, it is not arriving at an answer at all, and the harder the problem the
+more often that happens. It is consistent with #99's finding that NAIVE's unboxed MATH-500
+responses are long, untruncated and hold no recoverable answer.
+
+**Stated as a pattern, not a result.** Two of its three points are the underpowered AIME rows,
+and no prediction was staked on it. Testing it needs a difficulty gradient with adequate n per
+level, which this design does not have.
+
+### Row wall-clock, and why it is NOT a speed comparison
+
+MATH-500 616/593 min, GSM8K 272/287, IFEval 202/191, AIME24 227/152, AIME25 138/106
+(NAIVE/OURS). **These do not license a tok/s claim.** The GPU spent parts of the night at 1012-
+1556 MHz and parts at 1847, not aligned to arms, which violates C-14's one-machine-state rule.
+A second candidate is that NAIVE simply generates more tokens per item - which its unboxed
+response profile makes plausible - and the two causes are not separated here. The files are 12.94
+vs 13.27 GB, so a real 1.5x speed difference between them is not available from bytes.
