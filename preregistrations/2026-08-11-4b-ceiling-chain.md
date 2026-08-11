@@ -99,3 +99,33 @@ The 35B ceiling (needs rented hardware). Whether the recipe's win is placement o
 always-active bundle (needs the decomposition arm, still unbuilt). And BF16-vs-BF16-served
 equivalence with the official API — this BF16 runs through llama.cpp like everything else here,
 which is the point: one harness, one box, one scorer, and the only variable is the file.
+
+
+---
+
+## AMENDMENT (2026-08-11, BF16 downloaded, BEFORE the probe and before any arm ran)
+
+**A provenance investigation, run because the two 4B files disagreed on layer count - and its
+resolution, which changes labels but no arm and no staked outcome.**
+
+The downloaded BF16 has 32 blocks; our existing Q4_K_M has 33, and its size matches nothing in
+today's unsloth or bartowski repos. Ground truth from `Qwen/Qwen3.5-4B` `config.json`:
+`text_config.num_hidden_layers = 32` **plus `mtp_num_hidden_layers = 1`**. Reading the extra
+block directly settled it: `blk.32` carries `nextn.eh_proj / enorm / hnorm / shared_head_norm` -
+**it is the MTP speculation head**, GLM-style layout, present in our older unsloth conversion
+and stripped from the current one (unsloth re-uploaded the whole repo on 2026-03-02).
+
+Consequences, in order of what they touch:
+
+1. **Same model everywhere.** Both files are the same 32-layer checkpoint; the MTP head is inert
+   during standard decode and EV-1 never enabled speculation. The Q4_K_M's EV-1 rows remain
+   valid references. Label sharpened from "different provenance" to: *older unsloth conversion,
+   MTP head present but inert, possibly imatrix-assisted - reference point, outside the chain.*
+2. **The chain parent lacks the MTP head.** Children built from this BF16 cannot carry it.
+   Irrelevant here (speculation is never enabled in this protocol) and recorded so nobody is
+   surprised when the children's tensor count differs from the Q4_K_M's.
+3. **Nothing staked moves.** P-C1..P-C4 reference BF16 / OURS-Q2K / NAIVE-Q2K only.
+
+Probe command fixed now, before running: `quantprobe probe --gguf <BF16> --bands 4 --chunks 32
+--eval <wikitext-2 test> --llama-dir tools/llamacpp-b10098` - the same tool and band count that
+produced the 35B recipe, per KR-C6.
