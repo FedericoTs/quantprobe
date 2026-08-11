@@ -154,8 +154,12 @@ def score(rows=None, health=None):
     #
     # So the column stays, with the opposite reading: a low emitted-box rate is evidence of
     # capability collapse, not of a scorer being fussy. See prereg #99.
+    # Both arms must carry the emitted_boxed column, or there is nothing to decompose. A row
+    # whose samples were never logged has no format data, and printing 0% for it would invent a
+    # capability collapse that was never measured.
     boxed = [t for t in POWERED + REPORTED_ONLY if t in R.BOXED_TASKS
-             and _pct(rows, NAIVE, t) is not None and _pct(rows, OURS, t) is not None]
+             and all(rows.get((a, t), {}).get("emitted_boxed,none") is not None
+                     for a in (NAIVE, OURS))]
     if boxed:
         print("\n  FORMAT DECOMPOSITION - a boxed delta measures formatting as well as accuracy")
         print(f"  {'row':<28} {'emitted box':>12} {'exact':>8} {'correct GIVEN a box':>21}")
