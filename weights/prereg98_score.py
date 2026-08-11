@@ -142,6 +142,31 @@ def score(rows=None, health=None):
             deltas[task] = d
         print(f"  {task:<22} {a:>7.1f}% {b:>7.1f}% {d:>+9.1f}   {status}")
 
+    # A boxed-task delta mixes "got it wrong" with "never produced a gradeable answer", and the
+    # two are different claims. This column separates them and prints WITH the number, always.
+    #
+    # It is here because I read it wrong the first time. Seeing NAIVE at 64.4% emitted-box against
+    # OURS at 86.4%, I concluded most of the +24.0 was answer FORMATTING and said so in the #98
+    # scored section and in d7910e6. Prereg #99 staked the test and refuted it: re-graded with a
+    # format-blind last-number rule the gap moves +24.0 -> +23.8, and only 2 of NAIVE's 178
+    # unboxed responses held the right answer anywhere - out of 100 whose gold a number rule
+    # COULD have matched. The missing box is not a lost format, it is a lost answer.
+    #
+    # So the column stays, with the opposite reading: a low emitted-box rate is evidence of
+    # capability collapse, not of a scorer being fussy. See prereg #99.
+    boxed = [t for t in POWERED + REPORTED_ONLY if t in R.BOXED_TASKS
+             and _pct(rows, NAIVE, t) is not None and _pct(rows, OURS, t) is not None]
+    if boxed:
+        print("\n  FORMAT DECOMPOSITION - a boxed delta measures formatting as well as accuracy")
+        print(f"  {'row':<28} {'emitted box':>12} {'exact':>8} {'correct GIVEN a box':>21}")
+        for task in boxed:
+            for arm in (NAIVE, OURS):
+                d = rows[(arm, task)]
+                em = d.get("emitted_boxed,none")
+                ex = d.get(R.REPORTED[task][0])
+                cond = (100 * ex / em) if em else float("nan")
+                print(f"  {arm + '/' + task:<28} {100*em:>11.1f}% {100*ex:>7.1f}% {cond:>20.1f}%")
+
     if missing or unregraded:
         print("\n=== NO VERDICT ===")
         if missing:

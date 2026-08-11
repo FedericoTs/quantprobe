@@ -265,3 +265,48 @@ One model, one family, one size, one bit-depth, one card. This still cannot sepa
 the right layers" from "spending more bits on attention and the token embedding" - the recipe does
 both, and the position-swapped byte-identical arm named in the 19:30 correction is what would
 decompose it. AIME 2024/2025 are running now and remain excluded from the verdict on power.
+
+
+---
+
+## CORRECTION (2026-08-11, after prereg #99 scored the decomposition)
+
+**The section above titled "WHAT THE WIN ACTUALLY IS, AND IT IS NOT BETTER ARITHMETIC" is
+WRONG, and prereg #99 refuted it with a test staked before it was run.**
+
+I read NAIVE's 64.4% emitted-box rate against OURS' 86.4% and concluded that +22.0 of the +24.0
+was answer FORMATTING - that naive Q2_K had "lost the ability to follow the answer-format
+instruction" rather than the ability to do the maths. #99 re-graded both arms with lm-eval's own
+format-blind flexible-extract rule as a fallback on exactly the unboxed items:
+
+| | #98 strict | #99 format-blind | no-box items | items recovered |
+|---|---|---|---|---|
+| NAIVE | 57.0% | 57.4% | 178 | **2** |
+| OURS | 81.0% | 81.2% | 68 | **1** |
+
+**Gap +24.0 -> +23.8. Format's share of the gap: 1%.**
+
+And the test had power - this is not a null from a blind instrument. 100 of NAIVE's 178 unboxed
+items have a purely numeric gold, so a last-number rule could have recovered up to 100 of them.
+It recovered 2. Those responses are also not empty or cut off: median length 6,787 characters,
+minimum 3,982, and 0.0% truncation on the row. They are long, non-converging reasoning that
+never arrives anywhere.
+
+**The corrected reading. The missing `\boxed{}` is not a lost format, it is a lost answer.**
+Naive Q2_K fails to reach any answer at all on 35.6% of MATH-500 versus 13.6% for the recipe,
+and the +24.0 is very nearly all capability. The original headline was right and my correction
+to it was wrong.
+
+**Where the reasoning failed, because that is the reusable part.** I offered the benchmark
+ordering - MATH-500 +24.0, IFEval +12.2, GSM8K +9.1 - as corroboration that "strictest format
+shows the largest gap". It is nothing of the kind. That ordering is equally consistent with
+"MATH-500 is simply the hardest of the three and degrades most", which is the boring hypothesis
+I never stated and never tested. **Three points falling in a predicted order is weak evidence
+when several hypotheses predict the same order**, and I presented it as though only one did.
+
+IFEval's +12.2 still stands on its own: it needs no extractor, and instruction-following really
+is degraded. What is now clear is that the two degradations are SEPARATE, and that the MATH-500
+gap is not an instance of the IFEval one.
+
+**#98's P1 verdict is unchanged** - it never depended on this reading, and it is if anything
+better supported now than it was under my mistaken one.
