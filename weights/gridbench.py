@@ -47,6 +47,13 @@ Q35_DIR = "D:/evo-compress-data/gguf/"
 MODELS["Q35-NAIVE"] = Q35_DIR + "Qwen3.5-35B-A3B-naive-q2k.gguf"
 MODELS["Q35-OURS"] = Q35_DIR + "Qwen3.5-35B-A3B-ours-depthaware.gguf"
 THINKING_FAMILY |= {"Q35-NAIVE", "Q35-OURS"}
+# Prereg #100 ceiling chain: one BF16 parent (current 32-block conversion, no MTP head) and two
+# children quantized from that exact file. NOT the same file family as "4B" above, which is the
+# older 33-block conversion carrying the inert nextn/MTP head - see the #100 amendment.
+MODELS["4B-BF16"] = Q35_DIR + "Qwen3.5-4B-BF16.gguf"
+MODELS["4B-OURS"] = Q35_DIR + "Qwen3.5-4B-ours-depthaware.gguf"
+MODELS["4B-NAIVE"] = Q35_DIR + "Qwen3.5-4B-naive-q2k.gguf"
+THINKING_FAMILY |= {"4B-BF16", "4B-OURS", "4B-NAIVE"}
 
 
 def load_bench(name):

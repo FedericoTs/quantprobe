@@ -346,6 +346,14 @@ def main(night, probe=0):
             for t in ("math500_boxed", "gsm8k_cot_zeroshot", "ifeval",
                       "aime24_boxed", "aime25_boxed"):
                 rows += [("Q35-NAIVE", t), ("Q35-OURS", t)]
+        elif night == 4:
+            # Prereg #100: the ceiling chain. Powered three ONLY (AIME excluded by stake, and
+            # adding it later is an amendment BEFORE it runs, not a flag flip). Same
+            # interleave-by-task rationale as night 3, three arms per task; BF16 leads each
+            # task so the ceiling for a benchmark exists before either child's number does.
+            rows = []
+            for t in ("math500_boxed", "gsm8k_cot_zeroshot", "ifeval"):
+                rows += [("4B-BF16", t), ("4B-OURS", t), ("4B-NAIVE", t)]
         elif night == 1:
             rows = ([("0.6B", t) for t in ("math500_boxed", "aime24_boxed", "aime25_boxed", "ifeval",
                                             "gsm8k_cot_zeroshot")]
@@ -372,10 +380,12 @@ if __name__ == "__main__":
     ap.add_argument("--night2", action="store_true")
     ap.add_argument("--night3", action="store_true",
                     help="prereg #98: Q35 naive vs depth-aware, arms interleaved by task")
+    ap.add_argument("--chain", action="store_true",
+                    help="prereg #100: 4B ceiling chain (BF16/ours/naive), powered three only")
     ap.add_argument("--probe", type=int, default=0,
                     help="validate a protocol change on N items per task before a night runs")
     a = ap.parse_args()
     if a.probe:
         sys.exit(main(1, probe=a.probe))
-    night = 1 if a.night1 else 2 if a.night2 else 3 if a.night3 else 0
+    night = 1 if a.night1 else 2 if a.night2 else 3 if a.night3 else 4 if a.chain else 0
     sys.exit(main(night) if night else 0)
