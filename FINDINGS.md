@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
 | Open contradictions | 30 |
-| Untried levers | 37 |
+| Untried levers | 38 |
 | External work to study | 20 |
 
 ## Established laws
@@ -787,6 +787,12 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** Staked in prereg #98 (2026-08-09-quant-recipe-vs-naive-benchmarks) BEFORE either arm was evaluated. It is the only comparison in the whole suite where exactly one variable changes: same weights, same Q8_0 source file, same quantizer binary, same card, same protocol, same day. The OURS arm already exists with its build command recorded verbatim; only the naive arm needed building. It also directly answers the question a sceptic asks about the product.
 
 `staked 2026-08-09, naive arm building, neither arm evaluated` · `unmeasured`
+
+### U-49 — THE CEILING CHAIN ON THE 4B: what does the recipe cost against the ORIGINAL, unquantized model? #98 compared two children of one Q8_0 parent and never ran the ceiling; the 35B ceiling is physically out of reach on this box (15.9 GB RAM vs a 34.4 GB parent; ~1 GB/token off NVMe at a measured 0.476 GB/s = 20-60 days/arm). Decision: run the full chain where the TRUE original fits in VRAM whole - Qwen3.5-4B BF16 (7.85 GiB), with OURS-Q2K and NAIVE-Q2K built locally FROM that exact file. Doubles as the recipe's first generalization test (second model), and the 4B is hybrid like the 35B (168 ssm_ tensors), so the always-active-path mechanism from the #98 tensor audit replays.
+
+**Predicted effect (staked):** STAKED in prereg #100 before any arm ran: P-C1 expected - BF16 beats OURS on MATH-500 by (0,12] AND OURS beats NAIVE by >=5. P-C2 near-lossless (<2 pts everywhere, not expected at 2 bits on a 4B). P-C3 the size class binds (BF16-OURS > 25 pts; ships as a recipe limit). P-C4 ordering violation (NAIVE >= OURS, or OURS > BF16 by > 2) - front page, not footnote. Outcomes between bands are reported as BETWEEN STAKED BANDS, never rounded (the #99 lesson).
+
+`staked 2026-08-11 (prereg #100), BF16 downloading, no arm evaluated` · `unmeasured` · evidence: prereg #100 (preregistrations/2026-08-11-4b-ceiling-chain.md), staked before the BF16 download finished; the 35B infeasibility arithmetic and the 4B ssm_ header scan are recorded there and in the session log.
 
 ### U-07 — Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.
 

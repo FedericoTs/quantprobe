@@ -1,0 +1,101 @@
+# Pre-registration #100: the ceiling chain — what does the recipe cost against the ORIGINAL model?
+
+**Author:** Federico Sciuca · **Date staked:** 2026-08-11, **before the BF16 file finished
+downloading, before the fragility probe has run, before any arm exists.** **STAKED.**
+
+## Why this exists, and why on the 4B
+
+Prereg #98 compared two children of the same Q8_0 parent and confirmed the recipe beats the naive
+default (+24.0 MATH-500). What it cannot say is **what either child lost against the original
+model** — the ceiling was never run. Federico's framing, verbatim in intent: *we would expect to
+score less than the original (some quality loss is the honest price) but better than the naive
+quantizations people find around, because we protect the fragile layers.*
+
+The 35B ceiling is out of reach on this box: 15.9 GB RAM against a 34.4 GB Q8_0 parent means
+~1 GB/token streamed off NVMe at a measured 0.476 GB/s — 20–60 days per arm. Decision recorded
+2026-08-11: run the chain on **Qwen3.5-4B**, where the TRUE original — **BF16, not quantized at
+all** — fits in VRAM whole (7.85 GiB). The 35B ceiling remains open and needs rented hardware
+(≥40 GB); it is not answered here and nobody should read this as if it were.
+
+**What the 4B adds beyond feasibility:** it is a SECOND model for the recipe, so it tests
+generalization (#98's own limits section: "a single instance"). And it is hybrid like the 35B —
+**168 `ssm_` tensors across 34 layers** — so the always-active-path mechanism from the #98
+tensor audit replays: a naive Q2_K will crush the SSM path, the recipe will protect it. That
+bundle IS the product; the decomposition of bundle-vs-band stays a separate question.
+
+## Arms
+
+| arm | file | provenance |
+|---|---|---|
+| **BF16** | `Qwen3.5-4B-BF16.gguf` (8,429,494,272 B expected ~7.85 GiB) | unsloth/Qwen3.5-4B-GGUF, straight conversion — THE ORIGINAL |
+| **Q4_K_M** | existing EV-1 rows | downloaded quant, **different provenance** — reported as a reference point, not part of the built chain |
+| **OURS-Q2K** | to build | recipe from a fragility probe run on THIS model, built from BF16 with `tools/llamacpp-b10098/llama-quantize.exe` |
+| **NAIVE-Q2K** | to build | `llama-quantize --allow-requantize BF16 OUT Q2_K 8` — the command people type, same binary, same source |
+
+Both Q2 children are built **from the BF16 arm's exact file**, so the chain parent→children is
+fully local and provenance-clean. The Q4_K_M is the one impure arm and is labeled so.
+
+## Protocol
+
+EV-1 v3.1 exactly, unchanged from nights 2 and 3: lm-eval 0.4.12, `local-chat-completions`,
+temp 0, `--reasoning off`, scoped system instruction on boxed tasks, budgets from the slot plan,
+scored by `ev1_report` with the C-26 re-grade on. **Benchmarks: the powered three only** —
+MATH-500, GSM8K, IFEval — as quoted in the decision (~24h box). AIME stays out: n=30 decides
+nothing and its cost is real. If AIME is ever added it is an amendment BEFORE those rows run.
+
+Existing 4B Q4_K_M rows (77.6 / 81.7 / 80.6) are reused, not re-run — same protocol, same box,
+same scorer. Re-running them would be better (same-week machine state); cost says reuse, and
+this line is the disclosure.
+
+## Staked predictions (Federico's expectation, made falsifiable)
+
+Ordered claim: **BF16 ≥ OURS-Q2K > NAIVE-Q2K**, with a real but modest loss at the top.
+
+- **P-C1 — THE EXPECTED PICTURE:** BF16 beats OURS-Q2K on MATH-500 by **(0, 12] pts**, AND
+  OURS-Q2K beats NAIVE-Q2K on MATH-500 by **≥ 5 pts**. Quality loss is real, the recipe pays
+  anyway. (The 12 allows for a 4B being genuinely harder to hold at 2 bits than a 35B-A3B —
+  fewer parameters, less redundancy.)
+- **P-C2 — NEAR-LOSSLESS RECIPE:** OURS-Q2K within **2 pts** of BF16 on every powered benchmark.
+  Would be the strongest product headline available ("3× smaller than BF16's already-quantized
+  Q4, indistinguishable scores") and is NOT expected at 2 bits on a 4B.
+- **P-C3 — THE RECIPE CANNOT SAVE A 4B AT 2 BITS:** OURS-Q2K loses to BF16 by **> 25 pts** on
+  MATH-500. If simultaneously OURS still beats NAIVE by ≥ 5, the recipe helps but the size class
+  is the binding constraint — a publishable limit on the recipe, and it ships.
+- **P-C4 — ORDERING VIOLATION:** NAIVE-Q2K ≥ OURS-Q2K on MATH-500, or OURS-Q2K > BF16 by more
+  than noise (> 2 pts) anywhere. Either inverts the thesis and gets front-page treatment, not a
+  footnote.
+
+Gaps between bands are possible (e.g. BF16−OURS in (12, 25]); an outcome landing there is
+reported as BETWEEN STAKED BANDS, not rounded — the #99 lesson, now structural.
+
+## Kill rules
+
+- **KR-C1 BYTES, STATED UP FRONT THIS TIME:** OURS-Q2K vs NAIVE-Q2K will NOT be byte-identical —
+  the recipe protects attention/SSM/embedding and llama.cpp's tiers are coarser than the gap.
+  The premium is measured at build time and disclosed in the header of every table. If it
+  exceeds **5%**, the pair is reported as size-confounded. (#98's KR-1 failed at 2.51%; the
+  expected premium here is of that order.)
+- **KR-C2 ONE MACHINE STATE:** C-14. One row per server session, lock held, GPU state logged.
+- **KR-C3 SAME SCORER:** all arms through `ev1_report`, re-grade on. Any extractor change after
+  the first new row invalidates the comparison.
+- **KR-C4 DEGRADED ROWS:** KR-E3 (>10% empty/truncated) drops that benchmark for ALL arms.
+- **KR-C5 NO PARTIAL VERDICTS:** scored only by `prereg100_score.py`, which must be committed
+  before the first new-arm row lands. Rows are read row-at-a-time as they bank; the ordered
+  claim is evaluated only when all three new arms hold the powered three.
+- **KR-C6 PROBE BEFORE PEEK:** the fragility probe that picks the protected band runs BEFORE any
+  benchmark row of any new arm, and its output (band, bytes) is committed when the recipe file
+  is built. Choosing the band after seeing a benchmark number would be tuning.
+
+## Cost, stated with the humility two prior misses earned
+
+BF16 fits in VRAM; expect roughly Q4-row speeds × (bytes ratio ~3×) worst case, likely better
+since it stays on-GPU: estimate **4–8 h** for its powered three. Q2 children are ~1.5 GiB,
+fastest arms yet: **~3–5 h each**. Probe ~0.5 h, builds ~0.5 h, download in progress. Total
+**~12–20 h of box time**. The first completed row recalibrates this line, as it did twice in #98.
+
+## What this cannot show
+
+The 35B ceiling (needs rented hardware). Whether the recipe's win is placement or the
+always-active bundle (needs the decomposition arm, still unbuilt). And BF16-vs-BF16-served
+equivalence with the official API — this BF16 runs through llama.cpp like everything else here,
+which is the point: one harness, one box, one scorer, and the only variable is the file.
