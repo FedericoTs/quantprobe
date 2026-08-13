@@ -1,0 +1,65 @@
+tr(lm, reqtype)(cloned_reqs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\lm_eval\models\api_models.py", line 825, in generate_until
+    asyncio.run(
+  File "C:\Python312\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\asyncio\base_events.py", line 664, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\lm_eval\models\api_models.py", line 631, in get_batched_requests
+    return await tqdm_asyncio.gather(*tasks, desc="Requesting API")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tqdm\asyncio.py", line 89, in gather
+    res = [await f for f in cls.as_completed(ifs, loop=loop, timeout=timeout,
+           ^^^^^^^
+  File "C:\Python312\Lib\asyncio\tasks.py", line 621, in _wait_for_one
+    return f.result()  # May raise f.exception().
+           ^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tqdm\asyncio.py", line 82, in wrap_awaitable
+    return i, await f
+              ^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tenacity\asyncio\__init__.py", line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\lm_eval\models\api_models.py", line 560, in amodel_call
+    raise e
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\lm_eval\models\api_models.py", line 516, in amodel_call
+    async with session.post(
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\aiohttp\client.py", line 1187, in __aenter__
+    self._resp = await self._coro
+                 ^^^^^^^^^^^^^^^^
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\aiohttp\client.py", line 601, in _request
+    await resp.start(conn)
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\aiohttp\client_reqrep.py", line 960, in start
+    with self._timer:
+  File "C:\Users\Federico\AppData\Roaming\Python\Python312\site-packages\aiohttp\helpers.py", line 735, in __exit__
+    raise asyncio.TimeoutError from None
+TimeoutError

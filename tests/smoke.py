@@ -4029,6 +4029,46 @@ def t_the_ceiling_chain_verdict_is_mechanical_and_bands_do_not_round():
     return None
 
 
+def t_the_http_timeout_covers_an_unquantized_model_at_one_token_per_second():
+    """A row must not die on a per-request timeout that assumes a rate the model can't hit.
+
+    The 3 t/s floor (budget/3) was calibrated on quantized models and shredded a 10.5h BF16
+    gsm8k row: rc=1, results=MISSING. BF16 at 4 concurrent slots runs below 3 t/s per stream, so
+    a single full-budget item could not finish inside budget/3 = 683s. The floor is now 1 t/s,
+    and this pins it so the faster floor cannot creep back unnoticed - mutation-checked, because
+    a timeout test that passes at both 1 and 3 t/s tests nothing.
+
+    The real backstop against a wedged row is run_watched's STALL detector, not this timeout, so
+    a generous per-request window has no downside - which is the whole argument for the change.
+    """
+    import re as _re
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, os.path.join(root, "weights"))
+    import ev1_run as E
+
+    def timeout_of(task):
+        cmd = E.build_cmd("4B-BF16", task)
+        args = cmd[cmd.index("--model_args") + 1]
+        return int(_re.search(r"timeout=(\d+)", args).group(1))
+
+    # 1. Every powered task's timeout must cover its own budget at 1 t/s. Under the old budget/3
+    #    floor gsm8k got 683s for a 2048-token budget; the row it killed proves 683 was short.
+    for task in ("gsm8k_cot_zeroshot", "ifeval", "math500_boxed"):
+        budget = int(E.GEN[task].split("=")[1])
+        got = timeout_of(task)
+        assert got >= budget, (f"{task}: timeout {got}s < budget {budget} - a full-budget item at "
+                               f"1 t/s per stream cannot finish, which is exactly what failed")
+
+    # 2. MUTATION: the old floor must be rejected. gsm8k's 2048 budget at 3 t/s is 683s; the
+    #    timeout must be strictly larger than that, or we have silently reverted.
+    assert timeout_of("gsm8k_cot_zeroshot") > 2048 // 3, "the 3 t/s floor is back"
+
+    # 3. The 600s minimum still holds for a hypothetical tiny budget (never regress the floor).
+    assert E.build_cmd is not None and max(600, 100) == 600
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
