@@ -99,3 +99,45 @@ The 35B ceiling remains a separate open item; this does not touch it.
 3. 4-band fragility probe -> score P-1/P-2/P-3.
 4. Build ours + naive from BF16 -> ceiling-chain rows -> score P-4.
 5. Compare autospec prediction to measured decode -> score P-5.
+
+
+---
+
+## AMENDMENT (2026-08-15, BF16 probe failed on this box, BEFORE the Q4 probe ran)
+
+**The BF16 probe is infeasible on this hardware, and the fragility band will be measured from a
+Q4_K_M source instead. Declared before the Q4 probe runs, per KR-1.**
+
+What happened: the BF16 (50.9 GB) downloaded fine, and the probe ran 69 minutes and quantized all
+its band files - but every perplexity run failed to LOAD them ("invalid magic '????'"). Root
+cause, diagnosed: **the disk was full** (11 GiB free against ~19.6 GiB per band file), so each
+band write truncated. Not an architecture bug. The probe correctly detected the broken curve and
+refused to emit a recipe - the C-26/C-30 discipline holding in failure.
+
+Fixing the disk only exposes the deeper wall, the same one prereg #100 named for the 35B: a 27B's
+Q6 reference (~20 GB) exceeds this box's 16 GB RAM, so the full-precision probe streams from disk
+(days), and the **BF16 ceiling chain (P-4/P-5) is weeks per arm - infeasible here.**
+
+**Decision (Federico, 2026-08-15): salvage the novel science, defer the ceiling.**
+
+- The BF16 was deleted (unusable for the ceiling on this box), freeing disk to 61 GiB.
+- The fragility band is measured from **Qwen3.8-27B-Q4_K_M** (15.9 GiB, fits 16 GB RAM), not BF16.
+- **This answers P-1/P-2/P-3 - the depth-vs-attention-type question, which is the genuinely novel
+  stake - because those turn on RELATIVE perplexity deltas between depth bands, and a consistent
+  Q4 source measures relative fragility fine.** Probing from a quantized source instead of the
+  original is a known compromise (the fragile band is where a further-quantized band hurts MOST
+  relative to the rest; the source's own quantization is common-mode and cancels in the deltas).
+- **P-4 (ceiling chain) and P-5 (Law 4 vs measured decode) are DEFERRED to rented hardware**, and
+  are explicitly NOT scored from this Q4-sourced probe. The absolute BF16->quant loss is not
+  measurable here; only the band LOCATION is.
+
+**What does NOT change:** P-1 vs P-2 thresholds (back-heavy worst band 48-63 with >=1.3x median,
+versus a flat profile within 15% pointing at the evenly-spread full-attention layers). The whole
+point of the stake - whether depth-localized fragility survives a hybrid - is intact, because it
+was always a question about the SHAPE of the depth curve, not its absolute height.
+
+**Honest limit added:** a Q4 source could in principle blunt the very fragility we are trying to
+locate (if the fragile band is already damaged by the Q4 quantization, its marginal Q2 delta
+shrinks). If the profile comes back suspiciously flat, that confound is named here in advance as a
+rival to P-2's "attention-type" reading, and the tie-breaker is the follow-up BF16 probe on a GPU
+- not a reinterpretation of this run.
