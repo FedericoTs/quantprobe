@@ -129,3 +129,71 @@ Consequences, in order of what they touch:
 Probe command fixed now, before running: `quantprobe probe --gguf <BF16> --bands 4 --chunks 32
 --eval <wikitext-2 test> --llama-dir tools/llamacpp-b10098` - the same tool and band count that
 produced the 35B recipe, per KR-C6.
+
+
+---
+
+## SCORED (2026-08-14, all nine cells banked, scored by pre-written code)
+
+**P-C3 CONFIRMED: the recipe cannot save a 4B at 2 bits. And P-C1 - Federico's expected "modest
+loss" - is REFUTED: the loss is large, not modest.**
+
+| benchmark | BF16 (original) | OURS Q2_K | NAIVE Q2_K | Q4_K_M ref* |
+|---|---|---|---|---|
+| MATH-500 | 81.0 | 50.2 | 2.6 | 77.6 |
+| GSM8K | 82.9 | 71.0 | 0.4 | 81.7 |
+| IFEval | 83.7 | 61.7 | 17.0 | 80.6 |
+
+`* Q4_K_M is the older conversion (inert MTP head) - context, not a chain arm.`
+
+MATH-500: **BF16 - OURS = +30.8** (staked "expected" ceiling was 12), **OURS - NAIVE = +47.6**.
+So P-C3's two clauses both hold: deficit > 25 AND ours still beats naive by >= 5.
+
+### Verified before believed (the numbers are dramatic, so they were checked)
+
+- **Health:** 0.0% empty/truncated on 8 of 9 rows; NAIVE/ifeval 0.2% empty. The naive collapse
+  is REAL, not degraded rows. KR-C4 drops nothing.
+- **Prompt parity:** clean - all three arms were sent identical prompts.
+- **Format decomposition, MATH-500:**
+
+  | | emitted a box | exact | correct GIVEN a box |
+  |---|---|---|---|
+  | BF16 | 87.8% | 81.0% | 92.3% |
+  | OURS | 62.0% | 50.2% | 81.0% |
+  | NAIVE | 22.4% | 2.6% | 11.6% |
+
+### What it means, honestly
+
+1. **Naive Q2_K on a 4B is catastrophic** - 2.6% on MATH-500, 0.4% on GSM8K. The model is
+   effectively destroyed: only 22% of items even produce a boxed answer, and of those only 11.6%
+   are right (near chance). This is C-30's mechanism on a hybrid model - naive 2-bit wrecks the
+   always-active path (here the SSM layers) and the model stops converging.
+2. **The depth-aware recipe rescues it enormously** - +47.6 on MATH-500 (2.6 -> 50.2), 0.4 -> 71.0
+   on GSM8K. Placement is doing real, large work: the difference between destroyed and usable.
+3. **But 2 bits on a 4B costs 30.8 points versus the original, and the recipe cannot hide it.**
+   Unlike the 35B (#98/#99), where the loss was almost all answer-FORMAT, here OURS loses on BOTH
+   axes: format (62.0% vs 87.8% emit a box) AND conditional reasoning (81.0% vs 92.3% correct when
+   it does box). A 4B simply has too few parameters to survive 2 bits, even with perfect placement.
+4. **The sensible quant for a 4B is Q4, and it is near-lossless** - Q4_K_M 77.6 vs BF16 81.0, a
+   3.4-point loss. 2-bit is the wrong tier for this size class regardless of recipe.
+
+### The finding, stated against #98
+
+**2-bit viability is size-dependent.** On the 35B-A3B (#98) the depth-aware recipe made 2-bit
+genuinely strong. On the 4B it makes 2-bit *survivable* but not good. The recipe's job -
+protecting the always-active path - it does at both sizes; what changes is whether the base
+model has the redundancy to absorb 2-bit at all. Big models do; a 4B does not. The honest product
+line is therefore: **use the recipe to reach aggressive quant on LARGE models; use Q4 (near-
+lossless) on small ones, where 2-bit is a false economy the recipe can rescue from catastrophe but
+not from mediocrity.**
+
+Federico's stake was that ours would lose to the original by a modest margin. It lost by a large
+one. The prereg predicted this outcome as P-C3 and it ships as staked.
+
+### KR-C2 disclosure
+
+BF16/gsm8k and BF16/ifeval FAILED on first attempt (a timeout floor calibrated for quantized
+models; BF16 is the first unquantized arm and ran below it - fixed in commit 38d14f8, floor 3 t/s
+-> 1 t/s). They were re-run days after their OURS/NAIVE siblings. Temp-0 scoring is
+clock-independent so the verdict is unaffected, but the machine-state drift is real and named
+rather than hidden. MATH-500 already carried this property (BF16 led its children by ~21h).

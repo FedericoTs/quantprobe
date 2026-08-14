@@ -1,0 +1,149 @@
+{
+  "results": {
+    "ifeval": {
+      "name": "ifeval",
+      "alias": "ifeval",
+      "sample_len": 541,
+      "prompt_level_strict_acc,none": 0.17005545286506468,
+      "prompt_level_strict_acc_stderr,none": 0.0161667580648002,
+      "inst_level_strict_acc,none": 0.2997601918465228,
+      "inst_level_strict_acc_stderr,none": "N/A",
+      "prompt_level_loose_acc,none": 0.18484288354898337,
+      "prompt_level_loose_acc_stderr,none": 0.01670417955850395,
+      "inst_level_loose_acc,none": 0.3213429256594724,
+      "inst_level_loose_acc_stderr,none": "N/A"
+    }
+  },
+  "group_subtasks": {},
+  "configs": {
+    "ifeval": {
+      "task": "ifeval",
+      "dataset_path": "google/IFEval",
+      "test_split": "train",
+      "doc_to_text": "prompt",
+      "doc_to_target": 0,
+      "unsafe_code": false,
+      "process_results": "def process_results(doc, results):\n    inp = InputExample(\n        key=doc[\"key\"],\n        instruction_id_list=doc[\"instruction_id_list\"],\n        prompt=doc[\"prompt\"],\n        kwargs=doc[\"kwargs\"],\n    )\n    response = results[0]\n\n    out_strict = test_instruction_following_strict(inp, response)\n    out_loose = test_instruction_following_loose(inp, response)\n\n    return {\n        \"prompt_level_strict_acc\": out_strict.follow_all_instructions,\n        \"inst_level_strict_acc\": out_strict.follow_instruction_list,\n        \"prompt_level_loose_acc\": out_loose.follow_all_instructions,\n        \"inst_level_loose_acc\": out_loose.follow_instruction_list,\n    }\n",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "fewshot_config": {
+        "sampler": "default",
+        "split": null,
+        "process_docs": null,
+        "fewshot_indices": null,
+        "samples": null,
+        "doc_to_text": "prompt",
+        "doc_to_choice": null,
+        "doc_to_target": 0,
+        "gen_prefix": null,
+        "fewshot_delimiter": "\n\n",
+        "target_delimiter": " "
+      },
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "prompt_level_strict_acc",
+          "aggregation": "mean",
+          "higher_is_better": true
+        },
+        {
+          "metric": "inst_level_strict_acc",
+          "aggregation": "def agg_inst_level_acc(items):\n    flat_items = [item for sublist in items for item in sublist]\n    inst_level_acc = sum(flat_items) / len(flat_items)\n    return inst_level_acc\n",
+          "higher_is_better": true
+        },
+        {
+          "metric": "prompt_level_loose_acc",
+          "aggregation": "mean",
+          "higher_is_better": true
+        },
+        {
+          "metric": "inst_level_loose_acc",
+          "aggregation": "def agg_inst_level_acc(items):\n    flat_items = [item for sublist in items for item in sublist]\n    inst_level_acc = sum(flat_items) / len(flat_items)\n    return inst_level_acc\n",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "until": [],
+        "do_sample": false,
+        "temperature": 0.0,
+        "max_gen_toks": 2048
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "metadata": {
+        "version": 4.0,
+        "model": "4B-NAIVE",
+        "base_url": "http://127.0.0.1:8093/v1/chat/completions",
+        "num_concurrent": 4,
+        "max_retries": 3,
+        "tokenized_requests": false,
+        "timeout": 683,
+        "config_source": "C:\\Users\\Federico\\AppData\\Roaming\\Python\\Python312\\site-packages\\lm_eval\\tasks\\ifeval\\ifeval.yaml"
+      }
+    }
+  },
+  "versions": {
+    "ifeval": 4.0
+  },
+  "n-shot": {
+    "ifeval": 0
+  },
+  "higher_is_better": {
+    "ifeval": {
+      "prompt_level_strict_acc": true,
+      "inst_level_strict_acc": true,
+      "prompt_level_loose_acc": true,
+      "inst_level_loose_acc": true
+    }
+  },
+  "n-samples": {
+    "ifeval": {
+      "original": 541,
+      "effective": 541
+    }
+  },
+  "config": {
+    "model": "local-chat-completions",
+    "model_args": {
+      "model": "4B-NAIVE",
+      "base_url": "http://127.0.0.1:8093/v1/chat/completions",
+      "num_concurrent": 4,
+      "max_retries": 3,
+      "tokenized_requests": false,
+      "timeout": 683
+    },
+    "batch_size": 1,
+    "batch_sizes": [],
+    "device": "cuda:0",
+    "use_cache": null,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "gen_kwargs": {
+      "max_gen_toks": 2048
+    },
+    "random_seed": 0,
+    "numpy_seed": 0,
+    "torch_seed": 0,
+    "fewshot_seed": 0
+  },
+  "git_hash": "v1.25.0-152-g38d14f8",
+  "date": 1786671341.996199,
+  "pretty_env_info": "PyTorch version: 2.5.1+cu121\nIs debug build: False\nCUDA used to build PyTorch: 12.1\nROCM used to build PyTorch: N/A\n\nOS: Microsoft Windows 10 Home\nGCC version: Could not collect\nClang version: Could not collect\nCMake version: Could not collect\nLibc version: N/A\n\nPython version: 3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)] (64-bit runtime)\nPython platform: Windows-10-10.0.19045-SP0\nIs CUDA available: True\nCUDA runtime version: 12.9.41\r\nCUDA_MODULE_LOADING set to: LAZY\nGPU models and configuration: GPU 0: NVIDIA GeForce GTX 1060 6GB\nNvidia driver version: 582.28\ncuDNN version: Could not collect\nHIP runtime version: N/A\nMIOpen runtime version: N/A\nIs XNNPACK available: True\n\nCPU:\nArchitecture=9\r\r\nCurrentClockSpeed=3801\r\r\nDeviceID=CPU0\r\r\nFamily=205\r\r\nL2CacheSize=1024\r\r\nL2CacheSpeed=\r\r\nManufacturer=GenuineIntel\r\r\nMaxClockSpeed=3801\r\r\nName=Intel(R) Core(TM) i5-7600K CPU @ 3.80GHz\r\r\nProcessorType=3\r\r\nRevision=\n\nVersions of relevant libraries:\n[pip3] numpy==2.5.1\n[pip3] torch==2.5.1+cu121\n[conda] Could not collect",
+  "transformers_version": "5.14.1",
+  "lm_eval_version": "0.4.12",
+  "upper_git_hash": null,
+  "task_hashes": {
+    "ifeval": "bdcf10fc42fb3b39fd60af9d347a998b5bcb0a6782900c760b7dcc67ef0109d7"
+  },
+  "model_source": "local-chat-completions",
+  "model_name": "4B-NAIVE",
+  "model_name_sanitized": "4B-NAIVE",
+  "system_instruction": null,
+  "system_instruction_sha": null,
+  "fewshot_as_multiturn": true,
+  "chat_template": "",
+  "chat_template_sha": null,
+  "total_evaluation_time_seconds": "10029.160406699986"
+}
