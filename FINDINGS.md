@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
 | Open contradictions | 30 |
-| Untried levers | 38 |
+| Untried levers | 39 |
 | External work to study | 20 |
 
 ## Established laws
@@ -793,6 +793,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** STAKED in prereg #100 before any arm ran: P-C1 expected - BF16 beats OURS on MATH-500 by (0,12] AND OURS beats NAIVE by >=5. P-C2 near-lossless (<2 pts everywhere, not expected at 2 bits on a 4B). P-C3 the size class binds (BF16-OURS > 25 pts; ships as a recipe limit). P-C4 ordering violation (NAIVE >= OURS, or OURS > BF16 by > 2) - front page, not footnote. Outcomes between bands are reported as BETWEEN STAKED BANDS, never rounded (the #99 lesson).
 
 `staked 2026-08-11 (prereg #100), BF16 downloading, no arm evaluated` · `unmeasured` · evidence: prereg #100 (preregistrations/2026-08-11-4b-ceiling-chain.md), staked before the BF16 download finished; the 35B infeasibility arithmetic and the 4B ssm_ header scan are recorded there and in the session log.
+
+### U-50 — DOES DEPTH-LOCALIZED FRAGILITY SURVIVE A HYBRID LINEAR-ATTENTION MODEL? Qwen3.8-27B landed on HF today - a DENSE 27B, 64 layers, qwen3_5 family, but HYBRID: 48 linear-attention layers + 16 full-attention layers, the full ones at indices 3,7,11..63 (every 4th, strictly periodic, evenly spread across all four depth bands). Every model we have ever probed is full-attention throughout. Our fragility probe is a 4-BAND DEPTH sweep, which encodes an untested assumption: that fragility is localized by DEPTH. A hybrid model with attention type spread evenly across depth is the first case that can refute it.
+
+**Predicted effect (staked):** STAKED in prereg #101 before download. P-1 DEPTH WINS: the depth profile is back-heavy, worst band 48-63, delta >= 1.3x median (the 4B/35B effect size), recipe transfers unchanged. P-2 PROBE IS BLIND: profile comes back FLAT (all bands within 15%), because the fragile thing is the evenly-distributed full-attention layers, not depth - which would make the depth probe the wrong instrument for hybrids and demand an attention-type probe. P-1 and P-2 are mutually exclusive. P-4 C-30 replays (naive Q2_K damages the always-active path - here the 48 linear layers - ours beats naive on MATH-500 by >= 5 pts). P-5 Law 4's weight term survives (dense reads all weights/token regardless of attention type) but the KV term over-predicts memory for the 48 linear layers at long context - a known tool gap, staked not patched.
+
+**Why it is promising:** It is the first test of whether the project's two core claims - depth-localized fragility (Law 3) and bytes/token decode (Law 4) - extend past full attention, on a model that dropped the same day, so a measured recipe would be the first published for it. Same qwen3_5 tooling works; only the science is new.
+
+`staked 2026-08-14 (prereg #101), weights not yet downloaded, queued behind #100` · `unmeasured` · evidence: prereg #101 (preregistrations/2026-08-14-qwen38-27b-hybrid-fragility.md); config.json read from Qwen/Qwen3.8-27B (64 layers, 48 linear + 16 full attention, full at every 4th index); the discarded manual-flag quantprobe output that applied MoE assumptions to a dense model is why autospec from the real GGUF is required, not manual params.
 
 ### U-07 — Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.
 
