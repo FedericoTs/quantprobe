@@ -144,10 +144,15 @@ def _chrome():
     return None
 
 
-def render_png(svg_path):
+def render_png(svg_path, scale=1):
     """PNG twin via headless Chrome, sized from the SVG's own viewBox. Standard process
     (Federico, 2026-08-06): every media image ships PNG as well as SVG - X and Reddit take
-    PNGs, and an asset that cannot be posted is not an asset."""
+    PNGs, and an asset that cannot be posted is not an asset.
+
+    scale > 1 renders at that device pixel ratio (a viewBox-W x scale wide PNG). X and Reddit
+    JPEG-compress uploads, so a 2x source keeps small labels crisp after compression - the
+    difference between 'readable' and 'perfect for x.com'. Default 1 leaves every other chart
+    byte-identical."""
     import subprocess
     src = open(svg_path, encoding="utf-8").read()
     m = re.search(r'viewBox="0 0 (\d+) (\d+)"', src)
@@ -157,10 +162,12 @@ def render_png(svg_path):
     if not c:
         print(f"WARNING: no Chrome found - PNG twin NOT rendered for {os.path.basename(svg_path)}")
         return None
-    subprocess.run([c, "--headless", "--disable-gpu", "--hide-scrollbars",
-                    f"--screenshot={png}", f"--window-size={w},{h}",
-                    "file:///" + svg_path.replace(os.sep, "/")],
-                   capture_output=True, timeout=60)
+    cmd = [c, "--headless", "--disable-gpu", "--hide-scrollbars",
+           f"--screenshot={png}", f"--window-size={w},{h}"]
+    if scale != 1:
+        cmd.append(f"--force-device-scale-factor={scale}")
+    cmd.append("file:///" + svg_path.replace(os.sep, "/"))
+    subprocess.run(cmd, capture_output=True, timeout=60)
     if os.path.isfile(png):
         print("media ->", png)
         return png
@@ -168,11 +175,11 @@ def render_png(svg_path):
     return None
 
 
-def save(name, body_svg):
+def save(name, body_svg, scale=1):
     os.makedirs(MEDIA, exist_ok=True)
     out = os.path.join(MEDIA, name)
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(body_svg)
     print("media ->", out)
-    render_png(out)
+    render_png(out, scale=scale)
     return out

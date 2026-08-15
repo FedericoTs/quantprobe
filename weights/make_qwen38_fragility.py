@@ -156,7 +156,8 @@ def main():
     s.append(B.footer(W, H, "prereg 2026-08-14-qwen38-27b-hybrid-fragility · "
                             "weights/data/prereg101_probe_qwen38_q4.log"))
     s.append("</svg>")
-    B.save("qwen38_fragility.svg", "".join(s))
+    # 2x for X: it JPEG-compresses uploads, and a 3200px source keeps the note text crisp.
+    B.save("qwen38_fragility.svg", "".join(s), scale=2)
 
 
 if __name__ == "__main__":
