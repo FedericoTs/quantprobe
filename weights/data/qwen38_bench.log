@@ -1,0 +1,11 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
+  Device 0: NVIDIA GeForce GTX 1060 6GB, compute capability 6.1, VMM: yes, VRAM: 6143 MiB
+load_backend: loaded CUDA backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cuda.dll
+load_backend: loaded RPC backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-rpc.dll
+load_backend: loaded CPU backend from C:\Users\Federico\Documents\evo-compress\tools\llamacpp-b10098\ggml-cpu-haswell.dll
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| qwen35 27B Q4_K - Medium       |  15.92 GiB |    27.32 B | CUDA       |  15 |           pp512 |        44.22 ± 39.26 |
+| qwen35 27B Q4_K - Medium       |  15.92 GiB |    27.32 B | CUDA       |  15 |           tg128 |          2.04 ± 0.02 |
+
+build: 0278d8362 (10098)

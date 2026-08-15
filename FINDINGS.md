@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
 | Open contradictions | 30 |
-| Untried levers | 39 |
+| Untried levers | 40 |
 | External work to study | 27 |
 
 ## Established laws
@@ -849,6 +849,12 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** STAKED AT REGISTRATION, before any run. P1: shared-prefix-diverge-late arms reach aggregate >=1.2x the independent-seed arms at N=8 on the 30B offload placement. P2: answer diversity on suite tasks stays >=70% of the independent-seed arms' diversity (else the bandwidth win bought agreement, not hedging). KR: if expert-overlap steering yields <1.1x aggregate, routing decorrelates too fast for sampler-level coherence and the idea dies.
 
 `open - measurable with stock tools; stake bands before running` · `mechanism argued, unmeasured`
+
+### U-51 — QUANTPROBE NEEDS A LINEAR-ATTENTION KV TERM. P-5 (prereg #101) showed the tool computes KV bytes/pos as if every layer is full attention: on Qwen3.8-27B it read 260 KB/pos (64 layers) when only 16 are full-attention, a ~4x over-estimate. Harmless at short context (weight-bound) but it over-predicts memory pressure and under-predicts speed at long context on any hybrid.
+
+**Predicted effect (staked):** count full-attention layers from the GGUF (layer_types / a per-arch table) and price only those in the KV term; linear/SSM layers contribute their fixed state, not O(seq) KV. Expected: no change to full-attention models (all layers count), a large KV reduction on hybrids at depth. Added as its own before/after per prereg #101 KR-5, never by tuning a constant.
+
+`staked 2026-08-15 from P-5, not built` · `unmeasured` · evidence: prereg #101 P-5 section; weights/data/qwen38_bench.log; the 260-vs-64 KB/pos arithmetic.
 
 ### U-06 — The disk-streaming tier has ~7x available that our fork verdict (D-05) explicitly does not cover.
 

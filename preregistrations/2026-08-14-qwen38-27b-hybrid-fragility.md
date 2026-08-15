@@ -193,3 +193,35 @@ the always-active path is C-30's lesson showing up in the generated recipe, unpr
   per arm on this box. Deferred, exactly as the 35B ceiling is.
 - The **attention-type follow-up probe** (P-2's corrected tool) is moot - P-2 is refuted, so
   there is no flat profile demanding an attention-type explanation.
+
+
+---
+
+## P-5 SCORED (2026-08-15): the speed law survives linear attention, with one named gap
+
+Feasible on this box (a speed measurement, not the deferred benchmark ceiling). quantprobe
+autospec on the Q4_K_M read the model correctly (27.3B total, 26.0B active, dense) - unlike the
+launch-day manual-flag attempt that applied MoE assumptions.
+
+**WEIGHT TERM - CONFIRMED.** quantprobe predicted 1.8 tok/s decode (split, -ngl 15, RAM-bandwidth-
+bound). llama-bench measured **tg128 = 2.04 +/- 0.02 tok/s** (GTX 1060 6GB + 16GB RAM, Q4_K_M,
+15/65 layers on GPU). quantprobe is 11.8% UNDER, in the conservative/floor direction, inside the
+band it hits on full-attention models. The staked claim holds: for single-stream decode the
+weight-bandwidth term is architecture-agnostic - a dense model reads all its weights per token
+regardless of attention type. (Prefill pp512 = 44.2 but +/-39.3 over 2 reps with warmup counted;
+noisy, not a staked decode term - reported, not claimed.)
+
+**KV TERM - DIVERGES EXACTLY AS STAKED.** quantprobe read 260 KB/pos, the all-64-layers-full-
+attention computation (64 x 2 x 4 KV-heads x 256 head-dim x 2 bytes = 256 KB). But only 16 of 64
+layers are full attention; the other 48 are linear attention with a fixed-size recurrent state
+that does not grow with position. Real KV ~= 16 x 4 KB = ~64 KB/pos, so quantprobe OVER-ESTIMATES
+KV by ~4x - the precise divergence P-5 predicted. Its other half holds too: at the 128-token
+context measured, KV is negligible either way (~8 vs ~33 MB against a 17 GB model), so the weight
+prediction still lands. The error is real but only bites at long context / high depth, as staked.
+
+**What P-5 buys the tool (KR-5, not back-fitted):** quantprobe needs a linear-attention KV term -
+count full-attention layers from the GGUF, not all layers. Filed as U-51, to be added as its own
+change with its own before/after, never by tuning a constant to make this row look better.
+
+**Headline datapoint:** Qwen3.8-27B decodes at ~2 tok/s on a 2016 $50 GTX 1060 6GB - it RUNS, and
+quantprobe called it within 12% before measuring.
