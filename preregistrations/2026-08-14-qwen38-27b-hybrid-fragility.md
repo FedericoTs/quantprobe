@@ -141,3 +141,55 @@ locate (if the fragile band is already damaged by the Q4 quantization, its margi
 shrinks). If the profile comes back suspiciously flat, that confound is named here in advance as a
 rival to P-2's "attention-type" reading, and the tie-breaker is the follow-up BF16 probe on a GPU
 - not a reinterpretation of this run.
+
+
+---
+
+## SCORED (2026-08-15, Q4-sourced probe complete, 7.3h, clean 4-band curve)
+
+**P-1 DEPTH WINS: CONFIRMED. P-2 REFUTED. Depth-localized fragility survives a hybrid
+linear-attention model.**
+
+| band | delta PPL |
+|---|---|
+| layers 0-16 | 0.045 |
+| layers 17-33 | 0.212 |
+| layers 34-50 | 0.292 |
+| **layers 51-64** | **0.593** (fragile) |
+
+Strictly monotone with depth. Worst band 51-64 (the back), delta 0.593 vs median 0.292 =
+**2.04x** - past the staked >= 1.3x bar. The profile spans 13x (0.045 -> 0.593), the opposite of
+P-2's "flat within 15%".
+
+**The finding.** Qwen3.8-27B has 48 of 64 layers as LINEAR attention, spread evenly across all
+four depth bands (full-attention layers at 3,7,11..63). If fragility tracked attention TYPE the
+depth profile would be flat, because every band holds the full-attention layers in equal measure.
+It is not flat - it is cleanly back-heavy, exactly like the full-attention Qwen family (4B 24-31,
+35B back, 2.5-7B, 3-30B). So fragility here is localized by DEPTH, not attention type: the depth
+probe is the right instrument for this hybrid, the "Qwen breaks at the back" pattern extends to
+hybrid architectures, and the depth-aware recipe transfers unchanged.
+
+**The declared confound did NOT fire.** The 2026-08-15 amendment named the risk that a Q4 source
+could blunt the fragile band into a false flat. It didn't: a 2.04x back-heavy signal survived the
+Q4 quantization, which makes the confirmation stronger, not weaker. The GPU BF16 tie-breaker named
+in the amendment is therefore not needed to reach the P-1 verdict (it would only sharpen the
+absolute deltas).
+
+**Prediction accuracy, stated honestly.** P-1 named the worst band "48-63"; the probe's back band
+was "51-64". Same band (the back quarter) - the small index difference is just how the probe
+divides 64 layers into 4 (0-16/17-33/34-50/51-64) versus my assumed even 48-63. The substantive
+stake - back-heavy, >= 1.3x median - is confirmed; the exact boundary was off by three layers and
+that is noted rather than smoothed over.
+
+**The emitted recipe is architecture-aware where it matters:** it protects `ssm_.*` (the linear-
+attention state, the always-active path) at Q4, plus shared experts and the MTP head at Q8, with
+the fragile band 51-64 at Q4 and the rest of the FFNs at Q2. That the tool independently protects
+the always-active path is C-30's lesson showing up in the generated recipe, unprompted.
+
+### Still open (deferred to rented hardware, NOT scored here)
+
+- **P-4** (naive vs recipe on benchmarks - the always-active-path collapse) and **P-5** (Law 4
+  weight term vs KV term for 48 linear layers) both need the BF16 ceiling chain, which is weeks
+  per arm on this box. Deferred, exactly as the 35B ceiling is.
+- The **attention-type follow-up probe** (P-2's corrected tool) is moot - P-2 is refuted, so
+  there is no flat profile demanding an attention-type explanation.

@@ -800,7 +800,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** It is the first test of whether the project's two core claims - depth-localized fragility (Law 3) and bytes/token decode (Law 4) - extend past full attention, on a model that dropped the same day, so a measured recipe would be the first published for it. Same qwen3_5 tooling works; only the science is new.
 
-`staked 2026-08-14 (prereg #101), weights not yet downloaded, queued behind #100` · `unmeasured` · evidence: prereg #101 (preregistrations/2026-08-14-qwen38-27b-hybrid-fragility.md); config.json read from Qwen/Qwen3.8-27B (64 layers, 48 linear + 16 full attention, full at every 4th index); the discarded manual-flag quantprobe output that applied MoE assumptions to a dense model is why autospec from the real GGUF is required, not manual params.
+`P-1 CONFIRMED 2026-08-15 (prereg #101): depth-localized fragility survives a hybrid; P-4/P-5 deferred to GPU` · `measured - Q4-sourced 4-band probe, clean monotone curve, declared confound did not fire` · evidence: prereg #101 (preregistrations/2026-08-14-qwen38-27b-hybrid-fragility.md); config.json read from Qwen/Qwen3.8-27B (64 layers, 48 linear + 16 full attention, full at every 4th index); the discarded manual-flag quantprobe output that applied MoE assumptions to a dense model is why autospec from the real GGUF is required, not manual params.
 
 ### U-07 — Asymmetric top-k (k=4 to ingest, k=8 to generate) survives Stage 1 and needs Stage 2.
 
