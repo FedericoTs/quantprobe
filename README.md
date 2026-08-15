@@ -291,6 +291,7 @@ quantprobe dashboard --gguf 2bit.gguf                    # the law live, every r
 | [weights/business_tasks.py](weights/business_tasks.py) | the 52-task suite: 40 staked + T3/T4 ladder, every check executable, self-testing |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | the method: stake, measure, score *and wire*, audit |
 | [docs/DEEP-DIVE.md](docs/DEEP-DIVE.md) | what's new vs. built-on, parity tables, and the repository map |
+| [docs/QUANT_QUALITY.md](docs/QUANT_QUALITY.md) | **does the recipe preserve capability, not just perplexity?** — naive vs recipe vs original on MATH-500/GSM8K/IFEval; the size-dependence law; fragility survives hybrid linear attention |
 | [papers/arxiv/](papers/arxiv/) | the paper (submission-ready LaTeX) |
 | [CHANGELOG.md](CHANGELOG.md) | every release, including corrections to numbers published here |
 

@@ -27,6 +27,9 @@ Notes:
    charged honestly - all 16 candidates plus selection execution.
 3. The 30B lanes column is absent by staked prior evidence (U-39: MoE expert-offload
    batching caps ~2x), not omission.
-4. Columns arriving with the program: k=32 arms, early-exit lanes (P0b),
-   depth-aware-quant variants (quality-ladder campaign), and the Phase C/D tuned
-   models - every phase adds a column, and misses stay on the table.
+4. Columns arriving with the program: k=32 arms, early-exit lanes (P0b), and the
+   Phase C/D tuned models - every phase adds a column, and misses stay on the table.
+5. The depth-aware-quant campaign has LANDED and has its own page - benchmark
+   scores across quant variants (naive vs recipe vs original) on MATH-500/GSM8K/
+   IFEval, with the size-dependence law and the hybrid-generalization result:
+   [does depth-aware quantization preserve capability?](QUANT_QUALITY.md).
