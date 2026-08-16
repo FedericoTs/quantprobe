@@ -1,0 +1,41 @@
+[quantprobe] read from GGUF: 27.3B total, 26.0B active, 5.01 effective bits, KV 260 KB/pos
+
+quantprobe plan - custom model @ 5.01-bit on 2016 desktop (GTX 1060 6GB), XMP on [measured]
+  model 17.1 GB | active 18.76 GB/token | est. quality cost x1.03 (depth-aware recipe)
+
+  *    1.8 tok/s  split: 15/65 layers->VRAM, rest->RAM
+       0.1 tok/s  stream from disk (cold experts)   [exceeds RAM - capacity demo]
+       0.1 tok/s  layer-by-layer streaming (one layer resident)   [one layer resident (0.26 GB of 17.1 GB); needs a layer-streaming runtime (airllm/accelerate-class) - llama.cpp has no such mode; UPPER BOUND - two costs are unpriced: host-to-device PCIe transfer of every layer every token (we have no measured PCIe anchor and will not invent one), and the streaming-efficiency gap C-23 measured at 1.82x on llama.cpp (0.2505 GB/s achieved against 0.452-0.459 raw). Expect materially slower]
+
+  binding constraint: CAPACITY-BOUND (RAM) - this configuration is 5.1 GB over the RAM boundary, and crossing it is worth 1.2x.
+    cross it by      shaving the file (next quant step down / tighter probed band) -> ~2.3 tok/s, or fitting 21.1 GB of RAM -> ~1.8 tok/s
+    until then       system RAM bandwidth is where the time goes (88% of the token) - but making it faster does not solve the reason you are on this placement
+    other levers     a faster GPU memory bus: <=1.14x (12%) | faster storage, more I/O lanes: NO effect (0% of the token) | more/faster CPU threads: NO effect (0% of the token)
+    scope            DECODE only. Prefill has a different binding constraint (compute) which this classification does not model: on the CPU-expert MoE placement -ub 2048 measured +73% on prefill and 0% on decode, while on an all-in-VRAM row the same flag measured -39% prefill (prereg #19). Neither number is a prediction for this row.
+
+  speculation: pays ONLY when output copies its context (edits, refactors, RAG quoting)
+  - on novel generation the ngram drafter produces 0 drafts and changes nothing (D-10,
+  independently replicated on an RTX 3090). Details below.
+
+  run it:  llama-server -m model.gguf -ngl 15 -b 2048 -ub 2048 --threads 4
+           (--threads 4 = this machine's LOGICAL cores; llama.cpp's own auto-detect may pick
+           physical-only and cost 2x on CPU-bound decode - verify with your fork if unsure)
+
+  prompt speed: `-b 2048 -ub 2048` is the sized safe batch for this card (buffer-fit rule, prereg #23) - a bigger ubatch batches host-resident weights across PCIe, but the measured numbers behind this lever (+73%, 199.9 -> 345.9 pp2048, prereg #19; 360.76 at pp4096/ub4096, L-26) are from the CPU-expert MoE placement (-ot exps=CPU) and are NOT a prediction for this row - the prefill law that licenses them is scoped to that tier (L-26; the dense control violates its form). Known boundary: fully in VRAM the same flag LOSES 39% (prereg #19 P-2), so the batch is sized against VRAM headroom and capped at 2048 outside the measured tier.
+
+  dense-SPLIT speculation (measured, prereg #69): a small same-family draft is the best speculation cell on this box - `-md draft.gguf -ngld 0 --spec-draft-n-max 2` bought **+33%** decode on a 14B split target (5.5 -> 7.4 tok/s, 76% acceptance, novel code), and the draft costs ZERO VRAM because it runs on CPU. Mechanism: the K+1-token verify batch reads each CPU-resident layer once, so the CPU share of every token amortizes. Keep K=2: every measured K>=3 landed AT OR BELOW no-draft baseline (the CPU draft spends the same RAM bandwidth the amortization saves), so llama.cpp's default 3 already loses here.
+
+  speculation: if you write CODE, add `--spec-type ngram-simple --spec-ngram-simple-size-m 12 --spec-ngram-simple-size-n 4` - one flag family, no download, identical output. THE DRAFT LENGTH IS THE LEVER (X-1, staked and measured): on pre-Ampere cards the verify pass switches kernels at width 9, so drafts of 4-7 are strictly dominated - measured 48-51 tok/s at m=4-7 vs **88.5 at m=8 and 124-132 at m=12-24**, against a 22.8 baseline: **up to 5.8x single-stream** on copy-heavy work, byte-identical output. Never draft 4-7 on this card class: m>=8 or leave speculation off. On Ampere+ the boundary is unverified (`bench --contribute` settles it). Prose gains nothing at any m (1.01x): the drafter copies spans from your context, and prose has none.
+  (upper bounds from this row's own decomposition, at 100% acceptance: 3.00x for a DRAFT
+  MODEL at K=2 - it verifies K+1 tokens per weight read - and 2.10x for the ngram drafter
+  above, which measured ~2.1 accepted tokens per verify round. A verify batch amortizes weight
+  READS only; measured gains are below both and MoE offload pays a union tax on top.)
+  upgrade advisor - WON'T HELP HERE: +16 GB RAM: re-evaluated, does not move this placement | NVMe SSD: disk I/O is 0% of this token
+  tier-boundary advisor: this config is 5.1 GB over the RAM boundary - shave it (next quant step down / tighter probed band) -> ~2.3 tok/s (x1.2)
+
+  concurrency: every number above is SINGLE-STREAM. Measured with 8 parallel slots, aggregate
+  throughput is ~2x higher and saturates by about 4 slots (pre-registration #26). The same
+  ratio appeared on every placement AND on a dense control, so it is a ceiling we do not model -
+  read our figures as one user's speed, not a server's capacity.
+
+  (eta bands fitted from published measurements; estimates +/-25%. Hybrid needs --no-mmap.)
