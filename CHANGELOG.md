@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.28.0 - 2026-08-16
+
+**The planner now prices hybrid linear-attention models correctly - two days after the class
+shipped.** Qwen3.8-27B landed 2026-08-14 with 48 of its 64 layers as linear attention; every
+prior model this tool had met was full-attention throughout.
+
+- **KV is priced on full-attention layers only** (U-51, from prereg #101 P-5, staked before
+  measuring). The old formula multiplied by n_layer, assuming every layer caches K+V with
+  position - a measured 4x over-estimate on the hybrid (260 KB/pos read, ~64 real). The count
+  now comes from the FILE: a block carrying an `attn_k` projection caches K+V, a linear/SSM
+  block does not. Full-attention models are byte-identical to the old formula (pinned by a
+  regression test against a real file); hybrids print
+  `KV 68 KB/pos (hybrid: 17 of 65 layers cache KV)`.
+- **The recipes atlas gains Qwen3.8-27B** - the first measured depth-aware band published for
+  it, probed launch-day+1 (band 51-64, back-fragile, 2.35x under the atlas ratio convention;
+  the probe binary's own banner prints 2.04 off a different median - both documented so the
+  two numbers do not read as a discrepancy). Sixth entry; `quantprobe recipes` lists it.
+- **Linux end-to-end CI** (.github/workflows/linux-e2e.yml): a GPU-less ubuntu runner installs
+  the package, runs `calibrate` and asserts it exits 0 with "GPU: none detected" - the exact
+  failure class issue #2 reported on AMD/Linux - then runs a real llama-bench and a real
+  `plan --gguf` against a downloaded model. Green on its first run (34s). The AMD/Vulkan
+  detection path itself arrives with issue #2's contributed patch, as v1.28.1.
+- The speed receipt behind the release: quantprobe predicted 1.80 tok/s for Qwen3.8-27B
+  Q4_K_M on a 2016 GTX 1060 before the model generated a token; llama-bench measured
+  2.04 +/- 0.02 (+13%, floor direction) - weights/data/qwen38_plan.log and qwen38_bench.log,
+  both committed. The same run is what exposed the KV gap this release fixes.
+- Also in the repo since 1.27: the quant-quality campaign page (docs/QUANT_QUALITY.md - the
+  35B naive-vs-recipe verdict, the capability-not-format decomposition, the 4B ceiling chain
+  and its size-dependence law, the hybrid fragility result), and prereg #102's answer to
+  whether effective rank could replace the probe: it cannot (P-C - 2 of 6 models, the
+  front-fragile control flat), so the probe remains the honest instrument. The negative is
+  published at the same size as the hits, as always.
+
 ## 1.27.0 - 2026-08-05
 
 **AMD and Intel GPUs are now detected.** The tool was nvidia-smi-only: issue #1's contributor
