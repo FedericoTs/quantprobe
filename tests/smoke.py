@@ -4069,6 +4069,45 @@ def t_the_http_timeout_covers_an_unquantized_model_at_one_token_per_second():
     return None
 
 
+def t_kv_is_priced_on_full_attention_layers_only():
+    """U-51 (prereg #101 P-5): hybrid models must not pay KV for linear-attention layers.
+
+    Qwen3.8-27B has 48 of 64 layers as linear attention (fixed state, no positional KV), and the
+    old formula priced all of them: 260 KB/pos read vs ~64 real, a 4x over-estimate that would
+    mis-advise memory pressure at long context. The count comes from the FILE - a block with an
+    attn_k projection caches K+V, a linear block has none - so no per-arch table can go stale.
+
+    Mutation-checked in both directions: the hybrid must come out BELOW the all-layers figure by
+    the block ratio, and a full-attention model must be BYTE-IDENTICAL to the old formula
+    (kv_layers == n_layer), which is the regression guard that lets this ship inside v1.28.
+    Uses the real GGUFs when present; skips honestly otherwise (a skip is not a pass).
+    """
+    import sys as _sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _sys.path.insert(0, root)
+    from quantprobe.spec import from_gguf
+
+    hybrid = "D:/evo-compress-data/gguf/qwen38/Qwen3.8-27B-Q4_K_M.gguf"
+    dense = "D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf"
+    if not (os.path.isfile(hybrid) and os.path.isfile(dense)):
+        return "SKIP: needs the Qwen3.8 + Qwen2.5-7B GGUFs on D: (this box only)"
+
+    h = from_gguf(hybrid)
+    # 1. The hybrid counts KV blocks from the file: 17 of 65 (16 full-attn + the MTP block,
+    #    which carries attn_k too - the pre-existing n_layer convention, unchanged here).
+    assert h["kv_layers"] == 17 and h["n_layer"] == 65, (h["kv_layers"], h["n_layer"])
+    # 2. And prices ONLY those: 17 x 4 KV-heads x (256+256) x 2B = 69,632 B/pos. The old
+    #    formula gave 65/17 = 3.8x more; if kvp comes back near 260 KB the fix has regressed.
+    assert h["kvp"] == 17 * 4 * 512 * 2, h["kvp"]
+
+    d = from_gguf(dense)
+    # 3. REGRESSION GUARD: on a full-attention model every block has attn_k, so the new count
+    #    equals n_layer and kvp is byte-identical to the old n_layer formula.
+    assert d["kv_layers"] == d["n_layer"], (d["kv_layers"], d["n_layer"])
+    assert d["kvp"] == d["n_layer"] * 4 * 256 * 2, d["kvp"]
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):

@@ -100,10 +100,13 @@ def from_gguf(path):
     tier_att = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}
     embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
     has_output = False       # a separate output/lm_head means embeddings are NOT tied
+    kv_blocks = set()        # U-51: blocks that carry a K projection, i.e. FULL attention
     tensors = list(r.tensors)
     for extra in paths[1:]:
         tensors.extend(GGUFReader(extra).tensors)
     for t in tensors:
+        if ".attn_k." in t.name and t.name.startswith("blk."):
+            kv_blocks.add(t.name.split(".")[1])
         n = 1
         for d in t.shape:
             n *= int(d)
@@ -165,6 +168,19 @@ def from_gguf(path):
         active, moe = total - gather_only, False    # same gather correction on the dense path
 
     # exact KV bytes/pos (f16): MLA caches the latent; GQA caches heads x dims, K+V
+    #
+    # U-51 (prereg #101 P-5): only FULL-attention layers grow a KV cache with position. Hybrid
+    # models (Qwen3.8-27B: 48 of 64 layers are linear attention with fixed-size state) were
+    # priced as if every layer cached K+V - a measured 4x over-estimate (260 KB/pos read vs ~64
+    # real). The count comes from the FILE, not a per-arch table: a block that carries an
+    # `attn_k` projection caches K+V; a linear/SSM block has no attn_k and caches nothing that
+    # grows. On every full-attention model each block has attn_k, so kv_layers == n_layer and
+    # the output is byte-identical to the old formula (the regression guard in tests/smoke.py
+    # pins this). Deliberately UNCHANGED here: the n_layer convention includes an MTP block
+    # where one exists (it carries attn_k too) - pre-existing behavior, one change at a time.
+    # MLA models keep the n_layer path: their cache is the latent, not per-head K+V, and no
+    # MLA hybrid has been observed - guessing a rule for one would be invention, not reading.
+    kv_layers = len(kv_blocks) if kv_blocks else n_layer
     kv_lora = _field(r, ".attention.kv_lora_rank")
     if kv_lora:
         rope = _field(r, ".rope.dimension_count") or 64
@@ -177,7 +193,7 @@ def from_gguf(path):
             emb = _field(r, ".embedding_length") or 4096
             heads = _field(r, ".attention.head_count") or 32
             k_dim = v_dim = emb // heads
-        kvp = n_layer * kv_heads * ((k_dim or 128) + (v_dim or k_dim or 128)) * 2
+        kvp = kv_layers * kv_heads * ((k_dim or 128) + (v_dim or k_dim or 128)) * 2
 
     bits = sum(os.path.getsize(p) for p in paths) * 8 / total
     arch = None
@@ -200,6 +216,7 @@ def from_gguf(path):
     fmt_bw = (ws / wb) if (all_bytes and wb / all_bytes >= 0.6) else None
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
                 bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
+                kv_layers=kv_layers,     # U-51: < n_layer marks a hybrid (linear-attn) model
                 iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
                 codebook_share=(codebook_bytes / all_bytes) if all_bytes else 0.0,
                 # prereg #79: what each TIER actually holds. None when a tier has no tensors.
@@ -227,7 +244,12 @@ def apply(a, quiet=False):
     if getattr(a, "bits", None) is None:
         a.bits = s["bits"]; used.append(f"{s['bits']:g} effective bits")
     if getattr(a, "kv_per_pos", None) is None:
-        a.kv_per_pos = s["kvp"] / 1024; used.append(f"KV {s['kvp']/1024:.0f} KB/pos")
+        a.kv_per_pos = s["kvp"] / 1024
+        if s.get("kv_layers", s["n_layer"]) < s["n_layer"]:
+            used.append(f"KV {s['kvp']/1024:.0f} KB/pos (hybrid: {s['kv_layers']} of "
+                        f"{s['n_layer']} layers cache KV)")
+        else:
+            used.append(f"KV {s['kvp']/1024:.0f} KB/pos")
     if getattr(a, "n_layer", None) is None:
         a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
     a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
