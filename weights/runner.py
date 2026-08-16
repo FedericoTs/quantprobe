@@ -40,7 +40,8 @@ import time
 from contextlib import contextmanager
 
 # THE canonical list. Every runner refuses to start while ANY of these is held by someone else.
-LOCK_NAMES = (".p0_lock", ".autotune_lock", ".grid_lock", ".phaseb_lock", ".ev1_lock")
+LOCK_NAMES = (".p0_lock", ".autotune_lock", ".grid_lock", ".phaseb_lock", ".ev1_lock",
+              ".doe_lock")
 
 
 class BoxBusy(RuntimeError):
