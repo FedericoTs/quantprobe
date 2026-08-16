@@ -123,3 +123,41 @@ while making the staked protocol executable on this box, declared before data:
 The harness cannot write this prereg; this amendment was appended by the operator before
 the first designed run. P-1/P-2/P-4 remain scoreable exactly as staked on the 7-factor
 stage 1; P-3 (Sobol) is stage 2 and its scorer will be committed before stage 2 runs.
+
+
+---
+
+## SCORED - stage 1 (Morris), 2026-08-16, by the pre-committed scorer
+
+150 of 150 designed runs on disk, 0 DNF, one machine state, thermal settle 38-49 C
+throughout. CSV sha256 c35c7e9d718b3d80..; verdict json committed beside it.
+
+| stake | verdict | evidence |
+|---|---|---|
+| P-1 concentration | **PASS** | top-3 mu_star share: 7B **0.972** (ngl, t, fa), 30B **0.768** (t, mmp, ngl) - both over the 0.70 bar |
+| P-2 regimes separate | **PASS** | 7B top factor **-ngl** (13.5 tok/s per unit range); 30B top factor **-t** (10.7) - the all-in-VRAM-class dense model and the CPU-expert split want different knobs first, as the placement physics requires |
+| P-4 interaction warning | **FAIL** | sigma(-ub): 7B 0.076 vs median 1.028; 30B 0.706 vs median 4.256 - BOTTOM of both rankings, not above median |
+| P-3 classifier vs Sobol | deferred | a Sobol claim; Morris cannot score it and the scorer says so verbatim. Stage 2. |
+
+**The P-4 miss, diagnosed:** the stake imported prereg #19's `-ub 2048` asymmetry (+73%
+CPU-split / -39% all-in-VRAM) as evidence of a `-ub x -ngl` interaction - but #19's
+asymmetry is a PREFILL effect, and this experiment's response is tg128, decode only
+(`-p 0`). On decode, `-ub` ranked DEAD LAST by mu_star on both models (7B 0.069, 30B
+0.411 tok/s per unit range). The interaction warning was staked onto the wrong phase.
+Published at full size: the flag most guides tell you to tune first is the flag that
+moves single-user decode the least.
+
+**Unstaked observations, recorded as observations only:** (a) `--no-mmap` is the #2
+factor on the 30B split (mu* 7.0) with the highest sigma (6.0) - strongly interacting,
+consistent with its role gating whether expert reads hit page cache or disk; a Sobol
+stage-2 candidate. (b) The 7B's top-3 concentration (97.2%) is extreme: ngl, t and fa
+are effectively the whole story on the dense model; ctk/ub/mmp are noise-level there.
+
+**Kill rules:** P-1 passed, so autotune's fixed-budget design survives as a funnel stage;
+P-3's kill rule (scope-label the binding-constraint line) stays ARMED pending stage 2 -
+nothing about stage 1 discharges it. Morris-vs-Sobol adjudication also waits for stage 2.
+
+Chain of custody: staked 2026-08-07 (before any screening run) -> amended pre-data
+2026-08-16 with 8 declared deviations -> harness + scorer committed before the first CSV
+row (31dd79c) -> 150 runs, one night, one machine state -> scored by the frozen scorer,
+rc 0. The miss publishes at the same size as the hits.

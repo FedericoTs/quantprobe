@@ -1,0 +1,173 @@
+{
+  "prereg": 95,
+  "stage": 1,
+  "csv": "weights/data/doe_morris_stage1.csv",
+  "csv_sha256": "c35c7e9d718b3d805a9dc59c67c56ddaa84f06c86f5ebd5da2340aae9b8c5514",
+  "scored_utc": "2026-08-16T18:04:32Z",
+  "design": {
+    "R": 10,
+    "p": 4,
+    "delta": "2/3",
+    "seeds": [
+      "prereg95:7B:20260807",
+      "prereg95:30B:20260807"
+    ],
+    "k": {
+      "7B": 6,
+      "30B": 7
+    },
+    "n_designed": 150,
+    "header_sha256": "47ed63b0f4ecfa3c3a7e6a140a79eb38b0713841ee5109c8f49a3c8e27d0c624"
+  },
+  "rows": {
+    "present": 150,
+    "ok": 150,
+    "dnf": 0,
+    "other_non_ok": 0,
+    "duplicate_run_ids_ignored": 0,
+    "extra_rows_outside_design": 0,
+    "ok_rows_with_unparseable_tok_s": []
+  },
+  "models": {
+    "7B": {
+      "factors": {
+        "ngl": {
+          "mu_star": 13.51649925,
+          "sigma": 6.155226032364379,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "ub": {
+          "mu_star": 0.0691297500000004,
+          "sigma": 0.07628663297213388,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "t": {
+          "mu_star": 4.30682325,
+          "sigma": 2.528631465477349,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "ctk": {
+          "mu_star": 0.41111340000000024,
+          "sigma": 0.6081900523059384,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "mmp": {
+          "mu_star": 0.05293605000000001,
+          "sigma": 0.0639992847243238,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "fa": {
+          "mu_star": 0.7688408999999996,
+          "sigma": 1.4485493827643217,
+          "n_ee": 10,
+          "scoreable": true
+        }
+      },
+      "unscoreable": []
+    },
+    "30B": {
+      "factors": {
+        "ngl": {
+          "mu_star": 4.9440086999999995,
+          "sigma": 1.3366752228893908,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "ub": {
+          "mu_star": 0.41125155000000013,
+          "sigma": 0.7059492116477827,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "t": {
+          "mu_star": 10.72703655,
+          "sigma": 4.880374620900431,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "ctk": {
+          "mu_star": 2.33526435,
+          "sigma": 4.255615550916638,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "mmp": {
+          "mu_star": 7.04170635,
+          "sigma": 5.999684017978842,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "fa": {
+          "mu_star": 0.7180695000000005,
+          "sigma": 0.9109365167889586,
+          "n_ee": 10,
+          "scoreable": true
+        },
+        "moe_cpu_frac": {
+          "mu_star": 3.380878350000001,
+          "sigma": 4.65581619859188,
+          "n_ee": 10,
+          "scoreable": true
+        }
+      },
+      "unscoreable": []
+    }
+  },
+  "dnf_list": [],
+  "verdicts": {
+    "P-1": {
+      "rule": "sum of top-3 mu_star >= 0.70 * sum of all mu_star, on BOTH models",
+      "verdict": "PASS",
+      "per_model": {
+        "7B": {
+          "top3_sum": 18.5921634,
+          "total_sum": 19.1253426,
+          "share": 0.9721218484211624,
+          "pass": true
+        },
+        "30B": {
+          "top3_sum": 22.712751599999997,
+          "total_sum": 29.55821535,
+          "share": 0.7684074065723321,
+          "pass": true
+        }
+      }
+    },
+    "P-2": {
+      "rule": "argmax-mu_star factor differs between 7B and 30B",
+      "verdict": "PASS",
+      "per_model": {
+        "7B": {
+          "top_factor": "ngl",
+          "mu_star": 13.51649925
+        },
+        "30B": {
+          "top_factor": "t",
+          "mu_star": 10.72703655
+        }
+      }
+    },
+    "P-4": {
+      "rule": "sigma(ub) > median(all sigma) on BOTH models",
+      "verdict": "FAIL",
+      "per_model": {
+        "7B": {
+          "sigma_ub": 0.07628663297213388,
+          "median_sigma": 1.02836971753513,
+          "pass": false
+        },
+        "30B": {
+          "sigma_ub": 0.7059492116477827,
+          "median_sigma": 4.255615550916638,
+          "pass": false
+        }
+      }
+    }
+  },
+  "P-3": "P-3: deferred to stage 2 (Sobol) - not scored by this tool."
+}

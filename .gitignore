@@ -35,6 +35,7 @@ weights/data/*
 # pattern line makes it part of the pattern, which is exactly how this was broken twice.
 !weights/data/*.svg
 !weights/data/*.json
+!weights/data/*.csv
 
 # third-party llama.cpp binaries (re-downloadable, ~1.8GB)
 tools/llamacpp/
