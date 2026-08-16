@@ -1,0 +1,35 @@
+[quantprobe] read from GGUF: 34.7B total, 2.9B active, 8.52 effective bits, KV 20 KB/pos (hybrid: 10 of 40 layers cache KV)
+[quantprobe] no hardware flags: auto-detected this machine (vram 6GB@192 | ram 16GB@48 | disk 0.5 GB/s). Pass --machine/flags to estimate a different box.
+[quantprobe] calibration applied [ram 24.4 GB/s measured; disk 0.47 GB/s measured] (2026-07-31, state 2dc97d41)
+[quantprobe] anchored: CPU x1.19, GPU x1.13 from your calibrate anchor runs [tier ratios; format x1.10; --no-anchors disables]
+
+quantprobe plan - custom model @ 8.52-bit on THIS machine [auto-detected - run `quantprobe hw` for details]
+  model 36.9 GB | active 3.61 GB/token | est. quality cost x1.00 (depth-aware recipe)
+
+  *    0.5 tok/s  stream from disk (cold experts)   [exceeds RAM - capacity demo]
+       0.5 tok/s  stream from disk (VRAM+RAM expert cache)   [needs an expert-caching runtime (ktransformers/colibri-class) - stock llama.cpp gets the RAM-cache row]
+       0.0 tok/s  layer-by-layer streaming (one layer resident)   [one layer resident (0.92 GB of 36.9 GB); needs a layer-streaming runtime (airllm/accelerate-class) - llama.cpp has no such mode; MoE PENALTY: this reads ALL experts every token, not just the active ones - the expert-offload rows above move far fewer bytes and this row should not be preferred on a MoE unless VRAM genuinely cannot hold their resident set; UPPER BOUND - two costs are unpriced: host-to-device PCIe transfer of every layer every token (we have no measured PCIe anchor and will not invent one), and the streaming-efficiency gap C-23 measured at 1.82x on llama.cpp (0.2505 GB/s achieved against 0.452-0.459 raw). Expect materially slower]
+
+  binding constraint: IO-BOUND (disk I/O) - 93% of every decode token is spent there.
+    margin           13.84x - disk I/O must get that much faster before system RAM bandwidth (7%) takes over
+    ceiling          14.84x if you fixed disk I/O outright - but that is the expected shape, not news: across our own 340-cell preset grid the binding resource holds a median 91% of the token wherever a second one exists at all (prereg #88 P-4 MISSED: 0.6% of cells below 2x vs a staked 10%). The caps worth reading are the ones below.
+    other levers     a faster GPU memory bus: NO effect (0% of the token) | faster RAM / XMP / more channels: <=1.07x (7%) | more/faster CPU threads: NO effect (0% of the token)
+    scope            DECODE only. Prefill has a different binding constraint (compute) which this classification does not model: on the CPU-expert MoE placement -ub 2048 measured +73% on prefill and 0% on decode, while on an all-in-VRAM row the same flag measured -39% prefill (prereg #19). Neither number is a prediction for this row.
+
+  speculation: pays ONLY when output copies its context (edits, refactors, RAG quoting)
+  - on novel generation the ngram drafter produces 0 drafts and changes nothing (D-10,
+  independently replicated on an RTX 3090). Details below.
+
+  run it:  llama-server -m model.gguf -ngl 0 -b 2048 -ub 2048 --threads 4
+           (--threads 4 = this machine's LOGICAL cores; llama.cpp's own auto-detect may pick
+           physical-only and cost 2x on CPU-bound decode - verify with your fork if unsure)
+
+  prompt speed: `-b 2048 -ub 2048` is the sized safe batch for this card (buffer-fit rule, prereg #23) - a bigger ubatch batches host-resident weights across PCIe, but the measured numbers behind this lever (+73%, 199.9 -> 345.9 pp2048, prereg #19; 360.76 at pp4096/ub4096, L-26) are from the CPU-expert MoE placement (-ot exps=CPU) and are NOT a prediction for this row - the prefill law that licenses them is scoped to that tier (L-26; the dense control violates its form). Known boundary: fully in VRAM the same flag LOSES 39% (prereg #19 P-2), so the batch is sized against VRAM headroom and capped at 2048 outside the measured tier.
+  upgrade advisor: +16 GB RAM -> ~1.0 tok/s (x2.01, stream from disk (cold experts)) | NVMe SSD -> ~2.5 tok/s (x5.19, stream from disk (cold experts))
+
+  concurrency: every number above is SINGLE-STREAM. Measured with 8 parallel slots, aggregate
+  throughput is ~2x higher and saturates by about 4 slots (pre-registration #26). The same
+  ratio appeared on every placement AND on a dense control, so it is a ceiling we do not model -
+  read our figures as one user's speed, not a server's capacity.
+
+  (eta bands fitted from published measurements; estimates +/-25%. Hybrid needs --no-mmap.)
