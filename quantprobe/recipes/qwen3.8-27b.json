@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "model": {
+    "key": "qwen3.8-27b",
+    "name": "Qwen3.8-27B",
+    "arch": "qwen35",
+    "n_layer": 65,
+    "moe": false,
+    "note": "Hybrid: 48 of 64 decode layers are linear attention (ssm_* state, no growing KV); only every 4th layer (3,7,..,63) is full attention. Fragility is still depth-localized, not attention-type-localized (prereg #101 P-1). n_layer is 65 because the GGUF block_count includes the MTP block (blk.64, carries attn_k + FFN) - this is the number autospec and the probe both read, so the recipe matches the real file."
+  },
+  "probe": {
+    "reference_ppl": 5.7133,
+    "band_deltas": [
+      {
+        "lo": 0,
+        "hi": 16,
+        "delta_ppl": 0.0452
+      },
+      {
+        "lo": 17,
+        "hi": 33,
+        "delta_ppl": 0.2122
+      },
+      {
+        "lo": 34,
+        "hi": 50,
+        "delta_ppl": 0.2925
+      },
+      {
+        "lo": 51,
+        "hi": 64,
+        "delta_ppl": 0.5926
+      }
+    ],
+    "fragile_band": [
+      51,
+      64
+    ],
+    "fragility_ratio": 2.35,
+    "shape": "late"
+  },
+  "provenance": {
+    "measured": "2026-08-15",
+    "eval": "WikiText-2 test (held out), 32 chunks",
+    "hardware": "GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K",
+    "base_quant": "Q6_K",
+    "raw_log": "weights/data/prereg101_probe_qwen38_q4.log",
+    "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
+    "contributor": "FedericoTs",
+    "note": "Probed launch-day+1 (weights landed 2026-08-14; prereg #101). Source was Q4_K_M, not BF16: a BF16 probe is infeasible on this box (prereg #101 amendment 2026-08-15), so band deltas are relative to a Q6_K reference requantized from Q4_K_M. The source's own quantization is common-mode and cancels in the deltas; band LOCATION is trustworthy, absolute BF16 loss is not measured here. fragility_ratio follows the atlas convention (max delta / statistics.median of the 4 deltas = 0.5926/0.25235 = 2.35), matching every sibling recipe; the probe binary's own banner printed 2.04 because it divides by its upper-median (0.29) - same data, different median convention, disclosed so the two published numbers do not read as a discrepancy."
+  }
+}

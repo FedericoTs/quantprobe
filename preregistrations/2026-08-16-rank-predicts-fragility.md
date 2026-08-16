@@ -93,3 +93,47 @@ Why rank would or would not track fragility (mechanism), whether an activation-b
 better (named follow-up, separate stake), or anything about attention/SSM-path fragility — the
 probe's FFN scope bounds the claim. And a P-A here validates a *screen*, not a replacement: the
 staked consequence is probe-becomes-confirmation, not probe-deleted.
+
+
+---
+
+## AMENDMENT (2026-08-16, BEFORE any singular value was computed - rank_bands.json does not exist)
+
+Four changes, all declared while the measurement is still unrun. The adversarial verify pass over
+the (uncommitted) harness and scorer forced three of them; the fourth adds test power.
+
+**1. A SIXTH ground-truth model is declared: qwen3-30b (plain Qwen3-30B-A3B).** Its full 4-band
+curve has been committed since 2026-06 in `quantprobe/recipes/qwen3-30b.json` (deltas 0.5907 /
+0.0165 / 0.1352 / 1.3374, bands (0,11)(12,23)(24,35)(36,47), back-fragile 3.68x) - same 4-band
+probe method as every other row. The bar moves **">= 4 of 5" -> ">= 5 of 6", Mistral still
+mandatory**. Declared now because nothing has been computed; adding a row after the first SVD
+would be scope-shopping.
+
+**2. The verify pass caught a cross-model join before it corrupted the row.** The harness's first
+draft pointed qwen3-30b at the CODER finetune's file (the only 30B on disk by that name-shape),
+but the recipe's ground truth was probed on the PLAIN Qwen3-30B-A3B - the repo's own ladders list
+the two as separate models. Rank of one model against band deltas of another is wrong numbers,
+and under the 5-of-6 bar a single corrupted row can flip the verdict. Repointed at
+`Qwen3-30B-A3B-Q2_K.gguf`, the plain variant held.
+
+**3. Source files fixed to honour the frozen "highest-precision held" clause, and recorded:**
+
+| model | source file | note |
+|---|---|---|
+| mistral-7b | Mistral-7B-Instruct-v0.3-Q4_K_M.gguf | highest held (downloaded 2026-08-16, KR-4) |
+| qwen2.5-7b | qwen2.5-7b-instruct-fp16 (4-part split) | was Q4_K_M in the draft; fp16 held since 08-04 |
+| qwen3.5-4b | Qwen3.5-4B-BF16.gguf | true original |
+| qwen3.5-35b | Qwen3.5-35B-A3B-Q8_0.gguf | highest held |
+| qwen3-30b | Qwen3-30B-A3B-Q2_K.gguf | **highest held for the PLAIN model is 2-bit** - the roughest source in the set; if this row alone misses, the source is the named suspect, and re-sourcing a higher-precision file would be a new prereg, not a retry |
+| qwen3.8-27b | Qwen3.8-27B-Q4_K_M.gguf | highest held (BF16 deleted for disk, prereg #101) |
+
+**4. Two errors in this document's own ground-truth table, corrected against the sources:** the
+35B fragile band is **30-39** (recipe `fragile_band: [30, 39]`), not the "34-39" first written
+(that number came from a later resize build's log line, not the probe); and qwen3.8-27b has **65
+blocks** (the probe quantized blk.64, the MTP block, as part of band 51-64), not "64 layers".
+Neither changes any staked threshold; both are quote corrections.
+
+The harness/scorer contract was also aligned in the same pre-measurement commit (the draft
+harness emitted a row shape the scorer rejects - KR-3 would have been voided by a
+post-measurement edit; instead the fix lands before the first SVD, which is the only legal
+moment). KR-1/KR-2/KR-3/KR-4 all still hold.

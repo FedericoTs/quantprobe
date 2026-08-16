@@ -1,0 +1,127 @@
+name: linux-e2e
+
+# Task #74 (L1): the smoke suite proves the code imports; nothing proved the TOOL works on a
+# machine we do not own. This job is that machine: a GPU-less ubuntu runner, a real GGUF, a real
+# llama-bench decode, and the calibrate->plan handoff, end to end. The bug class it exists for is
+# issue #1 / fboudra's box (detect.py:32): code written on the devbox assuming nvidia-smi and
+# Windows paths, falling over on the first Linux machine that lacked them.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "quantprobe/**"
+      - ".github/workflows/linux-e2e.yml"
+
+# Least privilege, same reasoning as smoke.yml: this job only checks out and runs; the token
+# never needs write scopes.
+permissions:
+  contents: read
+
+# Same SHA-grouping as smoke.yml, and for a stronger reason here: two runs of this job fetch the
+# same ~386 MB file from huggingface.co, and our own jobs have already rate-limited each other on
+# the HF API once (smoke.yml, 2026-08-03).
+concurrency:
+  group: linux-e2e-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  # b10098 is the build the shipped numbers were measured on (docs/EVAL_TABLE.md; CHANGELOG.md
+  # "mainline b10098"), and it is past b9596, the first tag with the --tensor-type regex support
+  # quantprobe's recipes need (docs/EXAMPLES.md). Asset name verified against the b10098 release
+  # assets: ubuntu CPU builds ship as llama-<tag>-bin-ubuntu-x64.tar.gz - older tags used .zip,
+  # so do not assume the extension when bumping the tag.
+  LLAMA_TAG: b10098
+  # Smallest official instruct GGUF that gives llama-bench a real decode: SmolLM2-360M Q8_0,
+  # ~386 MB, well inside the job's 20-minute hard stop. NOT the 135M: the verify pass probed
+  # HuggingFaceTB/SmolLM2-135M-Instruct-GGUF and it does not exist publicly (HF returns the
+  # private/nonexistent 401), while the 360M repo is live, ungated, and carries exactly this
+  # file - the first draft extrapolated a GGUF repo from the safetensors naming in
+  # weights/DATA_MANIFEST.md, and the extrapolation was wrong.
+  MODEL_REPO: HuggingFaceTB/SmolLM2-360M-Instruct-GGUF
+  MODEL_FILE: smollm2-360m-instruct-q8_0.gguf
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Hard stop: a wedged download or a hung bench must not hold a runner for the default six
+    # hours - the same watchdog discipline the local measurement chains use.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          # pip's wheel cache, keyed on pyproject.toml. The one heavy wheel is numpy, pulled in
+          # transitively by gguf; calibrate's RAM-stream pass needs it (calibrate.py).
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # -e, unlike smoke.yml's plain install: this job tests the checkout AS the product, and an
+      # editable install is what a Linux contributor debugging issue-#1-class reports actually runs.
+      - run: pip install -e .
+
+      - name: calibrate must degrade gracefully with no GPU
+        # This runner genuinely has no nvidia-smi, so calibrate must exit 0 AND say so in words.
+        # The exact string is printed by calibrate.py when gpu_state() comes back empty; grep
+        # doubles as a truncation check - a crash before the GPU line fails the step even if
+        # something upstream swallowed the exit code.
+        run: |
+          set -o pipefail   # a crashing calibrate must not hide behind tee's exit 0
+          quantprobe calibrate | tee calibrate.out
+          grep -F 'GPU: none detected' calibrate.out
+
+      - name: cache the tiny GGUF
+        id: gguf-cache
+        uses: actions/cache@v4
+        with:
+          path: models/${{ env.MODEL_FILE }}
+          key: gguf-${{ env.MODEL_FILE }}
+
+      - name: fetch the tiny GGUF
+        if: steps.gguf-cache.outputs.cache-hit != 'true'
+        # Retries because HF throws transient 5xx under load (smoke.yml's concurrency note).
+        # --retry-all-errors extends the retry to connection resets, which plain --retry skips.
+        run: |
+          mkdir -p models
+          curl -fSL --retry 5 --retry-all-errors --connect-timeout 30 \
+            -o "models/${MODEL_FILE}" \
+            "https://huggingface.co/${MODEL_REPO}/resolve/main/${MODEL_FILE}"
+
+      - name: cache llama.cpp ${{ env.LLAMA_TAG }}
+        id: llama-cache
+        uses: actions/cache@v4
+        with:
+          path: llama-cpp
+          key: llama-${{ env.LLAMA_TAG }}-bin-ubuntu-x64
+
+      - name: fetch llama.cpp ${{ env.LLAMA_TAG }}
+        if: steps.llama-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -fSL --retry 5 --retry-all-errors --connect-timeout 30 \
+            -o llama.tar.gz \
+            "https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_TAG}/llama-${LLAMA_TAG}-bin-ubuntu-x64.tar.gz"
+          mkdir -p llama-cpp
+          tar -xzf llama.tar.gz -C llama-cpp
+          rm llama.tar.gz
+
+      - name: llama-bench - a real decode on the runner
+        # find, not a hardcoded path: the release archive layout has moved before (zip ->
+        # tar.gz, build/bin nesting), and a shuffle should cost the next bump one tag line, not
+        # an archaeology session. The shared libs ship in the same archive, so LD_LIBRARY_PATH
+        # gets every dir that holds one.
+        run: |
+          BIN="$(find llama-cpp -type f -name llama-bench | head -n 1)"
+          test -n "$BIN"
+          chmod +x "$BIN"
+          export LD_LIBRARY_PATH="$(find llama-cpp -name 'lib*.so*' -printf '%h\n' | sort -u | paste -sd:):${LD_LIBRARY_PATH:-}"
+          "$BIN" -m "models/${MODEL_FILE}" -p 64 -n 32 -r 1
+
+      - name: plan must price the same GGUF
+        # plan reads total/active/bits straight from the file (spec.py) and prints one
+        # "<tps> tok/s <placement>" line per priced placement (plan.py). The grep pins that
+        # contract on a RAM-only box, consuming the calibration written by the calibrate step
+        # above - the full handoff, not just a banner.
+        run: |
+          set -o pipefail
+          quantprobe plan --gguf "models/${MODEL_FILE}" | tee plan.out
+          grep -F 'tok/s' plan.out
