@@ -137,3 +137,45 @@ The harness/scorer contract was also aligned in the same pre-measurement commit 
 harness emitted a row shape the scorer rejects - KR-3 would have been voided by a
 post-measurement edit; instead the fix lands before the first SVD, which is the only legal
 moment). KR-1/KR-2/KR-3/KR-4 all still hold.
+
+
+---
+
+## SCORED (2026-08-16, same day: staked, amended, measured, and scored by pre-committed code)
+
+**P-C: RANK FAILS. Law 3 is strengthened - effective rank joins kurtosis and architecture family
+on the refuted-predictor list.**
+
+| model | rho | reads |
+|---|---|---|
+| mistral-7b | +0.00 | FLAT - the 27x front band has the same rank as the calm bands |
+| qwen2.5-7b | +0.00 | flat |
+| qwen3-30b | +0.00 | flat |
+| qwen3.5-35b | **-1.00** | staked direction, perfect |
+| qwen3.5-4b | **-1.00** | staked direction, perfect |
+| qwen3.8-27b | -0.20 | leans staked, below threshold |
+
+2 of 6 in the staked direction against a bar of >= 5 including Mistral; 0 wrong-sign. The
+load-bearing control did its job: Mistral's front band carries 27x the fragility at the SAME
+effective rank as its calm bands, so any rank-only screen would have protected the wrong layers
+on exactly the model where it matters most.
+
+**The one residual worth recording, as an observation and nothing more:** the two Qwen3.5-
+generation models are both PERFECT (-1.00) and the Qwen3.8 leans the same way, while every
+non-Qwen3.5-lineage model is flat. Rank may track fragility WITHIN a training lineage and not
+across lineages - which would make it a per-family screen at best, never the universal predictor
+P-A staked. n=2 perfect rows plus one lean is a hypothesis generator, not evidence; if it is ever
+tested, that is a NEW prereg with new models (KR-1), and Law 3's verdict here stands regardless.
+
+**Consequences:**
+- The probe remains the only honest instrument for band placement. `probe --fast` is NOT built.
+- Law 3's negative claim now has three refuted predictors behind it (family, kurtosis, weight
+  effective rank) and six ground-truth models - it is the strongest-evidenced law in the register.
+- THE FORK INPUT, which is what this experiment existed to produce: there is no cheap
+  order-of-magnitude breakthrough hiding in the rank direction. The strategic choice between
+  deepening the tool (DoE/Sobol path, product consolidation) and starting a new project is now a
+  judgment call on honest ground, not a bet on an untested hope.
+
+Everything in this file happened in one day, in order: staked (c1d910f) -> amended pre-data with
+the verify pass's catches (6a8455f) -> measured (rank_bands_run.log, ~40 min, six models) ->
+scored by the pre-committed scorer. The negative publishes at the same size as a hit would have.
