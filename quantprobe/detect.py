@@ -55,8 +55,121 @@ MAC_BW = {"m1 ultra": 800, "m1 max": 400, "m1 pro": 200, "m1": 68,
           "m4 max": 546, "m4 pro": 273, "m4": 120}
 
 
+def _parse_rocm_text(text):
+    """Parse rocm-smi combined text output into per-card dicts.
+
+    Pure parser, testable without a GPU (same convention as _parse_win_adapters).
+    Section state machine over GPU[n]-prefixed lines, keyword matching (case-insensitive
+    substring; metric strings drift across rocm-smi versions). Returns [{name, vram_gb,
+    sclk, mclk, temp, sclk_max}, ...], one dict per card.
+    """
+    cards = {}
+    in_sclk_section = False
+    for line in (text or "").strip().splitlines():
+        m = re.match(r"GPU\[(\d+)\]\s*:\s*(.*)", line)
+        if not m:
+            continue
+        gpu_id = int(m.group(1))
+        rest = m.group(2).strip()
+        if not rest:
+            # Bare "GPU[n] :" — terminates any active section
+            in_sclk_section = False
+            continue
+        cur = cards.setdefault(gpu_id, dict(name=None, vram_gb=None, sclk=None,
+                                            mclk=None, temp=None, sclk_max=None))
+        rest_lower = rest.lower()
+        # Name: "Card series" contains the full product name (e.g. "AMD Radeon RX 9070 XT").
+        if "card series" in rest_lower:
+            cur["name"] = rest.split(":", 1)[1].strip()
+        # VRAM total
+        elif "vram total memory (b):" in rest_lower:
+            try:
+                cur["vram_gb"] = int(rest.split(":", 1)[1].strip()) / 2**30
+            except (ValueError, IndexError):
+                pass
+        # VRAM used
+        elif "vram total used memory (b):" in rest_lower:
+            try:
+                cur["vram_used_b"] = int(rest.split(":", 1)[1].strip())
+            except (ValueError, IndexError):
+                pass
+        # sclk clock level: "3: (1200.Mhz)" or "S: (238Mhz)" — level may be numeric or a letter.
+        elif "sclk clock level:" in rest_lower:
+            m = re.search(r"\((\d+)\.?Mhz\)", rest)
+            if m:
+                cur["sclk"] = int(m.group(1))
+        # mclk clock level
+        elif "mclk clock level:" in rest_lower:
+            val = rest.split(":", 1)[1].strip()
+            m = re.search(r"\((\d+)\.?Mhz\)", val)
+            if m:
+                cur["mclk"] = int(m.group(1))
+        # Temperature (Sensor edge)
+        elif "temperature (sensor edge)" in rest_lower:
+            try:
+                cur["temp"] = int(float(rest.split(":", 1)[1].strip()))
+            except (ValueError, IndexError):
+                pass
+        # Supported sclk frequencies section header
+        elif "supported sclk frequencies" in rest_lower:
+            in_sclk_section = True
+            continue
+        # Inside sclk section: lines like "0: 400Mhz" or "12: 2400Mhz *"
+        # The `*` marks the current active frequency (level may be numeric or state letter like "S:").
+        if in_sclk_section:
+            sm = re.match(r"^\S+\s*:\s*(\d+)\s*Mhz", rest)
+            if sm:
+                freq = int(sm.group(1))
+                if cur["sclk_max"] is None or freq > cur["sclk_max"]:
+                    cur["sclk_max"] = freq
+                if "*" in rest:
+                    cur["sclk"] = freq
+    return [cards[k] for k in sorted(cards)]
+
+
+def _rocm_state():
+    """Run rocm-smi, return parsed list. [] on missing tool / no driver."""
+    cmds = [
+        ["rocm-smi", "--showclkfrq"],
+        ["rocm-smi", "--showclocks"],
+        ["rocm-smi", "--showmeminfo", "vram"],
+        ["rocm-smi", "--showproductname"],
+        ["rocm-smi", "--showtemp"],
+    ]
+    parts = []
+    for cmd in cmds:
+        out = _run(cmd)
+        if out.strip():
+            parts.append(out)
+    if not parts:
+        return []
+    merged = "\n".join(parts)
+    try:
+        return _parse_rocm_text(merged)
+    except (subprocess.SubprocessError, OSError):
+        return []
+
+
+def gpus_amd():
+    """[(name, vram_gb)] via rocm-smi; empty list if no AMD GPU detected."""
+    state = _rocm_state()
+    return [(d["name"], d["vram_gb"]) for d in state if d["name"] and d["vram_gb"]]
+
+
+def _price_gpus(gs):
+    """Price a list of (name, vram_gb) tuples through gpu_lookup.
+
+    Returns (known, unknown) where known/unknown are lists of
+    (name, vram_gb, bw, geta, gl, src) — src contains 'table' for known cards.
+    """
+    priced = [(n, gb) + gpu_lookup(n) for n, gb in gs]
+    known = [p for p in priced if "table" in p[5]]
+    unknown = [p for p in priced if "table" not in p[5]]
+    return known, unknown
+
+
 def gpus():
-    """[(name, vram_gb)] via nvidia-smi; empty list if none/AMD (AMD: pass flags for now)."""
+    """[(name, vram_gb)] via nvidia-smi; empty list if none/AMD."""
     out = _run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"])
     gs = []
     for line in out.strip().splitlines():
@@ -196,7 +309,7 @@ def detect():
         notes.append(f"RAM: {total:.0f} GB [os]; speed unknown -> 48 GB/s [default: DDR4-3000 dual, pass --ram-bw]")
 
     # GPU(s)
-    gs = gpus()
+    gs = gpus() or gpus_amd()
     if gs:
         vram = sum(g[1] for g in gs)
         per = [gpu_lookup(g[0]) for g in gs]                        # per-card lookup (mixed pairs differ)
@@ -208,31 +321,34 @@ def detect():
                      + (f" (x{len(gs)} per-card sum, 0.85 TP efficiency [est]; slower card gates its share)" if len(gs) > 1 else ""))
         hw.update(vram=vram, vram_bw=round(vram_bw), geta=geta, gl=gl)
     else:
-        # nvidia-smi saw nothing - check the Windows driver registry for AMD/Intel (or an
-        # NVIDIA card with no driver tools). Field case: issue #1, RX 5700 XT, "none detected".
-        others = gpus_other()
-        priced = [(n, gb) + gpu_lookup(n) for n, gb in others]
-        known = [p for p in priced if "table" in p[5]]
-        unknown = [p for p in priced if "table" not in p[5]]
-        if known:
-            vram = sum(p[1] for p in known)
-            vram_bw = sum(p[2] for p in known) * (1.0 if len(known) == 1 else 0.85)
-            names = " + ".join(p[0] for p in known)
-            hw.update(vram=round(vram, 1), vram_bw=round(vram_bw),
-                      geta=known[0][3], gl=known[0][4])
-            notes.append(f"GPU: {names}, {vram:.0f} GB [os], {vram_bw:.0f} GB/s [table] - "
-                         f"non-NVIDIA path: VRAM from the driver registry, bandwidth from spec; "
-                         f"eta on this backend is UNVALIDATED here, so run `quantprobe "
-                         f"calibrate` with your llama.cpp build to anchor it")
-        elif unknown:
-            names = ", ".join(f"{p[0]} ({p[1]:.0f} GB)" for p in unknown)
-            hw.update(vram=0, vram_bw=0)
-            notes.append(f"GPU: {names} detected [os] but not in the bandwidth table - pass "
-                         f"--vram <GB> --vram-bw <GB/s> (spec sheet) to include the GPU tier; "
-                         f"planning CPU-only until then")
-        else:
-            hw.update(vram=0, vram_bw=0)
-            notes.append("GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]")
+        # nvidia-smi saw nothing - check AMD via rocm-smi, then Windows driver registry for
+        # Intel (or any GPU with no driver tools). Field case: issue #1, RX 5700 XT, "none detected".
+        amd = gpus_amd()
+        others = gpus_other() if not amd else []
+        gs = amd or others
+        if gs:
+            known, unknown = _price_gpus(gs)
+            if known:
+                vram = sum(p[1] for p in known)
+                vram_bw = sum(p[2] for p in known) * (1.0 if len(known) == 1 else 0.85)
+                names = " + ".join(p[0] for p in known)
+                is_amd = bool(amd)
+                hw.update(vram=round(vram, 1), vram_bw=round(vram_bw),
+                          geta=known[0][3], gl=known[0][4])
+                src_note = ("AMD via rocm-smi (amdgpu driver required)" if is_amd
+                            else "non-NVIDIA path: VRAM from the driver registry, bandwidth from spec")
+                notes.append(f"GPU: {names}, {vram:.0f} GB [os], {vram_bw:.0f} GB/s [table] - "
+                             f"{src_note}; eta on this backend is UNVALIDATED here, so run "
+                             f"`quantprobe calibrate` with your llama.cpp build to anchor it")
+            elif unknown:
+                names = ", ".join(f"{p[0]} ({p[1]:.0f} GB)" for p in unknown)
+                hw.update(vram=0, vram_bw=0)
+                notes.append(f"GPU: {names} detected [os] but not in the bandwidth table - pass "
+                             f"--vram <GB> --vram-bw <GB/s> (spec sheet) to include the GPU tier; "
+                             f"planning CPU-only until then")
+            else:
+                hw.update(vram=0, vram_bw=0)
+                notes.append("GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]")
 
     # disk: class default; a real measured number needs `quantprobe hw --measure` (reads a large file)
     hw.update(ram=round(total), ram_bw=ram_bw, disk_bw=0.5)

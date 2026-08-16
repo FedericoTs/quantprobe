@@ -197,6 +197,7 @@ def unload(name, need_free_mib=4500, tries=20):
         except Exception:
             pass
     for _ in range(tries):
+        # Try nvidia-smi first
         try:
             r = subprocess.run(["nvidia-smi", "--query-gpu=memory.used,memory.total",
                                 "--format=csv,noheader,nounits"],
@@ -205,9 +206,21 @@ def unload(name, need_free_mib=4500, tries=20):
             if (total - used) >= need_free_mib:
                 return True, total - used
         except Exception:
-            return None, None          # no nvidia-smi: cannot verify, so do not claim clean
+            pass
+        # Fall back to rocm-smi for AMD
+        try:
+            from .detect import _rocm_state
+            rc = _rocm_state()
+            if rc:
+                vram_total_b = rc[0].get("vram_gb", 0) * 2**30 if rc[0].get("vram_gb") else 0
+                vram_used_b = rc[0].get("vram_used_b", 0)
+                free_mib = (vram_total_b - vram_used_b) / (1024 * 1024)
+                if free_mib >= need_free_mib:
+                    return True, int(free_mib)
+        except Exception:
+            pass
         time.sleep(3)
-    return False, None
+    return None, None          # no working tool: cannot verify, so do not claim clean
 
 
 def run(a):
@@ -270,8 +283,8 @@ def run(a):
                 print("     unloading ollama so it stops holding the GPU...", flush=True)
                 clean, freed = unload(name)
                 if clean is None:
-                    print("     cannot read GPU memory (no nvidia-smi), so a clean comparison")
-                    print("     cannot be VERIFIED. Refusing to compare rather than guess.")
+                    print("     cannot read GPU memory (no nvidia-smi or rocm-smi), so a clean")
+                    print("     comparison cannot be VERIFIED. Refusing to compare rather than guess.")
                     print("")
                     continue
                 if not clean:

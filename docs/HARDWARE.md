@@ -70,3 +70,8 @@ clears on consumer cards (pre-registrations #60/#61). Results persist to
 `~/.quantprobe/calibration.json` and `plan` consumes them automatically, tagged `[calibrated]`;
 the optional anchor runs on your own GGUF make anchored predictions the default from there.
 
+**AMD GPUs:** detected via `rocm-smi` (requires the `amdgpu` kernel driver). VRAM, clocks,
+temperature, and supported sclk frequencies are read from the tool's text output; max clock
+comes from the `Supported sclk frequencies` section when present (older rocm-smi builds may
+omit it — boost verdict degrades to `None` rather than failing).
+
