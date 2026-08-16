@@ -73,6 +73,15 @@ def main():
     b.add_argument("--depth", type=int, default=None, help="bench at KV depth N (llama-bench -d): measures the Law 4 v2 context term on YOUR box")
     b.add_argument("--contribute", action="store_true", help="print a pre-filled, opt-in GitHub issue with your predicted-vs-measured point (you review before submitting; nothing auto-sent)")
 
+    rp = sub.add_parser("report", help="one-page forwardable Markdown report: verdict, placement, "
+                                       "binding constraint, quality - every number labeled")
+    rp.add_argument("--gguf", required=True, help="the file the report is about (autospec grounds every number)")
+    hwargs(rp)                       # --model/--machine/--bits/--ctx/... identical to run/bench
+    rp.add_argument("--out", default=None,
+                    help="output path (default: quantprobe-report-<model>.md in the current directory)")
+    rp.add_argument("--bench-log", default=None,
+                    help="a llama-bench log to quote as the [measured] column next to the prediction")
+
     d = sub.add_parser("dashboard", help="launch llama-server with planned flags + a live predicted-vs-measured chat page")
     d.add_argument("--gguf", required=True); hwargs(d)
     d.add_argument("--port", type=int, default=8077); d.add_argument("--server-port", type=int, default=8090)
@@ -154,6 +163,9 @@ def main():
     elif a.cmd == "bench":
         from . import runtime
         runtime.bench(a)
+    elif a.cmd == "report":
+        from . import report
+        report.run(a)
     elif a.cmd == "dashboard":
         from . import dashboard
         dashboard.dashboard(a)

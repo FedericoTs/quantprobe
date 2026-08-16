@@ -80,6 +80,7 @@ quantprobe auto qwen3-coder --tps 15 --run     # ONE command: bits chosen, quant
 quantprobe hw                                  # what the tool sees (override anything with flags)
 quantprobe calibrate                           # measure this machine once: RAM stream, disk, GPU clocks
 quantprobe plan --gguf your-model.gguf         # THIS machine + THAT file: nothing else to type
+quantprobe report --gguf your-model.gguf       # plan's answer as ONE forwardable page, every number labeled
 quantprobe bench --gguf your-model.gguf        # predicted vs measured, zero configuration
 ```
 

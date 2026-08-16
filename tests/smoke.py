@@ -4108,6 +4108,272 @@ def t_kv_is_priced_on_full_attention_layers_only():
     return None
 
 
+def t_report_writes_a_forwardable_markdown():
+    """`report` must produce a file whose numbers are plan's numbers - staked BEFORE report.py
+    existed (docs/DESIGN_REPORT_CMD.md is the contract) and then SHARPENED by the verify pass:
+    the first version searched the whole file for plan's winning tok/s, and mutation testing
+    proved a hardcoded verdict headline (99.9) still passed because SOME line always carried
+    the number. Two changes make hardcoding impossible now:
+      * the parity assertions anchor to the two lines a decision-maker actually reads - the
+        'PREDICTED decode speed, one user:' Verdict line and the RECOMMENDED placements row -
+        not to anywhere-in-file;
+      * TWO preset cells with different winners and different placement families (2016-xmp:
+        the design doc's own mock cell; rtx-3060: a different tok/s, split and binding class),
+        so one memorized artifact cannot satisfy both.
+    Expectations still come from plan's own output in the SAME suite run - never from numbers
+    typed here, because a hardcoded expectation rots into exactly the two-truths problem the
+    feature exists to prevent (the C-15 failure class: auto vs plan, 26.2 vs 19.5, which took
+    a measurement to notice). Also asserted per cell:
+      * plan's binding verdict tokens (klass AND resource) appear in the file;
+      * with nothing measured (preset machine, no bench log) M1's tail must say so out loud;
+      * no unresolved {placeholder} braces - a template slot that failed to fill reads as
+        missing data, not as a crash, which is worse.
+    Mutation passes discharged 2026-08-16 (house rule, both directions): hardcoding _verdict's
+    tps to 99.9 fails the Verdict-line parity on both cells; hardcoding every placement row
+    fails the RECOMMENDED parity; the untouched tree passes both cells.
+    """
+    import re as _re
+    import shutil
+    import tempfile
+    g = "D:/evo-compress-data/gguf/qwen38/Qwen3.8-27B-Q4_K_M.gguf"
+    if not os.path.isfile(g):
+        return "SKIP: needs the Qwen3.8 GGUF on D: (this box only)"
+    d = tempfile.mkdtemp()
+    try:
+        for machine in ("2016-xmp", "rtx-3060"):
+            rc_p, plan_out = cli("plan", "--gguf", g, "--machine", machine)
+            assert rc_p == 0, f"plan itself failed on {machine}: {plan_out[:200]}"
+            win = _re.search(r"^  \* +([0-9.]+) tok/s", plan_out, _re.M)
+            assert win, f"plan lost its starred winning row on {machine}: {plan_out[:300]}"
+            verdict = _re.search(r"binding constraint: ([A-Z-]+) \(([^)]+)\)", plan_out)
+            assert verdict, f"plan lost its binding-constraint line: {plan_out[:300]}"
+            headline = f"{float(win.group(1)):.1f}"
+            outp = os.path.join(d, f"report-{machine}.md")
+            rc, out = cli("report", "--gguf", g, "--machine", machine, "--out", outp)
+            assert rc == 0, (f"report failed on {machine} (docs/DESIGN_REPORT_CMD.md is the "
+                             f"contract this test stakes): {out[:200]}")
+            assert os.path.isfile(outp), f"report exited 0 but wrote no file at {outp}"
+            md = open(outp, encoding="utf-8").read()
+            vline = _re.search(r"^PREDICTED decode speed, one user:\s+([0-9.]+) tok/s",
+                               md, _re.M)
+            assert vline, f"{machine}: the Verdict lost its PREDICTED headline line"
+            assert f"{float(vline.group(1)):.1f}" == headline, (
+                f"{machine}: Verdict says {vline.group(1)} tok/s, plan's starred row says "
+                f"{headline} - the ONE number a decision-maker reads disagrees with plan "
+                f"(the C-15 failure class)")
+            rrow = _re.search(r"^  RECOMMENDED\s+([0-9.]+) tok/s", md, _re.M)
+            assert rrow, f"{machine}: placements table lost its RECOMMENDED row"
+            assert f"{float(rrow.group(1)):.1f}" == headline, (
+                f"{machine}: RECOMMENDED row says {rrow.group(1)} tok/s vs plan's "
+                f"{headline} - report re-ranked or re-priced plan's winner")
+            for tok in verdict.groups():
+                assert tok in md, (f"{machine}: plan's binding verdict names {tok!r} and the "
+                                   f"report never says it - the 'what limits this machine' "
+                                   f"section has drifted from plan's physics")
+            # preset machine + no bench log = nothing measured; the report must SAY that
+            # (M1's tail), not imply it - absence of measurement stated, never implied
+            assert "No number in this report was measured on" in md, (
+                f"{machine}: nothing was measured for this report and M1's tail does not "
+                f"say so")
+            left = _re.search(r"\{[A-Za-z_][A-Za-z0-9_]*\}|\{\}", md)
+            assert not left, (f"{machine}: unresolved template placeholder in the forwarded "
+                              f"file: {left.group(0)!r}")
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    return None
+
+
+def t_report_template_guards_and_bench_refusal():
+    """The design-contract guards (DESIGN_REPORT_CMD.md section 8, smoke items 2 and 3) the
+    first build shipped WITHOUT - and the gap bit the same day: report.py went out with an
+    always-False `is` comparison that rendered the mandatory M2 scope block bullet-less for
+    five minutes; an M2-presence assertion is exactly what would have caught it. One report
+    run covers both items, fed a bench log whose params column (8.03B) cannot be this 27.3B
+    file - so the same artifact also proves the param-mismatch guard refuses the ratio
+    ("a ratio between two different models is worse than no ratio", design section 1).
+
+    Template guards, on the generated artifact:
+      * M1 present as a contiguous block (its lines render verbatim);
+      * M2 present line by line - NOT `M2 in md`: the scope renderer prefixes its lines with
+        "- "/"  " bullets, so the contiguous check can never pass and would freeze a bug in;
+        two literal phrases pin the semantics against a quiet reword of the constants;
+      * plain ASCII end to end (the file must survive forwarding through anything);
+      * no register IDs in the body - "prereg", C-/L-/U-/KR- codes, weights/ paths and
+        FINDINGS.md mean nothing to the forwarded reader; the Sources block at the end is
+        the one sanctioned home for them;
+      * every placements row carries a [derived...] label on its final line (count of row
+        starts == count of labels in that section) - the design's every-number-labeled rule
+        made checkable, per row, not as a single any() that one label would satisfy.
+    Refusal path, same artifact: no "MEASURED on this machine" line, the "different model"
+    wording present in Verdict and Measured check, and the terminal summary says the log was
+    refused. Discriminates by construction: a report that quoted the mismatched 55.2 tok/s as
+    measured, or dropped either mandatory block, fails here.
+    """
+    import re as _re
+    import shutil
+    import tempfile
+    from quantprobe.report import M1, M2
+    g = "D:/evo-compress-data/gguf/qwen38/Qwen3.8-27B-Q4_K_M.gguf"
+    if not os.path.isfile(g):
+        return "SKIP: needs the Qwen3.8 GGUF on D: (this box only)"
+    d = tempfile.mkdtemp()
+    try:
+        log = os.path.join(d, "wrong_model_bench.log")
+        with open(log, "w", encoding="utf-8") as f:
+            f.write("build: abc1234 (1234)\n"
+                    "| model | size | params | backend | ngl | test | t/s |\n"
+                    "| ----- | ---- | ------ | ------- | --- | ---- | --- |\n"
+                    "| qwen2 7B Q4_K - Medium | 4.33 GiB | 8.03 B | CUDA | 99 | tg128 |"
+                    " 55.20 +/- 0.30 |\n")
+        outp = os.path.join(d, "report.md")
+        rc, out = cli("report", "--gguf", g, "--machine", "2016-xmp",
+                      "--bench-log", log, "--out", outp)
+        assert rc == 0, f"report failed: {out[:200]}"
+        md = open(outp, encoding="utf-8").read()
+        # -- template guards ------------------------------------------------------------
+        assert M1 in md, "M1 (the PREDICTED-means-not-run block) is not in the report verbatim"
+        for ln in M2.splitlines():
+            assert ln in md, (f"M2 (the one-user scope block) lost a line in rendering: "
+                              f"{ln!r} - the bullet-prefix bug class this test exists for")
+        assert "was computed from this machine's memory" in md, "M1 semantics reworded"
+        assert "ONE user's speed" in md, "M2 semantics reworded"
+        md.encode("ascii")               # raises if any non-ASCII survived render()
+        body = md.split("## Reproduce")[0]
+        assert "prereg" not in body.lower(), "register language leaked into the body"
+        assert "FINDINGS.md" not in body, "register pointer leaked into the body"
+        assert "weights/" not in body, "repo path leaked into the body (Sources is the home)"
+        code = _re.search(r"\b[A-Z]{1,2}-\d+[a-z]?\b", body)
+        assert not code, (f"register ID {code.group(0)!r} leaked into the body - the reader "
+                          f"has no FINDINGS.md (issue #1 is what that reads like)")
+        placements = md.split("## Predicted placements")[1].split("## What limits")[0]
+        rows = _re.findall(r"^  (?:RECOMMENDED| {11})\s+[0-9.]+ tok/s", placements, _re.M)
+        labels = placements.count("[derived")
+        assert rows and labels == len(rows), (
+            f"{len(rows)} placement rows but {labels} [derived...] labels - a row shipped "
+            f"without its honesty label on the final line")
+        # -- bench-log refusal ----------------------------------------------------------
+        assert "MEASURED on this machine" not in md, (
+            "the mismatched bench row was quoted as a measurement of THIS model")
+        assert "different model" in md, "the refusal does not name the reason"
+        assert "no predicted-vs-measured ratio is quoted" in md, (
+            "the refusal must say out loud that no ratio is quoted")
+        assert "NO RATIO" in md, "the Measured check section lost its refusal line"
+        assert "refused" in out, "the terminal summary does not say the log was refused"
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    return None
+
+
+def t_plan_stdout_is_byte_identical_after_report_refactor():
+    """The report refactor's regression contract: run() = build_rows(args) + prints, no drift.
+
+    A true before/after byte diff needs the pre-refactor binary - that is the one-time
+    weights/exp_report_stdout_guard.py 340-cell job, which cannot live in a permanent suite.
+    What CAN be pinned forever is the invariant that makes byte-identity structural: every row
+    line in plan's stdout, the single winning star, the header's size/active/quality numbers
+    and the binding-constraint verdict must be exactly what build_rows returns, formatted with
+    run()'s own "%6.1f". If report.py grows a second physics, or the refactor moves or edits a
+    print in passing, one of these exact strings breaks before any downstream test notices.
+
+    RED until build_rows lands (docs/DESIGN_REPORT_CMD.md section 2). A missing build_rows is
+    maximal drift, not a skip: skipping there would let a later deletion of the refactor go
+    quiet, the exact rot hf_unreachable's docstring warns a helper into. Mutation pass owed at
+    implementation time (house rule, both directions): reorder two rows in the returned list
+    and the order check must fail; leave the tree untouched and every cell must pass.
+    """
+    import types
+    try:
+        from quantprobe.plan import build_rows
+    except ImportError:
+        raise AssertionError(
+            "quantprobe.plan.build_rows does not exist - the report refactor "
+            "(docs/DESIGN_REPORT_CMD.md section 2) has not landed; this test is its contract "
+            "and stays red until run() consumes build_rows")
+
+    def plan_args(**over):
+        # Mirrors cli.py's plan subparser defaults, because there is no importable parser
+        # factory. If the parser grows a flag with a non-None default and this dict lags, the
+        # subprocess half and the in-process half below disagree and the test fails toward
+        # maintenance - which is the dialect drift it exists to catch (hwargs exists in cli.py
+        # for the same reason).
+        base = dict(model=None, machine=None, bits=None, total=None, active=None,
+                    always_active=None, vram=None, vram_bw=None, ram=None, ram_bw=None,
+                    disk_bw=None, gguf=None, ctx=0, kv_per_pos=None, no_anchors=False)
+        base.update(over)
+        return types.SimpleNamespace(**base)
+
+    # Three preset regimes, all deterministic across boxes (preset machines skip calibration -
+    # resolve_hw only applies it on the auto-detect path): the flagship MoE hybrid cell whose
+    # prose every L-26/#26 test greps, a dense split at depth (KV term live, pure CPU evicted),
+    # and the sub-1-tok/s disk-stream cell (anchor matrix territory).
+    cells = [
+        (["plan", "--model", "qwen3-30b", "--bits", "2.95", "--machine", "2016-xmp"],
+         plan_args(model="qwen3-30b", bits=2.95, machine="2016-xmp")),
+        (["plan", "--model", "mistral-7b", "--bits", "4.5", "--machine", "2016-xmp",
+          "--ctx", "16384"],
+         plan_args(model="mistral-7b", bits=4.5, machine="2016-xmp", ctx=16384)),
+        (["plan", "--model", "glm-air", "--bits", "2.5", "--machine", "2016-xmp"],
+         plan_args(model="glm-air", bits=2.5, machine="2016-xmp")),
+    ]
+    for idx, (argv, ns) in enumerate(cells):
+        rc, out = cli(*argv)
+        assert rc == 0, f"{argv}: plan failed: {out[:200]}"
+        buf = io.StringIO()
+        with redirect_stdout(buf):     # nested provenance banners print during the compute
+            px = build_rows(ns)        # prefix by design; they are not under test here
+        rows = px["rows"]
+        assert rows and px["best"] == rows[0], f"{argv}: best is not rows[0]"
+        # Every printed row line, byte-exact under run()'s own formatting, in the same order.
+        # Presence alone is not enough: a stable-set reorder would leave every line findable
+        # while changing which row the star (and `run it:`) belongs to.
+        pos = -1
+        for i, r in enumerate(rows):
+            name, tps, warn = r[0], r[1], r[2]
+            star = "*" if i == 0 else " "
+            w = f"   [{warn}]" if warn else ""
+            line = f"  {star} {tps:6.1f} tok/s  {name}{w}"
+            at = out.find(line)
+            assert at >= 0, (f"{argv}: build_rows row {i} is not printed byte-identically:\n"
+                             f"  expected {line!r}")
+            assert at > pos, f"{argv}: printed order diverges from build_rows at row {i}"
+            pos = at
+        stars = [ln for ln in out.splitlines() if ln.startswith("  * ")]
+        assert len(stars) == 1, f"{argv}: expected exactly one starred row, got {stars!r}"
+        # the header numbers are build_rows' numbers (kvline sits between these two at depth,
+        # so they are asserted as two substrings, not one joined line)
+        assert f"model {px['size']:.1f} GB | active {px['act']:.2f} GB/token" in out, \
+            f"{argv}: header size/active no longer trace to build_rows"
+        assert f"est. quality cost x{px['q']:.2f}" in out, \
+            f"{argv}: header quality multiplier no longer traces to build_rows"
+        # the binding verdict run() prints is the bc build_rows returned - same dict, same
+        # branch binding_report takes (capacity wins when it fires, prereg #88 R5)
+        bc = px["bc"]
+        assert bc, f"{argv}: build_rows returned no binding constraint"
+        if bc.get("capacity"):
+            expect = f"binding constraint: CAPACITY-BOUND ({bc['capacity']['tier']})"
+        else:
+            expect = f"binding constraint: {bc['klass'].upper()} ({bc['label']})"
+        assert expect in out, (f"{argv}: run() and build_rows disagree on what binds - "
+                               f"expected {expect!r} in plan output")
+        if idx == 0:
+            # The flagship cell's print stream still carries the exact strings other tests
+            # grep for - a refactor that moves a print into build_rows, or edits one while
+            # relocating it, breaks these here with the refactor named as the suspect.
+            # SINGLE-STREAM is the literal run() prints; its owning test lowercases first,
+            # which is exactly the looseness that would let a case edit slip past it.
+            for s, owner in (("hybrid", "t_plan_preset"),
+                             ("run it:", "t_plan_preset"),
+                             ("SINGLE-STREAM", "t_concurrency_is_disclosed_not_modelled"),
+                             ("#26", "t_concurrency_is_disclosed_not_modelled"),
+                             ("sized safe batch",
+                              "t_l26_ub_prose_claims_track_the_measured_tier"),
+                             ("-b 4096 -ub 4096",
+                              "t_l26_cpu_expert_moe_prefill_gets_ub4096"),
+                             ("speculation:", "the D-10 top-line disclosure in run()")):
+                assert s in out, f"flagship plan output lost {s!r} (pinned by {owner})"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):

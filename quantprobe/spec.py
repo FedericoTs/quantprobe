@@ -253,6 +253,8 @@ def apply(a, quiet=False):
     if getattr(a, "n_layer", None) is None:
         a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
     a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
+    a.arch = s.get("arch")               # read-only: report's recipe matching needs (arch, n_layer)
+    a.kv_layers = s.get("kv_layers")     # read-only: report's hybrid-KV line ("N of L layers cache KV")
     a.codebook_share = s.get("codebook_share", 0.0)   # the share that actually pays the tax (C-13)
     a.fmt_bw_attn = s.get("fmt_bw_attn")              # prereg #79: per-tier format pricing
     a.fmt_bw_exp = s.get("fmt_bw_exp")

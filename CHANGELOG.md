@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- **`quantprobe report`** - the one-page forwardable answer. `plan` talks to the person at
+  the terminal; `report --gguf model.gguf` writes the same answer as ONE Markdown file for
+  the person who was not there - the IT manager sizing a hardware buy, a consultant's
+  client, an ISV writing hardware requirements. Every number carries an honesty label
+  ([measured] / [derived] / [est] / UNVALIDATED) on the line or block it qualifies; the
+  verdict speeds are spelled PREDICTED or [measured] in words; register IDs stay out of the
+  body (the reader has no FINDINGS.md - the failure mode issue #1 demonstrated); two
+  mandatory misread-prevention blocks (predictions-were-not-run, one-user-not-throughput)
+  render verbatim in every artifact; `--bench-log` quotes a llama-bench run beside the
+  prediction and REFUSES the ratio when the log's param count is not this model's. It is a
+  renderer over `plan.build_rows()` - the same engine, so the two commands cannot disagree
+  about the same file (plan's stdout verified byte-identical across the full 340-cell
+  preset grid through the refactor). Full contract: docs/DESIGN_REPORT_CMD.md. Built
+  design-first by a 7-agent workflow whose adversarial verify pass mutation-tested the
+  tests themselves; all 4 staked mutations now kill (the first parity test provably could
+  not tell a hardcoded report from a real one - that version never shipped).
+
 ## 1.28.0 - 2026-08-16
 
 **The planner now prices hybrid linear-attention models correctly - two days after the class

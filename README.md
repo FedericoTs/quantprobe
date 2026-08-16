@@ -247,6 +247,7 @@ mechanisms we tested and the one that survived: [CHANGELOG](CHANGELOG.md).
 ```bash
 quantprobe auto                                # interactive: detects, asks, decides, runs
 quantprobe plan  --gguf model.gguf             # predicted tok/s + placement + launch command
+quantprobe report --gguf model.gguf            # one page to forward: verdict, what binds, quality - every number labeled
 quantprobe hw                                  # what the law sees on THIS machine
 quantprobe calibrate                           # measure, don't assume: RAM stream, disk, GPU clocks; optional anchor runs
 quantprobe run   --gguf model.gguf             # plan the placement, then launch chat
@@ -267,9 +268,32 @@ quantprobe dashboard --gguf 2bit.gguf                    # the law live, every r
 ```
 </details>
 
-`hw`/`plan`/`target`/`optimize` need nothing but Python. The weight-touching commands drive stock llama.cpp — point at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`, and preview anything with `--dry`. 17 machine presets ship in (`--machine`); multi-GPU and RAID aggregate with comma lists (`--vram 24,24`).
+`hw`/`plan`/`report`/`target`/`optimize` need nothing but Python. The weight-touching commands drive stock llama.cpp — point at it with `--llama-dir`, `QUANTPROBE_LLAMA_DIR`, or `PATH`, and preview anything with `--dry`. 17 machine presets ship in (`--machine`); multi-GPU and RAID aggregate with comma lists (`--vram 24,24`).
 
 > **Windows: `'quantprobe' is not recognized`?** pip put it in a folder that isn't on your PATH. Use `python -m quantprobe ...` — identical, always works.
+
+### Reports
+
+`plan` answers you at the terminal. `quantprobe report` writes that answer as **one Markdown file meant to be forwarded** — to the IT manager sizing a hardware buy, the consultant's client, the ISV writing hardware requirements. The reader it is built for will never run the tool, so the file carries what the terminal session would have told them: every number labeled **[measured]** / **[derived]** / **[est]** / **UNVALIDATED** on the line or block it qualifies — never only in a footnote — the verdict speeds spelled **PREDICTED** or **[measured]** in so many words, and a mandatory scope block, because the person who could explain the caveats is not in the room. It is a renderer over the same engine `plan` runs, so the two cannot disagree about the same file.
+
+```bash
+quantprobe report --gguf Qwen3.8-27B-Q4_K_M.gguf --machine 2016-xmp --bench-log qwen38_bench.log
+# reads the GGUF header (~10 s on this 17 GB file), downloads nothing, launches nothing -
+# prints the path of the file it wrote
+```
+
+`--bench-log` quotes a llama-bench run you already made next to the prediction. The file opens with the verdict:
+
+```
+## Verdict
+
+PREDICTED decode speed, one user:   1.8 tok/s   (band 1.4 - 2.3)  [derived]
+MEASURED on this machine:           2.04 +/- 0.02 tok/s  (llama-bench)  [measured]
+The measurement is 1.11x the prediction - inside the +/-25% band, on the side
+our misses err (low).
+```
+
+Then the placements, the binding constraint with its per-lever ceilings ("faster storage / NVMe: NO effect"), the exact llama.cpp command, and what the quant costs in quality — including UNVALIDATED said in exactly that word where no measurement covers the model's size. Full contract and a complete example report: [docs/DESIGN_REPORT_CMD.md](docs/DESIGN_REPORT_CMD.md).
 
 ## Contributing
 
@@ -292,6 +316,7 @@ quantprobe dashboard --gguf 2bit.gguf                    # the law live, every r
 | [CONTRIBUTING.md](CONTRIBUTING.md) | the method: stake, measure, score *and wire*, audit |
 | [docs/DEEP-DIVE.md](docs/DEEP-DIVE.md) | what's new vs. built-on, parity tables, and the repository map |
 | [docs/QUANT_QUALITY.md](docs/QUANT_QUALITY.md) | **does the recipe preserve capability, not just perplexity?** — naive vs recipe vs original on MATH-500/GSM8K/IFEval; the size-dependence law; fragility survives hybrid linear attention |
+| [docs/DESIGN_REPORT_CMD.md](docs/DESIGN_REPORT_CMD.md) | **the `report` file's contract** — the four labels every number must carry, the two ways a forwarded page misleads a decision-maker and the exact wording that prevents them, a complete worked report |
 | [papers/arxiv/](papers/arxiv/) | the paper (submission-ready LaTeX) |
 | [CHANGELOG.md](CHANGELOG.md) | every release, including corrections to numbers published here |
 

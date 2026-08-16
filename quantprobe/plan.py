@@ -94,6 +94,16 @@ UBATCH_HEADROOM_GB = 1.5   # VRAM the compute buffer needs before -ub 2048 is sa
                            # is real; its shape is an open measurement (pre-registration #19).
 
 
+def moe_vram_resident_gb(ne, bits, moe):
+    """GB a MoE split keeps resident in VRAM (attention + shared experts, bits floored at the
+    recipe's protected 4.5, x1.08 overhead) - the input ubatch_flags and phase_advice price.
+    ONE spelling on purpose: report.py renders the same -ub decision from the same number, and
+    a constant drifting here must drift for both or plan and report emit different commands
+    for the same file (the exact disagree-class the report's no-second-physics invariant
+    forbids)."""
+    return ne * max(bits, 4.5) / 8 * 1.08 if moe else 0.0
+
+
 def ubatch_flags(placement, vram_resident_gb, vc):
     """-b/-ub for placements that leave weights in HOST memory. Prefill-only lever.
 
@@ -1027,8 +1037,11 @@ def capacity_probe(ev, best_tps, size, kv_gb, vc, rc):
         gain_lift = lift_tps / best_tps if best_tps > 0 else 0.0
         if max(gain_shave, gain_lift) < CAP_PROMOTION_MIN:
             return None
+        # fit_scale travels IN the finding: report's quality section prices the shave's implied
+        # bits (bits x fit_scale), and re-deriving the tier boundary there would be a second
+        # copy of this arithmetic - the drift class this probe exists to prevent.
         find = dict(tier=tier, gap_gb=gap, lever=lever, shave_tps=shave_tps, lift_tps=lift_tps,
-                    gain_shave=gain_shave, gain_lift=gain_lift,
+                    gain_shave=gain_shave, gain_lift=gain_lift, fit_scale=fit_scale,
                     need_gb=(lift_kw.get("vc") or lift_kw.get("rc")))
         # THE KV HALF OF THE GAP (L-24/L-25). This probe used to shave WEIGHTS only, though for
         # a deep-context config the cheapest GB on the table is often the KV cache itself:
@@ -1876,7 +1889,33 @@ def resolve_hw(args, announce=True):
     return vc, vb, rc, rb, db, geta, gl, hw
 
 
-def run(args):
+def build_rows(args):
+    """Everything plan.run COMPUTES, none of what it prints.
+
+    Extracted for `report` (docs/DESIGN_REPORT_CMD.md section 2): the report is a RENDERER over
+    this engine, exactly as binding_report() is a renderer over binding_constraint(). If report
+    and plan could disagree about the same file on the same box the feature would be wrong (the
+    C-15 auto-vs-plan divergence, 26.2 vs 19.5 on one model, is the failure class) - so there is
+    ONE compute path, and run() prints from its return value.
+
+    Stdout-safe by construction: every print that happens in this prefix happens inside nested
+    calls that moved with it (spec.apply's autospec banner, resolve_hw's auto-detect banner and
+    calibration lines, resolve_gpu_eta/resolve_cpu_bw's size-class notes), and evaluate /
+    capacity_probe / binding_constraint print nothing. The moved block is a strict prefix of the
+    old run() and executes first in both versions, so the byte order of stdout cannot change.
+
+    Returns a dict:
+      inputs  t, a, ne, moe, bits, ctx, kvp, nlay, true_size_gb, gguf, arch, kv_layers,
+              iq_share, codebook_share, model_hint, machine_hint
+      hw      vc, vb, rc, rb, db, geta, gl, cal_active, gpu_ratio, cpu_ratio
+      size, act, q                      # file GB, active GB/token, QUAL multiplier
+      rows    [Row]                     # terms/eff/runnable intact, already sorted
+      best    rows[0] (None only if evaluate ever returned no rows, which it cannot today)
+      cap     capacity_probe finding or None
+      bc      binding_constraint dict or None
+      ev      the counterfactual closure - it shares the baseline's own argument dict
+              (prereg #88 P-3a); advisors MUST use this, never a re-spelled kwarg set
+    """
     from . import spec as specmod
     specmod.apply(args)
     check_presets(args)
@@ -1926,8 +1965,31 @@ def run(args):
 
     size, act, cfgs = evaluate(**ev_kw)
     q = qual_of(moe, args.bits)
-    print(f"\nquantprobe plan - {m.get('hint', 'custom model')} @ {args.bits:g}-bit "
-          f"on {hw.get('hint', 'custom machine')}")
+    best = cfgs[0] if cfgs else None
+    cap_find = (capacity_probe(ev, best[1], size, ctx * kvp / 1e9 if ctx > 0 else 0.0, vc, rc)
+                if best else None)
+    bc = binding_constraint(best, capacity=cap_find) if best else None
+    return dict(
+        inputs=dict(t=t, a=a, ne=ne, moe=moe, bits=args.bits, ctx=ctx, kvp=kvp, nlay=nlay,
+                    true_size_gb=true_size, gguf=_g, arch=getattr(args, "arch", None),
+                    kv_layers=getattr(args, "kv_layers", None),
+                    iq_share=getattr(args, "iq_share", 0.0),
+                    codebook_share=getattr(args, "codebook_share", 0.0),
+                    model_hint=m.get("hint"), machine_hint=hw.get("hint")),
+        hw=dict(vc=vc, vb=vb, rc=rc, rb=rb, db=db, geta=geta, gl=gl,
+                cal_active=bool(hw.get("_cal_active")),
+                gpu_ratio=hw.get("_gpu_ratio"), cpu_ratio=hw.get("_cpu_ratio")),
+        size=size, act=act, q=q, rows=cfgs, best=best, cap=cap_find, bc=bc, ev=ev)
+
+
+def run(args):
+    px = build_rows(args)
+    inp, hwd = px["inputs"], px["hw"]
+    ne, moe, ctx, kvp, nlay = inp["ne"], inp["moe"], inp["ctx"], inp["kvp"], inp["nlay"]
+    vc, rb = hwd["vc"], hwd["rb"]
+    size, act, q, cfgs, ev = px["size"], px["act"], px["q"], px["rows"], px["ev"]
+    print(f"\nquantprobe plan - {inp['model_hint'] or 'custom model'} @ {args.bits:g}-bit "
+          f"on {inp['machine_hint'] or 'custom machine'}")
     kvline = (f" | ctx {ctx}: +{ctx * kvp / 1e9:.2f} GB KV read/token"
               if ctx > 0 else "")
     print(f"  model {size:.1f} GB | active {act:.2f} GB/token{kvline} | est. quality cost x{q:.2f} "
@@ -1936,12 +1998,13 @@ def run(args):
         star = "*" if i == 0 else " "
         w = f"   [{warn}]" if warn else ""
         print(f"  {star} {tps:6.1f} tok/s  {name}{w}")
-    best = cfgs[0]
-    # WHICH RESOURCE BINDS (prereg #88). Printed directly under the rows, because everything below
-    # it - speculation, the IQ warning, the upgrade advisor, the concurrency note - is advice whose
-    # payoff is conditional on this answer, and until now the tool asserted all of it unconditionally.
-    cap_find = capacity_probe(ev, best[1], size, ctx * kvp / 1e9 if ctx > 0 else 0.0, vc, rc)
-    bc = binding_constraint(best, capacity=cap_find)
+    best = px["best"]
+    # WHICH RESOURCE BINDS (prereg #88). Computed in build_rows, printed directly under the rows,
+    # because everything below it - speculation, the IQ warning, the upgrade advisor, the
+    # concurrency note - is advice whose payoff is conditional on this answer, and until now the
+    # tool asserted all of it unconditionally.
+    cap_find = px["cap"]
+    bc = px["bc"]
     rep = binding_report(bc, bits=args.bits, placement=best[0])
     if rep:
         print()
@@ -1955,7 +2018,7 @@ def run(args):
           " nothing (D-10,\n  independently replicated on an RTX 3090). Details below.")
     # Prefill lever, appended only where the measurement says it pays (host-resident weights with
     # VRAM headroom). Not part of the law: `evaluate` is untouched and no anchor can move.
-    ub = ubatch_flags(best[0], ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc)
+    ub = ubatch_flags(best[0], moe_vram_resident_gb(ne, args.bits, moe), vc)
     run_flags = f"{best[3]} {ub}" if ub else best[3]
     run_flags, nthreads = append_threads_flag(run_flags, best[0])
     print(f"\n  run it:  llama-server -m model.gguf {run_flags}")
@@ -1993,7 +2056,7 @@ def run(args):
                       f" re-downloading the model would buy you almost nothing. The 2.7x is real"
                       f"\n  and it is not what limits you: see the binding constraint above.")
     ph = phase_advice(best[0], cfgs,
-                      vram_resident_gb=ne * max(args.bits, 4.5) / 8 * 1.08 if moe else 0.0, vc=vc)
+                      vram_resident_gb=moe_vram_resident_gb(ne, args.bits, moe), vc=vc)
     if ph:
         print(f"\n  phase: {ph}")
         chat, rag = workload_frontier(0.5), workload_frontier(200)
