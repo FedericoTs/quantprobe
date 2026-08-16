@@ -161,3 +161,63 @@ Chain of custody: staked 2026-08-07 (before any screening run) -> amended pre-da
 2026-08-16 with 8 declared deviations -> harness + scorer committed before the first CSV
 row (31dd79c) -> 150 runs, one night, one machine state -> scored by the frozen scorer,
 rc 0. The miss publishes at the same size as the hits.
+
+
+---
+
+## Pre-data amendment - stage 2, 2026-08-16, before any stage-2 run
+
+Design doc: `docs/DESIGN_DOE_SOBOL.md` (committed with this amendment, together with the
+`--stage2` harness mode and the pre-committed scorer `weights/prereg95_sobol_score.py` -
+scorer in the repo before the first stage-2 CSV row, per house rule). Deviations and
+constants, declared before data:
+
+1. **Survivor rule:** factors covering >= 90% of stage-1 total mu_star, UNION the
+   model's P-3 mapping-set factors (a design that excludes the mapping factors could
+   never PASS the stake it scores). Result: 7B k=4 {ngl, t, ctk, ub} (95.7% of mu*);
+   30B k=5 {t, mmp, ngl, moe_cpu_frac, ctk} (96.2%). Survivor level lists identical to
+   stage 1.
+2. **Non-survivors fixed at stage-1 best-observed levels:** 7B `fa=0, mmp=0` (best ok
+   row 22.486 tok/s); 30B `ub=2048, fa=1` (best ok row 20.497 tok/s). Every fixed factor
+   is outside both mapping sets, and max(mu*, sigma) of each is <= 10.7% of its model's
+   top-survivor mu*, so fixing removes only FAIL modes it could not plausibly have won.
+   The 7B fa x ngl interaction is thereby excluded from measured variance, recorded not
+   estimated.
+3. **Design:** Saltelli N*(k+2), seeded stdlib Monte Carlo (no QMC dependency), seeds
+   `"prereg95:stage2:{7B|30B}:20260816"`, N_start 32 (7B) / 40 (30B), N_cap 64, runs
+   192 + 280 = 472, extension in +16-block steps of the same stream on an UNDECIDED
+   gate. Estimators: Saltelli-2010 Table-2(b) first-order, Jansen-1999 total-order;
+   bootstrap 1000 block resamples, seed `"prereg95:stage2:bootstrap:20260816"`; argmax
+   DECIDED iff rank-1 retention >= 950/1000.
+4. **Two nights by resume, declared:** 11.9 h nominal at stage-1's measured per-run
+   costs (84.4 s 7B at fixed mmp=0, 95.3 s 30B). Per-model scoring as each design
+   completes; a publishable model-FAIL short-circuits overall P-3 (the 7B can fire the
+   kill rule after night 1).
+5. **P-3 ground truth frozen:** plan classes measured 2026-08-16 on this box
+   (7B VRAM-bandwidth-bound at 100%; 30B system-RAM-bandwidth-bound at 51%, margin
+   1.03x recorded as context), embedded in the scorer as constants; mapping sets
+   {ctk, ub} and {moe_cpu_frac, ctk}. The near-tie does not widen the 30B set.
+6. **Morris-vs-Sobol disagreement** is handled per kill rule 3: any model where the two
+   argmaxes differ is HELD_FOR_TAGUCHI and nothing about its ranking publishes until a
+   Taguchi arm adjudicates - except that a mapping refuted under BOTH candidate
+   argmaxes is a publishable P-3 FAIL with only the factor identity held.
+7. **Stricter than staked, accepted:** if the argmax is still UNDECIDABLE at N_cap=64,
+   the binding-constraint scope label ships anyway - the label text ("derived from the
+   law, not confirmed by variance attribution") is literally true in that branch, and
+   perpetual undecidability must not become a shield. This can only add a label the
+   staked rules would not force; it can never suppress one.
+8. `-np` remains not exercisable (llama-bench rejects it; server-only), unchanged from
+   stage-1 amendment item 2.
+9. **As-built scorer strengthening, declared:** DECIDED additionally requires the
+   bootstrap-modal argmax to EQUAL the full-data argmax - a night whose gate passes but
+   whose modal and point-estimate argmaxes disagree reads UNDECIDED, never decided.
+   Strictly conservative: it can only defer a verdict, never manufacture one.
+
+**The stage-1 consequence this arm inherits, stated before its own data:** the P-3
+mapping sets and the Morris argmaxes (7B ngl, 30B t) are already disjoint, so stage 2
+cannot produce a P-3 PASS - every branch ends in a publishable FAIL, a HELD_FOR_TAGUCHI,
+or an UNDECIDABLE-at-cap, and all three ship or hold exactly per items 6-7. Written down
+now so the outcome cannot be mistaken for a post-hoc choice.
+
+The harness cannot write this prereg; this amendment is appended by the operator before
+the first stage-2 run.
