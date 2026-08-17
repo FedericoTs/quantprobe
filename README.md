@@ -48,11 +48,12 @@ quantprobe plan - Qwen3-30B-A3B @ 2.5-bit on THIS machine [auto-detected]
       13.2 tok/s  pure CPU (GPU idle)   [RAM boundary - expect bimodal speed]
 
   binding constraint: BANDWIDTH-BOUND (system RAM bandwidth) - 51% of every decode token is spent there.
+    validation       derived from the law, not confirmed by variance attribution (prereg #95 - …)
 
   run it:  llama-server -m model.gguf -ngl 99 -ot "blk\.(16|17|…|47)\.ffn_.*_exps\.=CPU" --no-mmap -b 1024 -ub 1024 --threads 4
 ```
 
-The first line is what a fresh install prints. The `calibration applied` and `anchored:` lines appear after you run `quantprobe calibrate` once — measured constants and your own anchor runs, not spec sheets. The **binding constraint** line is the part most tools never tell you: *3 tok/s, disk-bound* means buy RAM; *3 tok/s, bandwidth-bound* means don't bother.
+The first line is what a fresh install prints. The `calibration applied` and `anchored:` lines appear after you run `quantprobe calibrate` once — measured constants and your own anchor runs, not spec sheets. The **binding constraint** line is the part most tools never tell you: *3 tok/s, disk-bound* means buy RAM; *3 tok/s, bandwidth-bound* means don't bother. And it now carries its own scope label, because we tested it the hard way: [prereg #95](preregistrations/2026-08-07-doe-flag-screening.md)'s variance-attribution arm did **not** confirm the flag-level mapping (the placement lever carried the variance, decided 1000/1000) — so every classification prints *"derived from the law, not confirmed by variance attribution"* until a re-derivation earns the confirmation. The time decomposition itself is untouched arithmetic; the label prices exactly what isn't measured.
 
 **Downloads nothing. Takes a second.** No hardware flags needed — it reads your machine. `--model` and `--bits` just say what you're considering; point it at a file you already have with `--gguf model.gguf` instead.
 

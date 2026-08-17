@@ -385,6 +385,15 @@ def _limits(px):
     if not bc:
         return _para("This placement carries no time decomposition, so nothing is classified "
                      "here. The speed above stands on the law alone.")
+    # the staked scope label (variance attribution did not confirm the flag-level mapping;
+    # the kill rule ships it at full prominence) - plain words here, the register pointer
+    # lives in Sources like every other one
+    scope_note = _para("Validation: this classification is derived from the law, not "
+                       "confirmed by variance attribution - where we measured which flag "
+                       "actually carries decode variance, the top carrier was the placement "
+                       "lever, not the flag the mapping expected. The time split itself is "
+                       "exact arithmetic and stands; the flag-level reading is the part "
+                       "under that label.")
     L = []
     alts = planmod.upgrade_advisor(px["ev"], best[1], hw["rb"])
     if cap:
@@ -394,6 +403,7 @@ def _limits(px):
                      f"the boundary is worth {gain:.1f}x.")
         head[-1] = _lab(head[-1], "[derived]")
         L += head
+        L += scope_note
         L.append("")
         if cap["gain_shave"] >= planmod.CAP_PROMOTION_MIN:
             L.append(_lab(f"  cross it by   shaving the file (next quant tier down)"
@@ -440,6 +450,7 @@ def _limits(px):
     else:
         L.append(_lab(f"{bc['klass'].upper()} ({bc['label']}): {_pct(bc['share'])} of every "
                       f"decode token is spent there.", "[derived]"))
+        L += scope_note
         if bc.get("margin_x") and bc.get("next_resource"):
             L += ["  " + ln for ln in
                   _para(f"margin: {planmod.RESOURCE_LABEL[bc['resource']]} must get "
@@ -808,8 +819,8 @@ def _reproduce(snap, px, rec):
                f"prints from){rec_src}; quality bands: fitted QUAL table; capability "
                f"tables: docs/QUANT_QUALITY.md. Predictions +/-25%; misses published at the "
                f"same size as hits. Register pointers for readers with the repo checkout: "
-               f"pre-registrations #19 #25 #88 #91 #98 #100 #101, findings C-17 L-24 U-23 "
-               f"U-38/U-39, FINDINGS.md.")
+               f"pre-registrations #19 #25 #88 #91 #95 #98 #100 #101, findings C-17 L-24 "
+               f"U-23 U-38/U-39, FINDINGS.md.")
     return L
 
 

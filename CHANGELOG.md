@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **The binding-constraint line now carries a validation scope label** - prereg #95's
+  variance-attribution arm (Sobol, decided 1000/1000) did NOT confirm the staked
+  flag-level mapping: the placement lever (-ngl) carried the variance, not the mapped
+  flags. Per the staked kill rule, every `plan`/`report` classification now prints
+  `validation: derived from the law, not confirmed by variance attribution` at full
+  prominence, and the README and report-card assets carry the same line. The time
+  decomposition itself is unchanged arithmetic; the label prices exactly the part no
+  measurement confirms yet.
+
 - **`quantprobe report`** - the one-page forwardable answer. `plan` talks to the person at
   the terminal; `report --gguf model.gguf` writes the same answer as ONE Markdown file for
   the person who was not there - the IT manager sizing a hardware buy, a consultant's

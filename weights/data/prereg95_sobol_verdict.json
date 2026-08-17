@@ -1,0 +1,207 @@
+{
+  "prereg": 95,
+  "stage": 2,
+  "scores": "P-3 only (stage-1 stakes are already scored and are not re-scored)",
+  "csv": "weights/data/doe_sobol_stage2.csv",
+  "csv_sha256": "4234b358ba568a614c4f4c274c169e1c1b0ae5bed5f1593b8fc94dfdb2931682",
+  "scored_utc": "2026-08-17T08:28:32Z",
+  "design": {
+    "seeds": [
+      "prereg95:stage2:7B:20260816",
+      "prereg95:stage2:30B:20260816"
+    ],
+    "bootstrap_seed": "prereg95:stage2:bootstrap:20260816",
+    "n_start": {
+      "7B": 32,
+      "30B": 40
+    },
+    "n_cap": 64,
+    "extend_step": 16,
+    "survivors": {
+      "7B": [
+        "ngl",
+        "ub",
+        "t",
+        "ctk"
+      ],
+      "30B": [
+        "ngl",
+        "t",
+        "ctk",
+        "mmp",
+        "moe_cpu_frac"
+      ]
+    },
+    "fixed": {
+      "7B": {
+        "mmp": 0,
+        "fa": 0
+      },
+      "30B": {
+        "ub": 2048,
+        "fa": 1
+      }
+    },
+    "estimators": {
+      "S": "Saltelli et al. 2010, Table 2, estimator (b)",
+      "ST": "Jansen 1999"
+    },
+    "gate": "ST argmax DECIDED iff modal top factor holds rank 1 in >= 950/1000 bootstrap resamples",
+    "validity_floor": "ceil(0.75 * N_complete) valid ST pairs per survivor",
+    "header_sha256": "95fe4b76345921ea95d6a86cc83b30caad741f799515716d0d07f687c2d89ade"
+  },
+  "ground_truth": {
+    "plan_binding": {
+      "7B": "binding constraint: BANDWIDTH-BOUND (VRAM bandwidth) - 100% of every decode token is spent there.",
+      "30B": "binding constraint: BANDWIDTH-BOUND (system RAM bandwidth) - 51% of every decode token is spent there."
+    },
+    "plan_margin_30B": "1.03x - system RAM bandwidth must get that much faster before VRAM bandwidth (49%) takes over",
+    "mapping_set": {
+      "7B": [
+        "ctk",
+        "ub"
+      ],
+      "30B": [
+        "moe_cpu_frac",
+        "ctk"
+      ]
+    },
+    "morris_argmax": {
+      "7B": "ngl",
+      "30B": "t"
+    },
+    "source": "quantprobe plan 2026-08-16, auto-detected hw, calibration 2026-07-31 state 2dc97d41; frozen in this scorer and never re-read at score time"
+  },
+  "rows": {
+    "rows_in_csv": 192,
+    "duplicate_run_ids_ignored": 0,
+    "extra_rows_outside_design": 0
+  },
+  "models": {
+    "7B": {
+      "n_start": 32,
+      "n_cap": 64,
+      "n_complete_blocks": 32,
+      "validity_floor_pairs": 24,
+      "rows": {
+        "ok": 192,
+        "dnf": 0,
+        "other_non_ok": 0,
+        "present_beyond_prefix": 0,
+        "ok_rows_with_unparseable_tok_s": []
+      },
+      "V_Y": 42.63469428284584,
+      "n_pool_ok_AB": 64,
+      "plan_binding": "binding constraint: BANDWIDTH-BOUND (VRAM bandwidth) - 100% of every decode token is spent there.",
+      "mapping_set": [
+        "ctk",
+        "ub"
+      ],
+      "morris_argmax": "ngl",
+      "factors": {
+        "ngl": {
+          "S": 0.5652615550374691,
+          "S_ci95": [
+            -0.6868310329984462,
+            1.8294163227859959
+          ],
+          "n_S_triples": 32,
+          "ST": 1.1311316139856051,
+          "ST_ci95": [
+            0.7953101019208115,
+            1.4691011568017684
+          ],
+          "n_ST_pairs": 32,
+          "scoreable": true
+        },
+        "ub": {
+          "S": 0.0010998766720558724,
+          "S_ci95": [
+            -0.005847946021013619,
+            0.007865665708727793
+          ],
+          "n_S_triples": 32,
+          "ST": 7.996013523067938e-05,
+          "ST_ci95": [
+            4.013472467763731e-05,
+            0.00013859332465084682
+          ],
+          "n_ST_pairs": 32,
+          "scoreable": true
+        },
+        "t": {
+          "S": 0.054632290457569024,
+          "S_ci95": [
+            -0.08087808360659336,
+            0.2000719073079063
+          ],
+          "n_S_triples": 32,
+          "ST": 0.03289738294517554,
+          "ST_ci95": [
+            0.010768045517517052,
+            0.07121724130205402
+          ],
+          "n_ST_pairs": 32,
+          "scoreable": true
+        },
+        "ctk": {
+          "S": -0.0030065106802740806,
+          "S_ci95": [
+            -0.011850934848911695,
+            0.003970957885632939
+          ],
+          "n_S_triples": 32,
+          "ST": 0.00011658149983241462,
+          "ST_ci95": [
+            5.656898141004658e-05,
+            0.00020108463908212652
+          ],
+          "n_ST_pairs": 32,
+          "scoreable": true
+        }
+      },
+      "non_ok_rows": [],
+      "st_argmax_full_data": "ngl",
+      "sobol_argmax": "ngl",
+      "case": "s == m and s not in MAP",
+      "verdict": "FAIL",
+      "bootstrap": {
+        "resamples": 1000,
+        "seed": "prereg95:stage2:bootstrap:20260816",
+        "modal_top": "ngl",
+        "retention": 1000,
+        "argmax_counts": {
+          "ngl": 1000
+        },
+        "no_argmax_resamples": 0,
+        "decided": true
+      }
+    },
+    "30B": {
+      "refused": "REFUSED (30B): incomplete design: largest complete prefix is 0 blocks, N_start is 40. Resume weights/doe_morris.py --stage2; a partial night is not the staked design.",
+      "n_complete_blocks": 0,
+      "n_start": 40,
+      "n_cap": 64
+    }
+  },
+  "P-3": {
+    "rule": "per model: the factor with the highest Sobol total-order index must be in the staked mapping set; overall: FAIL if either model is a publishable FAIL, else HELD_FOR_TAGUCHI if either model is held or undecidable, PASS only if both models publishably pass",
+    "overall": "FAIL",
+    "per_model": {
+      "7B": "FAIL",
+      "30B": null
+    }
+  },
+  "exit_code": 0,
+  "label": {
+    "text": "derived from the law, not confirmed by variance attribution (prereg #95 P-3)",
+    "surfaces": [
+      "the 'binding constraint:' print in quantprobe plan / report (quantprobe/plan.py, quantprobe/report.py)",
+      "the README example block that quotes it (README.md)",
+      "the pipeline chart asset that draws it (weights/data/card_flagship.svg)"
+    ],
+    "reasons": [
+      "7B: publishable P-3 FAIL - the kill rule fires; the label ships the same day at full prominence"
+    ]
+  }
+}

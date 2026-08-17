@@ -221,3 +221,49 @@ now so the outcome cannot be mistaken for a post-hoc choice.
 
 The harness cannot write this prereg; this amendment is appended by the operator before
 the first stage-2 run.
+
+
+---
+
+## SCORED - stage 2 night 1 (7B Sobol), 2026-08-17, by the pre-committed scorer
+
+**P-3: FAIL. The kill rule fired, and the scope label shipped the same day.**
+
+192 of 192 designed runs (N=32 blocks), 0 DNF, one machine state, finished 4.4 h into the
+9.5 h window. CSV sha256 4234b358..; verdict json committed beside it.
+
+| item | value |
+|---|---|
+| Sobol total-order, 7B | ngl **1.131** [0.795, 1.469] >> t 0.033 >> ctk 0.0001, ub 0.0001 |
+| decidability gate | ngl holds rank 1 in **1000/1000** bootstrap resamples - DECIDED |
+| methods | Morris argmax ngl, Sobol argmax ngl - AGREE (no Taguchi hold) |
+| staked mapping (VRAM-bw-bound) | {ctk, ub} - the measured argmax is in neither |
+| verdict | publishable P-3 FAIL; overall P-3 FAIL (per-model short-circuit, amendment item 4) |
+| 30B | REFUSED (no night-2 data yet) - the refusal is the correct behavior, night 2 queued |
+
+**What the FAIL means, precisely.** The classification's time decomposition is untouched
+arithmetic and still stands - on this 7B cell the law says VRAM bandwidth takes 100% of
+the decode token, and nothing here contradicts that. What failed is the staked FLAG-LEVEL
+mapping: the prereg bet that the binding resource's within-placement levers (KV type,
+ubatch) would carry the measured variance. They carried none of it (ST 0.0001 both).
+The variance lives in the PLACEMENT lever (-ngl spans 0..99 and moves the config across
+placements), which the mapping table never listed. A better-constructed stake would have
+separated within-placement variance from across-placement variance; this one did not, it
+lost, and the label prices that.
+
+**Kill rule executed (same day, full prominence):**
+- `quantprobe plan` / `quantprobe report`: every binding-constraint print now carries
+  `validation: derived from the law, not confirmed by variance attribution` directly
+  under the headline (plan.py binding_report, report.py _limits; report body keeps the
+  plain-words form, the register pointer lives in its Sources).
+- README quickstart example + prose: the label line added to the example block, and the
+  prose now explains what is and is not confirmed.
+- Both report-card assets (weights/data/card_flagship.svg, media/card_flagship.svg via
+  make_report_card.py) draw the label under their binding line.
+The label stays until a re-derivation - a variance design that separates placement from
+within-placement factors - survives a Taguchi arm.
+
+Night 2 (30B, 280 runs) queued; its verdict can refine the story but cannot un-fire the
+kill rule. Chain of custody: mapping staked 2026-08-07; ground truth frozen and scorer
+committed 2026-08-16 before any stage-2 row; measured overnight; scored by frozen code
+2026-08-17. The third staked miss of prereg #95, published at the same size as its hits.

@@ -1,0 +1,401 @@
+21:53:22 ======================================================================
+21:53:22 prereg #95 stage 2 Sobol (Saltelli survivors)  stamp=20260816_215322  pid=17988
+21:53:22 design docs/DESIGN_DOE_SOBOL.md  models 7B  blocks 7B:32  runs 192  deadline 9.5h  exe C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe
+21:53:24 7B: D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf  4683074240 bytes  block_count=28  ok
+21:53:24 30B: D:/evo-compress-data/gguf/Qwen3-30B-A3B-Q2_K.gguf  11258610240 bytes  block_count=48  ok
+21:53:26 resume state: 0 designed rows already in the CSV
+21:53:26 [7B] 192 of 192 designed runs pending
+21:53:26 [7B] pre-flight: 4 corner probes at -n 8 -r 1 (log-only)
+21:53:26 [7B] preflight all-grid-0: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 8 -p 0 -r 1 -o json
+21:53:42   ok in 15.6s  avg_ts=2.916052
+21:53:42 [7B] preflight all-grid-1: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 8 -p 0 -r 1 -o json
+21:53:45   ok in 2.8s  avg_ts=22.060513
+21:53:45 [7B] preflight max-vram: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 8 -p 0 -r 1 -o json
+21:53:47   ok in 2.5s  avg_ts=22.455623
+21:53:47 [7B] preflight max-cpu: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 8 -p 0 -r 1 -o json
+21:53:53   ok in 5.4s  avg_ts=2.953102
+21:54:23 [7B] 404d25450a619814 block 0 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+21:55:53   ok  tok/s=4.399925  wall=89.9s  settle=30.4s  temp 41->43
+21:56:24 [7B] 3c472d9fdc762c93 block 0 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+21:56:43   ok  tok/s=22.419841  wall=19.3s  settle=30.3s  temp 42->56
+21:57:14 [7B] fc6ebf3f73937e50 block 0 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+21:57:34   ok  tok/s=22.177376  wall=19.4s  settle=30.3s  temp 48->61
+21:58:04 [7B] 5d2da4ac32d677b8 block 0 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+21:59:33   ok  tok/s=4.466169  wall=88.5s  settle=30.3s  temp 52->52
+22:00:04 [7B] a755c2b75a8ffa2e block 0 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:01:32   ok  tok/s=4.483827  wall=88.2s  settle=30.3s  temp 49->52
+22:02:03 [7B] cea19451b4416a5a block 0 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:03:31   ok  tok/s=4.465399  wall=88.6s  settle=30.4s  temp 49->52
+22:04:02 [7B] f3569dce6311897c block 1 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:04:35   ok  tok/s=12.663843  wall=32.6s  settle=30.4s  temp 49->59
+22:05:05 [7B] 52e1185198723a20 block 1 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:06:06   ok  tok/s=6.642521  wall=60.3s  settle=30.3s  temp 52->47
+22:06:36 [7B] 29d3a0855c65342a block 1 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:07:37   ok  tok/s=6.632362  wall=60.4s  settle=30.3s  temp 45->43
+22:08:08 [7B] 3cb77f3b84f4e06d block 1 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:08:40   ok  tok/s=12.734135  wall=32.4s  settle=30.4s  temp 42->53
+22:09:11 [7B] 0e90375ef01131d1 block 1 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:09:43   ok  tok/s=12.770756  wall=32.3s  settle=30.4s  temp 47->57
+22:10:14 [7B] 553e343513a77ba1 block 1 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:10:46   ok  tok/s=12.720297  wall=32.4s  settle=30.4s  temp 50->59
+22:11:17 [7B] dd176084cbb49449 block 2 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:11:50   ok  tok/s=12.572679  wall=32.8s  settle=30.4s  temp 52->61
+22:12:21 [7B] 3a73900bb9d5a07e block 2 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:13:15   ok  tok/s=7.382328  wall=54.3s  settle=30.4s  temp 52->57
+22:13:46 [7B] e30702475c347139 block 2 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:14:19   ok  tok/s=12.569459  wall=32.8s  settle=30.4s  temp 51->60
+22:14:49 [7B] 8987675d479f4651 block 2 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:15:22   ok  tok/s=12.648754  wall=32.6s  settle=30.4s  temp 52->61
+22:15:58 [7B] ae419695d7de3233 block 2 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:16:52   ok  tok/s=7.350636  wall=54.6s  settle=35.4s  temp 52->57
+22:17:23 [7B] 32466252e5aaaf7c block 2 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:17:56   ok  tok/s=12.582277  wall=32.8s  settle=30.4s  temp 51->60
+22:18:27 [7B] 16ac8f43f6fe4381 block 3 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:19:21   ok  tok/s=7.325999  wall=54.7s  settle=30.3s  temp 52->56
+22:19:52 [7B] 80c61a27ac5ab3da block 3 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:21:02   ok  tok/s=5.692406  wall=70.0s  settle=30.4s  temp 51->46
+22:21:33 [7B] 4bf72ea6fe1a7198 block 3 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:23:38   ok  tok/s=3.135138  wall=125.2s  settle=30.3s  temp 45->41
+22:24:09 [7B] a2e10daa7340e88c block 3 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:25:03   ok  tok/s=7.349059  wall=54.5s  settle=30.3s  temp 40->48
+22:25:34 [7B] abde0e8fecf7d445 block 3 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:26:11   ok  tok/s=11.15437  wall=36.7s  settle=30.4s  temp 44->51
+22:26:42 [7B] 485d43f1dd55f36e block 3 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:27:37   ok  tok/s=7.275647  wall=55.1s  settle=30.3s  temp 46->51
+22:28:08 [7B] 193088c5004e71af block 4 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:30:12   ok  tok/s=3.148272  wall=124.6s  settle=30.4s  temp 47->42
+22:30:43 [7B] fe1e65ba1df982e7 block 4 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:31:40   ok  tok/s=7.118361  wall=56.5s  settle=30.4s  temp 41->45
+22:32:10 [7B] 7179909d92a85ba9 block 4 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:33:39   ok  tok/s=4.484377  wall=88.2s  settle=30.4s  temp 42->48
+22:34:09 [7B] 12901e05b5e08631 block 4 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:36:14   ok  tok/s=3.157413  wall=124.4s  settle=30.3s  temp 46->41
+22:36:45 [7B] eaffc1ce7380a137 block 4 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:37:55   ok  tok/s=5.675417  wall=70.1s  settle=30.4s  temp 40->39
+22:38:26 [7B] 8eab00510e761427 block 4 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:40:30   ok  tok/s=3.14136  wall=124.9s  settle=30.3s  temp 39->37
+22:41:01 [7B] 0abdc8e627c4e5eb block 5 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:41:34   ok  tok/s=12.712942  wall=32.5s  settle=30.4s  temp 37->48
+22:42:04 [7B] 31609d81a0c648f4 block 5 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:42:53   ok  tok/s=8.337619  wall=48.5s  settle=30.4s  temp 42->45
+22:43:24 [7B] 225a80ceff71287d block 5 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:44:14   ok  tok/s=8.126784  wall=49.7s  settle=30.4s  temp 42->45
+22:44:44 [7B] 2dc60b68635ced6a block 5 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:45:17   ok  tok/s=12.717053  wall=32.4s  settle=30.4s  temp 42->53
+22:45:47 [7B] 721c92c35230f10e block 5 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:46:19   ok  tok/s=13.02428  wall=31.7s  settle=30.4s  temp 46->56
+22:46:50 [7B] bb449a293334f579 block 5 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:47:23   ok  tok/s=12.640946  wall=32.6s  settle=30.4s  temp 49->58
+22:47:53 [7B] 4d40cebb4b5bb929 block 6 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:48:47   ok  tok/s=7.414201  wall=54.1s  settle=30.4s  temp 51->56
+22:49:18 [7B] 6eb528f3275d6951 block 6 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:51:23   ok  tok/s=3.150891  wall=124.6s  settle=30.4s  temp 51->44
+22:51:53 [7B] 0eb8325aca99cf37 block 6 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:53:58   ok  tok/s=3.145197  wall=124.8s  settle=30.4s  temp 42->39
+22:54:29 [7B] 9786b587417a89a0 block 6 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:55:24   ok  tok/s=7.294134  wall=55.0s  settle=30.4s  temp 39->46
+22:55:55 [7B] ad276b9f8fe823df block 6 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:56:50   ok  tok/s=7.328942  wall=54.7s  settle=30.4s  temp 43->49
+22:57:20 [7B] 179aeebb886061db block 6 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:58:15   ok  tok/s=7.326081  wall=54.7s  settle=30.4s  temp 45->51
+22:58:46 [7B] 52ddfbb726d348d3 block 7 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+22:59:05   ok  tok/s=22.336888  wall=19.3s  settle=30.4s  temp 47->61
+22:59:36 [7B] 36a656861f215038 block 7 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:00:30   ok  tok/s=7.35965  wall=54.5s  settle=30.4s  temp 51->56
+23:01:01 [7B] 44aba73db4577a76 block 7 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:01:33   ok  tok/s=13.021591  wall=31.8s  settle=30.3s  temp 50->60
+23:02:04 [7B] 32bdf0c820ff686c block 7 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:02:23   ok  tok/s=22.291034  wall=19.3s  settle=30.4s  temp 52->65
+23:02:59 [7B] d95f2ee5633793a2 block 7 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:03:18   ok  tok/s=22.359822  wall=19.3s  settle=35.4s  temp 52->65
+23:03:59 [7B] 8228c1047f0ef073 block 7 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:04:18   ok  tok/s=22.157255  wall=19.5s  settle=40.5s  temp 52->65
+23:04:49 [7B] a7da41ad0806166d block 8 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:05:09   ok  tok/s=22.141838  wall=19.5s  settle=30.4s  temp 52->65
+23:05:49 [7B] b37ec901c56b11cc block 8 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:06:48   ok  tok/s=6.821971  wall=58.9s  settle=40.5s  temp 52->47
+23:07:19 [7B] 2894dfbaba572be9 block 8 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:08:19   ok  tok/s=6.64218  wall=60.3s  settle=30.4s  temp 45->43
+23:08:50 [7B] 67f2286ff7b10b39 block 8 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:09:10   ok  tok/s=22.370415  wall=19.3s  settle=30.4s  temp 42->56
+23:09:40 [7B] 9a22d88bca8555f6 block 8 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:10:00   ok  tok/s=22.290819  wall=19.4s  settle=30.4s  temp 47->61
+23:10:30 [7B] fb18cd2101069acc block 8 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:10:50   ok  tok/s=22.222891  wall=19.4s  settle=30.4s  temp 50->63
+23:11:26 [7B] 36483d0c1020fa0a block 9 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:12:26   ok  tok/s=6.606973  wall=60.6s  settle=35.4s  temp 52->47
+23:12:57 [7B] 876492d4ad7b410c block 9 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:13:33   ok  tok/s=11.288562  wall=36.3s  settle=30.3s  temp 45->52
+23:14:04 [7B] fc5b2367c750b981 block 9 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:14:37   ok  tok/s=12.713558  wall=32.4s  settle=30.4s  temp 47->58
+23:15:07 [7B] 95f17a53fdb37aa3 block 9 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:16:07   ok  tok/s=6.678511  wall=59.9s  settle=30.4s  temp 50->47
+23:16:38 [7B] 4f9d3262b312ee92 block 9 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:17:48   ok  tok/s=5.711021  wall=69.8s  settle=30.4s  temp 45->42
+23:18:19 [7B] bd7a53e827f422da block 9 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:19:19   ok  tok/s=6.65948  wall=60.1s  settle=30.4s  temp 41->41
+23:19:50 [7B] 6c4f1324080332c7 block 10 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:20:26   ok  tok/s=11.349488  wall=36.1s  settle=30.4s  temp 40->48
+23:20:56 [7B] ce415bd8e0f9a643 block 10 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:21:55   ok  tok/s=6.851156  wall=58.5s  settle=30.4s  temp 44->42
+23:22:26 [7B] c18578870ac209a0 block 10 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:23:36   ok  tok/s=5.70254  wall=69.8s  settle=30.4s  temp 41->40
+23:24:06 [7B] 7ee906a723814515 block 10 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:24:43   ok  tok/s=11.220669  wall=36.5s  settle=30.3s  temp 39->47
+23:25:14 [7B] f539276a68ba355f block 10 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:25:45   ok  tok/s=12.983714  wall=31.8s  settle=30.4s  temp 43->53
+23:26:16 [7B] b75050d6eb870c43 block 10 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:26:53   ok  tok/s=11.196772  wall=36.5s  settle=30.4s  temp 47->53
+23:27:23 [7B] 67afff3607981105 block 11 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:28:52   ok  tok/s=4.470678  wall=88.5s  settle=30.4s  temp 48->52
+23:29:23 [7B] f22b9d16ecba1ec5 block 11 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:31:28   ok  tok/s=3.146128  wall=124.7s  settle=30.4s  temp 49->42
+23:31:58 [7B] 29c075fc5bc00b6f block 11 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:34:03   ok  tok/s=3.149382  wall=124.6s  settle=30.4s  temp 41->38
+23:34:34 [7B] 009d2f9e79dfaf03 block 11 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:36:02   ok  tok/s=4.490857  wall=88.2s  settle=30.4s  temp 38->45
+23:36:33 [7B] be4da8814333a2fa block 11 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:38:01   ok  tok/s=4.493208  wall=88.0s  settle=30.4s  temp 43->48
+23:38:31 [7B] 8f3a0164b4e1ea89 block 11 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:40:00   ok  tok/s=4.457871  wall=88.7s  settle=30.4s  temp 45->50
+23:40:31 [7B] 531fb2d017426f38 block 12 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:40:50   ok  tok/s=22.431912  wall=19.2s  settle=30.4s  temp 47->61
+23:41:21 [7B] 8f88d7b8837b3cb6 block 12 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:42:21   ok  tok/s=6.650426  wall=60.3s  settle=30.4s  temp 52->47
+23:42:52 [7B] 0525d832ba117497 block 12 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:43:52   ok  tok/s=6.648299  wall=60.3s  settle=30.4s  temp 45->43
+23:44:23 [7B] dfe5743064b64f73 block 12 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:44:43   ok  tok/s=22.402972  wall=19.3s  settle=30.3s  temp 42->57
+23:45:13 [7B] cdb0d030aee4e4de block 12 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:45:33   ok  tok/s=22.318845  wall=19.3s  settle=30.4s  temp 47->61
+23:46:03 [7B] 4d4c18e835baa237 block 12 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:46:23   ok  tok/s=22.267715  wall=19.4s  settle=30.4s  temp 50->64
+23:46:59 [7B] dbf85256c43399c1 block 13 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:47:30   ok  tok/s=13.00981  wall=31.8s  settle=35.4s  temp 52->61
+23:48:01 [7B] c28db25c7a1b4513 block 13 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:48:34   ok  tok/s=12.666346  wall=32.6s  settle=30.4s  temp 52->61
+23:49:09 [7B] 2965d1cf478231b0 block 13 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:49:41   ok  tok/s=13.010671  wall=31.8s  settle=35.4s  temp 52->61
+23:50:17 [7B] 42dd36ad137d7245 block 13 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:50:49   ok  tok/s=12.947522  wall=31.9s  settle=35.4s  temp 52->61
+23:51:25 [7B] 15ef34f49732bd9b block 13 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:51:57   ok  tok/s=12.666941  wall=32.6s  settle=35.4s  temp 52->61
+23:52:33 [7B] 06a1554e06e4322e block 13 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:53:05   ok  tok/s=13.031234  wall=31.7s  settle=35.4s  temp 52->61
+23:53:36 [7B] 012e452b34824436 block 14 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:54:08   ok  tok/s=12.594167  wall=32.8s  settle=30.4s  temp 52->61
+23:54:44 [7B] 030807ee7291d018 block 14 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 512 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:55:41   ok  tok/s=7.078218  wall=56.7s  settle=35.4s  temp 52->52
+23:56:12 [7B] c0d16203c489a079 block 14 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:57:02   ok  tok/s=8.077102  wall=50.0s  settle=30.4s  temp 49->50
+23:57:33 [7B] 6fb33659e6d8ef1a block 14 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:58:05   ok  tok/s=12.722005  wall=32.4s  settle=30.4s  temp 47->57
+23:58:36 [7B] cf8bf02058dc8869 block 14 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+23:59:12   ok  tok/s=11.166966  wall=36.6s  settle=30.4s  temp 50->56
+23:59:43 [7B] 6a14fc90b5e97eba block 14 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:00:16   ok  tok/s=12.670378  wall=32.5s  settle=30.4s  temp 51->60
+00:00:46 [7B] 4014541eb8ad3268 block 15 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:01:06   ok  tok/s=22.340016  wall=19.3s  settle=30.4s  temp 52->65
+00:01:47 [7B] b1fd821be0cc36bd block 15 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:02:23   ok  tok/s=11.269559  wall=36.3s  settle=40.5s  temp 52->57
+00:02:54 [7B] 25b974a1b24b85b7 block 15 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:03:47   ok  tok/s=7.48604  wall=53.6s  settle=30.4s  temp 51->57
+00:04:18 [7B] 26005355d94052b0 block 15 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:04:37   ok  tok/s=22.296018  wall=19.3s  settle=30.4s  temp 52->65
+00:05:13 [7B] 6fb807bf1a5032a3 block 15 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:05:33   ok  tok/s=22.291352  wall=19.3s  settle=35.4s  temp 52->65
+00:06:13 [7B] 66ec8595e294083f block 15 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:06:33   ok  tok/s=22.345641  wall=19.3s  settle=40.5s  temp 52->65
+00:07:09 [7B] 577a88e99bdce1c0 block 16 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:08:19   ok  tok/s=5.670223  wall=70.2s  settle=35.4s  temp 52->47
+00:08:50 [7B] 5178bd70b85b5300 block 16 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:09:22   ok  tok/s=12.646286  wall=32.6s  settle=30.3s  temp 45->56
+00:09:53 [7B] 52d5b41aede337a0 block 16 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:10:29   ok  tok/s=11.278226  wall=36.3s  settle=30.4s  temp 49->55
+00:11:00 [7B] 6fda7a7f49c24a73 block 16 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:12:10   ok  tok/s=5.678625  wall=70.2s  settle=30.4s  temp 50->46
+00:12:41 [7B] 466fef7d43570f73 block 16 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:13:41   ok  tok/s=6.668768  wall=60.1s  settle=30.4s  temp 44->42
+00:14:12 [7B] 94da0730f29f7cb3 block 16 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:15:22   ok  tok/s=5.692799  wall=70.0s  settle=30.4s  temp 41->39
+00:15:53 [7B] d89f8a8722be0ec0 block 17 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:16:51   ok  tok/s=6.916586  wall=57.9s  settle=30.4s  temp 39->38
+00:17:21 [7B] 85e933efcb354ca4 block 17 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:17:54   ok  tok/s=12.722365  wall=32.4s  settle=30.4s  temp 38->49
+00:18:25 [7B] 4bf1466e463d8332 block 17 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:18:56   ok  tok/s=13.009863  wall=31.8s  settle=30.3s  temp 43->53
+00:19:27 [7B] c4abe3edf8bfdd2e block 17 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:20:25   ok  tok/s=6.919747  wall=58.0s  settle=30.3s  temp 47->44
+00:20:56 [7B] 9676e667869791a9 block 17 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:21:56   ok  tok/s=6.625684  wall=60.4s  settle=30.4s  temp 43->41
+00:22:27 [7B] 13e9bbfc0243e025 block 17 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:23:25   ok  tok/s=6.912201  wall=58.0s  settle=30.4s  temp 40->39
+00:23:56 [7B] 2c3b47dabd5d78cc block 18 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:24:15   ok  tok/s=22.397369  wall=19.3s  settle=30.3s  temp 39->54
+00:24:46 [7B] 8f81d16ece55241b block 18 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:25:18   ok  tok/s=12.701023  wall=32.5s  settle=30.4s  temp 45->55
+00:25:49 [7B] 6e82867bf9611cf1 block 18 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:26:43   ok  tok/s=7.404948  wall=54.1s  settle=30.4s  temp 48->54
+00:27:14 [7B] 841be401e25186a1 block 18 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:27:34   ok  tok/s=22.222579  wall=19.4s  settle=30.4s  temp 49->63
+00:28:04 [7B] 1ff3bc16baa9051a block 18 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:28:24   ok  tok/s=22.168813  wall=19.5s  settle=30.4s  temp 52->65
+00:29:00 [7B] fab48087e6e51b65 block 18 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:29:19   ok  tok/s=22.153868  wall=19.5s  settle=35.4s  temp 52->65
+00:29:55 [7B] 210638763f740a8d block 19 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:30:27   ok  tok/s=12.977537  wall=31.8s  settle=35.4s  temp 52->60
+00:30:57 [7B] b203b4ca4c81b7ad block 19 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:31:55   ok  tok/s=6.91173  wall=58.0s  settle=30.4s  temp 52->47
+00:32:26 [7B] 04480ebeea521b39 block 19 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:33:24   ok  tok/s=6.925921  wall=57.9s  settle=30.4s  temp 46->43
+00:33:55 [7B] 8e2104bd50318698 block 19 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:34:27   ok  tok/s=13.050712  wall=31.7s  settle=30.4s  temp 42->53
+00:34:57 [7B] b3f4d9eca8f99f01 block 19 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:35:29   ok  tok/s=13.064162  wall=31.6s  settle=30.3s  temp 46->56
+00:36:00 [7B] 5f145eaea34bb4ff block 19 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:36:32   ok  tok/s=12.933477  wall=32.0s  settle=30.3s  temp 49->59
+00:37:02 [7B] fd5c482d6aa54edd block 20 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:39:08   ok  tok/s=3.136609  wall=125.2s  settle=30.3s  temp 51->43
+00:39:39 [7B] 6f07dacdfb45c243 block 20 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:39:58   ok  tok/s=22.417517  wall=19.3s  settle=30.3s  temp 42->57
+00:40:29 [7B] 0647e98d4f61e0ff block 20 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:40:48   ok  tok/s=22.337059  wall=19.3s  settle=30.3s  temp 47->61
+00:41:19 [7B] b4b7f3a0da4152b6 block 20 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:43:23   ok  tok/s=3.154424  wall=124.3s  settle=30.3s  temp 50->43
+00:43:54 [7B] 313ca055d238c643 block 20 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:45:59   ok  tok/s=3.126863  wall=125.5s  settle=30.4s  temp 42->39
+00:46:30 [7B] 8f9a8e7ffc502228 block 20 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:48:35   ok  tok/s=3.150268  wall=124.7s  settle=30.3s  temp 39->37
+00:49:06 [7B] 94c251d1f1b744a5 block 21 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:50:04   ok  tok/s=6.903925  wall=58.1s  settle=30.4s  temp 37->37
+00:50:34 [7B] 64585903b9425ac8 block 21 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:51:07   ok  tok/s=12.684628  wall=32.5s  settle=30.4s  temp 37->48
+00:51:38 [7B] 3dd817cb938fa798 block 21 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:52:09   ok  tok/s=13.029726  wall=31.7s  settle=30.4s  temp 42->52
+00:52:40 [7B] 76faf2584daca937 block 21 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:53:38   ok  tok/s=6.912484  wall=58.1s  settle=30.3s  temp 45->43
+00:54:09 [7B] 677978dde90c1cf8 block 21 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:55:10   ok  tok/s=6.595843  wall=60.7s  settle=30.4s  temp 42->40
+00:55:41 [7B] 13d05cc5bbb1d5fd block 21 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:56:40   ok  tok/s=6.765124  wall=59.5s  settle=30.3s  temp 39->39
+00:57:11 [7B] ca198ea4e1c5e2bd block 22 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 2048 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+00:58:39   ok  tok/s=4.46512  wall=88.6s  settle=30.4s  temp 38->45
+00:59:10 [7B] 974ccfc4ab5863b9 block 22 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:00:21   ok  tok/s=5.638012  wall=70.8s  settle=30.4s  temp 43->41
+01:00:52 [7B] ef8fbb7fd89aeef1 block 22 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:02:56   ok  tok/s=3.148218  wall=124.6s  settle=30.4s  temp 40->38
+01:03:27 [7B] 1ec5664261e524ff block 22 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:04:55   ok  tok/s=4.494926  wall=88.0s  settle=30.4s  temp 37->45
+01:05:26 [7B] d20c2a7b011a9271 block 22 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 2048 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:06:23   ok  tok/s=7.093327  wall=56.6s  settle=30.4s  temp 43->46
+01:06:53 [7B] dbb20eed56d5a2a9 block 22 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 2048 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:08:22   ok  tok/s=4.470447  wall=88.5s  settle=30.4s  temp 43->48
+01:08:53 [7B] e1350e90c4de194b block 23 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:09:43   ok  tok/s=8.126515  wall=49.7s  settle=30.3s  temp 46->48
+01:10:13 [7B] c615c1bbc2eced17 block 23 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:11:08   ok  tok/s=7.340484  wall=54.6s  settle=30.4s  temp 45->51
+01:11:39 [7B] b0e7387f798ec15d block 23 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:12:11   ok  tok/s=12.600318  wall=32.7s  settle=30.4s  temp 47->57
+01:12:42 [7B] 7e566f6a2051e2bc block 23 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:13:32   ok  tok/s=8.098501  wall=49.9s  settle=30.4s  temp 49->50
+01:14:03 [7B] 732729c2b1fca2c0 block 23 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:15:31   ok  tok/s=4.486064  wall=88.2s  settle=30.4s  temp 47->51
+01:16:02 [7B] 083b0e4eebadeceb block 23 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:16:52   ok  tok/s=8.118805  wall=49.8s  settle=30.4s  temp 48->49
+01:17:22 [7B] 75e9e37e802a3460 block 24 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:17:42   ok  tok/s=22.326645  wall=19.3s  settle=30.4s  temp 46->60
+01:18:12 [7B] bc5da9685fc4cf6f block 24 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:18:49   ok  tok/s=11.321648  wall=36.2s  settle=30.4s  temp 49->56
+01:19:19 [7B] 14151561a66103c4 block 24 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:19:56   ok  tok/s=11.16369  wall=36.6s  settle=30.4s  temp 50->56
+01:20:27 [7B] dbf41f250b754954 block 24 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:20:46   ok  tok/s=22.206864  wall=19.4s  settle=30.4s  temp 50->64
+01:21:17 [7B] fc46a7711ab08f9b block 24 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:21:36   ok  tok/s=22.234308  wall=19.5s  settle=30.4s  temp 52->65
+01:22:22 [7B] 103aa800bea645eb block 24 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:22:42   ok  tok/s=22.247417  wall=19.4s  settle=45.5s  temp 52->65
+01:23:18 [7B] f62245ac5b2d9189 block 25 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 128 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:23:37   ok  tok/s=22.112544  wall=19.5s  settle=35.4s  temp 52->65
+01:24:13 [7B] 30bc04b88ad4f1a3 block 25 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 512 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:25:09   ok  tok/s=7.137659  wall=56.3s  settle=35.4s  temp 52->52
+01:25:40 [7B] 355719335db0030f block 25 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:26:30   ok  tok/s=8.078379  wall=50.0s  settle=30.4s  temp 49->50
+01:27:01 [7B] ca2be437a97644a3 block 25 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:27:20   ok  tok/s=22.268018  wall=19.4s  settle=30.4s  temp 47->61
+01:27:51 [7B] ecbf105473b32f3f block 25 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:28:10   ok  tok/s=22.234444  wall=19.4s  settle=30.3s  temp 51->64
+01:28:46 [7B] d9edd5c03119729e block 25 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 128 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:29:05   ok  tok/s=22.369331  wall=19.3s  settle=35.4s  temp 52->64
+01:29:46 [7B] d2d342f5f63bebac block 26 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 2048 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:30:43   ok  tok/s=7.085539  wall=56.8s  settle=40.5s  temp 52->52
+01:31:14 [7B] 5482acbca1966109 block 26 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:31:46   ok  tok/s=12.987066  wall=31.8s  settle=30.4s  temp 48->58
+01:32:16 [7B] 95d9fe603da33532 block 26 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 2048 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:32:53   ok  tok/s=11.230043  wall=36.4s  settle=30.3s  temp 51->56
+01:33:24 [7B] f5cb836cf0ecfb27 block 26 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:34:20   ok  tok/s=7.150407  wall=56.2s  settle=30.3s  temp 51->52
+01:34:51 [7B] 6b82c6ff4dd90317 block 26 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 2048 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:35:39   ok  tok/s=8.430164  wall=48.0s  settle=30.4s  temp 48->50
+01:36:09 [7B] b1162b8d6ea4a2c9 block 26 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 2048 -t 2 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:37:06   ok  tok/s=7.157062  wall=56.1s  settle=30.4s  temp 47->49
+01:37:36 [7B] 88f636a69ec50a95 block 27 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:38:35   ok  tok/s=6.849206  wall=58.5s  settle=30.4s  temp 46->43
+01:39:06 [7B] ae513f6240e4687d block 27 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:39:25   ok  tok/s=22.4801  wall=19.2s  settle=30.4s  temp 42->57
+01:39:56 [7B] da9c31bb1440c254 block 27 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 128 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:40:16   ok  tok/s=22.248522  wall=19.4s  settle=30.4s  temp 47->61
+01:40:46 [7B] 60cbe96bb41a45d7 block 27 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 1024 -t 4 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:41:45   ok  tok/s=6.893293  wall=58.2s  settle=30.4s  temp 50->46
+01:42:15 [7B] 8861b5e6783d6b78 block 27 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:43:16   ok  tok/s=6.662397  wall=60.1s  settle=30.3s  temp 45->43
+01:43:46 [7B] e290f0ab20c2e5ed block 27 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 128 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:44:45   ok  tok/s=6.899499  wall=58.1s  settle=30.4s  temp 42->41
+01:45:15 [7B] 1a040b5fbad007ed block 28 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:46:12   ok  tok/s=7.115126  wall=56.5s  settle=30.4s  temp 40->44
+01:46:42 [7B] bef1e561dfd20993 block 28 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:47:39   ok  tok/s=7.083282  wall=56.7s  settle=30.4s  temp 42->45
+01:48:10 [7B] 6fad3aed0bebd369 block 28 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:49:07   ok  tok/s=7.079974  wall=56.8s  settle=30.4s  temp 43->45
+01:49:37 [7B] e1c0c4d69a81a698 block 28 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 128 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:50:34   ok  tok/s=7.120501  wall=56.4s  settle=30.4s  temp 43->46
+01:51:05 [7B] 70cfcb1f76a0bacd block 28 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:52:01   ok  tok/s=7.077864  wall=56.7s  settle=30.4s  temp 43->46
+01:52:32 [7B] caf6b9895185dda8 block 28 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 9 -ub 1024 -t 2 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:53:30   ok  tok/s=6.943919  wall=57.8s  settle=30.4s  temp 43->46
+01:54:01 [7B] d4bf1570c0b4928b block 29 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:56:06   ok  tok/s=3.143945  wall=124.8s  settle=30.3s  temp 43->39
+01:56:36 [7B] b797021e3facece1 block 29 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 3 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:56:56   ok  tok/s=22.465639  wall=19.3s  settle=30.3s  temp 38->53
+01:57:26 [7B] 5a2ac3caa54f7a29 block 29 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+01:57:46   ok  tok/s=22.27049  wall=19.5s  settle=30.3s  temp 44->58
+01:58:17 [7B] ac58d718621651ea block 29 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 2048 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:00:25   ok  tok/s=3.073472  wall=128.2s  settle=30.4s  temp 48->42
+02:00:56 [7B] 42d8ba3ce6fde35d block 29 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:02:06   ok  tok/s=6.664285  wall=69.5s  settle=30.3s  temp 41->40
+02:02:36 [7B] dba9690e79a74dd2 block 29 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 0 -ub 512 -t 1 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:04:40   ok  tok/s=3.16561  wall=124.0s  settle=30.4s  temp 39->38
+02:05:11 [7B] 44bc1e063e50cc8d block 30 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:05:31   ok  tok/s=22.423425  wall=19.4s  settle=30.3s  temp 37->52
+02:06:01 [7B] 86aa70d8320a5d1f block 30 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:06:33   ok  tok/s=12.995389  wall=31.8s  settle=30.3s  temp 43->53
+02:07:04 [7B] 896eed074d77c65a block 30 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 19 -ub 1024 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:07:36   ok  tok/s=13.059369  wall=31.6s  settle=30.4s  temp 47->56
+02:08:06 [7B] f8a08f2f7f4f79fd block 30 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 512 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:08:26   ok  tok/s=22.394747  wall=19.3s  settle=30.4s  temp 49->62
+02:08:56 [7B] 87be0d53bb8f0908 block 30 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:09:16   ok  tok/s=22.349403  wall=19.3s  settle=30.4s  temp 52->64
+02:09:51 [7B] 90e0c12ba5d720a5 block 30 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 4 -ctk q8_0 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:10:11   ok  tok/s=22.347797  wall=19.3s  settle=35.4s  temp 52->65
+02:10:52 [7B] 92cb158a6be34a10 block 31 matrix A: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:11:11   ok  tok/s=22.195713  wall=19.4s  settle=40.5s  temp 52->64
+02:11:47 [7B] 8104a89054c2c660 block 31 matrix B: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:12:06   ok  tok/s=22.181163  wall=19.5s  settle=35.4s  temp 52->65
+02:12:42 [7B] 6f0da96cf11bd4f9 block 31 matrix AB_ngl: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:13:02   ok  tok/s=22.211009  wall=19.4s  settle=35.4s  temp 52->65
+02:13:37 [7B] fc678d8639c26cd7 block 31 matrix AB_ub: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 1024 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:13:57   ok  tok/s=22.19232  wall=19.4s  settle=35.4s  temp 52->65
+02:14:33 [7B] 0f73eb02f2f04231 block 31 matrix AB_t: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 1 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:14:52   ok  tok/s=22.207106  wall=19.4s  settle=35.4s  temp 52->65
+02:15:28 [7B] 2c6b0b33652b7b45 block 31 matrix AB_ctk: C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe -m D:/evo-compress-data/gguf/Qwen2.5-7B-Instruct-Q4_K_M.gguf -ngl 99 -ub 2048 -t 3 -ctk f16 -ctv f16 -b 2048 -mmp 0 -fa 0 -n 128 -p 0 -r 3 -o json
+02:15:47   ok  tok/s=22.197557  wall=19.4s  settle=35.4s  temp 52->65
+02:15:47 stage 2 complete: 192 of 192 designed rows on disk - score with weights/prereg95_sobol_score.py

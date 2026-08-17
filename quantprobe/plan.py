@@ -1704,6 +1704,16 @@ def binding_report(bc, bits=None, placement=None):
     """
     if not bc:
         return []
+    # Prereg #95 P-3 FAILED (scored 2026-08-17, staked 2026-08-07): Sobol variance attribution
+    # put the PLACEMENT lever (-ngl on the dense regime, decided 1000/1000 bootstrap) on top,
+    # not the flag the staked mapping assigned to the binding resource. The time decomposition
+    # below is untouched arithmetic and still stands; what is NOT measurement-confirmed is the
+    # flag-level tuning implication of the class name. The staked kill rule prices that
+    # honestly: this label ships directly under the headline, at full prominence, until a
+    # re-derivation survives a Taguchi arm.
+    scope_label = ("  validation       derived from the law, not confirmed by variance "
+                   "attribution (prereg #95 P-3: the top variance carrier was the placement "
+                   "lever, not the mapped flag)")
     cap = bc.get("capacity")
     lines = []
     if cap:
@@ -1711,6 +1721,7 @@ def binding_report(bc, bits=None, placement=None):
         lines.append(f"binding constraint: CAPACITY-BOUND ({cap['tier']}) - this configuration is "
                      f"{cap['gap_gb']:.1f} GB over the {cap['tier']} boundary, and crossing it is "
                      f"worth {best_gain:.1f}x.")
+        lines.append(scope_label)
         lines.append(f"  cross it by      shaving the file ({cap['lever']}) -> "
                      f"~{cap['shave_tps']:.1f} tok/s, or fitting {cap['need_gb']:.1f} GB of "
                      f"{cap['tier']} -> ~{cap['lift_tps']:.1f} tok/s")
@@ -1744,6 +1755,7 @@ def binding_report(bc, bits=None, placement=None):
     else:
         lines.append(f"binding constraint: {bc['klass'].upper()} ({bc['label']}) - "
                      f"{_pct(bc['share'])} of every decode token is spent there.")
+        lines.append(scope_label)
         if bc.get("margin_x") and bc.get("next_resource"):
             lines.append(f"  margin           {bc['margin_x']:.2f}x - {RESOURCE_LABEL[bc['resource']]} "
                          f"must get that much faster before {RESOURCE_LABEL[bc['next_resource']]} "

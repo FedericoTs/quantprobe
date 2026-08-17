@@ -39,6 +39,10 @@ def main(path):
           f' <tspan fill="{TEAL}" font-weight="bold">({pr["delta"].replace(" over floor", "")})</tspan></text>',
           f'<text x="110" y="706" fill="{SUB}" font-size="21">bound by <tspan fill="{brand.VRAM}">'
           f'system RAM bandwidth (51% of every token)</tspan></text>',
+          # prereg #95 P-3 kill rule: the classification ships with its scope label everywhere
+          # it is drawn, at full prominence, until a re-derivation confirms the mapping
+          f'<text x="110" y="738" fill="{MUT}" font-size="14">derived from the law, '
+          f'not confirmed by variance attribution (prereg #95)</text>',
           f'<text x="80" y="808" fill="{MUT}" font-size="20">{hw["placement"]}</text>']
 
     cx, cy, cw, ch = 740, 320, W - 740 - 80, 470
