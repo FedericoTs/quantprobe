@@ -4272,6 +4272,45 @@ def t_kv_is_priced_on_full_attention_layers_only():
     return None
 
 
+def t_the_parity_assertion_form_is_the_whole_gate():
+    """The committed receipt for a claim we were making without one.
+
+    On 2026-08-16 an adversarial verifier hardcoded report.py's verdict headline to 99.9
+    tok/s and the parity test PASSED - the assertion searched the whole document for plan's
+    number and some other line supplied it. We anchored the assertion to the verdict line and
+    the RECOMMENDED row, mutation-checked the fix, and shipped. But the WEAK form was fixed in
+    the working tree before its first commit, so the escape existed only in a workflow
+    transcript: an unreproducible headline, which is exactly the C-31 class we log against
+    other people's numbers. A story is not a receipt.
+
+    This is the receipt, distilled to the part that actually mattered and costing no GGUF, no
+    subprocess and no seconds: a document whose verdict line is WRONG while a different line
+    still carries the right number. Whole-document search cannot tell the two apart; a line-
+    anchored assertion can. Anyone can run this and watch the escape happen.
+    """
+    import re as _re
+    plan_wins = "1.8"
+    # A report that ignored its inputs: the headline is invented, but an unrelated capacity
+    # line happens to quote plan's real number - which is precisely how the real escape
+    # survived, and why "the number appears somewhere" is not a parity check.
+    forged = ("## Verdict\n"
+              "PREDICTED decode speed, one user:   99.9 tok/s   (band 74.9 - 124.9)\n"
+              "\n"
+              "Fit: fitting 21.1 GB of RAM -> ~1.8 tok/s on this machine.\n")
+
+    weak = bool(_re.search(r"(?<![0-9.])" + _re.escape(plan_wins) + r"\s*tok/s", forged))
+    assert weak, ("the weak form must PASS on a forged report - if it does not, this test no "
+                  "longer demonstrates the escape it exists to demonstrate")
+
+    m = _re.search(r"^PREDICTED decode speed, one user:\s+([0-9.]+) tok/s", forged, _re.M)
+    assert m, "the forged document must carry a verdict line for the strong form to read"
+    strong = f"{float(m.group(1)):.1f}" == plan_wins
+    assert not strong, ("the line-anchored form must FAIL on a forged report - that failure is "
+                        "the entire value of the fix, and if it passes here the shipped parity "
+                        "test has regressed to whole-document search")
+    return None
+
+
 def t_report_writes_a_forwardable_markdown():
     """`report` must produce a file whose numbers are plan's numbers - staked BEFORE report.py
     existed (docs/DESIGN_REPORT_CMD.md is the contract) and then SHARPENED by the verify pass:

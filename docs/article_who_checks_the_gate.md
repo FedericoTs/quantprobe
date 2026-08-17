@@ -50,6 +50,16 @@ number, so no single memorized artifact can satisfy both. Then mutate it four wa
 hardcode the verdict, hardcode the rows, delete a mandatory block, disable a guard. All
 four now fail.
 
+There is a postscript, and it belongs here rather than in a footnote. When I went back to
+cite this story I found that the *weak* version of the assertion had been fixed in my
+working tree before its first commit — so the escape existed only in a transcript. A true
+story with no artifact anyone else can run is precisely the thing this article argues
+against, and I had written it as receipt number one. The fix is a committed test that
+reconstructs the escape in milliseconds: a document whose verdict line is wrong while
+another line still carries the right number, asserting that whole-document search *passes*
+it and the line-anchored form *fails* it. Run it yourself; that is the difference between a
+receipt and an anecdote, and I had to be caught to produce one.
+
 **Rule 1: mutation-test the gate.** Break the thing on purpose. If the gate still says
 pass, you learned something enormous for the price of one deliberate bug. If you have
 never watched your gate fail, you do not know that it can.

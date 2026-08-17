@@ -13,7 +13,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Measured dead ends | 26 |
 | Open contradictions | 31 |
 | Untried levers | 40 |
-| External work to study | 27 |
+| External work to study | 28 |
 
 ## Established laws
 
@@ -1247,6 +1247,12 @@ A STRANGER PRACTICING C-28. @superalesha tested kvpress's '16x KV compression' o
 LEGITIMATE MIT tool (Rust, output matches the reference), and the poster is honest that the LLM does not get 1000x faster. The '994x' is C-28's best-path-vs-worst-path: the repo says its baselines are HuggingFace tokenizers and tiktoken 'already running multithreaded Rust', which do hundreds of MB/s to GB/s - NOT the 6.3 MB/s in the headline, which is the naive per-document Python path. A second tell: gigatoken encodes the whole 11.9 GB file un-split while HF is measured on 'the first 100 MB'. THE BINDING-CONSTRAINT READING: tokenization matters in proportion to the ingest:generate ratio. For chat/decode (quantprobe's domain) a 4K prompt tokenizes in ~ms against a multi-second decode - <1% of prefill, ~0% of decode, noise. For RAG indexing / dataset prep / agents eating tool output (all ingest, no generate) it is the wall. Same 'which stage binds' logic as Law 4, one stage upstream. Orthogonal to the tool as it stands: llama.cpp ships its own C++ tokenizer, so local users never touch HF tokenizers; it would only enter Law 4 if we ever price ingestion pipelines, not decode.
 
 `reviewed 2026-08-15; a real tool, an inflated ratio, and a pipeline-stage note`
+
+### E-29 — pitest.org | stryker-mutator.io | mutatest | cosmic-ray | mutmut | EleutherAI/lm-evaluation-harness
+
+We designed gateprobe - mutation testing aimed at AI eval suites and agent gates - on the thesis that nobody breaks a gate on purpose to see if it notices. An adversarial verifier was told to attack the BUSINESS thesis before any code existed, and it did: PIT has shipped EMPTY/FALSE/TRUE/NULL/PRIMITIVE_RETURNS (our RETURN-HARDCODE), REMOVE_CONDITIONALS (our BRANCH-KILL), NEGATE_CONDITIONALS and CONDITIONALS_BOUNDARY (our COMPARATOR-FLIP) and INLINE_CONSTS/CRCR (our THRESHOLD-PERTURB) since 2010; mutatest ships If_True/If_False in Python; cosmic-ray and mutmut both accept an arbitrary test command, so the 'any gate command' contract is not a wedge either. Worse for the AI-specific pitch: lm-evaluation-harness already ships a dummy model (lm_eval --model dummy) whose generate_until returns a constant string for every request, and the underlying result is peer-reviewed - arXiv:2410.07137 (ICLR 2025), null models scoring 86.5% LC on AlpacaEval 2.0 and 83.0 on Arena-Hard-Auto. Four of five operators and the headline insight are taken.
+
+`KILLED 2026-08-18 before any code was written - prior art refuted the wedge` · `high - refuted by named shipping tools with URLs and a peer-reviewed paper, before any code was written` · wired into: `docs/DESIGN_GATEPROBE.md (kept as the killed design, with this verdict at its head)`
 
 ---
 
