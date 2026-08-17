@@ -196,6 +196,12 @@ def unload(name, need_free_mib=4500, tries=20):
             subprocess.run([b, "stop", name], capture_output=True, text=True, timeout=60)
         except Exception:
             pass
+    # Three outcomes, and the caller prints a different refusal for each - so "no tool could
+    # read VRAM" must not be reported as "ollama is squatting", or vice versa. The AMD
+    # fallback made both paths end in the same `return None`, which left the squatting
+    # message unreachable: a working nvidia-smi plus an ollama that never releases would
+    # tell the user their GPU is unreadable. `probed` is the discriminator.
+    probed = False
     for _ in range(tries):
         # Try nvidia-smi first
         try:
@@ -203,6 +209,7 @@ def unload(name, need_free_mib=4500, tries=20):
                                 "--format=csv,noheader,nounits"],
                                capture_output=True, text=True, timeout=20).stdout.strip()
             used, total = [int(x) for x in r.splitlines()[0].split(",")]
+            probed = True
             if (total - used) >= need_free_mib:
                 return True, total - used
         except Exception:
@@ -214,13 +221,16 @@ def unload(name, need_free_mib=4500, tries=20):
             if rc:
                 vram_total_b = rc[0].get("vram_gb", 0) * 2**30 if rc[0].get("vram_gb") else 0
                 vram_used_b = rc[0].get("vram_used_b", 0)
+                if vram_total_b:
+                    probed = True
                 free_mib = (vram_total_b - vram_used_b) / (1024 * 1024)
                 if free_mib >= need_free_mib:
                     return True, int(free_mib)
         except Exception:
             pass
         time.sleep(3)
-    return None, None          # no working tool: cannot verify, so do not claim clean
+    # read it at least once = the GPU is genuinely still held; never read it = cannot verify
+    return (False, None) if probed else (None, None)
 
 
 def run(a):

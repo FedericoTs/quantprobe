@@ -28,6 +28,26 @@
   tests themselves; all 4 staked mutations now kill (the first parity test provably could
   not tell a hardcoded report from a real one - that version never shipped).
 
+## 1.28.1 - 2026-08-17
+
+**The first external code contribution: AMD GPUs are detected, not guessed at.**
+[fboudra](https://github.com/fboudra) built the rocm-smi path end to end and reported it
+from an RX 9070 XT ([PR #4](https://github.com/FedericoTs/quantprobe/pull/4), closing
+issue #2).
+
+- **AMD detection via `rocm-smi`** (Linux, amdgpu driver): name, VRAM, sclk/mclk, temp and
+  the supported-frequency ceiling, parsed by a pure function that is testable without a GPU
+  - the same shape the Windows registry parser uses. `detect()` tries NVIDIA first, so no
+  existing machine changes behaviour; `calibrate` gets the same clock/boost instrument on
+  AMD that it has on NVIDIA (identical dict shape, so ClockSampler, boost_verdict and cal_id
+  were untouched); `audit-ollama` can verify a clean GPU on AMD; and the stuck-boost advice
+  names `rocm-smi --showclocks`. Five parser tests shipped with the patch.
+- **Follow-up on the merge (ours, not his):** `unload()` reported "cannot read VRAM" for
+  BOTH failure modes, which made the "ollama is still holding the GPU" refusal unreachable -
+  a working nvidia-smi plus a squatting ollama would have sent the user to fix the wrong
+  thing. The tristate is restored and pinned by a test that fails if the distinction
+  collapses again (mutation-checked).
+
 ## 1.28.0 - 2026-08-16
 
 **The planner now prices hybrid linear-attention models correctly - two days after the class

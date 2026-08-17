@@ -3822,6 +3822,50 @@ def t_amd_rocm_parser_multi_card():
     return None
 
 
+def t_unload_separates_unreadable_gpu_from_a_squatting_ollama():
+    """audit-ollama refuses to compare for TWO different reasons and must name the right one.
+
+    unload() returns a tristate the caller branches on: True (verified free), False (read the
+    VRAM fine, ollama is still holding it), None (no tool could read VRAM at all). The AMD
+    fallback (PR #4) made both failure paths end in `return None`, which left the 'ollama is
+    still holding the GPU' message unreachable - a working nvidia-smi plus a squatting ollama
+    told the user their GPU was unreadable, sending them to fix the wrong thing. Contention
+    reporting is a measurement-discipline surface: a wrong diagnosis here is how someone
+    publishes a contaminated benchmark believing the tool cleared it.
+
+    Both failure modes are exercised with the probes stubbed, so this needs no GPU and holds
+    on every box: tries=1 keeps it instant.
+    """
+    from quantprobe import ollama as om
+    import subprocess as sp
+    real_run, real_sleep = sp.run, om.time.sleep
+    om.time.sleep = lambda *_a, **_k: None
+    try:
+        # 1. nvidia-smi answers, but the GPU stays full -> verified NOT clean (False)
+        class _R:
+            stdout = "7000, 8000\n"          # 1000 MiB free, need 4500
+        sp.run = lambda *a, **k: _R()
+        clean, freed = om.unload("m", need_free_mib=4500, tries=1)
+        assert clean is False, (f"a readable-but-full GPU must report False (still held), "
+                                f"got {clean!r} - the squatting branch is unreachable again")
+        # 2. no tool at all -> cannot verify (None), and the caller says so instead
+        def _boom(*a, **k):
+            raise OSError("no nvidia-smi")
+        sp.run = _boom
+        from quantprobe import detect as dt
+        real_state = dt._rocm_state
+        dt._rocm_state = lambda: []
+        try:
+            clean2, _ = om.unload("m", need_free_mib=4500, tries=1)
+        finally:
+            dt._rocm_state = real_state
+        assert clean2 is None, (f"with no readable tool the answer is None (cannot verify), "
+                                f"got {clean2!r} - never claim a clean box you did not read")
+    finally:
+        sp.run, om.time.sleep = real_run, real_sleep
+    return None
+
+
 def t_split_gguf_siblings_and_size():
     """Issue #1 root cause: a 2-part GGUF specced from part 1 alone halves total params and
     every size-derived quantity. split_siblings must map ANY part to the full ordered set,
