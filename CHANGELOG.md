@@ -28,6 +28,30 @@
   tests themselves; all 4 staked mutations now kill (the first parity test provably could
   not tell a hardcoded report from a real one - that version never shipped).
 
+## 1.28.2 - 2026-08-17
+
+**Hotfix: v1.28.1 was broken on machines with no GPU. Upgrade if you installed it.**
+
+The AMD refactor wrapped the non-NVIDIA detection branches in an `if gs:` guard with no
+`else`, so a box with no GPU at all fell through every arm: `detect()` returned hardware
+with **no `vram`/`vram_bw` keys and no GPU line at all**, and `None` propagated downstream -
+the same failure mode issue #1 reported. Every CPU-only user of 1.28.1 was affected; every
+GPU user was not.
+
+- `detect()` always settles `vram`/`vram_bw` and always emits exactly one `GPU:` line. The
+  empty case now falls through the same `else` as every other dead end (`_price_gpus([])`
+  returns `([], [])`), which is what the pre-refactor code did.
+- A test pins it **on any box**: the three probes are stubbed empty in-process, so the
+  no-GPU path is exercised on GPU machines too. Verified against the actual released
+  1.28.1 file - it fails there, passes here.
+
+**How this got out, since the misses are published here too:** the full suite ran green
+locally before the release, and this box has an NVIDIA card, so the broken branch was
+never reached. CI - which runs on GPU-less runners - caught it within minutes on four
+tests, but the release had already been tagged and uploaded in the same sequence. The rule
+that follows: **CI green is a release gate, not a formality that runs after the upload.**
+No release from now on precedes its CI run.
+
 ## 1.28.1 - 2026-08-17
 
 **The first external code contribution: AMD GPUs are detected, not guessed at.**

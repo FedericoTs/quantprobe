@@ -325,30 +325,33 @@ def detect():
         # Intel (or any GPU with no driver tools). Field case: issue #1, RX 5700 XT, "none detected".
         amd = gpus_amd()
         others = gpus_other() if not amd else []
-        gs = amd or others
-        if gs:
-            known, unknown = _price_gpus(gs)
-            if known:
-                vram = sum(p[1] for p in known)
-                vram_bw = sum(p[2] for p in known) * (1.0 if len(known) == 1 else 0.85)
-                names = " + ".join(p[0] for p in known)
-                is_amd = bool(amd)
-                hw.update(vram=round(vram, 1), vram_bw=round(vram_bw),
-                          geta=known[0][3], gl=known[0][4])
-                src_note = ("AMD via rocm-smi (amdgpu driver required)" if is_amd
-                            else "non-NVIDIA path: VRAM from the driver registry, bandwidth from spec")
-                notes.append(f"GPU: {names}, {vram:.0f} GB [os], {vram_bw:.0f} GB/s [table] - "
-                             f"{src_note}; eta on this backend is UNVALIDATED here, so run "
-                             f"`quantprobe calibrate` with your llama.cpp build to anchor it")
-            elif unknown:
-                names = ", ".join(f"{p[0]} ({p[1]:.0f} GB)" for p in unknown)
-                hw.update(vram=0, vram_bw=0)
-                notes.append(f"GPU: {names} detected [os] but not in the bandwidth table - pass "
-                             f"--vram <GB> --vram-bw <GB/s> (spec sheet) to include the GPU tier; "
-                             f"planning CPU-only until then")
-            else:
-                hw.update(vram=0, vram_bw=0)
-                notes.append("GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]")
+        # NO `if gs:` guard around this chain. _price_gpus([]) returns ([], []), so the empty
+        # case falls to the else and gets vram=0 + the "none detected" note like every other
+        # dead end. Guarding it skipped BOTH on a machine with no GPU at all: hw came back
+        # with no vram/vram_bw keys and no GPU line, which is how None hardware reached the
+        # contribute payload once already (issue #1). CI caught it; a GPU box cannot.
+        known, unknown = _price_gpus(amd or others)
+        if known:
+            vram = sum(p[1] for p in known)
+            vram_bw = sum(p[2] for p in known) * (1.0 if len(known) == 1 else 0.85)
+            names = " + ".join(p[0] for p in known)
+            is_amd = bool(amd)
+            hw.update(vram=round(vram, 1), vram_bw=round(vram_bw),
+                      geta=known[0][3], gl=known[0][4])
+            src_note = ("AMD via rocm-smi (amdgpu driver required)" if is_amd
+                        else "non-NVIDIA path: VRAM from the driver registry, bandwidth from spec")
+            notes.append(f"GPU: {names}, {vram:.0f} GB [os], {vram_bw:.0f} GB/s [table] - "
+                         f"{src_note}; eta on this backend is UNVALIDATED here, so run "
+                         f"`quantprobe calibrate` with your llama.cpp build to anchor it")
+        elif unknown:
+            names = ", ".join(f"{p[0]} ({p[1]:.0f} GB)" for p in unknown)
+            hw.update(vram=0, vram_bw=0)
+            notes.append(f"GPU: {names} detected [os] but not in the bandwidth table - pass "
+                         f"--vram <GB> --vram-bw <GB/s> (spec sheet) to include the GPU tier; "
+                         f"planning CPU-only until then")
+        else:
+            hw.update(vram=0, vram_bw=0)
+            notes.append("GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]")
 
     # disk: class default; a real measured number needs `quantprobe hw --measure` (reads a large file)
     hw.update(ram=round(total), ram_bw=ram_bw, disk_bw=0.5)

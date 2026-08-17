@@ -3822,6 +3822,40 @@ def t_amd_rocm_parser_multi_card():
     return None
 
 
+def t_detect_always_answers_about_the_gpu_even_when_there_is_none():
+    """detect() must ALWAYS settle vram/vram_bw and say something about the GPU.
+
+    v1.28.1 shipped with a hole here and this box could not see it: the AMD refactor wrapped
+    the non-NVIDIA branch chain in `if gs:`, so a machine with NO GPU at all fell through
+    every arm - hw came back with no vram/vram_bw keys and notes carried no GPU line. That is
+    the issue-#1 failure mode (None hardware reaching a contribute payload), and it reproduced
+    on every GPU-less machine: the whole CPU-only user base of that release.
+
+    Four existing tests caught it in CI and none could catch it here, because every probe
+    returns something on a box with an NVIDIA card. So the discriminator is stubbing all
+    three probes empty IN-PROCESS - then the no-GPU path runs on any hardware, including
+    this one. Mutation owed and discharged: restoring the `if gs:` guard fails this test.
+    """
+    from quantprobe import detect as dt
+    real = (dt.gpus, dt.gpus_amd, dt.gpus_other)
+    dt.gpus = lambda: []
+    dt.gpus_amd = lambda: []
+    dt.gpus_other = lambda: []
+    try:
+        hw, notes = dt.detect()
+    finally:
+        dt.gpus, dt.gpus_amd, dt.gpus_other = real
+    assert hw.get("vram") == 0, (f"no GPU must resolve vram to 0, got {hw.get('vram')!r} - "
+                                 f"a missing key becomes None downstream, which is exactly "
+                                 f"what issue #1 reported")
+    assert hw.get("vram_bw") == 0, f"no GPU must resolve vram_bw to 0, got {hw.get('vram_bw')!r}"
+    gpu_notes = [n for n in notes if n.startswith("GPU:")]
+    assert len(gpu_notes) == 1, (f"detect() must print exactly one GPU line, got {gpu_notes} - "
+                                 f"silence reads as 'not checked', not as 'none present'")
+    assert "none detected" in gpu_notes[0], f"wrong GPU line for a GPU-less box: {gpu_notes[0]}"
+    return None
+
+
 def t_unload_separates_unreadable_gpu_from_a_squatting_ollama():
     """audit-ollama refuses to compare for TWO different reasons and must name the right one.
 
