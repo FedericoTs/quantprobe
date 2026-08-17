@@ -1235,6 +1235,18 @@
    "evidence": "prereg #99 (preregistrations/2026-08-11-format-vs-capability-decomposition.md), staked and scored the same day; weights/prereg99_score.py; the correction appended to prereg #98 (preregistrations/2026-08-09-quant-recipe-vs-naive-benchmarks.md); commits d7910e6 (the error) and 9b483ff (the retraction).",
    "wired_into": "weights/prereg98_score.py now ALWAYS prints the format decomposition beside any boxed delta, with the sign of the reading reversed: a low emitted-box rate is evidence of capability collapse, not of a fussy scorer. The guard exists because the column was what misled me, and a column that can mislead should carry its interpretation.",
    "confidence": "measured - 500 items per arm, one staked test, and the null was shown to have power rather than assumed to"
+  },
+  {
+   "id": "C-31",
+   "kind": "contradiction",
+   "status": "CLOSED 2026-08-18 - corrected in README the same day it was found",
+   "what_is_wrong": "Both numbers are the FIRST request of their session, quoted from llama.cpp's `eval time` line: 22.69 t/s was a 16-token reply (bt_server.log line 16) and 11.72 a 72-token reply (bt_server_16k.log line 16). At that length the print is dominated by per-request overhead and is not a decode rate. Neither log's proper per-request decode population was ever consulted.",
+   "what_the_data_says": "bt_server.log carries 1,231 `n_decoded/tg` decode rates: median 20.79, p10 17.41, p90 21.37, max 22.32, min 14.37. bt_server_16k.log carries 634: median 11.18, p10 10.30, p90 11.45, max 11.80. So the published 22.7 top-of-range was never measured as a decode rate, and the true 4k->16k ratio is 1.86x, not 1.94x. The corrected headline (median 20.8) is LOWER than what was published and rests on 1,865 measurements instead of two.",
+   "how_it_was_found": "A direct question about the 30B's best speed sent us back to the cited log instead of to memory. The rule that caught it is the project's own: every user-facing tok/s figure must be reproducible from its committed source on demand. It was published for two weeks and nobody, including us, had re-derived it.",
+   "generalisation": "Any metric extracted by grepping a log for a pattern will find the FIRST match, and the first match is systematically the least representative request in a server session (cold cache, short reply, overhead-dominated). Prefer a population statistic over any single line, and state N. Applies to every future bench/--contribute claim.",
+   "wired_into": "README.md measured-results table; FINDINGS.md",
+   "claim": "Qwen3-30B-A3B '20.4-22.7 tok/s, 22.69 re-measured on a normal working session' and 'context trade 22.69 at 4k -> ~11.7 at 16k'",
+   "confidence": "measured - recomputed from the two cited logs themselves: 1,231 and 634 per-request decode rates. The corrected headline is lower than the one it replaces."
   }
  ],
  "untried": [

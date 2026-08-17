@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 28 |
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
-| Open contradictions | 30 |
+| Open contradictions | 31 |
 | Untried levers | 40 |
 | External work to study | 27 |
 
@@ -677,6 +677,10 @@ A: Let's think step by step.') never asks for - the pattern is inherited from th
 ### C-30 — I MISREAD OUR OWN BIGGEST RESULT WITHIN AN HOUR OF GETTING IT, IN THE DIRECTION THAT MADE IT SOUND MORE SOPHISTICATED. Prereg #98 confirmed P1 with MATH-500 57.0 -> 81.0 (+24.0 against a staked +2.0). The scorer also prints emitted_boxed: NAIVE 64.4% vs OURS 86.4%. From that I concluded that +22.0 of the +24.0 was ANSWER FORMATTING - that naive Q2_K had lost instruction-following rather than capability - and wrote it into the #98 scored section and commit d7910e6 as the corrected, more honest headline. It was neither. Prereg #99 re-graded both arms with lm-eval's own format-blind flexible-extract rule as a fallback on exactly the unboxed items: the gap moved +24.0 -> +23.8. FORMAT IS 1% OF IT. NAIVE recovered 2 items of 178 unboxed; OURS 1 of 68. The missing box is a lost ANSWER, not a lost format.
 
 `resolved 2026-08-11 by prereg #99, which refuted the analysis rather than the result` · `measured - 500 items per arm, one staked test, and the null was shown to have power rather than assumed to` · evidence: prereg #99 (preregistrations/2026-08-11-format-vs-capability-decomposition.md), staked and scored the same day; weights/prereg99_score.py; the correction appended to prereg #98 (preregistrations/2026-08-09-quant-recipe-vs-naive-benchmarks.md); commits d7910e6 (the error) and 9b483ff (the retraction). · wired into: `weights/prereg98_score.py now ALWAYS prints the format decomposition beside any boxed delta, with the sign of the reading reversed: a low emitted-box rate is evidence of capability collapse, not of a fussy scorer. The guard exists because the column was what misled me, and a column that can mislead should carry its interpretation.`
+
+### C-31 — Qwen3-30B-A3B '20.4-22.7 tok/s, 22.69 re-measured on a normal working session' and 'context trade 22.69 at 4k -> ~11.7 at 16k'
+
+`CLOSED 2026-08-18 - corrected in README the same day it was found` · `measured - recomputed from the two cited logs themselves: 1,231 and 634 per-request decode rates. The corrected headline is lower than the one it replaces.` · wired into: `README.md measured-results table; FINDINGS.md`
 
 ## Untried levers
 

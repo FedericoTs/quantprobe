@@ -188,11 +188,11 @@ Copyability is the whole mechanism: code answers repeat their input, prose inven
 
 | result | number |
 |---|---|
-| Qwen3-30B-A3B on a 2016 desktop | **20.4–22.7 tok/s** (22.69 re-measured 2026-08-03 on a normal working session, [server log](weights/data/bt_server.log); 22.94 on a scrubbed box, not quoted as the headline) |
+| Qwen3-30B-A3B on a 2016 desktop | **median 20.8 tok/s**, 17.4-21.4 typical (p10-p90), best 22.3 - across **1,231 decode requests** in one live working session with a coding agent and desktop apps running ([server log](weights/data/bt_server.log)). 22.94 on a scrubbed box, not quoted as the headline. [Corrected 2026-08-18](FINDINGS.md): the previous "22.69" was the session's 16-token first reply, not a decode rate. |
 | Same config, 40 machine-checked business tasks | **40/40** ([evidence](weights/data/bt_20260803_2228_qwen30b_q2k.json)) |
 | Same model, partial expert offload | **20.62 tok/s** (+12.4%, free) |
 | Depth-aware vs uniform quant, **equal bytes** (7B @ 2-bit, staked A2A) | **-13.2% perplexity, -39.5% median KLD, +5.1 pts same-token, +6.6% tok/s** at +0.48% file size ([prereg + verdict](preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md)) |
-| Context window trade, measured | 22.69 tok/s at 4k ctx → **~11.7 at 16k** — KV displaces weights on a 6 GB card; run 4k for chat, open it for long chains |
+| Context window trade, measured | median **20.8 tok/s at 4k ctx → 11.2 at 16k** (**1.86x**), from 1,231 and 634 decode requests in two live sessions — KV displaces weights on a 6 GB card; run 4k for chat, open it for long chains |
 | Same bytes, different layers protected (Gemma 4 12B) | **byte-identical files, 2.25 ppl apart** |
 | Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |
 | GLM-4.5-Air **110B** from a SATA drive, 16 GB RAM | **0.19 tok/s** (capacity demo, not usable inference) |
@@ -212,9 +212,10 @@ That is not your machine on a normal day, and we will not pretend otherwise:
 - **All 14 rows measured faster than the previous pass** — not 13, all of them. Median **+4.6%**,
   up to +27.5%. The scrubbed box is a **ceiling**, not a typical result.
 - Because of that, **the published headline speeds above stay conservative.** Qwen3-30B-A3B measured
-  **22.94 tok/s** on the scrubbed pass; the headline quotes 22.69, measured with a coding agent and
-  desktop apps live, because a number you can only get by stopping services is not a number you can
-  reproduce.
+  **22.94 tok/s** on the scrubbed pass; the headline quotes the **median of a live session**
+  (20.8 tok/s across 1,231 requests, coding agent and desktop apps running), because a number
+  you can only get by stopping services is not a number you can reproduce. A single fast reply
+  is not one either - that mistake is what C-31 corrected.
 - The median moved 9.0% → 8.4%, which is **inside our own ±1 point noise floor**, so we report it
   as *unchanged* rather than improved — even though the smaller number is the flattering one.
 - An earlier version of this section called the gemma4-12B row "untrustworthy" on a 27% spread.
