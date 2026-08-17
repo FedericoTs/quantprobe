@@ -267,3 +267,23 @@ Night 2 (30B, 280 runs) queued; its verdict can refine the story but cannot un-f
 kill rule. Chain of custody: mapping staked 2026-08-07; ground truth frozen and scorer
 committed 2026-08-16 before any stage-2 row; measured overnight; scored by frozen code
 2026-08-17. The third staked miss of prereg #95, published at the same size as its hits.
+
+
+### stage 2 night 2 (30B Sobol), 2026-08-17: UNDECIDED at N=40 - extending, not deciding
+
+280 of 280 designed runs, 0 DNF, 7.5 h. Total-order: mmp **0.914** [0.571, 1.289] vs t
+**0.869** [0.597, 1.184] - a statistical dead heat, and the bootstrap agrees: the modal
+argmax holds rank 1 in only **569 of 1000** resamples against the pre-committed 950 gate.
+ngl 0.325, ctk 0.312, moe_cpu_frac 0.168.
+
+The scorer refused to issue a 30B verdict from an undecided argmax and printed the
+pre-declared remedy verbatim: extend the SAME seeded stream to 56 blocks (amendment item
+3, +16-block steps, cap 64). That extension is running; a design that cannot separate its
+top two factors does not get to pick the flattering one.
+
+Note what is NOT affected: the overall P-3 verdict was already FAIL on the 7B alone
+(per-model short-circuit, amendment item 4), and the scope label shipped 2026-08-17.
+Nothing the 30B can return will un-fire that. What the extension buys is the honest
+answer to a different question - whether --no-mmap or -t carries decode variance on a
+CPU-expert split - which stage 1 already flagged as the strongest interaction candidate
+on the board.

@@ -3,8 +3,8 @@
   "stage": 2,
   "scores": "P-3 only (stage-1 stakes are already scored and are not re-scored)",
   "csv": "weights/data/doe_sobol_stage2.csv",
-  "csv_sha256": "4234b358ba568a614c4f4c274c169e1c1b0ae5bed5f1593b8fc94dfdb2931682",
-  "scored_utc": "2026-08-17T08:28:32Z",
+  "csv_sha256": "b5e1a9b0382f9b765f63c45b1851abf84ccb6d7a6d1631355ba2f0b057e065bd",
+  "scored_utc": "2026-08-17T16:06:40Z",
   "design": {
     "seeds": [
       "prereg95:stage2:7B:20260816",
@@ -73,7 +73,7 @@
     "source": "quantprobe plan 2026-08-16, auto-detected hw, calibration 2026-07-31 state 2dc97d41; frozen in this scorer and never re-read at score time"
   },
   "rows": {
-    "rows_in_csv": 192,
+    "rows_in_csv": 472,
     "duplicate_run_ids_ignored": 0,
     "extra_rows_outside_design": 0
   },
@@ -178,10 +178,120 @@
       }
     },
     "30B": {
-      "refused": "REFUSED (30B): incomplete design: largest complete prefix is 0 blocks, N_start is 40. Resume weights/doe_morris.py --stage2; a partial night is not the staked design.",
-      "n_complete_blocks": 0,
       "n_start": 40,
-      "n_cap": 64
+      "n_cap": 64,
+      "n_complete_blocks": 40,
+      "validity_floor_pairs": 30,
+      "rows": {
+        "ok": 280,
+        "dnf": 0,
+        "other_non_ok": 0,
+        "present_beyond_prefix": 0,
+        "ok_rows_with_unparseable_tok_s": []
+      },
+      "V_Y": 18.9272216876213,
+      "n_pool_ok_AB": 80,
+      "plan_binding": "binding constraint: BANDWIDTH-BOUND (system RAM bandwidth) - 51% of every decode token is spent there.",
+      "mapping_set": [
+        "moe_cpu_frac",
+        "ctk"
+      ],
+      "morris_argmax": "t",
+      "factors": {
+        "ngl": {
+          "S": 0.04162315529376613,
+          "S_ci95": [
+            -0.7644042819980503,
+            0.7351275969876496
+          ],
+          "n_S_triples": 40,
+          "ST": 0.3248826896788542,
+          "ST_ci95": [
+            0.18036284351988796,
+            0.5314408906511114
+          ],
+          "n_ST_pairs": 40,
+          "scoreable": true
+        },
+        "t": {
+          "S": 1.7544489305939905,
+          "S_ci95": [
+            0.7900846276623176,
+            2.9683260122387396
+          ],
+          "n_S_triples": 40,
+          "ST": 0.868545820176847,
+          "ST_ci95": [
+            0.5968796403307086,
+            1.1842115704393947
+          ],
+          "n_ST_pairs": 40,
+          "scoreable": true
+        },
+        "ctk": {
+          "S": 1.1022104358245501,
+          "S_ci95": [
+            0.42802069517355873,
+            1.9790560192917592
+          ],
+          "n_S_triples": 40,
+          "ST": 0.3124085686099904,
+          "ST_ci95": [
+            0.14786675988853368,
+            0.5297258645302175
+          ],
+          "n_ST_pairs": 40,
+          "scoreable": true
+        },
+        "mmp": {
+          "S": 0.6564531820736883,
+          "S_ci95": [
+            -0.3010223349146862,
+            1.8007021216054424
+          ],
+          "n_S_triples": 40,
+          "ST": 0.9141016277053959,
+          "ST_ci95": [
+            0.570533412398123,
+            1.2892594225909668
+          ],
+          "n_ST_pairs": 40,
+          "scoreable": true
+        },
+        "moe_cpu_frac": {
+          "S": -0.05334206956786762,
+          "S_ci95": [
+            -0.6088989865811233,
+            0.47706263805942817
+          ],
+          "n_S_triples": 40,
+          "ST": 0.16818871736392815,
+          "ST_ci95": [
+            0.06175405022598664,
+            0.3102782411493614
+          ],
+          "n_ST_pairs": 40,
+          "scoreable": true
+        }
+      },
+      "non_ok_rows": [],
+      "st_argmax_full_data": "mmp",
+      "sobol_argmax": null,
+      "case": null,
+      "verdict": null,
+      "bootstrap": {
+        "resamples": 1000,
+        "seed": "prereg95:stage2:bootstrap:20260816",
+        "modal_top": "mmp",
+        "retention": 569,
+        "argmax_counts": {
+          "mmp": 569,
+          "t": 431
+        },
+        "no_argmax_resamples": 0,
+        "decided": false
+      },
+      "undecided_message": "UNDECIDED (30B): ST argmax rank-1 retention 569/1000 < 950. Extend the same seeded design: python weights/doe_morris.py --stage2 --model 30B --n-blocks 56 (cap 64). No verdict is issued from an undecided argmax."
     }
   },
   "P-3": {
@@ -192,7 +302,7 @@
       "30B": null
     }
   },
-  "exit_code": 0,
+  "exit_code": 1,
   "label": {
     "text": "derived from the law, not confirmed by variance attribution (prereg #95 P-3)",
     "surfaces": [
