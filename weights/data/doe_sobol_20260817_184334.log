@@ -1,0 +1,4 @@
+18:43:34 ======================================================================
+18:43:34 prereg #95 stage 2 Sobol (Saltelli survivors)  stamp=20260817_184334  pid=6168
+18:43:34 design docs/DESIGN_DOE_SOBOL.md  models 30B  blocks 30B:56  runs 392  deadline 9.5h  exe C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-bench.exe
+18:43:34 REFUSED: C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\.doe_lock exists - this runner is already running

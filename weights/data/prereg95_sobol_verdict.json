@@ -3,8 +3,8 @@
   "stage": 2,
   "scores": "P-3 only (stage-1 stakes are already scored and are not re-scored)",
   "csv": "weights/data/doe_sobol_stage2.csv",
-  "csv_sha256": "b5e1a9b0382f9b765f63c45b1851abf84ccb6d7a6d1631355ba2f0b057e065bd",
-  "scored_utc": "2026-08-17T16:06:40Z",
+  "csv_sha256": "be38d48ac5c804131bb50b2dd653e0ecec2cd3a3eba301c3e38b121315cd4a07",
+  "scored_utc": "2026-08-17T23:58:53Z",
   "design": {
     "seeds": [
       "prereg95:stage2:7B:20260816",
@@ -73,7 +73,7 @@
     "source": "quantprobe plan 2026-08-16, auto-detected hw, calibration 2026-07-31 state 2dc97d41; frozen in this scorer and never re-read at score time"
   },
   "rows": {
-    "rows_in_csv": 472,
+    "rows_in_csv": 640,
     "duplicate_run_ids_ignored": 0,
     "extra_rows_outside_design": 0
   },
@@ -180,17 +180,17 @@
     "30B": {
       "n_start": 40,
       "n_cap": 64,
-      "n_complete_blocks": 40,
-      "validity_floor_pairs": 30,
+      "n_complete_blocks": 64,
+      "validity_floor_pairs": 48,
       "rows": {
-        "ok": 280,
+        "ok": 448,
         "dnf": 0,
         "other_non_ok": 0,
         "present_beyond_prefix": 0,
         "ok_rows_with_unparseable_tok_s": []
       },
-      "V_Y": 18.9272216876213,
-      "n_pool_ok_AB": 80,
+      "V_Y": 20.1302249569919,
+      "n_pool_ok_AB": 128,
       "plan_binding": "binding constraint: BANDWIDTH-BOUND (system RAM bandwidth) - 51% of every decode token is spent there.",
       "mapping_set": [
         "moe_cpu_frac",
@@ -199,99 +199,98 @@
       "morris_argmax": "t",
       "factors": {
         "ngl": {
-          "S": 0.04162315529376613,
+          "S": 0.2355742942838308,
           "S_ci95": [
-            -0.7644042819980503,
-            0.7351275969876496
+            -0.317430563902167,
+            0.7777819937537119
           ],
-          "n_S_triples": 40,
-          "ST": 0.3248826896788542,
+          "n_S_triples": 64,
+          "ST": 0.3346436260641071,
           "ST_ci95": [
-            0.18036284351988796,
-            0.5314408906511114
+            0.21116047454020226,
+            0.47248353118474445
           ],
-          "n_ST_pairs": 40,
+          "n_ST_pairs": 64,
           "scoreable": true
         },
         "t": {
-          "S": 1.7544489305939905,
+          "S": 1.642804143972633,
           "S_ci95": [
-            0.7900846276623176,
-            2.9683260122387396
+            0.9481048563199131,
+            2.4770599825417423
           ],
-          "n_S_triples": 40,
-          "ST": 0.868545820176847,
+          "n_S_triples": 64,
+          "ST": 0.8297799000372788,
           "ST_ci95": [
-            0.5968796403307086,
-            1.1842115704393947
+            0.6102775589183267,
+            1.0799567830138446
           ],
-          "n_ST_pairs": 40,
+          "n_ST_pairs": 64,
           "scoreable": true
         },
         "ctk": {
-          "S": 1.1022104358245501,
+          "S": 1.0774172387679066,
           "S_ci95": [
-            0.42802069517355873,
-            1.9790560192917592
+            0.6100773248108651,
+            1.6924449279303524
           ],
-          "n_S_triples": 40,
-          "ST": 0.3124085686099904,
+          "n_S_triples": 64,
+          "ST": 0.29148553080149475,
           "ST_ci95": [
-            0.14786675988853368,
-            0.5297258645302175
+            0.1742639397540066,
+            0.4418494061921344
           ],
-          "n_ST_pairs": 40,
+          "n_ST_pairs": 64,
           "scoreable": true
         },
         "mmp": {
-          "S": 0.6564531820736883,
+          "S": 0.661205134271365,
           "S_ci95": [
-            -0.3010223349146862,
-            1.8007021216054424
+            0.043939939943012506,
+            1.4560165949452213
           ],
-          "n_S_triples": 40,
-          "ST": 0.9141016277053959,
+          "n_S_triples": 64,
+          "ST": 0.7095251846148141,
           "ST_ci95": [
-            0.570533412398123,
-            1.2892594225909668
+            0.5070054329007626,
+            0.9496550459122897
           ],
-          "n_ST_pairs": 40,
+          "n_ST_pairs": 64,
           "scoreable": true
         },
         "moe_cpu_frac": {
-          "S": -0.05334206956786762,
+          "S": 0.1887594527256254,
           "S_ci95": [
-            -0.6088989865811233,
-            0.47706263805942817
+            -0.21933134059702358,
+            0.6044207272590639
           ],
-          "n_S_triples": 40,
-          "ST": 0.16818871736392815,
+          "n_S_triples": 64,
+          "ST": 0.18359873296936605,
           "ST_ci95": [
-            0.06175405022598664,
-            0.3102782411493614
+            0.09059812739444977,
+            0.2945805747196527
           ],
-          "n_ST_pairs": 40,
+          "n_ST_pairs": 64,
           "scoreable": true
         }
       },
       "non_ok_rows": [],
-      "st_argmax_full_data": "mmp",
+      "st_argmax_full_data": "t",
       "sobol_argmax": null,
-      "case": null,
-      "verdict": null,
+      "case": "gate never decides at N_cap",
+      "verdict": "UNDECIDABLE",
       "bootstrap": {
         "resamples": 1000,
         "seed": "prereg95:stage2:bootstrap:20260816",
-        "modal_top": "mmp",
-        "retention": 569,
+        "modal_top": "t",
+        "retention": 765,
         "argmax_counts": {
-          "mmp": 569,
-          "t": 431
+          "t": 765,
+          "mmp": 235
         },
         "no_argmax_resamples": 0,
         "decided": false
-      },
-      "undecided_message": "UNDECIDED (30B): ST argmax rank-1 retention 569/1000 < 950. Extend the same seeded design: python weights/doe_morris.py --stage2 --model 30B --n-blocks 56 (cap 64). No verdict is issued from an undecided argmax."
+      }
     }
   },
   "P-3": {
@@ -299,10 +298,10 @@
     "overall": "FAIL",
     "per_model": {
       "7B": "FAIL",
-      "30B": null
+      "30B": "UNDECIDABLE"
     }
   },
-  "exit_code": 1,
+  "exit_code": 0,
   "label": {
     "text": "derived from the law, not confirmed by variance attribution (prereg #95 P-3)",
     "surfaces": [
@@ -311,7 +310,8 @@
       "the pipeline chart asset that draws it (weights/data/card_flagship.svg)"
     ],
     "reasons": [
-      "7B: publishable P-3 FAIL - the kill rule fires; the label ships the same day at full prominence"
+      "7B: publishable P-3 FAIL - the kill rule fires; the label ships the same day at full prominence",
+      "30B: UNDECIDABLE at N_cap 64 - the label ships anyway (amendment item 7: stricter than staked, declared)"
     ]
   }
 }

@@ -287,3 +287,51 @@ Nothing the 30B can return will un-fire that. What the extension buys is the hon
 answer to a different question - whether --no-mmap or -t carries decode variance on a
 CPU-expert split - which stage 1 already flagged as the strongest interaction candidate
 on the board.
+
+
+---
+
+## SCORED - stage 2 complete, 2026-08-18: the 30B is UNDECIDABLE at the cap
+
+448 of 448 designed runs, 0 DNF, three sessions, one machine state throughout. The
+extension ladder ran exactly as pre-declared (amendment item 3), and it never decided:
+
+| N blocks | runs | modal top factor | rank-1 retention | gate (950/1000) |
+|---|---|---|---|---|
+| 40 | 280 | --no-mmap | 569 | not decided |
+| 56 | 392 | -t | 663 | not decided |
+| **64 (cap)** | **448** | **-t** | **765** | **not decided -> UNDECIDABLE** |
+
+Final total-order indices, 30B: `-t` **0.830** [0.610, 1.080] and `--no-mmap` **0.710**
+[0.507, 0.950] - overlapping across most of their range - then `-ngl` 0.335, `-ctk` 0.292,
+`-ot` 0.184.
+
+**What this is, precisely.** Not a null result and not a failure of the instrument. On a
+CPU-expert MoE split, thread count and page-cache behaviour carry comparable decode
+variance, and 448 measurements on this box cannot separate them. The modal winner even
+CHANGED between the first extension and the second - which is exactly why the gate exists.
+A pass/fail scorer would have named `--no-mmap` the top carrier at N=40, and 168 further
+runs would have quietly made that published claim wrong.
+
+**Consequences, all pre-declared:**
+- **P-3 overall: FAIL**, unchanged - it was decided on the 7B (`-ngl`, 1000/1000, outside
+  the staked mapping set) and short-circuited per amendment item 4.
+- **The 30B branch ships the scope label anyway**, per amendment item 7 (stricter than
+  staked): "derived from the law, not confirmed by variance attribution" is literally true
+  when the attribution never resolved. The label went live on 2026-08-17 across `plan`,
+  `report`, README and both card assets; nothing further is owed.
+- **Stage 3 (Taguchi) is NOT triggered.** Kill rule 3 adjudicates a Morris-vs-Sobol
+  DISAGREEMENT; here Morris and Sobol agree on `-t` and the block is decidability, not
+  conflict. Separating `-t` from `--no-mmap` needs a different design - a two-factor
+  targeted experiment at depth, not more Saltelli blocks - and that is a NEW prereg if it
+  is ever worth the nights. It is recorded as an open question, not as work in flight.
+
+**The stage-1 observation that survives intact:** `--no-mmap` was flagged there as the
+strongest interaction candidate on the board (mu* 7.0, the highest sigma of any factor).
+Stage 2 neither confirmed nor refuted it; it established that the question is harder than
+the design that asked it.
+
+Chain of custody: mapping staked 2026-08-07 -> amended pre-data 2026-08-16 with the
+extension ladder and the UNDECIDABLE branch both declared in advance -> scorer committed
+before the first stage-2 row -> 448 runs measured -> scored by the frozen scorer, which
+refused three times and was right to.
