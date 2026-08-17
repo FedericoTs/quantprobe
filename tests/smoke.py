@@ -3736,6 +3736,92 @@ def t_amd_gpu_detection_prices_the_field_case():
     return None
 
 
+def t_amd_rocm_parser_basic():
+    """_parse_rocm_text: basic single-card parse of the combined command output."""
+    from quantprobe.detect import _parse_rocm_text
+    txt = (
+        "GPU[0] : Card series:      AMD Radeon RX 7900 XTX\n"
+        "GPU[0] : VRAM Total Memory (B):       16000000000\n"
+        "GPU[0] : sclk clock level: 3: (1200.Mhz)\n"
+        "GPU[0] : mclk clock level: 1: (1600.Mhz)\n"
+        "GPU[0] : Temperature (Sensor edge) (C):       45\n"
+    )
+    result = _parse_rocm_text(txt)
+    assert len(result) == 1
+    c = result[0]
+    assert c["name"] == "AMD Radeon RX 7900 XTX", f"name wrong: {c['name']}"
+    assert c["vram_gb"] == 16000000000 / 2**30, f"vram wrong: {c['vram_gb']}"
+    assert c["sclk"] == 1200, f"sclk wrong (parens/Mhz/dot strip): {c['sclk']}"
+    assert c["mclk"] == 1600, f"mclk wrong: {c['mclk']}"
+    assert c["temp"] == 45, f"temp wrong: {c['temp']}"
+    assert c["sclk_max"] is None, "no sclk section -> sclk_max should be None"
+    return None
+
+
+def t_amd_rocm_parser_sclk_max_section():
+    """_parse_rocm_text: Supported sclk frequencies section, terminated by bare GPU[n] line."""
+    from quantprobe.detect import _parse_rocm_text
+    txt = (
+        "GPU[0] : Card series:      Radeon\n"
+        "GPU[0] : Card model:       RX 7900 XTX\n"
+        "GPU[0] : Supported sclk frequencies on GPU0\n"
+        "GPU[0] : 0: 400Mhz\n"
+        "GPU[0] : 1: 800Mhz\n"
+        "GPU[0] : 12: 2400Mhz *\n"
+        "GPU[0] :\n"
+    )
+    result = _parse_rocm_text(txt)
+    assert len(result) == 1
+    assert result[0]["sclk_max"] == 2400, f"sclk_max wrong: {result[0]['sclk_max']}"
+    return None
+
+
+def t_amd_rocm_parser_missing_edge_temp():
+    """_parse_rocm_text: missing edge temp line -> None (N/A sensors go to stderr only)."""
+    from quantprobe.detect import _parse_rocm_text
+    txt = (
+        "GPU[0] : Card series:      Radeon\n"
+        "GPU[0] : Card model:       RX 6600\n"
+        "GPU[0] : VRAM Total Memory (B):       8000000000\n"
+        "GPU[0] : sclk clock level: 3: (1500.Mhz)\n"
+    )
+    result = _parse_rocm_text(txt)
+    assert result[0]["temp"] is None, f"missing temp should be None, got {result[0]['temp']}"
+    return None
+
+
+def t_amd_rocm_parser_nvidia_line_rejected():
+    """_parse_rocm_text: nvidia-smi shaped line must be ignored (no GPU[n] prefix)."""
+    from quantprobe.detect import _parse_rocm_text
+    txt = (
+        "GPU[0] : Card series:      Radeon\n"
+        "GPU[0] : Card model:       RX 6700 XT\n"
+        "NVIDIA GeForce RTX 3090, 24576\n"
+    )
+    result = _parse_rocm_text(txt)
+    assert len(result) == 1
+    assert "RTX" not in result[0]["name"], "nvidia line must not leak into AMD parse"
+    return None
+
+
+def t_amd_rocm_parser_multi_card():
+    """_parse_rocm_text: two cards, each with their own data."""
+    from quantprobe.detect import _parse_rocm_text
+    txt = (
+        "GPU[0] : Card series:      AMD Radeon RX 7900 XTX\n"
+        "GPU[0] : VRAM Total Memory (B):       24000000000\n"
+        "GPU[0] : sclk clock level: 3: (2000.Mhz)\n"
+        "GPU[1] : Card series:      AMD Radeon RX 6600\n"
+        "GPU[1] : VRAM Total Memory (B):       8000000000\n"
+        "GPU[1] : sclk clock level: 1: (1200.Mhz)\n"
+    )
+    result = _parse_rocm_text(txt)
+    assert len(result) == 2
+    assert result[0]["name"] == "AMD Radeon RX 7900 XTX"
+    assert result[1]["name"] == "AMD Radeon RX 6600"
+    return None
+
+
 def t_split_gguf_siblings_and_size():
     """Issue #1 root cause: a 2-part GGUF specced from part 1 alone halves total params and
     every size-derived quantity. split_siblings must map ANY part to the full ordered set,

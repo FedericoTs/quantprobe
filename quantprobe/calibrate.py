@@ -69,7 +69,7 @@ def measure_ram_stream(gb=1.0, passes=3):
     return round(best, 2), None
 
 
-def gpu_state():
+def gpu_state_nvidia():
     """Current + max clocks and temperature via nvidia-smi; None if no NVIDIA GPU."""
     out = _run(["nvidia-smi", "--query-gpu=name,clocks.sm,clocks.max.sm,clocks.mem,temperature.gpu",
                 "--format=csv,noheader,nounits"])
@@ -81,6 +81,26 @@ def gpu_state():
         return dict(name=name, sm=int(sm), sm_max=int(sm_max), mem=int(mem), temp=int(temp))
     except ValueError:
         return None
+
+
+def gpu_state_amd():
+    """Current + max clocks and temperature via rocm-smi; None if no AMD GPU.
+
+    Returns the same dict shape as gpu_state_nvidia so ClockSampler, boost_verdict,
+    cal_id, and drift_vs all stay untouched.
+    """
+    from .detect import _rocm_state
+    state = _rocm_state()
+    if not state:
+        return None
+    d = state[0]
+    return dict(name=d["name"], sm=d["sclk"], sm_max=d["sclk_max"],
+                mem=d["mclk"], temp=d["temp"])
+
+
+def gpu_state():
+    """Current + max clocks and temperature — NVIDIA first, AMD fallback."""
+    return gpu_state_nvidia() or gpu_state_amd()
 
 
 class ClockSampler:
@@ -251,7 +271,7 @@ def run(a):
     st = gpu_state()
     if st:
         cal["gpu"] = st
-        print(f"  GPU: {st['name']}, idle {st['sm']} MHz (max {st['sm_max']}), {st['temp']} C [os]")
+        print(f"  GPU: {st['name']}, idle {st['sm']} MHz (max {st['sm_max'] or '?'}, {st['temp']} C) [os]")
     else:
         print("  GPU: none detected (nvidia-smi absent/empty)")
 
@@ -286,11 +306,18 @@ def run(a):
                 print(f"  anchor: {why}")
             vram_gb = None
             if st:
+                # Try nvidia-smi first, fall back to rocm-smi for AMD
                 out = _run(["nvidia-smi", "--query-gpu=memory.total", "--format=csv,noheader,nounits"])
-                try:
-                    vram_gb = float(out.strip().splitlines()[0]) / 1024
-                except (ValueError, IndexError):
-                    pass
+                if out.strip():
+                    try:
+                        vram_gb = float(out.strip().splitlines()[0]) / 1024
+                    except (ValueError, IndexError):
+                        pass
+                if not vram_gb:
+                    from .detect import _rocm_state
+                    rc = _rocm_state()
+                    if rc and rc[0].get("vram_gb"):
+                        vram_gb = rc[0]["vram_gb"]
             ganchor, gwhy = gpu_anchor(model, vram_gb, getattr(a, "llama_dir", None))
             if ganchor:
                 cal["anchors"].append(ganchor)
