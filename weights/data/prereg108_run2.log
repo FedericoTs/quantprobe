@@ -1,0 +1,30 @@
+prompt file: 8,011 bytes
+
+== warm-up: 2 discards at k=8 (L-29) ==
+  warm 1/2: 53.1 tok/s prefill   free RAM 12.33 GB  (DISCARDED)
+  warm 2/2: 48.8 tok/s prefill   free RAM 12.42 GB  (DISCARDED)
+  warm 3/2: 49.5 tok/s prefill   free RAM 12.49 GB  (DISCARDED)
+
+== prefill: forward, backward, forward ==
+  p1 k=8: 50.8 tok/s prefill   free RAM 12.49 GB
+  p1 k=4: 82.8 tok/s prefill   free RAM 12.56 GB
+  p1 k=2: 195.1 tok/s prefill   free RAM 12.55 GB
+  p1 k=1: 197.1 tok/s prefill   free RAM 12.33 GB
+  p2 k=1: 218.6 tok/s prefill   free RAM 12.36 GB
+  p2 k=2: 204.4 tok/s prefill   free RAM 12.37 GB
+  p2 k=4: 113.5 tok/s prefill   free RAM 12.39 GB
+  p2 k=8: 70.7 tok/s prefill   free RAM 12.58 GB
+  p3 k=8: 51.1 tok/s prefill   free RAM 12.49 GB
+  p3 k=4: 83.9 tok/s prefill   free RAM 12.54 GB
+  p3 k=2: 191.6 tok/s prefill   free RAM 12.52 GB
+  p3 k=1: 202.9 tok/s prefill   free RAM 12.52 GB
+  p4 k=1: 226.5 tok/s prefill   free RAM 12.54 GB
+  p4 k=2: 201.4 tok/s prefill   free RAM 12.55 GB
+  p4 k=4: 74.2 tok/s prefill   free RAM 12.51 GB
+  p4 k=8: 11.3 tok/s prefill   free RAM 12.54 GB
+  p5 k=8: 52.7 tok/s prefill   free RAM 12.59 GB
+  p5 k=4: 82.6 tok/s prefill   free RAM 12.6 GB
+  p5 k=2: 195.5 tok/s prefill   free RAM 12.6 GB
+  p5 k=1: 208.4 tok/s prefill   free RAM 12.6 GB
+
+wrote C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill/weights/data/prereg108_prefill_pass2.json in 12.7 min

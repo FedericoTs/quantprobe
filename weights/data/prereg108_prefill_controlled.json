@@ -1,0 +1,25 @@
+{
+  "prefill": {
+    "8": [
+      50.8,
+      51.1,
+      52.7
+    ],
+    "4": [
+      82.8,
+      83.9,
+      82.6
+    ],
+    "2": [
+      195.1,
+      191.6,
+      195.5
+    ],
+    "1": [
+      197.1,
+      202.9,
+      208.4
+    ]
+  },
+  "note": "descending passes p1/p3/p5 only - every arm has the same predecessor k in each pass. The ascending passes are a DIFFERENT condition (arm preceded by a lower k) and spread 21-72%; see prereg108_order_effect.txt"
+}

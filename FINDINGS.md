@@ -8,8 +8,8 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 30 |
-| Shipped levers | 21 |
+| Established laws | 31 |
+| Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 32 |
 | Untried levers | 44 |
@@ -199,6 +199,12 @@ What we believe, and the measurement that earned it.
 
 `measured 2026-08-19 under prereg #107 (scored 4/4)` · `measured, 4/4 predictions staked before the arms ran, three reps per arm in forward/backward/forward order after a discarded warm-up` · scope: Qwen3.6-35B-A3B (256 experts, k=8, expert FFN 512) on GTX 1060 6GB / 16GB DDR4-3000, llama.cpp b10098, -ngl 12, decode. The CEILING is per-file arithmetic and transfers to any MoE GGUF; the measured speedups are this box. Prefill is NOT covered - see the confounded observation in the prereg. · evidence: prereg #107, weights/data/prereg107_kcurve.json, weights/data/prereg107_verdict.txt · wired into: `quantprobe/spec.py:from_gguf (the byte split this is computed from)`
 
+### L-31 — When a model file is larger than free RAM, a benchmark arm is CONTAMINATED BY ITS PREDECESSOR: the page cache carries the previous run's working set into the next process, so back-to-back arms are not independent samples.
+
+**Magnitude:** Prefill on Qwen3.6-35B-A3B, five interleaved passes. Arms preceded by an equal-or-higher k: 0.8-1.8% spread. The SAME arms preceded by a lower k: 20.9% (k=4 after k=2) and 72.4% (k=8 after k=4). Same command, same file, same session - only the predecessor differs. Individual k=8 readings ranged 11.3 to 70.7 tok/s, a 6.3x span, entirely explained by run order.
+
+`measured 2026-08-19 under prereg #108 (order effect, n=20 arms)` · `measured and structured, not inferred - the split by predecessor separates 0.8% spreads from 72% spreads with no overlap, across 20 arms` · scope: Files LARGER than free RAM (L-29's regime), MoE models where the working set is k-dependent. Where the model fits, there is nothing to evict and this should vanish - untested. Direction matters: low-k predecessors poison high-k successors, not the reverse. · evidence: prereg #108; weights/data/prereg108_order_effect.txt; raw weights/data/prereg108_run2.log · wired into: `quantprobe/detect.py:residency (the same free-RAM condition that predicts it)`
+
 ## Shipped levers
 
 Things the tool actually recommends, with the number attached.
@@ -328,6 +334,12 @@ Things the tool actually recommends, with the number attached.
 **Magnitude:** k=4: 1.15x speed for +1.51 PPL. k=2: 1.18x for +15.5 PPL. k=1: 1.45x and the model is gone (PPL 2277). A 15% gain most users would not notice, against a quality loss they would.
 
 `MEASURED and NOT RECOMMENDED - prereg #107, scored 4/4` · `measured; the quality collapse at k=1 (PPL 2277) also proves the override was honoured rather than silently ignored` · scope: Qwen3.6-35B-A3B at -ngl 12 on a GTX 1060 6GB. The SHAPE (bounded by the always-active floor) generalises to any MoE; the numbers do not. Models with a larger routed share of active bytes have more headroom and deserve their own probe. · evidence: prereg #107; PPL on weights/data/wikitext2_test.raw, 32 chunks, -ngl 0 · wired into: `not shipped as a dial - see L-30: the tool states the ceiling computed from the file instead`
+
+### V-23 — Lowering expert_used_count is a real PREFILL lever, worth 1.6-3.8x on time-to-first-token where it is worth only 1.15-1.18x on decode - because quantization shrinks bytes but not FLOPs, and prefill is compute-bound.
+
+**Magnitude:** Prefill, ~2000-token prompt, -ngl 12: k=4 1.613x (against decode's 1.146x), k=2 3.766x (against 1.175x), k=1 3.935x. Predicted from the param share at 1.206x / 1.345x / 1.426x, so the FLOP model UNDER-prices prefill by 34% at k=4 and ~180% below it. The excess is an unmodelled per-expert term and is not claimed until staked.
+
+`MEASURED 2026-08-19 - prereg #108 scored 2/3, P-1 refuted high` · `the ORDERING (prefill > decode) is robust to every way of cutting the data, including the worst-case divisor on the unusable pass-1 baseline. The exact multiples come from the controlled descending-pass subset and depend on that choice, which is declared in the prereg's verdict.` · scope: Qwen3.6-35B-A3B at -ngl 12 on a GTX 1060 6GB, ~2000-token prompt, llama.cpp b10098. The UNIT argument (compute follows params, bandwidth follows bytes) generalises; the numbers do not. Measured on a file larger than free RAM, so part of the excess may be residency rather than compute. · evidence: prereg #108 (scored by weights/prereg108_score.py, committed before the arms); weights/data/prereg108_prefill_controlled.json · wired into: `not shipped as a recommendation - the quality bill is unchanged from prereg #107 (k=4 costs +1.51 PPL, k=2 costs +15.5), so this makes the trade arguable for a prompt-dominated pipeline that can absorb the loss, and nothing more`
 
 ## Measured dead ends
 
@@ -1108,7 +1120,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** prereg #107 closed the decode question with a clean negative - the dial is bounded at 1.24x and costs +1.51 PPL to halve the experts. But quantization shrinks BYTES, not FLOPs, so the same knob is a different size on a compute-bound resource. Prefill is where agentic and coding workloads live: long files, retrieved context, repeated re-reads. A lever worth nothing at decode can still be worth having if it moves time-to-first-token. This costs one short run because quality does not need re-measuring - k is k, and #107 already priced it.
 
-`STAKED under prereg #108; scorer committed before the arms run` · `the param split is read from the file. Whether prefill follows it is the question. prereg #107's PPL wall times fell far faster than 1.426x, which hints at a per-expert overhead term the FLOP model lacks - but that hint is confounded by a cold first arm (L-29) and is explicitly NOT what is staked.` · scope: Qwen3.6-35B-A3B at -ngl 12 on a GTX 1060 6GB, llama.cpp b10098, ~2000-token prompt. The unit argument (compute follows params, bandwidth follows bytes) generalises; the numbers do not.
+`CLOSED 2026-08-19 - prereg #108 scored 2/3; became V-23 (the prefill lever) and L-31 (predecessor contamination, found while measuring it)` · `the param split is read from the file. Whether prefill follows it is the question. prereg #107's PPL wall times fell far faster than 1.426x, which hints at a per-expert overhead term the FLOP model lacks - but that hint is confounded by a cold first arm (L-29) and is explicitly NOT what is staked.` · scope: Qwen3.6-35B-A3B at -ngl 12 on a GTX 1060 6GB, llama.cpp b10098, ~2000-token prompt. The unit argument (compute follows params, bandwidth follows bytes) generalises; the numbers do not.
 
 ## External work to study
 

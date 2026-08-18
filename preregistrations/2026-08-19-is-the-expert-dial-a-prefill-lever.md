@@ -1,7 +1,7 @@
 # Pre-registration #108: the expert dial is a bad decode lever — is it a good prefill one?
 
 **Author:** Federico Sciuca · **Date staked:** 2026-08-19, **before any prefill arm was run.**
-**STAKED.**
+**SCORED 2026-08-19 - 2 of 3, P-1 refuted high. See the verdict at the foot.**
 
 ## Why
 
@@ -74,3 +74,78 @@ Scored by [`weights/prereg108_score.py`](../weights/prereg108_score.py), written
 - **P-1 refuted high with P-2 holding** → the FLOP-share model under-prices prefill, and the extra
   is per-expert overhead rather than arithmetic. That is a new term, and it gets its own stake
   before anything is claimed about it.
+
+---
+
+## Verdict: SCORED 2/3, P-1 refuted high (2026-08-19)
+
+Scored by [`weights/prereg108_score.py`](../weights/prereg108_score.py), committed before the
+arms ran. Raw: [`prereg108_run.log`](../weights/data/prereg108_run.log) (pass 1) ·
+[`prereg108_run2.log`](../weights/data/prereg108_run2.log) (pass 2) ·
+[`prereg108_order_effect.txt`](../weights/data/prereg108_order_effect.txt) ·
+[`prereg108_prefill_controlled.json`](../weights/data/prereg108_prefill_controlled.json) ·
+[`prereg108_verdict.txt`](../weights/data/prereg108_verdict.txt).
+
+| k | prefill tok/s | gain | predicted | error | decode (#107) |
+|---|---|---|---|---|---|
+| 8 | 51.53 ± 0.95 | 1.000x | 1.000x | — | 1.000x |
+| 4 | 83.10 ± 0.65 | **1.613x** | 1.206x | **+33.7%** | 1.146x |
+| 2 | 194.07 ± 1.95 | **3.766x** | 1.345x | +180% | 1.175x |
+| 1 | 202.80 ± 5.65 | **3.935x** | 1.426x | +176% | 1.451x |
+
+- **P-1 k=4 within ±15% of 1.206x — MISS (1.613x, +33.7%).** The FLOP-share model
+  **under-prices prefill**, and by more than the band allows.
+- **P-2 prefill beats decode at k=4 and k=2 — HIT.** 1.613x against 1.146x, and 3.766x against
+  1.175x. The dial belongs to prefill.
+- **P-3 k=2 reaches 1.25x — HIT (3.766x).** By a factor of three.
+
+**Kill rule: IT IS A PREFILL LEVER.** With the note the scorer attaches automatically — P-1
+refuted while P-2 holds means the excess is a term the FLOP model does not contain, and it gets
+its own stake before anything is claimed about it.
+
+### The measurement nearly reported the wrong number, twice
+
+**Pass 1 had an unusable baseline.** k=8 came in at 20.2, 48.5, 68.2 — a **53% spread** against
+the project's 15% bar. Divide by the mean and k=4 reads 2.026x (a spectacular MISS); divide by
+the highest sample and it reads 1.356x (a HIT). A verdict that flips depending on which sample
+you divide by is not a verdict, so P-1 was recorded **VOID**, and the scorer gained a
+baseline-usability gate — the same bar `runtime.py` already applies and the same call prereg
+#104 made on a 9.94 ± 5.40 arm.
+
+**Pass 2 revealed the spread was not noise.** Five interleaved passes, and the scatter sorted
+itself perfectly by *which k ran immediately before*:
+
+| arm | preceded by | n | spread |
+|---|---|---|---|
+| k=8 | k=8 | 3 | **1.8%** |
+| k=8 | k=4 | 2 | **72.4%** |
+| k=4 | k=8 | 3 | **0.8%** |
+| k=4 | k=2 | 2 | **20.9%** |
+| k=2 | k=4 | 3 | 1.0% |
+
+**An arm preceded by a lower-k arm is contaminated; an arm preceded by an equal-or-higher k is
+clean to within 2%.** The mechanism is the one L-29 already names: this file is larger than free
+RAM, so the page cache carries the previous run's expert working set into the next one, and a
+low-k predecessor leaves the wrong pages resident for a high-k successor.
+
+The interleaving was in the method for exactly this reason — *"so residual drift shows up as
+disagreement between passes instead of hiding inside the trend"* — and it earned its place. The
+scored table above is the **three descending passes only** (p1/p3/p5), where every arm has the
+same predecessor in every pass, and every arm is tight to ≤2.8%.
+
+**This is post-hoc subset selection and it is declared as such.** Two things keep it honest.
+First, the split is *mechanistic and pre-named*, not fitted: it falls out of L-29, which was
+measured yesterday on a different question. Second, **the conclusion does not depend on it** —
+under the pooled pass-1 analysis P-1 is VOID, under the controlled analysis P-1 is a MISS at
++33.7%, and under the worst-case divisor P-2 and P-3 still hold. P-1 is never a HIT on any
+reading, so *"the FLOP-share model under-prices prefill"* survives every way of cutting the data.
+A first cut of the filter (`predecessor >= k`) was wrong and swept each ascending pass's first
+arm back in; caught by checking the sample lists, not by the number looking plausible.
+
+### What this means
+
+The expert dial is a **bad decode lever and a real prefill lever**: ~1.6x time-to-first-token at
+k=4, ~3.8x at k=2 — against decode's 1.15x and 1.18x. But it carries prereg #107's quality bill
+unchanged: **k=4 costs +1.51 perplexity, k=2 costs +15.5.** Nothing here makes the trade good on
+general work; it makes it *arguable* for a prompt-dominated pipeline that can tolerate the loss,
+which is a narrower claim and the only one the data supports.

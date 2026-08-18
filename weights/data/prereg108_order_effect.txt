@@ -1,0 +1,44 @@
+       arm   k    tok/s   preceded by
+  warm 1/2   8     53.1   -
+  warm 2/2   8     48.8   k=8
+  warm 3/2   8     49.5   k=8
+    p1 k=8   8     50.8   k=8
+    p1 k=4   4     82.8   k=8
+    p1 k=2   2    195.1   k=4
+    p1 k=1   1    197.1   k=2
+    p2 k=1   1    218.6   k=1
+    p2 k=2   2    204.4   k=1
+    p2 k=4   4    113.5   k=2
+    p2 k=8   8     70.7   k=4
+    p3 k=8   8     51.1   k=8
+    p3 k=4   4     83.9   k=8
+    p3 k=2   2    191.6   k=4
+    p3 k=1   1    202.9   k=2
+    p4 k=1   1    226.5   k=1
+    p4 k=2   2    201.4   k=1
+    p4 k=4   4     74.2   k=2
+    p4 k=8   8     11.3   k=4
+    p5 k=8   8     52.7   k=8
+    p5 k=4   4     82.6   k=8
+    p5 k=2   2    195.5   k=4
+    p5 k=1   1    208.4   k=2
+
+grouped by (arm k, predecessor k):
+  k=1 after k=1: n=2 mean  222.55 +/-  3.95 (  1.8%)  <-- descending pass
+  k=1 after k=2: n=3 mean  202.80 +/-  5.65 (  2.8%)  <-- descending pass
+  k=2 after k=1: n=2 mean  202.90 +/-  1.50 (  0.7%)  <-- ASCENDING pass
+  k=2 after k=4: n=3 mean  194.07 +/-  1.95 (  1.0%)  <-- descending pass
+  k=4 after k=2: n=2 mean   93.85 +/- 19.65 ( 20.9%)  <-- ASCENDING pass
+  k=4 after k=8: n=3 mean   83.10 +/-  0.65 (  0.8%)  <-- descending pass
+  k=8 after k=4: n=2 mean   41.00 +/- 29.70 ( 72.4%)  <-- ASCENDING pass
+  k=8 after k=8: n=3 mean   51.53 +/-  0.95 (  1.8%)  <-- descending pass
+
+descending-pass arms only (each k has the same predecessor every time):
+  k=8: [50.8, 51.1, 52.7]  mean   51.53 +/-0.95 (1.8%)
+  k=4: [82.8, 83.9, 82.6]  mean   83.10 +/-0.65 (0.8%)
+  k=2: [195.1, 191.6, 195.5]  mean  194.07 +/-1.95 (1.0%)
+  k=1: [197.1, 202.9, 208.4, 218.6, 226.5]  mean  210.70 +/-14.70 (7.0%)
+
+  gains vs k=8: k=8 1.000x  k=4 1.613x  k=2 3.766x  k=1 4.089x
+
+wrote C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill/weights/data/prereg108_prefill_controlled.json
