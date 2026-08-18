@@ -42,9 +42,18 @@ def score(d):
                      f"{(f'{pred:.3f}x' if pred else '-'):>8s} {err:>8s}")
     if ppl:
         lines.append("")
+        # Deltas are against THIS SESSION's k=8, never against PPL_K8. That constant came from
+        # prereg #104, which used a different eval corpus (D:/evo-compress-data/eval/
+        # wiki.test.raw, 1,290,590 bytes) than these arms (weights/data/wikitext2_test.raw,
+        # 1,307,975 bytes, different hash). Mixing the two printed a k=4 delta of +1.69 where
+        # the real in-session cost is +1.51. P-4 was always computed correctly; only this line
+        # was wrong, and a wrong line in a verdict is still a wrong verdict to whoever reads it.
+        base_ppl = ppl.get(8)
         for k in sorted(ppl, reverse=True):
             lines.append(f"  k={k:<2d} PPL {ppl[k]:.4f}"
-                         + (f"   {ppl[k]-PPL_K8:+.4f} vs k=8" if k != 8 else ""))
+                         + (f"   {ppl[k]-base_ppl:+.4f} vs k=8" if k != 8 and base_ppl else ""))
+        lines.append(f"  (corpus: this session's own k=8 is the baseline; prereg #104's 5.7796 "
+                     f"is NOT comparable - different eval file)")
     lines.append("")
 
     # P-1: is the lever weak?

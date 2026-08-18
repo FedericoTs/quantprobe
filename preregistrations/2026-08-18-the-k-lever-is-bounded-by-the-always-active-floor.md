@@ -1,7 +1,7 @@
 # Pre-registration #107: how much speed can you buy by using fewer experts?
 
 **Author:** Federico Sciuca · **Date staked:** 2026-08-18, **before any speed or quality arm was
-run.** **STAKED.**
+run.** **SCORED 2026-08-19 - 4 of 4. See the verdict at the foot of this file.**
 
 ## Why
 
@@ -114,3 +114,79 @@ Scored by [`weights/prereg107_score.py`](../weights/prereg107_score.py), written
   That is a Law 4 amendment and it gets its own stake.
 - **P-3 refuted with P-1 holding** → the lever is weak as claimed but Law 4 mis-sizes it; publish
   the miss and the measured curve at the same size as the ceiling claim.
+
+---
+
+## Verdict: SCORED 4/4 (2026-08-19)
+
+Scored by [`weights/prereg107_score.py`](../weights/prereg107_score.py), committed before the
+arms ran. Raw: [`prereg107_kcurve.json`](../weights/data/prereg107_kcurve.json) ·
+[`prereg107_speed.log`](../weights/data/prereg107_speed.log) ·
+[`prereg107_run.log`](../weights/data/prereg107_run.log) ·
+[`prereg107_verdict.txt`](../weights/data/prereg107_verdict.txt).
+
+| k | tok/s (llama-cli, N=3) | measured | Law 4 predicted | error | PPL | cost vs k=8 |
+|---|---|---|---|---|---|---|
+| 8 | 13.90 +/- 0.55 | 1.000x | 1.000x | - | 5.9618 | - |
+| 4 | 15.93 +/- 0.45 | 1.146x | 1.125x | **+1.9%** | 7.4708 | +1.51 |
+| 2 | 16.33 +/- 1.05 | 1.175x | 1.200x | **-2.1%** | 21.4196 | +15.46 |
+| 1 | 20.17 +/- 0.35 | **1.451x** | 1.242x | **+16.8%** | 2277.15 | destroyed |
+
+- **P-1 k=1 below 1.50x — HIT (1.451x).** By 0.049. The lever is weak, and it nearly wasn't.
+- **P-2 monotone as k falls — HIT.**
+- **P-3 k=2 within ±15% of 1.200x — HIT (1.175x, -2.1%).** Law 4 sized the lever from the file's
+  byte split, before any measurement, to within 2%.
+- **P-4 halving the experts costs ≥ 0.50 PPL — HIT (+1.51).**
+
+**Kill rule: BOUNDED, EXPENSIVE LEVER.** The knob is real and Law 4 prices it, but the ceiling
+is set by the always-active floor and the quality bill arrives immediately. The useful product
+output is the **ceiling computed from the file**, not the dial.
+
+### The headline for a user
+
+Turning experts down on this model buys **15% at k=4 and costs +1.51 perplexity** — the model is
+measurably worse for a gain most people would not notice. At k=2 it buys 18% and costs 15.5 PPL.
+At k=1 it buys 45% and the model is gone (2277). There is no good point on this curve. That is
+not a defect of the implementation; it is arithmetic that was readable from the file before
+anything ran: the routed experts own **22% of the active bytes**, so 78% of the work is untouched
+no matter what k does.
+
+### Where the prediction broke, exactly where the stake said it might
+
+k=4 and k=2 land within 2% of Law 4. **k=1 overshoots by 16.8%** — 1.451x measured against a
+1.242x bandwidth-only ceiling.
+
+The stake named this in advance: *"Lowering k shrinks not just the per-token byte count but the
+set of experts touched across a whole run, which could raise the page-cache hit rate and produce a
+speedup larger than the bandwidth-only ceiling."* The signature fits — the excess appears **only**
+at the extreme, where the touched-expert set shrinks 8x and this file is larger than free RAM
+(13.15 GiB against ~12.6 GB, L-29/C-32). At k=4 and k=2 the working set is still too large to
+change residency and Law 4 is exact.
+
+So P-1 survives, but the honest reading is that it survived **narrowly and for a reason the
+bandwidth model does not contain**. Registered as the open edge of Law 4, not as a win.
+
+### Two errors made and corrected in this prereg
+
+1. **Wrong binary.** The feasibility check used `llama-cli`; the method specified `llama-bench`,
+   which has no `--override-kv` in b10098. Caught on the first pass because k=8 returned a number
+   and every override arm returned nothing. Amended pre-data — all arms moved to `llama-cli`, and
+   since every prediction is a ratio against k=8, no threshold moved.
+2. **Wrong corpus.** These arms ran on `weights/data/wikitext2_test.raw` (1,307,975 bytes);
+   prereg #104's 5.7796 was measured on `D:/evo-compress-data/eval/wiki.test.raw` (1,290,590
+   bytes, different hash). I verified `quant_probe.py`'s default instead of what #104's own script
+   ran. **Absolute PPL here is not comparable to #103/#104**; every k value here is mutually
+   comparable, which is what all four predictions need. The scorer computed P-4 from the session's
+   own k=8 and was correct throughout — but its *printed* delta line used the #104 constant and
+   showed +1.69 where the truth is +1.51. Fixed, and the line now says which baseline it used.
+
+Both errors are the same shape: **verifying a plausible proxy instead of the thing itself.** Same
+family as C-31 (grepping a log's first match instead of its population).
+
+### Observed, not staked, and confounded
+
+Perplexity wall time fell 341s → 142s → 112s → 96s as k dropped. That looks like a large prefill
+effect, and prefill is compute-bound rather than bandwidth-bound, so k should bite harder there.
+But **k=8 ran first and was therefore cold**, and L-29 prices that at up to 46% on this file. Among
+the warm arms alone it is 142s → 96s. Suggestive, confounded, unstaked — a candidate for its own
+pre-registration, not a finding.

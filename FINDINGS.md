@@ -8,8 +8,8 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 29 |
-| Shipped levers | 20 |
+| Established laws | 30 |
+| Shipped levers | 21 |
 | Measured dead ends | 27 |
 | Open contradictions | 32 |
 | Untried levers | 43 |
@@ -193,6 +193,12 @@ What we believe, and the measurement that earned it.
 
 `measured 2026-08-18 under prereg #106` · `measured - six runs, monotone, plus a control arm and a refuted priming arm` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE 13.15 GiB file at -ngl 12, model larger than free RAM. Unmeasured on boxes where the model fits, except via this prereg's own control arm. Audited across seven published models 2026-08-18; the boundary is the file size against free RAM, not the parameter count. · evidence: prereg #106, weights/data/prereg106_reproduce.json, weights/data/prereg106_run.log · wired into: `quantprobe/detect.py:residency, quantprobe/runtime.py:bench`
 
+### L-30 — The speed ceiling of the expert-count knob is set by the ALWAYS-ACTIVE share of active bytes, and it is computable from the GGUF before anything is run. Law 4 sizes the lever to within 2% wherever the working set is unchanged.
+
+**Magnitude:** Qwen3.6-35B-A3B: routed experts own 22% of active bytes (11.602 GiB at 3.09 bits routed, 1.268 GiB at 4.45 bits always-active), so the ceiling is 1.242x at k=1. Measured against predictions made from the file: k=4 1.146x vs 1.125 predicted (+1.9%), k=2 1.175x vs 1.200 (-2.1%), k=1 1.451x vs 1.242 (+16.8%).
+
+`measured 2026-08-19 under prereg #107 (scored 4/4)` · `measured, 4/4 predictions staked before the arms ran, three reps per arm in forward/backward/forward order after a discarded warm-up` · scope: Qwen3.6-35B-A3B (256 experts, k=8, expert FFN 512) on GTX 1060 6GB / 16GB DDR4-3000, llama.cpp b10098, -ngl 12, decode. The CEILING is per-file arithmetic and transfers to any MoE GGUF; the measured speedups are this box. Prefill is NOT covered - see the confounded observation in the prereg. · evidence: prereg #107, weights/data/prereg107_kcurve.json, weights/data/prereg107_verdict.txt · wired into: `quantprobe/spec.py:from_gguf (the byte split this is computed from)`
+
 ## Shipped levers
 
 Things the tool actually recommends, with the number attached.
@@ -316,6 +322,12 @@ Things the tool actually recommends, with the number attached.
 **Magnitude:** +1.3% mean decode, 0 regressions; flagship 21.33 -> 21.54, champion 22.20 -> 22.55
 
 `confirmed` · `measured` · scope: MoE expert-splits on this box; the mechanism (freed budget -> one more resident layer) generalises, the magnitude is per-machine · evidence: prereg #78 (staked before measuring); weights/data/full_ladder_v124.json; #62 resident-expert sweep · wired into: `quantprobe/spec.py from_gguf (the accounting that frees the budget); MACHINE_LADDER`
+
+### V-22 — Lowering expert_used_count at runtime is a real but bounded speed lever whose quality bill arrives immediately; there is no good operating point on the curve for this model.
+
+**Magnitude:** k=4: 1.15x speed for +1.51 PPL. k=2: 1.18x for +15.5 PPL. k=1: 1.45x and the model is gone (PPL 2277). A 15% gain most users would not notice, against a quality loss they would.
+
+`MEASURED and NOT RECOMMENDED - prereg #107, scored 4/4` · `measured; the quality collapse at k=1 (PPL 2277) also proves the override was honoured rather than silently ignored` · scope: Qwen3.6-35B-A3B at -ngl 12 on a GTX 1060 6GB. The SHAPE (bounded by the always-active floor) generalises to any MoE; the numbers do not. Models with a larger routed share of active bytes have more headroom and deserve their own probe. · evidence: prereg #107; PPL on weights/data/wikitext2_test.raw, 32 chunks, -ngl 0 · wired into: `not shipped as a dial - see L-30: the tool states the ceiling computed from the file instead`
 
 ## Measured dead ends
 
@@ -1086,7 +1098,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** Not promising as a speed win - promising as a DISPROOF. The knob is widely treated as a free dial for MoE on small hardware, and prereg #107 can price its ceiling from metadata alone, before running anything. Routed experts: 32.212 B params in 11.602 GiB at 3.09 bits. Always-active: 2.448 B in 1.268 GiB at 4.45 bits. At k=1 - one expert of 256 - 96.5% of the active bytes are still read. If it holds, the useful product output is the ceiling FORMULA, computed per file, not the dial.
 
-`STAKED under prereg #107; scorer committed before the arms run` · `the byte split is read from the file and is not in doubt. Whether the measured speedup matches it is exactly what prereg #107 tests - and the model does not fit free RAM (L-29), so a smaller working set could beat the bandwidth-only ceiling. That failure mode is named in the stake rather than discovered after.` · scope: Qwen3.6-35B-A3B (256 experts, k=8, expert FFN 512) on GTX 1060 6GB / 16GB DDR4-3000, llama.cpp b10098, -ngl 12. The CEILING is per-file arithmetic and transfers; the measured speedups do not.
+`CLOSED 2026-08-19 - prereg #107 scored 4/4; became L-30 (the ceiling law) and V-22 (the lever, measured and not recommended)` · `the byte split is read from the file and is not in doubt. Whether the measured speedup matches it is exactly what prereg #107 tests - and the model does not fit free RAM (L-29), so a smaller working set could beat the bandwidth-only ceiling. That failure mode is named in the stake rather than discovered after.` · scope: Qwen3.6-35B-A3B (256 experts, k=8, expert FFN 512) on GTX 1060 6GB / 16GB DDR4-3000, llama.cpp b10098, -ngl 12. The CEILING is per-file arithmetic and transfers; the measured speedups do not.
 
 ## External work to study
 

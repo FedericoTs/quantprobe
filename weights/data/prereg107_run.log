@@ -1,0 +1,70 @@
+== warm-up: 3 discards at k=8 (L-29 - a cold baseline would fake the result) ==
+  warm 1/3: 9.91 tok/s   free RAM 12.16 GB  (DISCARDED)
+  warm 2/3: 12.7 tok/s   free RAM 12.15 GB  (DISCARDED)
+  warm 3/3: 14.49 tok/s   free RAM 12.15 GB  (DISCARDED)
+
+== speed, forward pass then backward ==
+  fwd k=8: 14.42 tok/s   free RAM 12.12 GB
+    unparseable k=4: Expecting value: line 1 column 1 (char 0)
+oad <0|1>                (default: 0)
+  --no-host <0|1>                             (default: 0)
+
+Multiple values can be given for each parameter by separating them with ','
+or by specifying the parameter multiple times. Ranges can be given as
+'first-last' or 'first-last+step' or 'first-last*mult'.
+
+  fwd k=4: None tok/s   free RAM 12.12 GB
+    unparseable k=2: Expecting value: line 1 column 1 (char 0)
+oad <0|1>                (default: 0)
+  --no-host <0|1>                             (default: 0)
+
+Multiple values can be given for each parameter by separating them with ','
+or by specifying the parameter multiple times. Ranges can be given as
+'first-last' or 'first-last+step' or 'first-last*mult'.
+
+  fwd k=2: None tok/s   free RAM 12.12 GB
+    unparseable k=1: Expecting value: line 1 column 1 (char 0)
+oad <0|1>                (default: 0)
+  --no-host <0|1>                             (default: 0)
+
+Multiple values can be given for each parameter by separating them with ','
+or by specifying the parameter multiple times. Ranges can be given as
+'first-last' or 'first-last+step' or 'first-last*mult'.
+
+  fwd k=1: None tok/s   free RAM 12.12 GB
+    unparseable k=1: Expecting value: line 1 column 1 (char 0)
+oad <0|1>                (default: 0)
+  --no-host <0|1>                             (default: 0)
+
+Multiple values can be given for each parameter by separating them with ','
+or by specifying the parameter multiple times. Ranges can be given as
+'first-last' or 'first-last+step' or 'first-last*mult'.
+
+  rev k=1: None tok/s   free RAM 12.12 GB
+    unparseable k=2: Expecting value: line 1 column 1 (char 0)
+oad <0|1>                (default: 0)
+  --no-host <0|1>                             (default: 0)
+
+Multiple values can be given for each parameter by separating them with ','
+or by specifying the parameter multiple times. Ranges can be given as
+'first-last' or 'first-last+step' or 'first-last*mult'.
+
+  rev k=2: None tok/s   free RAM 12.12 GB
+    unparseable k=4: Expecting value: line 1 column 1 (char 0)
+oad <0|1>                (default: 0)
+  --no-host <0|1>                             (default: 0)
+
+Multiple values can be given for each parameter by separating them with ','
+or by specifying the parameter multiple times. Ranges can be given as
+'first-last' or 'first-last+step' or 'first-last*mult'.
+
+  rev k=4: None tok/s   free RAM 12.13 GB
+  rev k=8: 12.6 tok/s   free RAM 12.11 GB
+
+== quality: perplexity, 32 chunks, -ngl 0 (matches prereg #104) ==
+  k=8: PPL 5.9618   (341s)
+  k=4: PPL 7.4708   (142s)
+  k=2: PPL 21.4196   (112s)
+  k=1: PPL 2277.1518   (96s)
+
+wrote C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill/weights/data/prereg107_kcurve.json in 14.7 min

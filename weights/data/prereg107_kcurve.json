@@ -1,0 +1,43 @@
+{
+  "model": "Qwen3.6-35B-A3B-OURS-depthaware.gguf",
+  "key": "qwen35moe.expert_used_count",
+  "ks": [
+    8,
+    4,
+    2,
+    1
+  ],
+  "build": "b10098",
+  "hardware": "GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K",
+  "speed": {
+    "8": [
+      13.6,
+      13.5,
+      14.6
+    ],
+    "4": [
+      15.4,
+      16.3,
+      16.1
+    ],
+    "2": [
+      15.0,
+      17.1,
+      16.9
+    ],
+    "1": [
+      19.7,
+      20.4,
+      20.4
+    ]
+  },
+  "ppl": {
+    "8": 5.9618,
+    "4": 7.4708,
+    "2": 21.4196,
+    "1": 2277.1518
+  },
+  "wall_minutes": 14.7,
+  "speed_harness": "llama-cli -ngl 12 -n 128 -st --simple-io --seed 1234 (llama-bench has no --override-kv in b10098; see the #107 amendment)",
+  "speed_wall_minutes": 3.7
+}

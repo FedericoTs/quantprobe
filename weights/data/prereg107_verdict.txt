@@ -1,0 +1,22 @@
+baseline k=8: 13.90 tok/s (warmed, same session)
+  k          tok/s   measured    Law 4    error
+  8    13.90 +/-0.55     1.000x   1.000x    +0.0%
+  4    15.93 +/-0.45     1.146x   1.125x    +1.9%
+  2    16.33 +/-1.05     1.175x   1.200x    -2.1%
+  1    20.17 +/-0.35     1.451x   1.242x   +16.8%
+
+  k=8  PPL 5.9618
+  k=4  PPL 7.4708   +1.5090 vs k=8
+  k=2  PPL 21.4196   +15.4578 vs k=8
+  k=1  PPL 2277.1518   +2271.1900 vs k=8
+  (corpus: this session's own k=8 is the baseline; prereg #104's 5.7796 is NOT comparable - different eval file)
+
+P-1  k=1 speedup < 1.5 (weak lever) ... HIT (1.451x)
+P-2  monotone as k falls ............... HIT
+P-3  k=2 within +/-15% of 1.200x ..... HIT (1.175x, -2.1%)
+P-4  k=4 costs >= 0.5 PPL .......... HIT (+1.5090)
+
+KILL RULE -> BOUNDED, EXPENSIVE LEVER.
+  Register it as such. quantprobe states the CEILING computed from the
+  file's byte split rather than offering the dial as a win - the useful
+  output is the formula, not the knob.
