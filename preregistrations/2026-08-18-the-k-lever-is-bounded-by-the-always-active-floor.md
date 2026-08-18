@@ -60,6 +60,35 @@ speedup **larger** than the bandwidth-only ceiling. If that happens, P-1 or P-3 
 reason is residency, not a broken law. I am staking the bandwidth-only numbers anyway, because a
 prediction hedged against both outcomes is not a prediction.
 
+## Amendment, pre-data (2026-08-18): the speed harness changes, the predictions do not
+
+`llama-bench` in b10098 **does not accept `--override-kv`**. Its help lists only
+`-ot / --override-tensor`; passing the KV override makes it print usage and exit, which is why
+the first attempt returned a rate for k=8 and nothing for k=4, 2 and 1. The feasibility check
+before staking was run with `llama-cli`, which does accept it - so the flag works on this
+build, just not in the benchmark binary. That is a harness limitation I should have checked in
+the binary I intended to measure with, not in a different one.
+
+**No k != 8 speed number exists**, so this is a method change before data, not after it.
+
+Speed arms move to **`llama-cli`**, which accepts the override, using its own reported
+generation rate: `-ngl 12 -n 128 -st --simple-io --seed 1234`, three reps per k, **every arm
+including the k=8 baseline on the same binary**. Absolute values will sit below llama-bench's
+(llama-cli's figure includes sampling and detokenization - measured ~11.4 against llama-bench's
+~14.4 on this file), but **every prediction in this document is a RATIO against the k=8 arm**,
+and the ratio is preserved when the baseline moves with the treatment. P-1, P-2 and P-3 stand
+exactly as staked; none of their thresholds are touched.
+
+Retained from the killed attempt because it is evidence and not a treatment: the warm-up
+discards ran 9.91 -> 12.70 -> 14.49 tok/s, and the first measured k=8 arm was 14.42. That is
+L-29's cold-start ramp reproducing on demand - a 46% climb across three runs of one unchanged
+command - and it is why the warm-up is in the method at all.
+
+The perplexity arms are unaffected: `llama-perplexity` shares `llama-cli`'s argument parser.
+Their built-in check is that k=8 must reproduce prereg #104's committed 5.7796 on the same
+corpus and chunk count; if all four k values come back identical, the override was silently
+ignored and the quality arms are VOID rather than flat.
+
 ## Method
 
 Speed: `llama-bench -ngl 12 -p 0 -n 128 -r 3`, one binary (b10098), one file, one session, arms
