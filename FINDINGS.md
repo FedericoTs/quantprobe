@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
 | Open contradictions | 31 |
-| Untried levers | 40 |
+| Untried levers | 41 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1043,6 +1043,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** Tracked as tasks #52 (measure expert-usage skew before building hot-expert selection) and #55 (cache-aware dropping, gated on #52). Kill rule on #52 staked there: if the top 32% of experts by usage do not carry materially more than 32% of routing mass, hot-expert caching is refuted for our models and we keep the static -ot regex.
 
 `open` · `external` · scope: Android phone (12 GB, UFS 4.x) and one Windows laptop, CPU-only, flash-streaming regime. We are GPU-split on a 6 GB card, so nothing here transfers without re-measurement - it tells us what to TRY and what to SKIP, not what is true on our box. · evidence: github.com/Helldez/BigMoeOnEdge docs/expert-prediction.md and the four benchmark tables in its README; task #55 staked as prereg #90 (2026-07-30-cache-aware-dropping.md), now blocked by D-26; speculation x KV-quant staked as prereg #93 (2026-07-31-speculation-x-kvquant.md), not yet run - renumbered from #92 on 2026-07-31 before any arm ran, because #92 was already taken by 2026-07-31-per-shape-calibration.md · wired into: `nothing yet - two staked experiments queued`
+
+### U-52 — DOES DEPTH-LOCALIZED FRAGILITY SURVIVE A HYBRID LINEAR-ATTENTION MoE? The atlas has a full-attention dense, a full-attention MoE, and since prereg #101 a hybrid linear-attention DENSE (Qwen3.8-27B, band 51-64, 2.04x, monotone). It has no model where linear attention and routed experts meet in the same file - which is the architecture the frontier is converging on. Qwen3.6-35B-A3B is that model: 40 layers, 34.7B total / 2.9B active, and only 10 of 40 layers cache KV (read from the GGUF header, weights/data/qwen36_plan_q8.log). It also gives the atlas its first SAME-LINEAGE SIBLING: Qwen3.5-35B-A3B was probed 2026-07-25 on this exact box, this exact eval, at the same base quant, and came back back-fragile (band 30-39) with a monotone curve - deltas 0.091, 0.153, 0.158, 0.449.
+
+**Predicted effect (staked):** STAKED in prereg #103 before the source was quantized. P-1: back-heavy and monotone-ish, worst band one of the last two, >= 1.3x the median band's delta (the bar #101 set for the hybrid dense, which passed at 2.04x). P-2 names the refutation in advance: a FLAT profile within 15% says fragility tracks the evenly-spread full-attention layers rather than depth, and is the single most informative outcome available. P-3: the 3.6's fragile band lands on the SAME index as the 3.5's (30-39).
+
+**Why it is promising:** Staked as prereg #103. It attacks the generality of Law 3 at the exact point where the architecture is changing under us. If depth survives here, the depth-aware recipe has been shown to hold across dense, MoE, hybrid-dense and hybrid-MoE - four structurally different families - and the atlas is worth extending. If it goes flat, the framing does not generalise and the tool must say so for this class. Either way the answer is worth more than another confirmation on a family we have already probed.
+
+`STAKED 2026-08-18 (prereg #103), probe RUNNING - source on disk, predictions public before the first band was built` · `unmeasured by construction - this entry exists to be scored against, and the bar it must clear was fixed before any data` · wired into: `preregistrations/2026-08-18-qwen36-hybrid-moe-fragility.md`
 
 ## External work to study
 
