@@ -1782,6 +1782,17 @@
       "kill_rules": "A +/-3% byte gate governs everything: outside it, no quality claim is published from the pair at all. If P-1 fails, quantize --recipe carries a scope note for hybrid MoE the same day and so does the atlas entry. If P-2 fails the recipe is reported as measurable but not material on this model and no marketing number is drawn from it. Any published figure carries N and spread, per C-31.",
       "wired_into": "preregistrations/2026-08-18-qwen36-recipe-vs-naive.md",
       "result": "OURS 5.7796 PPL vs SPREAD 5.9088 on 32 chunks of held-out WikiText-2, against a Q6_K reference of 5.4669. P-1 PASS. P-2 PASS at 29.2% against a 5% bar - moving ten protected layers onto the measured band instead of spreading them evenly removes 29% of the quality loss at ZERO byte cost. P-3 PASS at 1.22%: placement moved quality, not speed. The control was strong by design - SPREAD spends the same bits on protection, just in the wrong places - and the originally staked plain-Q2_K arm was rejected by the byte gate at +9.09% before anything was scored. Artifact speed 14.86 +/- 0.36 tok/s at -ngl 12 (N=5), a 35B hybrid MoE at chat speed on a GTX 1060 6GB. VOID, recorded not dropped: Law 4's 22.7 tok/s prediction for the hybrid row measured 9.94 +/- 5.40 - a 54% error bar that our own report command calls unusable - so the prediction is UNSCORED rather than missed, and the instability was itself predicted by the planner's own pinned-memory warning. Unstaked observation: -ngl 12 -> 24 costs 3x decode, a VRAM-overcommit cliff."
+    },
+    {
+      "id": "U-54",
+      "kind": "untried",
+      "status": "STAKED under prereg #107; scorer committed before the arms run",
+      "claim": "Lowering expert_used_count at runtime is a BOUNDED lever: on Qwen3.6-35B-A3B it cannot exceed ~1.24x no matter how far k falls, because the routed experts own only 22% of the active byte budget.",
+      "predicted_effect": "Law 4 from the file's own byte split: k=4 -> 1.125x, k=2 -> 1.200x, k=1 -> 1.242x. P-1 stakes the k=1 speedup BELOW 1.50x, P-3 stakes k=2 within +/-15% of 1.200x, P-4 stakes the quality cost of halving the experts at 0.50 PPL or worse.",
+      "why_it_is_promising": "Not promising as a speed win - promising as a DISPROOF. The knob is widely treated as a free dial for MoE on small hardware, and prereg #107 can price its ceiling from metadata alone, before running anything. Routed experts: 32.212 B params in 11.602 GiB at 3.09 bits. Always-active: 2.448 B in 1.268 GiB at 4.45 bits. At k=1 - one expert of 256 - 96.5% of the active bytes are still read. If it holds, the useful product output is the ceiling FORMULA, computed per file, not the dial.",
+      "magnitude": "ceiling 1.242x at k=1; 22% of active bytes are routed at the default k=8. Feasibility confirmed before staking: llama.cpp reports n_expert_used = 2 and 1 under --override-kv on qwen35moe.",
+      "scope": "Qwen3.6-35B-A3B (256 experts, k=8, expert FFN 512) on GTX 1060 6GB / 16GB DDR4-3000, llama.cpp b10098, -ngl 12. The CEILING is per-file arithmetic and transfers; the measured speedups do not.",
+      "confidence": "the byte split is read from the file and is not in doubt. Whether the measured speedup matches it is exactly what prereg #107 tests - and the model does not fit free RAM (L-29), so a smaller working set could beat the bandwidth-only ceiling. That failure mode is named in the stake rather than discovered after."
     }
   ],
   "external": [

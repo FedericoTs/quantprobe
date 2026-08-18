@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 27 |
 | Open contradictions | 32 |
-| Untried levers | 42 |
+| Untried levers | 43 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1077,6 +1077,16 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** Staked as prereg #104. It converts a measurement into a downloadable thing, which is the form that travels furthest for this audience, and it tests the method where it has never been tested - hybrid attention plus routed experts in one file. A pass makes the atlas actionable rather than descriptive; a failure is a finding about the method itself, which is worth more than another confirmation on a family already probed.
 
 `CLOSED 2026-08-18: 3 of 3 stakes PASS at byte-identical size - the measured band pays on a hybrid MoE; the Law 4 speed check is VOID on noise and awaits a clean re-run` · `measured - byte-identical arms (14,115,658,720 bytes each), one machine state, bars fixed before either arm was scored` · wired into: `preregistrations/2026-08-18-qwen36-recipe-vs-naive.md`
+
+### U-54 — Lowering expert_used_count at runtime is a BOUNDED lever: on Qwen3.6-35B-A3B it cannot exceed ~1.24x no matter how far k falls, because the routed experts own only 22% of the active byte budget.
+
+**Magnitude:** ceiling 1.242x at k=1; 22% of active bytes are routed at the default k=8. Feasibility confirmed before staking: llama.cpp reports n_expert_used = 2 and 1 under --override-kv on qwen35moe.
+
+**Predicted effect (staked):** Law 4 from the file's own byte split: k=4 -> 1.125x, k=2 -> 1.200x, k=1 -> 1.242x. P-1 stakes the k=1 speedup BELOW 1.50x, P-3 stakes k=2 within +/-15% of 1.200x, P-4 stakes the quality cost of halving the experts at 0.50 PPL or worse.
+
+**Why it is promising:** Not promising as a speed win - promising as a DISPROOF. The knob is widely treated as a free dial for MoE on small hardware, and prereg #107 can price its ceiling from metadata alone, before running anything. Routed experts: 32.212 B params in 11.602 GiB at 3.09 bits. Always-active: 2.448 B in 1.268 GiB at 4.45 bits. At k=1 - one expert of 256 - 96.5% of the active bytes are still read. If it holds, the useful product output is the ceiling FORMULA, computed per file, not the dial.
+
+`STAKED under prereg #107; scorer committed before the arms run` · `the byte split is read from the file and is not in doubt. Whether the measured speedup matches it is exactly what prereg #107 tests - and the model does not fit free RAM (L-29), so a smaller working set could beat the bandwidth-only ceiling. That failure mode is named in the stake rather than discovered after.` · scope: Qwen3.6-35B-A3B (256 experts, k=8, expert FFN 512) on GTX 1060 6GB / 16GB DDR4-3000, llama.cpp b10098, -ngl 12. The CEILING is per-file arithmetic and transfers; the measured speedups do not.
 
 ## External work to study
 
