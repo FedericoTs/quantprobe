@@ -1,0 +1,21 @@
+free RAM right now: 12.15 GiB (box idle)
+
+model                                                    GiB  headroom  verdict
+--------------------------------------------------------------------------------------------
+Qwen3-Coder-30B-A3B-Instruct-Q2_K_L.gguf               10.55     +1.60  FITS - but only by 1.60 GiB
+Qwen3-30B-A3B-Q2_K.gguf                                10.49     +1.66  FITS - but only by 1.66 GiB
+Qwen3.6-35B-A3B-OURS-depthaware.gguf                   13.15     -1.00  DOES NOT FIT
+Qwen3.5-35B-A3B-ours-depthaware.gguf                   12.36     -0.21  DOES NOT FIT
+Qwen2.5-7B-Instruct-Q4_K_M.gguf                         4.36     +7.79  FITS
+Qwen3-0.6B-Q8_0.gguf                                    0.60    +11.55  FITS
+Mistral-7B-Instruct-v0.3-Q4_K_M.gguf                    4.07     +8.08  FITS
+
+notes:
+  ~ Qwen3-Coder-30B-A3B-Instruct-Q2_K_L.gguf: the 30B flagship: median 20.8 tok/s at 4k, 11.18 at 16k (N=1231/634, C-31 corrected)
+      1.60 GiB of headroom - fits today, and would not if ~1.6 GiB of anything else were resident. Fragile, not wrong.
+  ~ Qwen3-30B-A3B-Q2_K.gguf: 30B ladder rows
+      1.66 GiB of headroom - fits today, and would not if ~1.7 GiB of anything else were resident. Fragile, not wrong.
+  ! Qwen3.6-35B-A3B-OURS-depthaware.gguf: C-32 - the one that broke
+      IN THE BAD REGIME - any published figure needs its free-RAM condition attached.
+  ! Qwen3.5-35B-A3B-ours-depthaware.gguf: prior depth-aware build
+      IN THE BAD REGIME - any published figure needs its free-RAM condition attached.

@@ -191,7 +191,7 @@ What we believe, and the measurement that earned it.
 
 **Magnitude:** Six consecutive runs of one unchanged command on a 13.15 GiB file with 12.28 GB free RAM: 13.04, 13.14, 13.89, 14.33, 14.43, 14.23 tok/s. 9% from first to last, monotone to a plateau near 14.43. The same command had returned 11.0 earlier the same day from a colder state - a 1.31x span with nothing about the file changed.
 
-`measured 2026-08-18 under prereg #106` · `measured - six runs, monotone, plus a control arm and a refuted priming arm` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE 13.15 GiB file at -ngl 12, model larger than free RAM. Unmeasured on boxes where the model fits, except via this prereg's own control arm. · evidence: prereg #106, weights/data/prereg106_reproduce.json, weights/data/prereg106_run.log · wired into: `quantprobe/detect.py:residency, quantprobe/runtime.py:bench`
+`measured 2026-08-18 under prereg #106` · `measured - six runs, monotone, plus a control arm and a refuted priming arm` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE 13.15 GiB file at -ngl 12, model larger than free RAM. Unmeasured on boxes where the model fits, except via this prereg's own control arm. Audited across seven published models 2026-08-18; the boundary is the file size against free RAM, not the parameter count. · evidence: prereg #106, weights/data/prereg106_reproduce.json, weights/data/prereg106_run.log · wired into: `quantprobe/detect.py:residency, quantprobe/runtime.py:bench`
 
 ## Shipped levers
 
