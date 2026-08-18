@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
 | Open contradictions | 31 |
-| Untried levers | 41 |
+| Untried levers | 42 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1051,6 +1051,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** Staked as prereg #103. It attacks the generality of Law 3 at the exact point where the architecture is changing under us. If depth survives here, the depth-aware recipe has been shown to hold across dense, MoE, hybrid-dense and hybrid-MoE - four structurally different families - and the atlas is worth extending. If it goes flat, the framing does not generalise and the tool must say so for this class. Either way the answer is worth more than another confirmation on a family we have already probed.
 
 `CLOSED 2026-08-18: 3 of 3 staked predictions PASS - depth-localized fragility survives a hybrid linear-attention MoE and the sibling band did not move` · `measured - 4-band probe, monotone curve, one machine state, scored against bars fixed before the source was quantized` · wired into: `preregistrations/2026-08-18-qwen36-hybrid-moe-fragility.md`
+
+### U-53 — DOES A MEASURED FRAGILE BAND BUY QUALITY ON A HYBRID LINEAR-ATTENTION MoE, AT EQUAL BYTES? Prereg #103 measured WHERE Qwen3.6-35B-A3B breaks (band 30-39, 2.53x, monotone). That is a measurement, not a product claim. The product claim - protect the measured band and beat a naive quantizer at the same file size - has only been tested on full-attention models (prereg #98 on Qwen3.5-35B, the 7B A2A on 2026-08-04). This is the first test of the payoff on the architecture the frontier is shipping, and the artifact is the one people would actually download: 12.4 GB, predicted 22.7 tok/s on a 2016 desktop with a GTX 1060.
+
+**Predicted effect (staked):** Staked in prereg #104 before scoring: P-1 OURS has lower held-out WikiText-2 perplexity than NAIVE at matched bytes (direction only). P-2 the gap is >= 5% of NAIVE-over-reference, or the recipe is real but not worth telling anyone about. P-3 decode speed differs < 5% between arms, because both carry the same bytes/token to within the byte gate and Law 4 says speed cannot move.
+
+**Why it is promising:** Staked as prereg #104. It converts a measurement into a downloadable thing, which is the form that travels furthest for this audience, and it tests the method where it has never been tested - hybrid attention plus routed experts in one file. A pass makes the atlas actionable rather than descriptive; a failure is a finding about the method itself, which is worth more than another confirmation on a family already probed.
+
+`STAKED 2026-08-18 (prereg #104) while the OURS file was still building - depth-aware file done, NAIVE arm and both scores pending` · `unmeasured by construction - the bars were fixed before either artifact was scored` · wired into: `preregistrations/2026-08-18-qwen36-recipe-vs-naive.md`
 
 ## External work to study
 
