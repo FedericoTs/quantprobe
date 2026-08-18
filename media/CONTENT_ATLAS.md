@@ -61,6 +61,12 @@ cite-or-refuse, misses at full size, render-review before shipping.
     half-spec, argv-grammar drift (-fa), stale calibration (RAM 24.9 -> 22.0 drift event).
     "Your benchmark is lying to you: the field guide."
 26. ● Warm vs cold disk: C-17's 6.8x page-cache trap (0.44 cold vs 2.99 "disk" that was RAM).
+27. ✔ **SHIPPED `cache_trap`** — the cache trick that makes it slower. Six consecutive runs of
+    one unchanged command climb 13.04 → 14.43, then `cat model.gguf > /dev/null` drops it to
+    11.89. Refutes the standard warm-the-cache remedy in exactly the regime people reach for
+    it (file bigger than RAM), and carries our own -1.95 miss against a staked +1.0
+    (prereg #106, L-29/D-29). The strongest metrology piece we have: the failure it documents
+    is one we committed publicly and corrected the same day.
 
 ## Lens 7 — The ecosystem (retrodictions and transfers)
 27. ● The retrodiction gallery: Kimi 0.3%, airllm's 30x spread bracketed, DGX Spark, the
