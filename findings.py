@@ -88,9 +88,18 @@ def validate(reg):
                 staked[n] = fn
     problems += dupes
     cited = set()
+    # The hyphen matters and has cost two false failures. Every pre-registration TITLES itself
+    # "Pre-registration #N", so that is the spelling an author reaches for in the register too -
+    # and `prereg(istration)?` does not match it, because "pre-registration" contains "pre-reg",
+    # not "prereg". The gate then reported a correctly-cited stake as uncited. Accept both.
+    # Scanning STATUS as well, for the same reason: "STAKED under prereg #N" is the natural place
+    # to put the citation on an entry that has no evidence yet, which is exactly what an untried
+    # entry is. A gate that only recognises one phrasing tests phrasing, not citation.
+    CITE = re.compile(r"pre-?reg(?:istration)? #(\d+)", re.I)
     for _, e in entries:
-        for field in ("evidence", "why_it_is_promising", "what_the_data_rules_out", "magnitude"):
-            cited.update(int(n) for n in re.findall(r"prereg(?:istration)? #(\d+)", str(e.get(field, ""))))
+        for field in ("evidence", "why_it_is_promising", "what_the_data_rules_out", "magnitude",
+                      "status", "predicted_effect"):
+            cited.update(int(n) for n in CITE.findall(str(e.get(field, ""))))
     for num, fn in sorted(staked.items()):
         if num not in cited:
             problems.append(f"pre-registration #{num} ({fn}) is not cited by any register entry")

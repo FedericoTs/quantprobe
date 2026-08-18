@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 21 |
 | Measured dead ends | 27 |
 | Open contradictions | 32 |
-| Untried levers | 43 |
+| Untried levers | 44 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1099,6 +1099,16 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** Not promising as a speed win - promising as a DISPROOF. The knob is widely treated as a free dial for MoE on small hardware, and prereg #107 can price its ceiling from metadata alone, before running anything. Routed experts: 32.212 B params in 11.602 GiB at 3.09 bits. Always-active: 2.448 B in 1.268 GiB at 4.45 bits. At k=1 - one expert of 256 - 96.5% of the active bytes are still read. If it holds, the useful product output is the ceiling FORMULA, computed per file, not the dial.
 
 `CLOSED 2026-08-19 - prereg #107 scored 4/4; became L-30 (the ceiling law) and V-22 (the lever, measured and not recommended)` · `the byte split is read from the file and is not in doubt. Whether the measured speedup matches it is exactly what prereg #107 tests - and the model does not fit free RAM (L-29), so a smaller working set could beat the bandwidth-only ceiling. That failure mode is named in the stake rather than discovered after.` · scope: Qwen3.6-35B-A3B (256 experts, k=8, expert FFN 512) on GTX 1060 6GB / 16GB DDR4-3000, llama.cpp b10098, -ngl 12. The CEILING is per-file arithmetic and transfers; the measured speedups do not.
+
+### U-55 — The expert-count knob has a LARGER ceiling on prefill than on decode, because compute scales with parameters while bandwidth scales with bytes - and the routed experts own 34.2% of the active params against only 22% of the active bytes.
+
+**Magnitude:** predicted prefill ceiling 1.426x at k=1 against decode's measured 1.451x; the decision-relevant comparison is k=2 and k=4, where the param share predicts prefill ahead of decode by 15% and 5% respectively
+
+**Predicted effect (staked):** Prefill speedups from the param share: k=4 -> 1.206x, k=2 -> 1.345x, k=1 -> 1.426x, against measured decode gains of 1.146x / 1.175x / 1.451x (prereg #107). P-1 stakes k=4 within +/-15% of 1.206x, P-2 that prefill beats decode at k=4 and k=2, P-3 that k=2 reaches 1.25x.
+
+**Why it is promising:** prereg #107 closed the decode question with a clean negative - the dial is bounded at 1.24x and costs +1.51 PPL to halve the experts. But quantization shrinks BYTES, not FLOPs, so the same knob is a different size on a compute-bound resource. Prefill is where agentic and coding workloads live: long files, retrieved context, repeated re-reads. A lever worth nothing at decode can still be worth having if it moves time-to-first-token. This costs one short run because quality does not need re-measuring - k is k, and #107 already priced it.
+
+`STAKED under prereg #108; scorer committed before the arms run` · `the param split is read from the file. Whether prefill follows it is the question. prereg #107's PPL wall times fell far faster than 1.426x, which hints at a per-expert overhead term the FLOP model lacks - but that hint is confounded by a cold first arm (L-29) and is explicitly NOT what is staked.` · scope: Qwen3.6-35B-A3B at -ngl 12 on a GTX 1060 6GB, llama.cpp b10098, ~2000-token prompt. The unit argument (compute follows params, bandwidth follows bytes) generalises; the numbers do not.
 
 ## External work to study
 
