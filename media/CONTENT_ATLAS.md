@@ -68,6 +68,14 @@ cite-or-refuse, misses at full size, render-review before shipping.
     (prereg #106, L-29/D-29). The strongest metrology piece we have: the failure it documents
     is one we committed publicly and corrected the same day.
 
+28. ✔ **SHIPPED `expert_dial`** — the MoE speed dial nobody should turn. Two panels because the
+    argument needs both: Law 4 predicted the speedup curve from the file's byte split to within
+    2% (k=4 1.146x vs 1.125 predicted), and every point on it costs more quality than the speed
+    is worth (k=4 buys 15% for +1.51 PPL; k=1 buys 45% and PPL is 2277). The ceiling — 1.24x —
+    was computable before anything ran, because the routed experts own only 22% of the active
+    bytes. Ships with the k=1 overshoot labelled as beating the ceiling, which is a Law 4 edge
+    and not a win (prereg #107, L-30/V-22).
+
 ## Lens 7 — The ecosystem (retrodictions and transfers)
 27. ● The retrodiction gallery: Kimi 0.3%, airllm's 30x spread bracketed, DGX Spark, the
     Blackwell +2..7.6%, AMD +0.1% - one scatter, "the law on machines we never touched."
