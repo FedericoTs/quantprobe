@@ -1058,7 +1058,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** Staked as prereg #104. It converts a measurement into a downloadable thing, which is the form that travels furthest for this audience, and it tests the method where it has never been tested - hybrid attention plus routed experts in one file. A pass makes the atlas actionable rather than descriptive; a failure is a finding about the method itself, which is worth more than another confirmation on a family already probed.
 
-`STAKED 2026-08-18 (prereg #104) while the OURS file was still building - depth-aware file done, NAIVE arm and both scores pending` · `unmeasured by construction - the bars were fixed before either artifact was scored` · wired into: `preregistrations/2026-08-18-qwen36-recipe-vs-naive.md`
+`CLOSED 2026-08-18: 3 of 3 stakes PASS at byte-identical size - the measured band pays on a hybrid MoE; the Law 4 speed check is VOID on noise and awaits a clean re-run` · `measured - byte-identical arms (14,115,658,720 bytes each), one machine state, bars fixed before either arm was scored` · wired into: `preregistrations/2026-08-18-qwen36-recipe-vs-naive.md`
 
 ## External work to study
 

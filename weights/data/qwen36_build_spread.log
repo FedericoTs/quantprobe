@@ -1,0 +1,21 @@
+SPREAD control - protected layers: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36]
+C:/Users/Federico/Documents/evo-compress/tools/llamacpp-b10098/llama-quantize.exe --allow-requantize --tensor-type ffn_.*_shexp.*=q8_0 --tensor-type nextn.*=q8_0 --tensor-type blk\.(1|2|3|5|6|7|9|10|11|13|14|15|17|18|19|21|22|23|25|26|27|29|30|31|33|34|35|37|38|39)\.ffn_.*=q2_k --tensor-type blk\.(0|4|8|12|16|20|24|28|32|36)\.ffn_.*=q4_k --tensor-type attn_.*=q4_k --tensor-type ssm_.*=q4_k --token-embedding-type q4_k D:/evo-compress-data/gguf/Qwen3.6-35B-A3B-Q8_0.gguf D:/evo-compress-data/gguf/Qwen3.6-35B-A3B-SPREAD-control.gguf Q2_K 8
+           - [  2048,      1,      1,      1], type =    f32, size =    0.008 MiB
+[ 721/ 733] blk.39.attn_output.weight            - [  4096,   2048,      1,      1], type =   q8_0, converting to q4_K .. size =     8.50 MiB ->     4.50 MiB
+[ 722/ 733] blk.39.attn_q.weight                 - [  2048,   8192,      1,      1], type =   q8_0, converting to q4_K .. size =    17.00 MiB ->     9.00 MiB
+[ 723/ 733] blk.39.attn_q_norm.weight            - [   256,      1,      1,      1], type =    f32, size =    0.001 MiB
+[ 724/ 733] blk.39.attn_v.weight                 - [  2048,    512,      1,      1], type =   q8_0, converting to q4_K .. size =     1.06 MiB ->     0.56 MiB
+[ 725/ 733] blk.39.ffn_down_exps.weight          - [   512,   2048,    256,      1], type =   q8_0, converting to q2_K .. size =   272.00 MiB ->    84.00 MiB
+[ 726/ 733] blk.39.ffn_down_shexp.weight         - [   512,   2048,      1,      1], type =   q8_0, size =    1.062 MiB
+[ 727/ 733] blk.39.ffn_gate_exps.weight          - [  2048,    512,    256,      1], type =   q8_0, converting to q2_K .. size =   272.00 MiB ->    84.00 MiB
+[ 728/ 733] blk.39.ffn_gate_inp.weight           - [  2048,    256,      1,      1], type =    f32, size =    2.000 MiB
+[ 729/ 733] blk.39.ffn_gate_inp_shexp.weight     - [  2048,      1,      1,      1], type =    f32, size =    0.008 MiB
+[ 730/ 733] blk.39.ffn_gate_shexp.weight         - [  2048,    512,      1,      1], type =   q8_0, size =    1.062 MiB
+[ 731/ 733] blk.39.ffn_up_exps.weight            - [  2048,    512,    256,      1], type =   q8_0, converting to q2_K .. size =   272.00 MiB ->    84.00 MiB
+[ 732/ 733] blk.39.ffn_up_shexp.weight           - [  2048,    512,      1,      1], type =   q8_0, size =    1.062 MiB
+[ 733/ 733] blk.39.post_attention_norm.weight    - [  2048,      1,      1,      1], type =    f32, size =    0.008 MiB
+llama_model_quantize_impl: model size  = 35183.10 MiB (8.52 BPW)
+llama_model_quantize_impl: quant size  = 13451.26 MiB (3.26 BPW)
+
+llama_quantize: quantize time = 1076934.24 ms
+llama_quantize:    total time = 1076934.24 ms

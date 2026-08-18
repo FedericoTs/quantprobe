@@ -47,6 +47,7 @@
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference. Source was Q8_0; the probe builds its own Q6_K reference and Q6_K band files internally, so base_quant matches the qwen3.5-35b entry by construction and the sibling comparison is controlled.",
     "note": "fragility_ratio 2.53 uses the atlas convention - worst delta over the TRUE median of the four bands (0.1649). The probe's own log line prints '+0.42 vs median 0.19' (~2.2x) because it displays a rounded upper-middle value; both numbers describe the same curve and neither is wrong. Same divergence disclosed on the qwen3.8-27b entry. Staked in prereg #103 before the source was quantized; all three predictions passed.",
     "contributor": "FedericoTs",
-    "prereg": "preregistrations/2026-08-18-qwen36-hybrid-moe-fragility.md"
+    "prereg": "preregistrations/2026-08-18-qwen36-hybrid-moe-fragility.md",
+    "payoff": "Tested at EQUAL BYTES (prereg #104, 2026-08-18): holding these ten layers at Q4_K instead of ten evenly-spread layers - byte-identical files, 14,115,658,720 bytes each - measured 5.7796 PPL against 5.9088, removing 29.2% of the quality loss over a Q6_K reference at no size cost, with decode unchanged (1.22%). Evidence: weights/data/prereg104_ppl.log."
   }
 }

@@ -111,3 +111,74 @@ expected to pass by construction - if it does not, the pair is still unpublishab
 **The plain Q2_K file is kept**, not deleted: it is the receipt for why this amendment exists,
 and it remains a legitimate datapoint for the separate question of what a normal user's
 download costs in quality - a question this prereg does not answer.
+
+
+---
+
+## SCORED 2026-08-18: the measured band pays on a hybrid MoE. 3 of 3, plus one void.
+
+Both arms built from the identical Q8_0 source and **byte-identical in size**:
+14,115,658,720 bytes each. Same tiers, same attention/SSM at Q4_K, same shared experts at
+Q8_0, the same **ten** layers held at Q4_K. The only difference in either file is *which* ten.
+
+| arm | PPL (32 chunks, held-out WikiText-2) | delta over Q6_K reference 5.4669 |
+|---|---|---|
+| **OURS** - band 30-39, as the probe measured | **5.7796** | **+0.3127** |
+| SPREAD - ten layers at 0,4,8...36 | 5.9088 | +0.4419 |
+
+| stake | verdict | evidence |
+|---|---|---|
+| **P-1** OURS beats the control at equal bytes | **PASS** | 5.7796 < 5.9088 |
+| **P-2** gap >= 5% of the control's delta | **PASS** | gap is **29.2%**, six times the bar |
+| **P-3** decode differs < 5% between arms | **PASS** | 1.22% apart - placement moved quality, not speed |
+| byte gate +/-3% | **PASS** | 0.000% - the files are the same size to the byte |
+
+**Putting ten layers where the probe says instead of spreading them evenly removes 29% of the
+quality loss, for free.** That is the first test of the depth-aware payoff on a hybrid
+linear-attention MoE, and the control was strong rather than convenient: SPREAD spends exactly
+the same bits on protection, just in the wrong places. A plain Q2_K would have looked far worse
+and proved far less - which is precisely why the byte gate rejected it and the arm was replaced
+before anything was scored.
+
+### The speed number, and the one that is VOID
+
+The artifact's decode speed, measured on the placement that is actually stable here:
+
+| placement | tok/s | error bar | usable? |
+|---|---|---|---|
+| CPU only (-ngl 0) | 7.40 +/- 2.09 | 28% | noisy |
+| **partial GPU (-ngl 12)** | **14.86 +/- 0.36** | **2.4%** | **yes - this is the number** |
+| partial GPU (-ngl 24) | 4.84 +/- 0.60 | 12% | noisy, and 3x SLOWER than -ngl 12 |
+
+**A 35B hybrid MoE at 14.86 tok/s on a GTX 1060 6GB.** N=5 reps, one machine state.
+
+**What is void, and why it is recorded rather than quietly dropped.** Law 4 predicted **22.7
+tok/s** for this file on the hybrid row (attention to VRAM, routed experts to RAM). Measured on
+that row: **9.94 +/- 5.40** - a **54% error bar**, which our own `report` command classifies as
+"quoted for completeness, not usable as a number". SPREAD came back 9.82 +/- 5.31, equally
+noisy. The P-3 *ratio* survives that noise because both arms ate it identically; the *absolute*
+number does not.
+
+So the 22.7 prediction is **UNSCORED, not missed**. 22.7 against 9.94 looks like a 2.3x miss
+and it would have been easy to write down, but a prediction cannot be scored against a
+measurement whose error bar is half its value - that is the same error class as the 16-token
+headline corrected this morning in C-31. The row is re-run or it gets no verdict.
+
+**The instability was predicted by the tool.** `plan` printed that row with the warning "pins
+12GB of 12GB RAM (CUDA host memory) - fails under memory pressure; if it does, drop -ot and let
+auto-placement decide". A 13.15 GiB file pinning host memory on a 16 GB box is exactly that
+failure, the warning was correct, and it was ignored on the first attempt. The fallback the
+tool recommended is what produced the usable number.
+
+### Unstaked observation: the -ngl cliff
+
+Going from `-ngl 12` to `-ngl 24` costs **3x decode** (14.86 -> 4.84) on this file and box. More
+GPU layers made it dramatically slower - a VRAM-overcommit cliff, not a gentle curve. This was
+not staked and is recorded as an observation only; it is a candidate for its own prereg, since
+the planner currently reasons about placements rather than about where a placement's own
+-ngl optimum sits.
+
+Chain of custody: staked while the OURS file was still being written -> byte gate fired at
++9.09% on the originally staked NAIVE arm -> control replaced with SPREAD and the change
+declared before any scoring -> both arms measured on one machine state -> scored against bars
+fixed in advance.

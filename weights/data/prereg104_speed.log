@@ -1,0 +1,11 @@
+[OURS] tg128, -ngl 99 -ot exps=CPU, r=3 ...
+[OURS] 9.94 +/- 5.40 tok/s   (59s)
+[SPREAD] tg128, -ngl 99 -ot exps=CPU, r=3 ...
+[SPREAD] 9.82 +/- 5.31 tok/s   (57s)
+
+OURS    9.94 tok/s
+SPREAD  9.82 tok/s
+P-3  |delta| < 5% ?   1.22%  ->  PASS - placement moved quality, not speed
+
+predicted by Law 4 before any of this was built: 22.7 tok/s
+measured OURS: 9.94 tok/s   ratio 0.44x

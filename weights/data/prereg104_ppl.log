@@ -1,0 +1,11 @@
+[OURS] perplexity, 32 chunks, -ngl 0 ...
+[OURS] PPL = 5.7796   (517s)
+[SPREAD] perplexity, 32 chunks, -ngl 0 ...
+[SPREAD] PPL = 5.9088   (351s)
+
+reference (Q6_K, #103)   5.4669
+OURS                     5.7796   delta over ref +0.3127
+SPREAD                   5.9088   delta over ref +0.4419
+
+P-1  OURS < SPREAD ?           PASS   (5.7796 vs 5.9088)
+P-2  gap >= 5% of control's delta ?  gap = 29.2%  ->  PASS
