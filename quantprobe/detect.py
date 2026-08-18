@@ -244,6 +244,73 @@ def ram_windows():
     return None, None, None
 
 
+def ram_free_gb():
+    """FREE physical RAM right now - not installed capacity. None if it cannot be read.
+
+    Installed capacity is a property of the machine. Free RAM is a property of the MINUTE, and it
+    is the one that decides whether a model's weights stay resident in page cache between decode
+    passes. C-32: we published 14.86 +/- 0.36 tok/s for a 13.15 GiB file, and could not reproduce
+    it days later on the same box with the same command, because nothing recorded that free RAM
+    was 12.24 GB - less than the file. A tight error bar said nothing about it; the run was
+    internally consistent and externally unrepeatable."""
+    try:
+        if os.name == "nt":
+            import ctypes
+
+            class _MS(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                            ("ullTotalPhys", ctypes.c_ulonglong),
+                            ("ullAvailPhys", ctypes.c_ulonglong),
+                            ("ullTotalPageFile", ctypes.c_ulonglong),
+                            ("ullAvailPageFile", ctypes.c_ulonglong),
+                            ("ullTotalVirtual", ctypes.c_ulonglong),
+                            ("ullAvailVirtual", ctypes.c_ulonglong),
+                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+            m = _MS()
+            m.dwLength = ctypes.sizeof(m)
+            if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m)):
+                return None
+            return round(m.ullAvailPhys / 2**30, 2)
+        # Linux: MemAvailable is the kernel's own estimate of what a new allocation can get.
+        # MemFree is not the same thing and is routinely near zero on a healthy box.
+        with open("/proc/meminfo", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("MemAvailable:"):
+                    return round(int(line.split()[1]) / 2**20, 2)
+    except Exception:
+        return None
+    return None
+
+
+def residency(model_bytes, free_gb=None):
+    """Can this model's weights stay page-cache resident? -> (fits, note).
+
+    Law 4 prices bytes streaming from RAM. When the file is larger than free RAM, part of every
+    decode pass comes off disk instead - a different resource, an order of magnitude slower, and
+    one that changes minute to minute with whatever else the machine is doing. That is not a
+    prediction that came out wrong; it is a regime the prediction does not cover, and the honest
+    move is to say so rather than absorb it into an error bar.
+
+    `fits` is None when free RAM could not be read - unknown is not the same as fine."""
+    if not model_bytes:
+        return None, None
+    gb = ram_free_gb() if free_gb is None else free_gb
+    if gb is None:
+        return None, "free RAM: unreadable - residency unknown, so treat any tok/s as one sample"
+    m = model_bytes / 2**30
+    if m <= gb:
+        return True, (f"free RAM {gb:.1f} GiB vs model {m:.1f} GiB - the weights fit, so this "
+                      f"number should repeat")
+    return False, (
+        f"free RAM {gb:.1f} GiB vs model {m:.1f} GiB - THE MODEL DOES NOT FIT IN FREE RAM.\n"
+        f"             Part of every pass streams from disk, so this figure describes this "
+        f"minute's\n"
+        f"             machine state, not the file. Expect it to move when something else is "
+        f"running,\n"
+        f"             and do not publish it without the free-RAM number beside it (C-32).")
+
+
 WIDE_CPU = ("threadripper", "epyc", "xeon w-3", "xeon(r) w9", "xeon(r) w7", "xeon gold",
             "xeon platinum", "xeon silver")
 

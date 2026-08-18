@@ -8,9 +8,9 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 28 |
+| Established laws | 29 |
 | Shipped levers | 20 |
-| Measured dead ends | 26 |
+| Measured dead ends | 27 |
 | Open contradictions | 32 |
 | Untried levers | 42 |
 | External work to study | 28 |
@@ -186,6 +186,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** mmap/read 1.388x sequential; 4 KB granularity 18.3x (read) and 51.4x (mmap) vs sequential read
 
 `open` · `measured` · scope: One drive (SATA SSD), one file, 2 GB per arm, Python page-touch as the mmap consumer. CAVEAT NOT TO BE BURIED: this run's sequential-read arm measured 0.5501 GB/s while D-28 measured 0.452-0.459 on the same drive - 1.21x apart, from a different region and span and possibly partial caching. Ratios WITHIN this run are sound; absolute numbers must NOT be compared across the two experiments, and the 2.20x total gap above inherits that uncertainty. The 4 KB arms are a granularity FLOOR, not a model of llama.cpp: llama.cpp reads tensors, which are large contiguous blocks, so it almost certainly does not pay the 18x/51x penalties - they bound what a naive page-granular reader would suffer. KR-A passed decisively (warm mmap re-touch 25.75 GB/s), which also bounds Python interpreter overhead at 1.5% of the cold mmap arm - the one way this design could have manufactured a fake mmap penalty. Contention biases every ratio toward 1.0, i.e. AGAINST the result obtained, so 1.388x is a lower bound. · evidence: weights/exp99_mmap_vs_read.py (stake in the module docstring), weights/data/exp99_mmap_vs_read.json · wired into: `nothing yet, and the next step is a PREDICTION rather than a coefficient. llama.cpp exposes --no-mmap; if page-fault overhead is what this measures, --no-mmap should buy a measurable fraction of 1.388x on a model that FITS RAM. That is directly testable and it is the next experiment. Note the limitation honestly: --no-mmap needs the model to fit in RAM, so it cannot help the disk tier - exactly the tier where C-23's gap hurts most. U-23 already gates --no-mmap advice on RAM headroom; this would quantify the benefit behind that gate. Law 4 keeps pricing DEVICE bandwidth and the disk tier keeps its disclosed 30% pessimism until the unexplained 1.58x is accounted for.`
+
+### L-29 — Where a model file is larger than free RAM, decode throughput is a function of how much of it is currently page-cache resident, and it WARMS with consecutive runs - so a single benchmark measures the cache state, not the model.
+
+**Magnitude:** Six consecutive runs of one unchanged command on a 13.15 GiB file with 12.28 GB free RAM: 13.04, 13.14, 13.89, 14.33, 14.43, 14.23 tok/s. 9% from first to last, monotone to a plateau near 14.43. The same command had returned 11.0 earlier the same day from a colder state - a 1.31x span with nothing about the file changed.
+
+`measured 2026-08-18 under prereg #106` · `measured - six runs, monotone, plus a control arm and a refuted priming arm` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE 13.15 GiB file at -ngl 12, model larger than free RAM. Unmeasured on boxes where the model fits, except via this prereg's own control arm. · evidence: prereg #106, weights/data/prereg106_reproduce.json, weights/data/prereg106_run.log · wired into: `quantprobe/detect.py:residency, quantprobe/runtime.py:bench`
 
 ## Shipped levers
 
@@ -471,6 +477,12 @@ Negative results. These are load-bearing: each one is a direction nobody has to 
 
 `resolved` · `measured` · scope: One drive (D:, SATA SSD), one file, 512 MB and 4 GB spans, cold regions assigned disjointly so no arm warms another. It says nothing about NVMe or Gen4 drives, where queue depth and pattern may well matter, and nothing about spans far below 512 MB. It also does NOT establish that llama.cpp reads sequentially - llama.cpp mmaps and touches expert tensors scattered through the file. SEQ and RND bracket that behaviour rather than reproducing it, and the finding is that the bracket is narrow enough for the distinction not to matter here. ELIMINATION IS NOT DIRECT EVIDENCE: H2 now stands because its only rival is dead, not because anyone has measured expert-usage skew. That measurement (task #52) is still owed, and the 0.429 implied miss fraction is the number it has to hit. · evidence: weights/exp94_access_pattern.py (stake in module docstring), weights/data/exp94_access_pattern.json · wired into: `nothing in the shipped code - correctly. The probe is sound, so measure_disk() needs no change, and the miss-fraction term must not be re-fitted from one datapoint. Next: task #52 measures expert-usage skew directly against the 0.429 target. If skew explains it, the disk-tier term gains a residency-aware miss fraction and the same mechanism feeds the hot-expert caching work (task #55).`
 
+### D-29 — Priming the page cache by reading a model file sequentially before benchmarking does NOT speed it up when the file is larger than free RAM - it slows it down.
+
+**Magnitude:** Sequential read of the whole 13.15 GiB file at 582 MB/s, then the identical command: 11.89 tok/s against a 13.84 six-run mean and a 14.43 plateau it had just reached. Priming cost 1.95 tok/s (14%). P-3 predicted +1.0 and the sign came out wrong.
+
+`REFUTED 2026-08-18 - prereg #106 P-3, staked at +1.0 tok/s and measured NEGATIVE` · `measured once, with a large and correctly-signed-against-us effect; the arm was staked before it ran and the prediction was mine to lose` · scope: files LARGER than free RAM. Where the file fits, a sequential read has nothing to evict and this does not apply. · evidence: prereg #106 P-3 (staked before the arm ran), weights/data/prereg106_run.log
+
 ## Open contradictions
 
 Where the code, the law and the measurements do not agree yet. Ranked by how much damage the gap does.
@@ -684,9 +696,9 @@ A: Let's think step by step.') never asks for - the pattern is inherited from th
 
 ### C-32 — Qwen3.6-35B-A3B-depthaware runs at 14.86 +/- 0.36 tok/s at -ngl 12 (published on the HuggingFace model card and in the qwen3.6-35b recipe)
 
-**Magnitude:** 14.86 published vs 11.0-11.4 reproduced = the headline is 30% high; model 13.15 GiB against 12.24 GB free RAM. prereg #105 VOID at its reference arm; prereg #106 stakes P-1..P-4 and a kill rule that can take the headline down
+**Magnitude:** published 14.86 +/- 0.36 as a point estimate; reproduced range 11.0-14.43 tok/s over six warming runs, best attempt 14.43 - 2.9% short of the published figure and short of its error bar. prereg #105 VOID, prereg #106 scored with P-1 and P-3 REFUTED against me.
 
-`OPEN - prereg #105 went VOID at its own reference arm; prereg #106 staked to replace it` · `the FAILURE to reproduce is measured and stable - 11.0 via llama-bench, 11.40 x3 via llama-cli, versus a published 14.86 +/- 0.36. The CAUSE is staked, not established: prereg #106's P-3 tests page-cache residency directly by priming, and it can fail.` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE file at -ngl 12. Whether the gap is this large on other hardware is unmeasured. · evidence: prereg #106 (preregistrations/2026-08-18-is-the-headline-reproducible.md), scorer weights/prereg106_score.py committed before its arms ran; superseded prereg #105 (VOID, preregistrations/2026-08-18-published-speed-vs-experienced-speed.md); weights/data/qwen36_generation_sanity.log; weights/data/prereg105_run.log · wired into: `HuggingFace model card + quantprobe/recipes/qwen3.6-35b.json - both carry 14.86 today and both are edited the same day the kill rule fires`
+`CLOSED 2026-08-18 - prereg #106 scored; every surface corrected the same day` · `the FAILURE to reproduce is measured and stable - 11.0 via llama-bench, 11.40 x3 via llama-cli, versus a published 14.86 +/- 0.36. The CAUSE is staked, not established: prereg #106's P-3 tests page-cache residency directly by priming, and it can fail.` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE file at -ngl 12. Whether the gap is this large on other hardware is unmeasured. · evidence: prereg #106 (preregistrations/2026-08-18-is-the-headline-reproducible.md), scorer weights/prereg106_score.py committed before its arms ran; superseded prereg #105 (VOID, preregistrations/2026-08-18-published-speed-vs-experienced-speed.md); weights/data/qwen36_generation_sanity.log; weights/data/prereg105_run.log · wired into: `quantprobe/detect.py:residency, quantprobe/runtime.py:bench, quantprobe/recipes/qwen3.6-35b.json, the HuggingFace model card`
 
 ## Untried levers
 

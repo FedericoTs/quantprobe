@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased
+## v1.29.0 - 2026-08-18
+
+- **Every measured tok/s now carries a residency verdict** - `bench` prints free RAM against the
+  model's size and refuses to present a figure as stable when the model does not fit. This came
+  from failing to reproduce our own headline (C-32): a 13.15 GiB build published at
+  14.86 +/- 0.36 tok/s returned 11.0 days later, same box, same binary, same command. The
+  existing guard only catches *noisy* runs, and that measurement was 2.4% spread - it sailed
+  through. Variance and reproducibility are different questions: where the file is larger than
+  free RAM, part of every decode pass streams from disk, and the number describes that minute's
+  machine state rather than the model. New `detect.ram_free_gb()` and `detect.residency()`;
+  unreadable free RAM reports as *unknown*, never as fine.
+
+- **A recipe with a published build says so before `quantize` rebuilds it** - the atlas exists to
+  skip work already done, and skipping the build saves hours plus a high-precision source
+  download several times larger than the output. `quantprobe recipes` lists the prebuilt file and
+  `quantize --recipe` names it before starting.
 
 - **The binding-constraint line now carries a validation scope label** - prereg #95's
   variance-attribution arm (Sobol, decided 1000/1000) did NOT confirm the staked

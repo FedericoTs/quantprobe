@@ -4647,6 +4647,64 @@ def t_a_recipe_with_a_published_build_offers_it_before_charging_an_hour():
     return None
 
 
+def t_a_tight_error_bar_is_not_evidence_the_number_will_repeat():
+    """Every measured tok/s must carry its residency verdict, and a small spread must not hide it.
+
+    C-32: we published 14.86 +/- 0.36 tok/s for a 13.15 GiB file. That is a 2.4% error bar, so it
+    passed the existing 15%-spread guard with room to spare - and days later the same command on
+    the same box with the same binary returned 11.0. The file was larger than free RAM, so part of
+    every pass came off disk, and the figure described that minute's machine state rather than the
+    model. Nothing in the tool recorded free RAM next to a tok/s number, so nothing could have
+    caught it.
+
+    Variance and residency are different questions. This pins three things: the classifier is
+    correct on both sides of the boundary, unknown free RAM is reported as unknown rather than as
+    fine, and - the part that actually failed us - the residency line is emitted BEFORE the noisy-
+    run early return, so a wide error bar cannot suppress it.
+
+    Mutations owed and discharged: flipping the comparison, returning True when free RAM is
+    unreadable, or moving the residency block back below the spread guard each fail this test.
+    """
+    from quantprobe import detect as dt
+
+    # 1. Both sides of the boundary, with free RAM injected so this runs anywhere.
+    fits, note = dt.residency(4 * 2**30, free_gb=12.0)
+    assert fits is True, f"4 GiB model in 12 GiB free RAM must fit, got {fits}"
+    assert "12.0" in note and "4.0" in note, f"the note must carry both numbers: {note}"
+
+    fits, note = dt.residency(int(13.15 * 2**30), free_gb=12.24)
+    assert fits is False, "13.15 GiB model in 12.24 GiB free RAM must NOT fit - this is C-32"
+    assert "DOES NOT FIT" in note, f"a non-fitting model needs an unmissable line: {note}"
+    assert "C-32" in note, "the note must point at the incident it came from"
+
+    # Exactly-equal is the boundary case; a model the size of free RAM is the last one that fits.
+    assert dt.residency(8 * 2**30, free_gb=8.0)[0] is True, "model == free RAM must fit"
+
+    # 2. Unreadable free RAM is UNKNOWN, never a pass. Silent-fallback-to-fine is the defect
+    #    class this project has shipped before (v1.28.1's `if gs:` guard).
+    real = dt.ram_free_gb
+    dt.ram_free_gb = lambda: None
+    try:
+        fits, note = dt.residency(4 * 2**30)
+    finally:
+        dt.ram_free_gb = real
+    assert fits is None, f"unreadable free RAM must be None, not {fits!r} - unknown is not fine"
+    assert note and "unknown" in note.lower(), f"and it must say so: {note!r}"
+
+    # 3. No model size to check means no claim either way.
+    assert dt.residency(0) == (None, None), "an unknown model size must not produce a verdict"
+
+    # 4. The ordering that failed us: residency is emitted before the spread guard returns.
+    src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "quantprobe", "runtime.py"), encoding="utf-8").read()
+    i_res, i_guard = src.find("_det.residency("), src.find("% spread - this number is not")
+    assert i_res != -1, "runtime.bench no longer reports residency at all"
+    assert i_guard != -1, "the spread guard vanished - update this test with it"
+    assert i_res < i_guard, ("the residency line moved below the noisy-run early return, so a wide "
+                             "error bar now suppresses it - that is the case where it matters most")
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):

@@ -191,6 +191,19 @@ def bench(a):
         # A run whose own error bar is huge is not a measurement - saying so beats letting
         # someone quote a cold-cache artifact. (Seen 2026-07-26: 4.01 +/- 2.16 on a first
         # read from disk, where the warm number was 18.7.)
+        # A TIGHT error bar is not evidence the number will repeat. Residency is a separate
+        # question from variance, so it prints for EVERY measurement and before the spread guard
+        # below - a noisy run is exactly when someone needs to know the file did not fit.
+        # C-32: 14.86 +/- 0.36 was 2.4% spread, sailed through that guard, and still could not be
+        # reproduced days later on the same box with the same command, because the file was
+        # larger than free RAM and nothing recorded it.
+        try:
+            from . import detect as _det
+            _fits, _note = _det.residency(os.path.getsize(a.gguf) if os.path.isfile(a.gguf) else 0)
+            if _note:
+                print(f"[quantprobe] {'residency' if _fits else 'RESIDENCY'}: {_note}")
+        except Exception:
+            pass
         if err > meas * 0.15:
             print(f"[quantprobe] WARNING: +/-{err/meas*100:.0f}% spread - this number is not "
                   f"reliable. Usually a cold file cache on the first read.\n"

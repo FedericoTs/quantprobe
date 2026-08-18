@@ -1,0 +1,21 @@
+== headline arm: 6 fresh runs of the published command ==
+  run 1/6: 13.04 tok/s   free RAM 12.28 GB   (54s)
+  run 2/6: 13.14 tok/s   free RAM 12.27 GB   (54s)
+  run 3/6: 13.89 tok/s   free RAM 12.23 GB   (51s)
+  run 4/6: 14.33 tok/s   free RAM 12.22 GB   (50s)
+  run 5/6: 14.43 tok/s   free RAM 12.24 GB   (49s)
+  run 6/6: 14.23 tok/s   free RAM 12.29 GB   (50s)
+
+== priming the page cache (sequential read of the whole file) ==
+  read 13.15 GiB in 23s (582 MB/s), free RAM now 12.27 GB
+  primed run: 11.89 tok/s
+
+== control arm: Qwen2.5-7B-Instruct-Q4_K_M.gguf, fits free RAM ==
+  ctl 1/6: 9.08 tok/s   free RAM 12.3 GB   (86s)
+  ctl 2/6: 9.11 tok/s   free RAM 12.24 GB   (73s)
+  ctl 3/6: 9.27 tok/s   free RAM 12.22 GB   (71s)
+  ctl 4/6: 9.15 tok/s   free RAM 12.22 GB   (72s)
+  ctl 5/6: 9.11 tok/s   free RAM 12.21 GB   (73s)
+  ctl 6/6: 9.11 tok/s   free RAM 12.21 GB   (73s)
+
+wrote C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill/weights/data/prereg106_reproduce.json in 14.0 min

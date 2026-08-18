@@ -1,0 +1,19 @@
+published claim ......... 14.86 +/- 0.36 tok/s
+headline arm (N=6) ..... mean 13.84, min 13.04, max 14.43, relative spread 10.0%
+    13.04 tok/s   free RAM 12.28 GB
+    13.14 tok/s   free RAM 12.27 GB
+    13.89 tok/s   free RAM 12.23 GB
+    14.33 tok/s   free RAM 12.22 GB
+    14.43 tok/s   free RAM 12.24 GB
+    14.23 tok/s   free RAM 12.29 GB
+primed (cache warmed) ... 11.89 tok/s (-1.95 vs the arm mean)
+control Qwen2.5-7B-Instruct-Q4_K_M.gguf (N=6) ... mean 9.14, relative spread 2.1%
+
+P-1  six-run mean < 13.0 ......... MISS (13.84)
+P-2  nothing reaches 14.5 ......... HIT (best 14.43)
+P-3  priming buys >= 1.0 tok/s .... MISS (-1.95)
+P-4  control no more variable ....... HIT (2.1% vs 10.0%)
+
+KILL RULE -> TODAY WAS THE ANOMALY (P-1 refuted).
+  The defect is then that we cannot tell the two states apart without
+  re-measuring. The free-RAM disclosure ships regardless.

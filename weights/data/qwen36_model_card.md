@@ -12,7 +12,9 @@ pipeline_tag: text-generation
 
 # Qwen3.6-35B-A3B — depth-aware 2-bit GGUF (14.1 GB)
 
-**A 35B mixture-of-experts model that runs at 14.86 tok/s on a 2016 GTX 1060.**
+**A 35B mixture-of-experts model that runs at 11–14.4 tok/s on a 2016 GTX 1060** — a range, not a
+number, and [the speed section](#speed-a-range-and-why-it-cannot-be-a-single-number) explains why
+that is the honest way to state it.
 
 Most low-bit quants decide which layers to protect by convention. This one was built from a
 **measurement**: every depth band of this specific model was pushed to 2-bit one at a time and
@@ -59,29 +61,58 @@ raw log: [`prereg104_ppl.log`](https://github.com/FedericoTs/quantprobe/blob/mas
 
 ---
 
-## Speed, measured not estimated
+## Speed: a range, and why it cannot be a single number
 
-On a **GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K**, llama.cpp b10098, tg128, N=5 reps:
+> **Corrected 2026-08-18.** This card previously said **14.86 ± 0.36 tok/s**. That was a real
+> `llama-bench` run with N=5 and a 2.4% error bar — and we could not reproduce it. Six fresh
+> runs of the identical command, same box, same binary, same file, never reached it. The
+> correction is published here at the same size as the original claim.
 
-| placement | tok/s |
+On a **GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K**, llama.cpp b10098, `-ngl 12`, tg128:
+
+| | tok/s |
 |---|---|
-| `-ngl 12` (recommended) | **14.86 ± 0.36** |
-| `-ngl 0` (CPU only) | 7.40 ± 2.09 |
-| `-ngl 24` | 4.84 ± 0.60 |
+| cold — first runs after the file has been idle | **11.0 – 13.1** |
+| warm — after ~5 consecutive runs | **14.2 – 14.4** |
+| previously published (unreproduced in 6 attempts) | ~~14.86 ± 0.36~~ |
 
-**Use `-ngl 12` on a 6 GB card.** Pushing more layers onto the GPU is *3× slower* here — a
-VRAM-overcommit cliff, not a gentle curve. Your optimum will differ with your VRAM; find it
-before assuming higher is better.
+**Why it moves.** This file is **13.15 GiB** and the machine has **~12.2 GB of free RAM.** The
+weights do not fit, so they cannot all stay resident in page cache, and part of every decode pass
+streams off disk. Throughput therefore depends on how much of the file the OS is currently
+holding — which *climbs across consecutive runs* and collapses when something else needs memory.
+The original 14.86 was measured minutes after the quantizer wrote the file, when it was at its
+hottest.
+
+Measured, six consecutive runs of one unchanged command: `13.04 → 13.14 → 13.89 → 14.33 → 14.43
+→ 14.23`. A 4.68 GB model that *does* fit free RAM, same box same command, holds a **2.1%**
+spread with no ramp at all. The instability is the size relationship, not the machine.
+
+**What this means for you.** With **more than ~14 GB free RAM**, expect the warm figures and a
+stable number. With less, expect it to move, and expect your first run to be the slowest one.
 
 ```bash
 llama-server -m Qwen3.6-35B-A3B-depthaware-Q2K.gguf -ngl 12
 ```
 
-**One number we are NOT publishing.** A different placement (`-ngl 99 -ot exps=CPU`) predicted
-22.7 tok/s and measured 9.94 **± 5.40** — an error bar over half the value, because a 14 GB
-file pinning host memory on a 16 GB box thrashes. That measurement is unusable, so the
-prediction it was meant to test is recorded as *unscored*, not as a hit or a miss. It will be
-re-run on hardware where the placement is stable.
+**Use `-ngl 12` on a 6 GB card.** Pushing more layers onto the GPU is *3× slower* here (4.84 at
+`-ngl 24`) — a VRAM-overcommit cliff, not a gentle curve. CPU-only measures 7.40 ± 2.09.
+
+**Do NOT try to "warm the cache" by reading the file first.** We tested it: `cat`-ing the whole
+13.15 GiB before benchmarking gave **11.89 tok/s**, *worse* than the 14.43 the box had just
+reached, and 1.95 below the six-run mean. A file bigger than RAM cannot be held whole, so a
+sequential read leaves the cache holding the file's last ~12 GB, while real runs leave it holding
+the pages the model actually re-reads — the hot experts. Priming swaps a frequency-adapted cache
+for a position-adapted one. Just run it twice instead.
+
+**One number we are still NOT publishing.** A different placement (`-ngl 99 -ot exps=CPU`)
+predicted 22.7 tok/s and measured 9.94 **± 5.40** — an error bar over half the value. That
+measurement is unusable, so the prediction it was meant to test is recorded as *unscored*, not as
+a hit or a miss.
+
+Full record, including the two predictions that went against us:
+[prereg #106](https://github.com/FedericoTs/quantprobe/blob/master/preregistrations/2026-08-18-is-the-headline-reproducible.md)
+(scored 2/4) and [prereg #105](https://github.com/FedericoTs/quantprobe/blob/master/preregistrations/2026-08-18-published-speed-vs-experienced-speed.md)
+(VOID — its premise died at its own reference arm).
 
 ---
 

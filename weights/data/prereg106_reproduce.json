@@ -1,0 +1,68 @@
+{
+  "model": "Qwen3.6-35B-A3B-OURS-depthaware.gguf",
+  "control_name": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "command": "llama-bench -ngl 12 -p 0 -n 128 -r 5 (the exact published command)",
+  "build": "b10098",
+  "hardware": "GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K",
+  "model_bytes": 14115658720,
+  "control_bytes": 4683074240,
+  "headline_runs": [
+    {
+      "tok_s": 13.04,
+      "free_gb": 12.28
+    },
+    {
+      "tok_s": 13.14,
+      "free_gb": 12.27
+    },
+    {
+      "tok_s": 13.89,
+      "free_gb": 12.23
+    },
+    {
+      "tok_s": 14.33,
+      "free_gb": 12.22
+    },
+    {
+      "tok_s": 14.43,
+      "free_gb": 12.24
+    },
+    {
+      "tok_s": 14.23,
+      "free_gb": 12.29
+    }
+  ],
+  "primed": {
+    "tok_s": 11.89,
+    "free_gb": 12.3,
+    "prime_seconds": 23,
+    "prime_mb_s": 582
+  },
+  "control_small": [
+    {
+      "tok_s": 9.08,
+      "free_gb": 12.3
+    },
+    {
+      "tok_s": 9.11,
+      "free_gb": 12.24
+    },
+    {
+      "tok_s": 9.27,
+      "free_gb": 12.22
+    },
+    {
+      "tok_s": 9.15,
+      "free_gb": 12.22
+    },
+    {
+      "tok_s": 9.11,
+      "free_gb": 12.21
+    },
+    {
+      "tok_s": 9.11,
+      "free_gb": 12.21
+    }
+  ],
+  "wall_minutes": 14.0
+}
