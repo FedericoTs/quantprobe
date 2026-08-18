@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 28 |
 | Shipped levers | 20 |
 | Measured dead ends | 26 |
-| Open contradictions | 31 |
+| Open contradictions | 32 |
 | Untried levers | 42 |
 | External work to study | 28 |
 
@@ -681,6 +681,12 @@ A: Let's think step by step.') never asks for - the pattern is inherited from th
 ### C-31 — Qwen3-30B-A3B '20.4-22.7 tok/s, 22.69 re-measured on a normal working session' and 'context trade 22.69 at 4k -> ~11.7 at 16k'
 
 `CLOSED 2026-08-18 - corrected in README the same day it was found` · `measured - recomputed from the two cited logs themselves: 1,231 and 634 per-request decode rates. The corrected headline is lower than the one it replaces.` · wired into: `README.md measured-results table; FINDINGS.md`
+
+### C-32 — Qwen3.6-35B-A3B-depthaware runs at 14.86 +/- 0.36 tok/s at -ngl 12 (published on the HuggingFace model card and in the qwen3.6-35b recipe)
+
+**Magnitude:** 14.86 published vs 11.0-11.4 reproduced = the headline is 30% high; model 13.15 GiB against 12.24 GB free RAM. prereg #105 VOID at its reference arm; prereg #106 stakes P-1..P-4 and a kill rule that can take the headline down
+
+`OPEN - prereg #105 went VOID at its own reference arm; prereg #106 staked to replace it` · `the FAILURE to reproduce is measured and stable - 11.0 via llama-bench, 11.40 x3 via llama-cli, versus a published 14.86 +/- 0.36. The CAUSE is staked, not established: prereg #106's P-3 tests page-cache residency directly by priming, and it can fail.` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE file at -ngl 12. Whether the gap is this large on other hardware is unmeasured. · evidence: prereg #106 (preregistrations/2026-08-18-is-the-headline-reproducible.md), scorer weights/prereg106_score.py committed before its arms ran; superseded prereg #105 (VOID, preregistrations/2026-08-18-published-speed-vs-experienced-speed.md); weights/data/qwen36_generation_sanity.log; weights/data/prereg105_run.log · wired into: `HuggingFace model card + quantprobe/recipes/qwen3.6-35b.json - both carry 14.86 today and both are edited the same day the kill rule fires`
 
 ## Untried levers
 

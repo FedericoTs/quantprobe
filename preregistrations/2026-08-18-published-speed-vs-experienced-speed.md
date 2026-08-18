@@ -1,7 +1,8 @@
-# Prereg #105 — the number on the card vs the number you get
+# Pre-registration #105: is our published speed the speed a user actually gets?
 
-**Staked:** 2026-08-18, before any arm below was run.
-**Status:** STAKED
+**Author:** Federico Sciuca · **Date staked:** 2026-08-18, **before any arm below was run.**
+**VOID / UNSCORED — 2026-08-18. The premise died at the reference arm. See the verdict at the
+foot of this file. Superseded by [pre-registration #106](2026-08-18-is-the-headline-reproducible.md).**
 
 ## Why
 
@@ -91,3 +92,47 @@ Scored by [`weights/prereg105_score.py`](../weights/prereg105_score.py), written
   not a headline.
 - Either way the card is edited **the same day**, and the correction is published at the same
   size as the original claim.
+
+---
+
+## Verdict: VOID / UNSCORED (2026-08-18)
+
+**P-1, P-2, P-3, P-4: VOID. No treatment arm ever ran.**
+
+The run order put the `llama-bench` reference first, so the comparison would come from one machine
+state instead of being imported from another day. It came back at **11.0 tok/s**.
+
+That is the same `llama-bench tg128` that produced the published **14.86 +/- 0.36** - byte-identical
+file, same binary (b10098), same `-ngl 12`, same box, the command differing only in `-r 3` versus
+`-r 5`. And it lands within 0.4 tok/s of the `llama-cli` figure this prereg was written to explain.
+
+So the framing was wrong. There is no harness-versus-product gap: **`llama-bench` and `llama-cli`
+agree at ~11 tok/s today.** The 23% is not between two tools, it is between two *sessions of the
+same tool*. Every prediction here tests a distinction that does not exist, so the remaining arms
+were killed rather than run - twelve minutes of exclusive box time spent answering a dead question
+is twelve minutes not spent on the live one.
+
+**What the reference arm cost, and what it bought.** It cost the prereg. It bought the actual
+defect, which is worse than the one we staked: *our published headline does not reproduce on the
+machine that produced it.*
+
+Diagnostics taken immediately after, box idle:
+
+| probe | reading | rules out |
+|---|---|---|
+| VRAM held by the desktop | **409 MiB** of 6144 | contention from Edge / XD / shell |
+| GPU performance state | **P0**, mem clock 4004 of 4006 MHz | power or thermal throttling |
+| free system RAM | **12.24 GB** of 15.95 | - |
+| model file | **13.15 GiB** | - |
+
+The last two rows are the finding. The file is *larger than free RAM*, so it cannot be held whole
+in page cache, and how much of it is resident depends on whatever else the machine was doing that
+minute. Law 4 prices bytes streaming from RAM. When the bytes come off disk instead, the law is
+being applied outside the regime it was measured in - and nothing in our tooling said so, because
+nothing in our tooling records free RAM next to a tok/s figure.
+
+**Not amended into a new hypothesis.** One number had already been measured when the premise
+broke, and rewriting predictions around data already seen is the failure this discipline exists to
+prevent. #105 stays void. The successor question is staked clean in prereg #106
+([`2026-08-18-is-the-headline-reproducible.md`](2026-08-18-is-the-headline-reproducible.md)), with
+its scorer committed before its arms run.
