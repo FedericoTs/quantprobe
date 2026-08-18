@@ -99,6 +99,7 @@ def from_gguf(path):
     tier_exp = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}   # prereg #79: per-tier format stats
     tier_att = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}
     embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
+    embd_bytes = 0           # the same exclusion in bytes, for L-30's routed share
     has_output = False       # a separate output/lm_head means embeddings are NOT tied
     kv_blocks = set()        # U-51: blocks that carry a K projection, i.e. FULL attention
     tensors = list(r.tensors)
@@ -115,6 +116,7 @@ def from_gguf(path):
             routed += n
         if "token_embd" in t.name:
             embd_params += n
+            embd_bytes += int(t.n_bytes)   # L-30 needs the BYTE version of the same exclusion
         if t.name.startswith("output.") or "lm_head" in t.name:
             has_output = True
         # bytes-weighted I-quant share. Measured (pre-registration #31): on the CPU tier the
@@ -214,7 +216,16 @@ def from_gguf(path):
         ws += unpriced_cb * WORST_MEASURED_CODEBOOK
         wb += unpriced_cb
     fmt_bw = (ws / wb) if (all_bytes and wb / all_bytes >= 0.6) else None
+    # L-30 (prereg #107): the ceiling of the expert-count knob is decided by the routed share of
+    # ACTIVE BYTES, and that is readable here. Params are the wrong unit - experts are usually
+    # quantized harder than the always-active path, so their byte share is smaller than their
+    # param share, and predicting from params overstates the lever.
+    routed_active_b = tier_exp["bytes"] * (n_used / n_exp) if (moe and n_exp and n_used) else 0
+    always_b = all_bytes - tier_exp["bytes"] - (embd_bytes if has_output else 0)
     return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
+                routed_byte_share=(routed_active_b / (routed_active_b + always_b))
+                if (moe and (routed_active_b + always_b)) else 0.0,
+                n_expert=n_exp, n_expert_used=n_used,
                 bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
                 kv_layers=kv_layers,     # U-51: < n_layer marks a hybrid (linear-attn) model
                 iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
@@ -224,6 +235,51 @@ def from_gguf(path):
                 fmt_bw_exp=round(tier_exp["wsum"] / tier_exp["wb"], 1) if tier_exp["wb"] else None,
                 codebook_share_exp=(tier_exp["cb"] / tier_exp["bytes"]) if tier_exp["bytes"] else 0.0,
                 fmt_bw=round(fmt_bw, 1) if fmt_bw else None)
+
+
+def expert_ceiling(s):
+    """L-30: the most the expert-count knob can ever buy on this file. -> (share, ceiling) or None.
+
+    `--override-kv <arch>.expert_used_count=int:K` is widely traded as a free speed dial for MoE
+    on small hardware. It is bounded, and the bound is arithmetic on the file: routed experts own
+    `routed_byte_share` of the active bytes AT THE DEFAULT k, so driving k to 1 removes all but
+    1/k_default of that share and Law 4 caps the speedup at
+
+        1 / (1 - share * (1 - 1/k_default))
+
+    The divisor is the DEFAULT k, not the expert count. Using n_expert instead reads as "drop from
+    all 256 experts to one" and inflates the ceiling - on the file below, 1.28x against the true
+    1.24x. Checked against prereg #107's staked byte table, which is why the slip was caught.
+
+    Measured against this prediction on Qwen3.6-35B-A3B (prereg #107, 4/4): k=4 1.146x against
+    1.125x predicted, k=2 1.175x against 1.200x. It is exact where the working set is unchanged.
+    At k=1 the measurement overshot by 17% - on a model larger than free RAM the touched-expert
+    set collapses and the page cache starts paying (L-29). So this is a CEILING for the regime the
+    law covers, and the honest word is "about", not a guarantee.
+
+    Returns None for dense models and for any MoE whose expert metadata is missing - a ceiling we
+    cannot compute is not a ceiling we should print."""
+    if not s.get("moe"):
+        return None
+    share, k_def = s.get("routed_byte_share") or 0.0, s.get("n_expert_used") or 0
+    if not share or k_def < 2:
+        return None                       # k=1 already: there is nothing left to turn down
+    return share, 1.0 / (1.0 - share * (1.0 - 1.0 / k_def))
+
+
+def expert_ceiling_note(s):
+    """One line for `plan`/`report`, or None when there is nothing honest to say."""
+    r = expert_ceiling(s)
+    if not r:
+        return None
+    share, ceil = r
+    if ceil < 1.05:                       # below a 5% ceiling the knob is not worth a line
+        return (f"  experts        routed experts are only {share*100:.0f}% of the active bytes - "
+                f"cutting expert_used_count cannot help here (L-30)")
+    return (f"  experts        routed experts are {share*100:.0f}% of the active bytes, so "
+            f"lowering expert_used_count\n"
+            f"                 buys at most ~{ceil:.2f}x even at k=1 - and quality falls long "
+            f"before that (L-30, prereg #107)")
 
 
 def apply(a, quiet=False):
@@ -260,6 +316,8 @@ def apply(a, quiet=False):
     a.fmt_bw_exp = s.get("fmt_bw_exp")
     a.codebook_share_exp = s.get("codebook_share_exp", 0.0)
     a.fmt_bw = s.get("fmt_bw")           # read-only: lets anchored predictions rescale by format (L-16)
+    a._spec = s                          # read-only: L-30's expert ceiling needs the byte split,
+    #                                      and re-scanning the GGUF to recover it would be silly
     if used and not quiet:
         print(f"[quantprobe] read from GGUF: " + ", ".join(used))
     return True

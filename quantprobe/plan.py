@@ -2022,6 +2022,16 @@ def run(args):
         print()
     for line in rep:
         print("  " + line)
+    # L-30 / prereg #107: the expert-count dial is a bounded lever, and the bound is arithmetic
+    # on THIS file. Printing the ceiling is the useful output; offering the dial is not, because
+    # every measured point on the curve costs more quality than the speed is worth. Only shown
+    # when a real GGUF was scanned - a preset has no expert byte split to read.
+    _sp = getattr(args, "_spec", None)
+    if isinstance(_sp, dict) and _sp.get("moe"):
+        from . import spec as _specmod
+        _note = _specmod.expert_ceiling_note(_sp)
+        if _note:
+            print(_note)
     # Speculation reality, TOP-LINE (first external replication, u/MoneroApe: the buried version
     # of this note cost him a debugging session - the drafter silently produced 0 drafts on a
     # novel prompt, exactly as D-10 measured, and the warning was ten paragraphs down).

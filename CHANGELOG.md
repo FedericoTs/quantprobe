@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.30.0 - 2026-08-19
+
+- **`plan` now states the expert-count CEILING instead of offering the dial** - `--override-kv
+  expert_used_count` is widely traded as a free speed knob for MoE on small hardware. Prereg #107
+  measured it end to end and it is bounded by the always-active floor: on Qwen3.6-35B-A3B the
+  routed experts own 22% of the active bytes, so the knob cannot beat ~1.24x even at k=1. Law 4
+  predicted the curve from the file to within 2% (k=4 1.146x vs 1.125 predicted, k=2 1.175x vs
+  1.200), and every point costs more quality than the speed is worth: k=4 buys 15% for +1.51 PPL,
+  k=1 buys 45% and the model is destroyed (PPL 2277). So the tool prints the ceiling computed from
+  YOUR file and cites the evidence. New `spec.expert_ceiling()`; dense models and unreadable
+  expert metadata produce no line at all. (L-30, V-22)
+
 ## v1.29.0 - 2026-08-18
 
 - **Every measured tok/s now carries a residency verdict** - `bench` prints free RAM against the

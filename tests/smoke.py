@@ -4705,6 +4705,56 @@ def t_a_tight_error_bar_is_not_evidence_the_number_will_repeat():
     return None
 
 
+def t_the_expert_ceiling_divides_by_the_default_k_not_the_expert_count():
+    """L-30's ceiling must reproduce prereg #107's staked table, and stay silent when it can't.
+
+    The knob `--override-kv expert_used_count` is traded as a free MoE speed dial. #107 measured
+    it: bounded by the always-active floor, and every point on the curve costs more quality than
+    the speed is worth (k=4 bought 1.146x for +1.51 PPL; k=1 bought 1.451x and PPL 2277). So the
+    tool prints the CEILING and not the dial - which only helps if the ceiling is right.
+
+    The arithmetic has one trap and I fell in it while writing this: the divisor is the DEFAULT k,
+    not the expert count. Using n_expert reads as "drop from all 256 experts to one" and inflated
+    Qwen3.6-35B's ceiling from 1.24x to 1.28x. It was caught only because #107 had staked 1.242
+    in advance, which is the whole argument for staking numbers before building on them.
+
+    Mutations owed and discharged: swapping k_default for n_expert, dropping the share to a param
+    ratio, or answering for a dense model each fail here.
+    """
+    from quantprobe import spec
+
+    # Qwen3.6-35B-A3B as prereg #107 staked it: 22.23% routed byte share, 256 experts, k=8.
+    moe = {"moe": True, "routed_byte_share": 0.22234563059779075,
+           "n_expert": 256, "n_expert_used": 8}
+    share, ceiling = spec.expert_ceiling(moe)
+    assert abs(ceiling - 1.242) < 0.005, (
+        f"ceiling {ceiling:.4f} does not reproduce prereg #107's staked 1.242 - if this drifted "
+        f"by using n_expert (256) instead of the default k (8), it reads 1.284")
+    assert abs(share - 0.2223) < 0.001, share
+
+    # The note has to carry the number a reader would act on, and cite where it came from.
+    note = spec.expert_ceiling_note(moe)
+    assert "1.24x" in note, f"the note lost its ceiling: {note}"
+    assert "L-30" in note and "#107" in note, f"the note must cite its evidence: {note}"
+
+    # Dense models have no such lever and must not get a line.
+    assert spec.expert_ceiling({"moe": False, "routed_byte_share": 0.5,
+                                "n_expert": 8, "n_expert_used": 2}) is None
+    # Nor does an MoE whose metadata we could not read - a ceiling we cannot compute is not one
+    # we should print. Same silent-fallback family as v1.28.1's GPU guard.
+    assert spec.expert_ceiling({"moe": True, "routed_byte_share": 0.0,
+                                "n_expert": 256, "n_expert_used": 8}) is None
+    assert spec.expert_ceiling({"moe": True, "routed_byte_share": 0.3,
+                                "n_expert": 256, "n_expert_used": 1}) is None
+
+    # A tiny routed share means the knob cannot help, and the note should say so rather than
+    # advertise a 1.00x "ceiling" as if it were an option.
+    tiny = spec.expert_ceiling_note({"moe": True, "routed_byte_share": 0.02,
+                                     "n_expert": 128, "n_expert_used": 8})
+    assert "cannot help" in tiny, f"a sub-5% ceiling must be stated as useless: {tiny}"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
