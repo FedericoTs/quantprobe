@@ -15,6 +15,11 @@ PREDICTED = {8: 1.000, 4: 1.206, 2: 1.345, 1: 1.426}
 DECODE = {8: 1.000, 4: 1.146, 2: 1.175, 1: 1.451}
 P1_K, P1_TOL = 4, 0.15
 P3_K, P3_FLOOR = 2, 1.25
+# A measurement whose own spread exceeds this cannot anchor a ratio. Not invented here: it is
+# the project's standing usability bar - runtime.py's bench refuses to contribute above it, and
+# prereg #104 recorded a 9.94 +/- 5.40 speed arm as VOID/UNSCORED rather than as a miss. Applied
+# to the BASELINE specifically, because every gain on this page is divided by it.
+USABLE_SPREAD = 0.15
 
 
 def _mean_hr(v):
@@ -40,30 +45,54 @@ def score(d):
                      f"{DECODE.get(k, float('nan')):11.3f}x")
     lines.append("")
 
+    base_spread = pf[8][1] / base if base else float("inf")
+    usable = base_spread <= USABLE_SPREAD
+    if not usable:
+        lines.append(f"!! BASELINE UNUSABLE: k=8 spread is {base_spread*100:.0f}% of its mean "
+                     f"(bar: {USABLE_SPREAD*100:.0f}%).")
+        lines.append("   Every gain below is divided by that number, so any prediction whose")
+        lines.append("   verdict could flip inside the baseline's own range is VOID, not scored.")
+        lines.append("")
+
     if P1_K in pf:
         got, pr = pf[P1_K][0] / base, PREDICTED[P1_K]
-        verd["P-1"] = abs(got / pr - 1) <= P1_TOL
-        lines.append(f"P-1  k={P1_K} within +/-{P1_TOL*100:.0f}% of {pr:.3f}x ... "
-                     f"{'HIT' if verd['P-1'] else 'MISS'} ({got:.3f}x, {(got/pr-1)*100:+.1f}%)")
+        if not usable:
+            # P-1 is a +/-15% band. A baseline uncertain by more than that cannot decide it:
+            # on the first pass the mean gave 2.026x (MISS) while the highest k=8 reading gave
+            # 1.356x (HIT). A verdict that depends on which sample you divide by is not a verdict.
+            verd["P-1"] = None
+            lines.append(f"P-1  VOID - the +/-{P1_TOL*100:.0f}% band is narrower than the "
+                         f"baseline's own spread ({got:.3f}x against an unusable divisor)")
+        else:
+            verd["P-1"] = abs(got / pr - 1) <= P1_TOL
+            lines.append(f"P-1  k={P1_K} within +/-{P1_TOL*100:.0f}% of {pr:.3f}x ... "
+                         f"{'HIT' if verd['P-1'] else 'MISS'} ({got:.3f}x, {(got/pr-1)*100:+.1f}%)")
     else:
         verd["P-1"] = None
         lines.append(f"P-1  VOID - no k={P1_K} arm")
 
-    beats = {k: (pf[k][0] / base) > DECODE[k] for k in (4, 2) if k in pf}
+    # P-2 and P-3 are one-sided ("the gain EXCEEDS x"), so an unusable baseline does not
+    # automatically void them: divide by the LARGEST baseline in range, and if the claim still
+    # holds there it holds everywhere the baseline could have been. That is a weaker, safer
+    # reading, not a rescue - it can only ever move a verdict from HIT to MISS.
+    div = base + pf[8][1] if not usable else base
+    hedge = "  [worst-case divisor]" if not usable else ""
+
+    beats = {k: (pf[k][0] / div) > DECODE[k] for k in (4, 2) if k in pf}
     if len(beats) == 2:
         verd["P-2"] = all(beats.values())
         detail = ", ".join(f"k={k}: {'beats' if v else 'LOSES TO'} decode" for k, v in beats.items())
         lines.append(f"P-2  prefill beats decode at k=4 and k=2 ... "
-                     f"{'HIT' if verd['P-2'] else 'MISS'}  ({detail})")
+                     f"{'HIT' if verd['P-2'] else 'MISS'}  ({detail}){hedge}")
     else:
         verd["P-2"] = None
         lines.append("P-2  VOID - needs both the k=4 and k=2 arms")
 
     if P3_K in pf:
-        got = pf[P3_K][0] / base
+        got = pf[P3_K][0] / div
         verd["P-3"] = got >= P3_FLOOR
         lines.append(f"P-3  k={P3_K} reaches {P3_FLOOR}x ............... "
-                     f"{'HIT' if verd['P-3'] else 'MISS'} ({got:.3f}x)")
+                     f"{'HIT' if verd['P-3'] else 'MISS'} ({got:.3f}x){hedge}")
     else:
         verd["P-3"] = None
         lines.append(f"P-3  VOID - no k={P3_K} arm")
@@ -101,9 +130,22 @@ def _self_check():
     def arms(d):
         return {"prefill": {str(k): [v, v] for k, v in d.items()}}
 
-    # prefill tracks the FLOP share and beats decode everywhere
+    # prefill tracks the FLOP share and beats decode everywhere (tight baseline -> scorable)
     _, v = score(arms({8: 100.0, 4: 120.6, 2: 134.5, 1: 142.6}))
     assert v == {"P-1": True, "P-2": True, "P-3": True}, v
+
+    # an unusable baseline voids the two-sided prediction but not the one-sided ones, and the
+    # one-sided ones are then judged against the WORST divisor in range
+    wide = {"prefill": {"8": [20.0, 70.0], "4": [92.0, 93.0], "2": [198.0, 199.0],
+                        "1": [215.0, 216.0]}}
+    _, v = score(wide)
+    assert v["P-1"] is None, v          # +/-15% band cannot survive a 55% baseline
+    assert v["P-2"] is True and v["P-3"] is True, v   # still true at base+spread = 70
+    # ... and the worst-case divisor really can fail a one-sided claim
+    narrowish = {"prefill": {"8": [100.0, 160.0], "4": [140.0, 141.0], "2": [150.0, 151.0],
+                             "1": [160.0, 161.0]}}
+    _, v = score(narrowish)
+    assert v["P-3"] is False, v
     # flat prefill: loses to decode, and never reaches 1.25
     _, v = score(arms({8: 100.0, 4: 101.0, 2: 102.0, 1: 103.0}))
     assert v["P-2"] is False and v["P-3"] is False, v

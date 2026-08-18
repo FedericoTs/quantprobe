@@ -1,0 +1,28 @@
+{
+  "model": "Qwen3.6-35B-A3B-OURS-depthaware.gguf",
+  "key": "qwen35moe.expert_used_count",
+  "harness": "llama-cli -ngl 12 -n 1 -f <~2000 token prompt>, reported Prompt t/s",
+  "prefill": {
+    "8": [
+      48.5,
+      68.2,
+      20.2
+    ],
+    "4": [
+      81.6,
+      114.7,
+      81.1
+    ],
+    "2": [
+      193.8,
+      206.9,
+      193.9
+    ],
+    "1": [
+      204.1,
+      235.3,
+      207.2
+    ]
+  },
+  "wall_minutes": 7.6
+}

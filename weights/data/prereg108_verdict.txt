@@ -1,0 +1,19 @@
+baseline k=8 prefill: 45.63 tok/s (warmed, same session)
+  k    prefill tok/s     gain  predicted    error  decode #107
+  8      45.63 +/-24.00   1.000x     1.000x    +0.0%       1.000x
+  4      92.47 +/-16.80   2.026x     1.206x   +68.0%       1.146x
+  2     198.20 +/-6.55   4.343x     1.345x  +222.9%       1.175x
+  1     215.53 +/-15.60   4.723x     1.426x  +231.2%       1.451x
+
+!! BASELINE UNUSABLE: k=8 spread is 53% of its mean (bar: 15%).
+   Every gain below is divided by that number, so any prediction whose
+   verdict could flip inside the baseline's own range is VOID, not scored.
+
+P-1  VOID - the +/-15% band is narrower than the baseline's own spread (2.026x against an unusable divisor)
+P-2  prefill beats decode at k=4 and k=2 ... HIT  (k=4: beats decode, k=2: beats decode)  [worst-case divisor]
+P-3  k=2 reaches 1.25x ............... HIT (2.846x)  [worst-case divisor]
+
+KILL RULE -> IT IS A PREFILL LEVER.
+  quantprobe's ceiling line gains a second number computed from the PARAM
+  share, stating the gain lands on time-to-first-token - and never free of
+  prereg #107's quality bill (k=4 costs +1.51 PPL, k=2 costs +15.5).
