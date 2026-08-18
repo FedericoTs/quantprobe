@@ -194,6 +194,7 @@ Copyability is the whole mechanism: code answers repeat their input, prose inven
 | Depth-aware vs uniform quant, **equal bytes** (7B @ 2-bit, staked A2A) | **-13.2% perplexity, -39.5% median KLD, +5.1 pts same-token, +6.6% tok/s** at +0.48% file size ([prereg + verdict](preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md)) |
 | Context window trade, measured | median **20.8 tok/s at 4k ctx → 11.2 at 16k** (**1.86x**), from 1,231 and 634 decode requests in two live sessions — KV displaces weights on a 6 GB card; run 4k for chat, open it for long chains |
 | Same bytes, different layers protected (Gemma 4 12B) | **byte-identical files, 2.25 ppl apart** |
+| Same bytes, different layers protected (Qwen3.6-35B-A3B, hybrid MoE) | **29.2% less quality loss** - 5.7796 vs 5.9088 PPL at 14,115,658,720 bytes *each*, decode unchanged ([prereg #104](preregistrations/2026-08-18-qwen36-recipe-vs-naive.md), [the build](https://huggingface.co/FedericoSciuca/Qwen3.6-35B-A3B-depthaware-GGUF)) |
 | Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |
 | GLM-4.5-Air **110B** from a SATA drive, 16 GB RAM | **0.19 tok/s** (capacity demo, not usable inference) |
 | RAM overclock (XMP, 2133→3000) | dense **+52%** |
