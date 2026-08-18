@@ -1050,7 +1050,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** Staked as prereg #103. It attacks the generality of Law 3 at the exact point where the architecture is changing under us. If depth survives here, the depth-aware recipe has been shown to hold across dense, MoE, hybrid-dense and hybrid-MoE - four structurally different families - and the atlas is worth extending. If it goes flat, the framing does not generalise and the tool must say so for this class. Either way the answer is worth more than another confirmation on a family we have already probed.
 
-`STAKED 2026-08-18 (prereg #103), probe RUNNING - source on disk, predictions public before the first band was built` · `unmeasured by construction - this entry exists to be scored against, and the bar it must clear was fixed before any data` · wired into: `preregistrations/2026-08-18-qwen36-hybrid-moe-fragility.md`
+`CLOSED 2026-08-18: 3 of 3 staked predictions PASS - depth-localized fragility survives a hybrid linear-attention MoE and the sibling band did not move` · `measured - 4-band probe, monotone curve, one machine state, scored against bars fixed before the source was quantized` · wired into: `preregistrations/2026-08-18-qwen36-hybrid-moe-fragility.md`
 
 ## External work to study
 
