@@ -387,6 +387,11 @@ def quantize(a):
               f"({r['probe']['shape']}-fragile, {r['probe']['fragility_ratio']}x median)")
         print(f"  measured {r['provenance']['measured']} on {r['provenance']['hardware']}; "
               f"evidence: {r['provenance']['raw_log']}")
+        # If the exact file this command is about to spend an hour producing is already
+        # published, the honest thing is to say so BEFORE the build, not after.
+        notice = recmod.prebuilt_notice(r)
+        if notice:
+            print(notice)
     else:
         lo, hi = n_lay - a.protect_late, n_lay - 1
         # If someone has already measured THIS model, say so - the default is a guess, and a

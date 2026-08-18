@@ -49,14 +49,56 @@ def find(key=None, arch=None, n_layer=None):
     return None
 
 
+def artifact(r):
+    """The prebuilt file for this recipe, if someone already built and published it.
+
+    Normalized to a dict so both call sites parse it once. A contribution that puts a bare
+    prose string here still renders - the URL is pulled out of it - because a recipe that is
+    slightly off-schema should degrade to less information, not to a stack trace."""
+    a = (r.get("provenance") or {}).get("published_artifact")
+    if not a:
+        return None
+    if isinstance(a, str):
+        import re
+        m = re.search(r"https?://\S+", a)
+        return {"url": m.group(0).rstrip(".,)") if m else None, "file": None,
+                "bytes": None, "note": a} if m else None
+    return {"url": a.get("url"), "file": a.get("file"), "bytes": a.get("bytes"),
+            "note": a.get("note", "")}
+
+
+def prebuilt_notice(r):
+    """What to print when a recipe already has a published build.
+
+    The whole point of the atlas is skipping work someone else already did. Skipping the PROBE
+    saves hours; skipping the BUILD saves hours more, plus the high-precision source download
+    that dwarfs the output. If the file exists, say so before the user starts quantizing."""
+    a = artifact(r)
+    if not a or not a["url"]:
+        return None
+    size = f", {a['bytes'] / 2**30:.1f} GiB" if a.get("bytes") else ""
+    lines = [f"[quantprobe] this recipe has ALREADY been built and published{size}:",
+             f"  {a['url']}"]
+    if a.get("file"):
+        lines.append(f"  file: {a['file']}")
+    lines.append("  Downloading it is the same bytes as building it, minus the source model "
+                 "and the hours.")
+    return "\n".join(lines)
+
+
 def describe(r):
     p, m, pr = r["probe"], r["model"], r["provenance"]
     lo, hi = p["fragile_band"]
-    return (f"{m['name']} ({m['n_layer']} layers, {'MoE' if m['moe'] else 'dense'}) - "
-            f"fragile band layers {lo}-{hi} ({p['shape']}-fragile, {p['fragility_ratio']}x "
-            f"the median band)\n"
-            f"    measured {pr['measured']} on {pr['hardware']}, eval {pr['eval']}\n"
-            f"    evidence: {pr['raw_log']}")
+    out = (f"{m['name']} ({m['n_layer']} layers, {'MoE' if m['moe'] else 'dense'}) - "
+           f"fragile band layers {lo}-{hi} ({p['shape']}-fragile, {p['fragility_ratio']}x "
+           f"the median band)\n"
+           f"    measured {pr['measured']} on {pr['hardware']}, eval {pr['eval']}\n"
+           f"    evidence: {pr['raw_log']}")
+    a = artifact(r)
+    if a and a["url"]:
+        size = f" ({a['bytes'] / 2**30:.1f} GiB)" if a.get("bytes") else ""
+        out += f"\n    PREBUILT{size}: {a['url']}"
+    return out
 
 
 def run(a):

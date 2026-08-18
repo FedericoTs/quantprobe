@@ -49,6 +49,11 @@
     "contributor": "FedericoTs",
     "prereg": "preregistrations/2026-08-18-qwen36-hybrid-moe-fragility.md",
     "payoff": "Tested at EQUAL BYTES (prereg #104, 2026-08-18): holding these ten layers at Q4_K instead of ten evenly-spread layers - byte-identical files, 14,115,658,720 bytes each - measured 5.7796 PPL against 5.9088, removing 29.2% of the quality loss over a Q6_K reference at no size cost, with decode unchanged (1.22%). Evidence: weights/data/prereg104_ppl.log.",
-    "published_artifact": "https://huggingface.co/FedericoSciuca/Qwen3.6-35B-A3B-depthaware-GGUF - the depth-aware build from this recipe, 14,115,658,720 bytes, measured 14.86 +/- 0.36 tok/s at -ngl 12 on a GTX 1060 6GB (N=5). Its model card carries this fragility curve, the equal-bytes comparison, and the one prediction left unscored."
+    "published_artifact": {
+      "url": "https://huggingface.co/FedericoSciuca/Qwen3.6-35B-A3B-depthaware-GGUF",
+      "file": "Qwen3.6-35B-A3B-depthaware-Q2K.gguf",
+      "bytes": 14115658720,
+      "note": "The depth-aware build from this recipe, measured 14.86 +/- 0.36 tok/s at -ngl 12 on a GTX 1060 6GB (N=5, llama-bench tg128). Its model card carries this fragility curve, the equal-bytes comparison, and the one prediction left unscored."
+    }
   }
 }

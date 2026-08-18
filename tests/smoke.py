@@ -4577,6 +4577,76 @@ def t_plan_stdout_is_byte_identical_after_report_refactor():
     return None
 
 
+def t_a_recipe_with_a_published_build_offers_it_before_charging_an_hour():
+    """`quantize --recipe X` must name the prebuilt file BEFORE it starts building it.
+
+    The atlas exists to skip work already done. Skipping the probe saves hours; skipping the
+    BUILD saves hours plus a high-precision source download several times larger than the
+    output. Once a recipe has a published artifact, running the build is the expensive way to
+    obtain a file that is already sitting on a CDN - and the tool knowing that and staying
+    quiet is the tool wasting the user's afternoon.
+
+    Stubbed in-process (fake 40-layer GGUF, no-op builder) so the assertion runs on the real
+    quantize() path on any machine, with no model file and no llama.cpp present. Mutation
+    owed and discharged: deleting the prebuilt_notice() call in probe.quantize fails here.
+    """
+    import io as _io, contextlib, tempfile
+    from quantprobe import probe as pb, recipes as rec
+
+    # 1. Schema: an artifact that cannot be fetched is not an artifact.
+    for r in rec.load_all():
+        a = rec.artifact(r)
+        if a is None:
+            continue
+        key = r["model"]["key"]
+        assert a["url"] and a["url"].startswith("https://"), \
+            f"recipe {key}: published_artifact has no https URL ({a['url']!r})"
+        if a.get("bytes") is not None:
+            assert isinstance(a["bytes"], int) and a["bytes"] > 0, \
+                f"recipe {key}: artifact bytes must be a positive int, got {a['bytes']!r}"
+
+    # 2. Behaviour: the offer reaches stdout on the path that would otherwise build.
+    target = next((r for r in rec.load_all() if rec.artifact(r)), None)
+    assert target is not None, ("no recipe carries a published_artifact - if the published "
+                               "build was withdrawn, delete this test with it")
+    a = rec.artifact(target)
+
+    fd, fake = tempfile.mkstemp(suffix=".gguf")
+    os.close(fd)
+    real = (pb.n_layers, pb.build_depthaware)
+    pb.n_layers = lambda _p: target["model"]["n_layer"]
+    pb.build_depthaware = lambda *args, **kw: None
+    try:
+        args = type("A", (), {"gguf": fake, "protect": None, "recipe": target["model"]["key"],
+                              "out": fake + ".out", "llama_dir": ".", "imatrix": None,
+                              "dry": True})()
+        buf = _io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            pb.quantize(args)
+        out = buf.getvalue()
+    finally:
+        pb.n_layers, pb.build_depthaware = real
+        try:
+            os.unlink(fake)
+        except OSError:
+            pass
+
+    assert a["url"] in out, (
+        f"quantize --recipe {target['model']['key']} never mentioned the published build "
+        f"{a['url']} - it was about to rebuild a file that already exists.\nGot:\n{out}")
+    assert "ALREADY been built" in out, \
+        f"the prebuilt line lost its headline; the URL alone reads as a citation:\n{out}"
+
+    # 3. `recipes` lists it too - the browsing surface, not just the building one.
+    buf = _io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rec.run(None)
+    listing = buf.getvalue()
+    assert a["url"] in listing, \
+        f"quantprobe recipes hid the prebuilt artifact for {target['model']['key']}"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
