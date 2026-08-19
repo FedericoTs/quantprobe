@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 33 |
-| Untried levers | 46 |
+| Untried levers | 47 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1153,6 +1153,16 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** It would close the open edge left by prereg #107 and prereg #108 with no new physics owed - the excess would be a regime statement, not a missing term. prereg #109's P-3 is the only correctly-specified test so far and it hit decisively; its P-1 and P-2 asked whether the measurement lands ON an upper bound, which is not a question a bound answers, so they missed LOW and told us nothing about the excess. The clean version is one-sided and spans more than one architecture.
 
 `OPEN - prereg #109 answered its question only partially; the clean stake is owed` · `the direction is consistent across every arm measured so far, and the reason it is not yet claimed is a specification error in prereg #109, not a conflicting measurement` · scope: needs at least two more fitting MoEs of different architectures before the excess can be called explained
+
+### U-58 — The excess over the expert ceiling is RESIDENCY and it is LEVERAGE: on a box where the model does not fit free RAM, lowering expert_used_count buys MORE speed than the file's bandwidth ceiling predicts, because a smaller touched-expert set stays cache-resident.
+
+**Magnitude:** decides whether the #107/#108 overshoot is residency (a leverage finding) or a per-expert term (a law amendment); closes or reopens the edge left by prereg #109
+
+**Predicted effect (staked):** On DeepSeek-Coder-V2-Lite at -ngl 0 (pure CPU, whole model in page cache), the k=1 gain is >=1.15x larger when free RAM is starved (7.5 GiB balloon -> ~3.8 GiB free) than when it fits, and the starved k=1 gain overshoots the 1.843x ceiling (>2.03x) while the fitting one does not.
+
+**Why it is promising:** It is the clean version of the test C-33 invalidated: one model, one placement, one architecture, only free RAM varied by a memory balloon. -ngl 0 removes the GPU entirely, so the result cannot be GPU/CPU overload or a capacity cliff - the exact objection that sank prereg #109. If it holds, quantprobe gains a concrete recommendation for its core audience: the expert dial is worth more on constrained hardware, which is where trading quality for speed is most likely worth it.
+
+`STAKED under prereg #110; scorer committed before the balloon arms ran` · `the balloon is verified to drop free RAM 11.3 -> 3.5 GiB on 8 GiB touched, and the within-condition ratio design is robust to the placement being unusual - only the MECHANISM's presence is in question, not the arithmetic.` · scope: one model, one box, two RAM levels. Proves the mechanism operates HERE; a second architecture is owed before it is called general.
 
 ## External work to study
 
