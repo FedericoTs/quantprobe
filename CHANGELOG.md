@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.31.0 - 2026-08-19
+
+- **The expert ceiling now separates DECODE from PREFILL.** Quantization shrinks bytes, not
+  FLOPs - so the same knob is a different size on each resource. Decode is bandwidth-bound and
+  divides the routed share of active BYTES (22% on the measured model, ceiling 1.24x); prefill
+  is compute-bound and divides the routed share of active PARAMS (34%, floor 1.43x). Measured
+  (prereg #108): prefill moved 1.61x at k=4 and 3.77x at k=2 where decode moved 1.15x and 1.18x,
+  so the param-share number is published as a FLOOR, not an estimate. The line carries prereg
+  #107's quality bill unchanged - halving the experts cost +1.51 perplexity. (L-30, V-23)
+
+- **`bench` warns that a run is contaminated by the one before it** when the model exceeds free
+  RAM. Found while measuring something else (prereg #108): identical arms spread 0.8-1.8% when
+  the preceding run used the same config and 21-72% when it did not, with individual readings
+  ranging 6.3x on run order alone. The page cache carries the previous process's working set
+  into the next one, so back-to-back A/B in this regime compares cache states as much as
+  configurations. The warning says what to do instead - interleave and repeat. Models that fit
+  are not warned; there is nothing to evict. (L-31)
+
 ## v1.30.0 - 2026-08-19
 
 - **`plan` now states the expert-count CEILING instead of offering the dial** - `--override-kv

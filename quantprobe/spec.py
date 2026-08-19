@@ -264,7 +264,29 @@ def expert_ceiling(s):
     share, k_def = s.get("routed_byte_share") or 0.0, s.get("n_expert_used") or 0
     if not share or k_def < 2:
         return None                       # k=1 already: there is nothing left to turn down
-    return share, 1.0 / (1.0 - share * (1.0 - 1.0 / k_def))
+    return share, _ceil(share, k_def)
+
+
+def _ceil(share, k_def):
+    return 1.0 / (1.0 - share * (1.0 - 1.0 / k_def))
+
+
+def expert_ceiling_prefill(s):
+    """The same ceiling for PREFILL -> (share, ceiling) or None.
+
+    L-30 prices decode, which is bandwidth-bound, so it divides BYTES. Prefill is compute-bound
+    and compute scales with PARAMETERS - quantization shrinks bytes, not FLOPs. The routed share
+    is therefore larger here, and so is the ceiling.
+
+    Measured (prereg #108, V-23): prefill moved 1.613x at k=4 and 3.766x at k=2, where decode
+    moved 1.146x and 1.175x. The direction and ordering are confirmed. The MAGNITUDE is not -
+    the param share predicted 1.206x at k=4 and the measurement came in 34% above it, so this
+    number is a FLOOR on what prefill does, not an estimate of it. Said that way in the note."""
+    a, ne, k_def = s.get("a") or 0.0, s.get("ne") or 0.0, s.get("n_expert_used") or 0
+    if not s.get("moe") or not a or a <= ne or k_def < 2:
+        return None
+    share = (a - ne) / a
+    return share, _ceil(share, k_def)
 
 
 def expert_ceiling_note(s):
@@ -276,10 +298,20 @@ def expert_ceiling_note(s):
     if ceil < 1.05:                       # below a 5% ceiling the knob is not worth a line
         return (f"  experts        routed experts are only {share*100:.0f}% of the active bytes - "
                 f"cutting expert_used_count cannot help here (L-30)")
-    return (f"  experts        routed experts are {share*100:.0f}% of the active bytes, so "
-            f"lowering expert_used_count\n"
-            f"                 buys at most ~{ceil:.2f}x even at k=1 - and quality falls long "
-            f"before that (L-30, prereg #107)")
+    out = (f"  experts        routed experts are {share*100:.0f}% of the active bytes, so "
+           f"lowering expert_used_count\n"
+           f"                 buys at most ~{ceil:.2f}x DECODE even at k=1 - and quality falls "
+           f"long before that (L-30, prereg #107)")
+    pf = expert_ceiling_prefill(s)
+    if pf:
+        pshare, pceil = pf
+        out += (f"\n                 PREFILL is the better place for it: {pshare*100:.0f}% of "
+                f"active PARAMS are routed, and\n"
+                f"                 measured gains beat this {pceil:.2f}x floor (1.6x at k=4, "
+                f"3.8x at k=2 - V-23, prereg #108).\n"
+                f"                 Neither is free: halving the experts cost +1.51 perplexity "
+                f"on the measured model.")
+    return out
 
 
 def apply(a, quiet=False):

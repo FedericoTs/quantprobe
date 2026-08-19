@@ -308,7 +308,13 @@ def residency(model_bytes, free_gb=None):
         f"minute's\n"
         f"             machine state, not the file. Expect it to move when something else is "
         f"running,\n"
-        f"             and do not publish it without the free-RAM number beside it (C-32).")
+        f"             and do not publish it without the free-RAM number beside it (C-32).\n"
+        f"             COMPARING CONFIGURATIONS? In this regime a run is contaminated by the one\n"
+        f"             before it - the page cache carries the previous config's working set into\n"
+        f"             the next process. Measured: identical arms spread 0.8-1.8% when the\n"
+        f"             predecessor matched and 21-72% when it did not, a 6.3x span from run "
+        f"order\n"
+        f"             alone (L-31). Interleave your arms and repeat them, or A/B here is noise.")
 
 
 WIDE_CPU = ("threadripper", "epyc", "xeon w-3", "xeon(r) w9", "xeon(r) w7", "xeon gold",

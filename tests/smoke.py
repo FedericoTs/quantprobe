@@ -4752,6 +4752,46 @@ def t_the_expert_ceiling_divides_by_the_default_k_not_the_expert_count():
     tiny = spec.expert_ceiling_note({"moe": True, "routed_byte_share": 0.02,
                                      "n_expert": 128, "n_expert_used": 8})
     assert "cannot help" in tiny, f"a sub-5% ceiling must be stated as useless: {tiny}"
+
+    # PREFILL uses the PARAM share, not the byte share - quantization shrinks bytes, not FLOPs,
+    # so the two ceilings must differ and the prefill one must be the larger (prereg #108).
+    full = dict(moe, a=2.9464, ne=1.9398)
+    pshare, pceil = spec.expert_ceiling_prefill(full)
+    assert abs(pceil - 1.426) < 0.005, (
+        f"prefill ceiling {pceil:.4f} does not reproduce prereg #108's staked 1.426")
+    assert pceil > ceiling, "prefill ceiling must exceed decode's - that is the whole finding"
+    assert abs(pshare - 0.3416) < 0.001, pshare
+    note = spec.expert_ceiling_note(full)
+    assert "DECODE" in note and "PREFILL" in note, f"the note must separate the two: {note}"
+    assert "+1.51 perplexity" in note, "a speed line that omits the quality bill is an advert"
+    # Dense models and models with no routed params get no prefill line either.
+    assert spec.expert_ceiling_prefill({"moe": True, "a": 2.0, "ne": 2.0,
+                                        "n_expert_used": 8}) is None
+    return None
+
+
+def t_a_contaminated_neighbour_is_disclosed_when_the_model_exceeds_ram():
+    """L-31: in the oversized-model regime, consecutive runs are not independent samples.
+
+    Measured under prereg #108 while trying to measure something else: identical arms spread
+    0.8-1.8% when the preceding run used the same config and 21-72% when it did not, with
+    individual readings ranging 6.3x on run order alone. The page cache carries the previous
+    process's working set into the next one, so back-to-back A/B on a model larger than free RAM
+    compares cache states as much as configurations.
+
+    That is a methodology trap anyone benchmarking a big local model can fall into, so the
+    residency note carries it - but ONLY in the regime where it was measured. A model that fits
+    has nothing to evict, and warning there would be noise.
+    """
+    from quantprobe import detect as dt
+
+    _, bad = dt.residency(int(13.15 * 2**30), free_gb=12.2)
+    assert "L-31" in bad, f"the non-fitting note lost its contamination warning: {bad}"
+    assert "before it" in bad and "Interleave" in bad, \
+        f"the warning must say what goes wrong AND what to do instead: {bad}"
+
+    _, ok = dt.residency(4 * 2**30, free_gb=12.0)
+    assert "L-31" not in ok, f"a model that FITS must not be warned about eviction: {ok}"
     return None
 
 
