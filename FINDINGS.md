@@ -1168,11 +1168,11 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Magnitude:** reconciles #109's undershoot with #110's overshoot on the SAME fitting model as a placement effect; would replace the qualified/contradicted L-32
 
-**Predicted effect (staked):** On one model in one session, sweeping -ngl from high (GPU-heavy) to 0 (CPU-only) with the model fitting throughout, the k=1 gain rises monotonically relative to the byte ceiling: undershoots at high -ngl (DeepSeek-Lite measured 1.528x at -ngl 12, prereg #109) and overshoots at -ngl 0 (~2x, prereg #110 probe, baseline noisy).
+**Predicted effect (staked):** On one model in one session, sweeping -ngl from high (GPU-heavy) to 0 (CPU-only) with the model fitting throughout, the k=1 gain rises monotonically relative to the byte ceiling: undershoots at high -ngl (DeepSeek-Lite measured 1.528x at -ngl 12, prereg #109) and overshoots at -ngl 0 (~2x, prereg #110 probe, baseline noisy). Narrowed: prereg #111 (staked 2026-08-20) tests only whether pure-CPU DeepSeek-Lite robustly overshoots its 1.843x byte ceiling at k=1 with a usable baseline, the load-bearing observation the whole thread rests on.
 
 **Why it is promising:** It is the OTHER hypothesis #108 named, and prereg #110's probe just made it the likelier one by ruling residency out (overshoot with the model fitting). If it holds, Law 4 gains a per-expert term keyed to the compute tier - a real amendment - and quantprobe can predict when the expert dial beats its bandwidth ceiling (CPU-heavy placements) versus falls short (GPU-heavy).
 
-`OPEN - the sharp question left by prereg #110's void, not yet staked` · `the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy.` · scope: needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.
+`OPEN - the clean CPU-vs-GPU sweep is UNMEASURABLE on this box (6 GB card + 5.56 GiB model entangles expert placement with the capacity boundary; regime check under prereg #111 confirmed only the pure-CPU row is bandwidth-bound). prereg #111 runs the one clean sub-question the box can answer: does the -ngl 0 overshoot survive a usable baseline?` · `the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy.` · scope: needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.
 
 ## External work to study
 
