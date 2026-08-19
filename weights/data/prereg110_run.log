@@ -1,0 +1,8 @@
+free RAM at start: 11.39 GB
+
+== fits: warm-up then 3 descending passes ==
+  warm 1/2: 4.3   free RAM 13.36 GB  (DISCARDED)
+  warm 2/2: 3.4   free RAM 13.48 GB  (DISCARDED)
+  p1 k=6: 5.7 tok/s   free RAM 13.44 GB
+  p1 k=4: 5.5 tok/s   free RAM 13.61 GB
+  p1 k=2: 5.2 tok/s   free RAM 13.78 GB

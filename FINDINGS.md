@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 33 |
-| Untried levers | 47 |
+| Untried levers | 48 |
 | External work to study | 28 |
 
 ## Established laws
@@ -209,7 +209,7 @@ What we believe, and the measurement that earned it.
 
 **Magnitude:** DeepSeek-Coder-V2-Lite-Base-IQ2_XS (5.56 GiB, 6.6 GiB of headroom). Decode: k=4 1.106x against a 1.224x ceiling (-9.6%), k=2 1.380x against 1.577x (-12.5%), k=1 1.528x against 1.843x (-17.1%). Prefill falls further short: -15.5% / -29.8% / -35.8%. Nothing exceeded its ceiling on either resource.
 
-`QUALIFIED 2026-08-19, hours after being registered - measured on a row where the ceiling it tests does not apply. See C-33.` · `the NUMBERS are measured and tight (3 descending passes, every arm inside 3.3%). The INTERPRETATION registered first - 'a fixed cost sets an Amdahl floor under the knob' - outran them, because the fixed cost may simply be the 56% of layers left on CPU by a placement nobody would choose.` · scope: DeepSeek-Coder-V2-Lite-Base-IQ2_XS at -ngl 12 on a GTX 1060 6GB - a placement that leaves 3.5 GiB of VRAM idle and runs at roughly HALF the speed quantprobe's own planner predicts for this model's recommended placement (16.67 measured against 33.0 predicted at 65% experts-in-VRAM). The planner classifies that recommended row CAPACITY-BOUND (VRAM), not bandwidth-bound. The expert ceiling is derived from Law 4, which prices BANDWIDTH. Applying it to a row bound by a different resource is a category error, and the shortfall measured here is evidence about the placement, not about the ceiling. · evidence: prereg #109; weights/data/prereg109_control.json; scorer weights/prereg109_score.py committed before the arms ran · wired into: `quantprobe/spec.py:expert_ceiling_note - the shipped wording already says 'buys at most', which is exactly what a bound of this kind licenses`
+`CONTRADICTED FROM BOTH SIDES 2026-08-19 - already qualified by C-33 (measured on a capacity-bound row), and prereg #110's -ngl 0 probe then measured the same fitting model OVERSHOOTING the ceiling ~2x. 'The ceiling is a genuine upper bound undershot by 10-36%' is refuted: it is crossed in both directions by placement. Superseded by the U-59 program.` · `the NUMBERS are measured and tight (3 descending passes, every arm inside 3.3%). The INTERPRETATION registered first - 'a fixed cost sets an Amdahl floor under the knob' - outran them, because the fixed cost may simply be the 56% of layers left on CPU by a placement nobody would choose.` · scope: DeepSeek-Coder-V2-Lite-Base-IQ2_XS at -ngl 12 on a GTX 1060 6GB - a placement that leaves 3.5 GiB of VRAM idle and runs at roughly HALF the speed quantprobe's own planner predicts for this model's recommended placement (16.67 measured against 33.0 predicted at 65% experts-in-VRAM). The planner classifies that recommended row CAPACITY-BOUND (VRAM), not bandwidth-bound. The expert ceiling is derived from Law 4, which prices BANDWIDTH. Applying it to a row bound by a different resource is a category error, and the shortfall measured here is evidence about the placement, not about the ceiling. · evidence: prereg #109; weights/data/prereg109_control.json; scorer weights/prereg109_score.py committed before the arms ran · wired into: `quantprobe/spec.py:expert_ceiling_note - the shipped wording already says 'buys at most', which is exactly what a bound of this kind licenses`
 
 ## Shipped levers
 
@@ -1162,7 +1162,17 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** It is the clean version of the test C-33 invalidated: one model, one placement, one architecture, only free RAM varied by a memory balloon. -ngl 0 removes the GPU entirely, so the result cannot be GPU/CPU overload or a capacity cliff - the exact objection that sank prereg #109. If it holds, quantprobe gains a concrete recommendation for its core audience: the expert dial is worth more on constrained hardware, which is where trading quality for speed is most likely worth it.
 
-`STAKED under prereg #110; scorer committed before the balloon arms ran` · `the balloon is verified to drop free RAM 11.3 -> 3.5 GiB on 8 GiB touched, and the within-condition ratio design is robust to the placement being unusual - only the MECHANISM's presence is in question, not the arithmetic.` · scope: one model, one box, two RAM levels. Proves the mechanism operates HERE; a second architecture is owed before it is called general.
+`VOID 2026-08-19 - prereg #110's residency framing was refuted before its balloon ran: the expert lever is ~2x at -ngl 0 with the model FITTING comfortably (13 GB free), so the excess is not memory pressure. The mechanism hunt moves to a placement-dependent per-expert CPU term; see U-59.` · `the balloon is verified to drop free RAM 11.3 -> 3.5 GiB on 8 GiB touched, and the within-condition ratio design is robust to the placement being unusual - only the MECHANISM's presence is in question, not the arithmetic.` · scope: one model, one box, two RAM levels. Proves the mechanism operates HERE; a second architecture is owed before it is called general.
+
+### U-59 — The excess over the byte-share expert ceiling is a per-expert CPU overhead (gather + a small matmul launch per routed expert), NOT residency: it is placement-dependent - overshoots when experts run on CPU, undershoots when they run on GPU - with the model fitting free RAM in both cases.
+
+**Magnitude:** reconciles #109's undershoot with #110's overshoot on the SAME fitting model as a placement effect; would replace the qualified/contradicted L-32
+
+**Predicted effect (staked):** On one model in one session, sweeping -ngl from high (GPU-heavy) to 0 (CPU-only) with the model fitting throughout, the k=1 gain rises monotonically relative to the byte ceiling: undershoots at high -ngl (DeepSeek-Lite measured 1.528x at -ngl 12, prereg #109) and overshoots at -ngl 0 (~2x, prereg #110 probe, baseline noisy).
+
+**Why it is promising:** It is the OTHER hypothesis #108 named, and prereg #110's probe just made it the likelier one by ruling residency out (overshoot with the model fitting). If it holds, Law 4 gains a per-expert term keyed to the compute tier - a real amendment - and quantprobe can predict when the expert dial beats its bandwidth ceiling (CPU-heavy placements) versus falls short (GPU-heavy).
+
+`OPEN - the sharp question left by prereg #110's void, not yet staked` · `the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy.` · scope: needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.
 
 ## External work to study
 

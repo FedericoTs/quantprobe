@@ -377,7 +377,7 @@
     {
       "id": "L-32",
       "kind": "law",
-      "status": "QUALIFIED 2026-08-19, hours after being registered - measured on a row where the ceiling it tests does not apply. See C-33.",
+      "status": "CONTRADICTED FROM BOTH SIDES 2026-08-19 - already qualified by C-33 (measured on a capacity-bound row), and prereg #110's -ngl 0 probe then measured the same fitting model OVERSHOOTING the ceiling ~2x. 'The ceiling is a genuine upper bound undershot by 10-36%' is refuted: it is crossed in both directions by placement. Superseded by the U-59 program.",
       "claim": "On a CAPACITY-BOUND row, the bandwidth-derived expert ceiling is not reached: measured gains fell 10-36% short of it. This says nothing about whether the ceiling holds on the bandwidth-bound rows it was derived for.",
       "magnitude": "DeepSeek-Coder-V2-Lite-Base-IQ2_XS (5.56 GiB, 6.6 GiB of headroom). Decode: k=4 1.106x against a 1.224x ceiling (-9.6%), k=2 1.380x against 1.577x (-12.5%), k=1 1.528x against 1.843x (-17.1%). Prefill falls further short: -15.5% / -29.8% / -35.8%. Nothing exceeded its ceiling on either resource.",
       "evidence": "prereg #109; weights/data/prereg109_control.json; scorer weights/prereg109_score.py committed before the arms ran",
@@ -1900,13 +1900,24 @@
     {
       "id": "U-58",
       "kind": "untried",
-      "status": "STAKED under prereg #110; scorer committed before the balloon arms ran",
+      "status": "VOID 2026-08-19 - prereg #110's residency framing was refuted before its balloon ran: the expert lever is ~2x at -ngl 0 with the model FITTING comfortably (13 GB free), so the excess is not memory pressure. The mechanism hunt moves to a placement-dependent per-expert CPU term; see U-59.",
       "claim": "The excess over the expert ceiling is RESIDENCY and it is LEVERAGE: on a box where the model does not fit free RAM, lowering expert_used_count buys MORE speed than the file's bandwidth ceiling predicts, because a smaller touched-expert set stays cache-resident.",
       "predicted_effect": "On DeepSeek-Coder-V2-Lite at -ngl 0 (pure CPU, whole model in page cache), the k=1 gain is >=1.15x larger when free RAM is starved (7.5 GiB balloon -> ~3.8 GiB free) than when it fits, and the starved k=1 gain overshoots the 1.843x ceiling (>2.03x) while the fitting one does not.",
       "why_it_is_promising": "It is the clean version of the test C-33 invalidated: one model, one placement, one architecture, only free RAM varied by a memory balloon. -ngl 0 removes the GPU entirely, so the result cannot be GPU/CPU overload or a capacity cliff - the exact objection that sank prereg #109. If it holds, quantprobe gains a concrete recommendation for its core audience: the expert dial is worth more on constrained hardware, which is where trading quality for speed is most likely worth it.",
       "magnitude": "decides whether the #107/#108 overshoot is residency (a leverage finding) or a per-expert term (a law amendment); closes or reopens the edge left by prereg #109",
       "scope": "one model, one box, two RAM levels. Proves the mechanism operates HERE; a second architecture is owed before it is called general.",
       "confidence": "the balloon is verified to drop free RAM 11.3 -> 3.5 GiB on 8 GiB touched, and the within-condition ratio design is robust to the placement being unusual - only the MECHANISM's presence is in question, not the arithmetic."
+    },
+    {
+      "id": "U-59",
+      "kind": "untried",
+      "status": "OPEN - the sharp question left by prereg #110's void, not yet staked",
+      "claim": "The excess over the byte-share expert ceiling is a per-expert CPU overhead (gather + a small matmul launch per routed expert), NOT residency: it is placement-dependent - overshoots when experts run on CPU, undershoots when they run on GPU - with the model fitting free RAM in both cases.",
+      "predicted_effect": "On one model in one session, sweeping -ngl from high (GPU-heavy) to 0 (CPU-only) with the model fitting throughout, the k=1 gain rises monotonically relative to the byte ceiling: undershoots at high -ngl (DeepSeek-Lite measured 1.528x at -ngl 12, prereg #109) and overshoots at -ngl 0 (~2x, prereg #110 probe, baseline noisy).",
+      "why_it_is_promising": "It is the OTHER hypothesis #108 named, and prereg #110's probe just made it the likelier one by ruling residency out (overshoot with the model fitting). If it holds, Law 4 gains a per-expert term keyed to the compute tier - a real amendment - and quantprobe can predict when the expert dial beats its bandwidth ceiling (CPU-heavy placements) versus falls short (GPU-heavy).",
+      "magnitude": "reconciles #109's undershoot with #110's overshoot on the SAME fitting model as a placement effect; would replace the qualified/contradicted L-32",
+      "scope": "needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.",
+      "confidence": "the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy."
     }
   ],
   "external": [

@@ -1,7 +1,7 @@
 # Pre-registration #110: does starving RAM enlarge the expert lever? (the clean residency test)
 
 **Author:** Federico Sciuca · **Date staked:** 2026-08-19, **before any balloon arm was run.**
-**STAKED.**
+**VOID / UNSCORED 2026-08-19 - a pre-balloon probe refuted the premise before any treatment arm ran. See the verdict at the foot.**
 
 ## Why
 
@@ -81,3 +81,48 @@ arms run.
 - **P-1 refuted** → residency does **not** enlarge the lever on a fitting model made to starve, so
   the #107/#108 overshoot is *not* residency after all, and the per-expert-term hypothesis returns
   with its own stake. Either way #107/#108/#109 stand as scored; this decides only the mechanism.
+
+---
+
+## Verdict: VOID / UNSCORED (2026-08-19). The premise was refuted by a pre-balloon probe.
+
+No balloon arm ever ran. Before inflating it, I ran a quick k=6 vs k=1 probe at -ngl 0 with the
+model FITTING comfortably (~13 GB free, 5.56 GiB model) - and it broke the prereg's own premise.
+
+Raw: [`prereg110_ngl0_probe.txt`](../weights/data/prereg110_ngl0_probe.txt).
+
+| | k=6 | k=1 | gain |
+|---|---|---|---|
+| -ngl 0, fits, no pressure | 3.73 (3.0-4.4) | 7.53 (7.1-8.0) | **2.018x** |
+
+Byte ceiling at k=1: 1.843x. **The lever is ~2x with the model fitting comfortably in free RAM.**
+
+**Two things this kills.**
+
+1. **P-2 assumed a fitting model does not overshoot the ceiling** (that was #109's core, re-run
+   clean). This probe shows a fitting model *at or above* the ceiling, with 13 GB of free RAM and
+   nothing to evict. So the overshoot - if it is real - happens **without memory pressure**, and
+   **residency cannot be the mechanism.** The whole #110 framing is wrong before the treatment arm.
+2. My earlier read of the first three arms as "flat, compute-bound, wrong regime" was a **misread
+   of noisy partial data** - I killed the run at k=2 of pass 1, before the k=1 arm where the lever
+   lives. The lever is present and large; I was wrong to call it absent.
+
+**What is NOT concluded.** The k=6 baseline spread is 47% - far past the #108 usability gate - so
+"2.018x" is not a trustworthy multiple (it flips below 1.843 at the high end of the baseline).
+What is robust is only this: **the lever is large and is not smaller without memory pressure.**
+
+**What this points at instead.** #108 named two candidates for the excess: residency, or a
+per-expert term (gather + a small matmul launch per routed expert, unpriced by Law 4). Residency
+is now the less likely of the two, because the excess shows up with the model fitting. A
+per-expert **CPU** overhead fits the pattern - #109 measured this same model *undershooting* at
+-ngl 12 (experts partly on GPU) and this probe shows it *overshooting* at -ngl 0 (all on CPU),
+same fitting model. That is a **placement** effect, not a memory-pressure effect.
+
+**The clean successor** varies **only -ngl** on **one model, one session, all placements fitting
+in RAM**, with tight baselines: does the excess over the byte ceiling grow as the model moves onto
+the CPU? That isolates the per-expert-CPU term from residency and does not require a balloon. It is
+staked next, carefully, with its regime checked by the planner *before* the run - the lesson of
+C-33 and of this void both.
+
+#107, #108, #109 stand as scored. This decides nothing about them; it only redirects the mechanism
+hunt away from residency.

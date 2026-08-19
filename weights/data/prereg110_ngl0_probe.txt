@@ -1,0 +1,19 @@
+Prereg #110 pre-balloon probe: does the expert lever exist at -ngl 0? (DeepSeek-Coder-V2-Lite-Base-IQ2_XS)
+Model FITS comfortably: ~13 GB free RAM, 5.56 GiB model. No balloon. Interleaved, k=1 always follows k=6.
+
+k=6: 3.8
+k=1: 8.0
+k=6: 3.0
+k=1: 7.5
+k=6: 4.4
+k=1: 7.1
+
+k=6 mean 3.73 (range 3.0-4.4, 47% spread - UNUSABLE by the #108 gate)
+k=1 mean 7.53 (range 7.1-8.0, tight)
+gain 2.018x  vs byte ceiling 1.843x
+
+VERDICT: LEVER PRESENT and LARGE (~2x at k=1) with the model FITTING - so the large lever is
+NOT caused by memory pressure. This contradicts prereg #110's residency framing (P-2 assumed a
+fitting model does not overshoot). The exact multiple is unreliable because the k=6 baseline
+spread (47%) exceeds the usability gate; what is robust is that the lever is big and is not
+smaller without memory pressure. Points at a placement-dependent per-expert term, not residency.
