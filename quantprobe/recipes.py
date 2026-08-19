@@ -10,8 +10,12 @@ globally, ever - and everyone after that skips straight to the build.
 A recipe is a few numbers plus its evidence. Every entry carries the raw log it came from, the
 eval corpus, and the hardware, because a recipe you cannot check is a recipe you should not use.
 """
+
 from __future__ import annotations
-import json, os, glob
+
+import glob
+import json
+import os
 
 
 def _dir():
@@ -27,9 +31,10 @@ def load_all():
     out = []
     for f in sorted(glob.glob(os.path.join(_dir(), "*.json"))):
         try:
-            out.append(json.load(open(f, encoding="utf-8")))
+            with open(f, encoding="utf-8") as fh:
+                out.append(json.load(fh))
         except Exception:
-            continue                       # a malformed contribution must not break the tool
+            continue  # a malformed contribution must not break the tool
     return out
 
 
@@ -60,11 +65,24 @@ def artifact(r):
         return None
     if isinstance(a, str):
         import re
+
         m = re.search(r"https?://\S+", a)
-        return {"url": m.group(0).rstrip(".,)") if m else None, "file": None,
-                "bytes": None, "note": a} if m else None
-    return {"url": a.get("url"), "file": a.get("file"), "bytes": a.get("bytes"),
-            "note": a.get("note", "")}
+        return (
+            {
+                "url": m.group(0).rstrip(".,)") if m else None,
+                "file": None,
+                "bytes": None,
+                "note": a,
+            }
+            if m
+            else None
+        )
+    return {
+        "url": a.get("url"),
+        "file": a.get("file"),
+        "bytes": a.get("bytes"),
+        "note": a.get("note", ""),
+    }
 
 
 def prebuilt_notice(r):
@@ -77,23 +95,28 @@ def prebuilt_notice(r):
     if not a or not a["url"]:
         return None
     size = f", {a['bytes'] / 2**30:.1f} GiB" if a.get("bytes") else ""
-    lines = [f"[quantprobe] this recipe has ALREADY been built and published{size}:",
-             f"  {a['url']}"]
+    lines = [
+        f"[quantprobe] this recipe has ALREADY been built and published{size}:",
+        f"  {a['url']}",
+    ]
     if a.get("file"):
         lines.append(f"  file: {a['file']}")
-    lines.append("  Downloading it is the same bytes as building it, minus the source model "
-                 "and the hours.")
+    lines.append(
+        "  Downloading it is the same bytes as building it, minus the source model and the hours."
+    )
     return "\n".join(lines)
 
 
 def describe(r):
     p, m, pr = r["probe"], r["model"], r["provenance"]
     lo, hi = p["fragile_band"]
-    out = (f"{m['name']} ({m['n_layer']} layers, {'MoE' if m['moe'] else 'dense'}) - "
-           f"fragile band layers {lo}-{hi} ({p['shape']}-fragile, {p['fragility_ratio']}x "
-           f"the median band)\n"
-           f"    measured {pr['measured']} on {pr['hardware']}, eval {pr['eval']}\n"
-           f"    evidence: {pr['raw_log']}")
+    out = (
+        f"{m['name']} ({m['n_layer']} layers, {'MoE' if m['moe'] else 'dense'}) - "
+        f"fragile band layers {lo}-{hi} ({p['shape']}-fragile, {p['fragility_ratio']}x "
+        f"the median band)\n"
+        f"    measured {pr['measured']} on {pr['hardware']}, eval {pr['eval']}\n"
+        f"    evidence: {pr['raw_log']}"
+    )
     a = artifact(r)
     if a and a["url"]:
         size = f" ({a['bytes'] / 2**30:.1f} GiB)" if a.get("bytes") else ""

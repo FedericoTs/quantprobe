@@ -7,10 +7,11 @@ A GGUF already contains everything the decode law needs:
   kv bytes/pos    = exact, from layer count x KV heads x head dims (MLA-aware)
 So `--gguf model.gguf` alone fully specifies the model; flags remain as overrides.
 """
+
 from __future__ import annotations
+
 import os
 import re
-
 
 # Multi-part GGUFs (llama.cpp gguf-split naming: model-00001-of-00002.gguf). The first external
 # contribution the tool ever received (issue #1, RX 5700 XT) arrived as "total=None active=None
@@ -33,7 +34,8 @@ def split_siblings(path):
     if missing:
         raise FileNotFoundError(
             f"split GGUF: {len(parts) - len(missing)} of {cnt} parts present "
-            f"(first missing: {os.path.basename(missing[0])})")
+            f"(first missing: {os.path.basename(missing[0])})"
+        )
     return parts
 
 
@@ -62,16 +64,27 @@ def _field(r, *names):
 # from the weighting; if coverage falls below 60% of bytes the factor is withheld entirely -
 # no number beats a wrong number.
 FORMAT_EBW = {
-    "Q4_0": 119.1, "Q4_K": 106.4, "Q2_K": 65.4, "Q3_K": 57.3, "Q6_K": 100.0,   # measured
-    "Q8_0": 115.0, "Q5_K": 103.0, "Q5_0": 117.0, "Q5_1": 115.0,                # derived
-    "F16": 150.0, "F32": 150.0, "BF16": 150.0,                                  # derived
+    "Q4_0": 119.1,
+    "Q4_K": 106.4,
+    "Q2_K": 65.4,
+    "Q3_K": 57.3,
+    "Q6_K": 100.0,  # measured
+    "Q8_0": 115.0,
+    "Q5_K": 103.0,
+    "Q5_0": 117.0,
+    "Q5_1": 115.0,  # derived
+    "F16": 150.0,
+    "F32": 150.0,
+    "BF16": 150.0,  # derived
     # IQ entries measured in prereg #70 (same-session matched set vs the Q4_K control, pure-type
     # values solved from file blends). The divide is CODEBOOK vs not, not IQ vs K: the codebook
     # formats (IQ2/IQ3) pay their lookup in decode; IQ4_NL's kernel is Q4_0-class and lands
     # beside it. IQ2/IQ3 variants not listed stay excluded (coverage rule withholds fmt_bw).
-    "IQ2_XS": 51.1, "IQ3_S": 61.1, "IQ3_XXS": 68.3,                             # measured (#70)
-    "IQ4_NL": 117.0,                                                            # measured (#70)
-    "IQ2_XXS": 46.0,                                                            # measured (#77)
+    "IQ2_XS": 51.1,
+    "IQ3_S": 61.1,
+    "IQ3_XXS": 68.3,  # measured (#70)
+    "IQ4_NL": 117.0,  # measured (#70)
+    "IQ2_XXS": 46.0,  # measured (#77)
 }
 
 # The slowest codebook format we have MEASURED. Prereg #77: when a file's unpriced formats are
@@ -80,13 +93,14 @@ FORMAT_EBW = {
 # bit-width, so an unmeasured IQ2/IQ1 variant cannot plausibly sit above the floor of what we
 # have measured. Withholding a number is only honest when the FALLBACK is conservative; the old
 # fallback assumed K-quant-class decode and over-promised a 59%-codebook file by 50%.
-K_CLASS_IQ = {"IQ4_NL"}   # IQ by name, Q4_0-class by measurement (#70)
+K_CLASS_IQ = {"IQ4_NL"}  # IQ by name, Q4_0-class by measurement (#70)
 WORST_MEASURED_CODEBOOK = 46.0
 CODEBOOK_FALLBACK_MIN_SHARE = 0.25
 
 
 def from_gguf(path):
     from gguf import GGUFReader
+
     paths = split_siblings(path)
     # Part 1 carries the full metadata (gguf-split copies the KV store there; later parts hold
     # only split bookkeeping). Tensors, however, live where they live: every part contributes.
@@ -96,12 +110,17 @@ def from_gguf(path):
     routed = 0
     iq_bytes = all_bytes = unpriced_cb = codebook_bytes = 0
     fmt_wsum = fmt_bytes = 0.0
-    tier_exp = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}   # prereg #79: per-tier format stats
-    tier_att = {'bytes': 0, 'wsum': 0.0, 'wb': 0, 'cb': 0}
-    embd_params = 0          # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
-    embd_bytes = 0           # the same exclusion in bytes, for L-30's routed share
-    has_output = False       # a separate output/lm_head means embeddings are NOT tied
-    kv_blocks = set()        # U-51: blocks that carry a K projection, i.e. FULL attention
+    tier_exp = {
+        "bytes": 0,
+        "wsum": 0.0,
+        "wb": 0,
+        "cb": 0,
+    }  # prereg #79: per-tier format stats
+    tier_att = {"bytes": 0, "wsum": 0.0, "wb": 0, "cb": 0}
+    embd_params = 0  # token_embd: a GATHER at decode, not a read (U-26 / prereg #76)
+    embd_bytes = 0  # the same exclusion in bytes, for L-30's routed share
+    has_output = False  # a separate output/lm_head means embeddings are NOT tied
+    kv_blocks = set()  # U-51: blocks that carry a K projection, i.e. FULL attention
     tensors = list(r.tensors)
     for extra in paths[1:]:
         tensors.extend(GGUFReader(extra).tensors)
@@ -116,7 +135,7 @@ def from_gguf(path):
             routed += n
         if "token_embd" in t.name:
             embd_params += n
-            embd_bytes += int(t.n_bytes)   # L-30 needs the BYTE version of the same exclusion
+            embd_bytes += int(t.n_bytes)  # L-30 needs the BYTE version of the same exclusion
         if t.name.startswith("output.") or "lm_head" in t.name:
             has_output = True
         # bytes-weighted I-quant share. Measured (pre-registration #31): on the CPU tier the
@@ -139,7 +158,7 @@ def from_gguf(path):
             fmt_wsum += nb * FORMAT_EBW[tn]
             fmt_bytes += nb
         elif tn.startswith("IQ"):
-            unpriced_cb += nb        # a codebook format we have not measured (prereg #77)
+            unpriced_cb += nb  # a codebook format we have not measured (prereg #77)
         # U-28 / prereg #79: the same bytes, split by WHICH TIER holds them. On a MoE split the
         # GPU holds attention and the CPU holds offloaded experts, and their formats differ
         # sharply (measured: attention 82-106 GB/s-equivalent vs experts 50-69 on the Qwen MoEs).
@@ -147,9 +166,11 @@ def from_gguf(path):
         _t = tier_exp if ("exps" in t.name or "_expert" in t.name) else tier_att
         _t["bytes"] += nb
         if tn in FORMAT_EBW:
-            _t["wsum"] += nb * FORMAT_EBW[tn]; _t["wb"] += nb
+            _t["wsum"] += nb * FORMAT_EBW[tn]
+            _t["wb"] += nb
         elif tn.startswith("IQ"):
-            _t["wsum"] += nb * WORST_MEASURED_CODEBOOK; _t["wb"] += nb
+            _t["wsum"] += nb * WORST_MEASURED_CODEBOOK
+            _t["wb"] += nb
         if tn.startswith("IQ") and tn not in K_CLASS_IQ:
             _t["cb"] += nb
     # U-26 / prereg #76: token_embd is GATHERED at decode - one row of a ~150k-row matrix, i.e.
@@ -167,7 +188,10 @@ def from_gguf(path):
         active = ne_params + routed * n_used / n_exp
         moe = True
     else:
-        active, moe = total - gather_only, False    # same gather correction on the dense path
+        active, moe = (
+            total - gather_only,
+            False,
+        )  # same gather correction on the dense path
 
     # exact KV bytes/pos (f16): MLA caches the latent; GQA caches heads x dims, K+V
     #
@@ -199,7 +223,7 @@ def from_gguf(path):
 
     bits = sum(os.path.getsize(p) for p in paths) * 8 / total
     arch = None
-    for field in r.fields.values():        # recipe matching needs (arch, n_layer), not layers alone
+    for field in r.fields.values():  # recipe matching needs (arch, n_layer), not layers alone
         if field.name == "general.architecture":
             try:
                 arch = bytes(field.parts[field.data[0]]).decode("utf-8")
@@ -222,19 +246,29 @@ def from_gguf(path):
     # param share, and predicting from params overstates the lever.
     routed_active_b = tier_exp["bytes"] * (n_used / n_exp) if (moe and n_exp and n_used) else 0
     always_b = all_bytes - tier_exp["bytes"] - (embd_bytes if has_output else 0)
-    return dict(t=total / 1e9, a=active / 1e9, ne=ne_params / 1e9, moe=moe,
-                routed_byte_share=(routed_active_b / (routed_active_b + always_b))
-                if (moe and (routed_active_b + always_b)) else 0.0,
-                n_expert=n_exp, n_expert_used=n_used,
-                bits=round(bits, 2), kvp=int(kvp), n_layer=n_layer, arch=arch,
-                kv_layers=kv_layers,     # U-51: < n_layer marks a hybrid (linear-attn) model
-                iq_share=(iq_bytes / all_bytes) if all_bytes else 0.0,
-                codebook_share=(codebook_bytes / all_bytes) if all_bytes else 0.0,
-                # prereg #79: what each TIER actually holds. None when a tier has no tensors.
-                fmt_bw_attn=round(tier_att["wsum"] / tier_att["wb"], 1) if tier_att["wb"] else None,
-                fmt_bw_exp=round(tier_exp["wsum"] / tier_exp["wb"], 1) if tier_exp["wb"] else None,
-                codebook_share_exp=(tier_exp["cb"] / tier_exp["bytes"]) if tier_exp["bytes"] else 0.0,
-                fmt_bw=round(fmt_bw, 1) if fmt_bw else None)
+    return {
+        "t": total / 1e9,
+        "a": active / 1e9,
+        "ne": ne_params / 1e9,
+        "moe": moe,
+        "routed_byte_share": (routed_active_b / (routed_active_b + always_b))
+        if (moe and (routed_active_b + always_b))
+        else 0.0,
+        "n_expert": n_exp,
+        "n_expert_used": n_used,
+        "bits": round(bits, 2),
+        "kvp": int(kvp),
+        "n_layer": n_layer,
+        "arch": arch,
+        "kv_layers": kv_layers,  # U-51: < n_layer marks a hybrid (linear-attn) model
+        "iq_share": (iq_bytes / all_bytes) if all_bytes else 0.0,
+        "codebook_share": (codebook_bytes / all_bytes) if all_bytes else 0.0,
+        # prereg #79: what each TIER actually holds. None when a tier has no tensors.
+        "fmt_bw_attn": round(tier_att["wsum"] / tier_att["wb"], 1) if tier_att["wb"] else None,
+        "fmt_bw_exp": round(tier_exp["wsum"] / tier_exp["wb"], 1) if tier_exp["wb"] else None,
+        "codebook_share_exp": (tier_exp["cb"] / tier_exp["bytes"]) if tier_exp["bytes"] else 0.0,
+        "fmt_bw": round(fmt_bw, 1) if fmt_bw else None,
+    }
 
 
 def expert_ceiling(s):
@@ -263,7 +297,7 @@ def expert_ceiling(s):
         return None
     share, k_def = s.get("routed_byte_share") or 0.0, s.get("n_expert_used") or 0
     if not share or k_def < 2:
-        return None                       # k=1 already: there is nothing left to turn down
+        return None  # k=1 already: there is nothing left to turn down
     return share, _ceil(share, k_def)
 
 
@@ -295,22 +329,28 @@ def expert_ceiling_note(s):
     if not r:
         return None
     share, ceil = r
-    if ceil < 1.05:                       # below a 5% ceiling the knob is not worth a line
-        return (f"  experts        routed experts are only {share*100:.0f}% of the active bytes - "
-                f"cutting expert_used_count cannot help here (L-30)")
-    out = (f"  experts        routed experts are {share*100:.0f}% of the active bytes, so "
-           f"lowering expert_used_count\n"
-           f"                 buys at most ~{ceil:.2f}x DECODE even at k=1 - and quality falls "
-           f"long before that (L-30, prereg #107)")
+    if ceil < 1.05:  # below a 5% ceiling the knob is not worth a line
+        return (
+            f"  experts        routed experts are only {share * 100:.0f}% of the active bytes - "
+            f"cutting expert_used_count cannot help here (L-30)"
+        )
+    out = (
+        f"  experts        routed experts are {share * 100:.0f}% of the active bytes, so "
+        f"lowering expert_used_count\n"
+        f"                 buys at most ~{ceil:.2f}x DECODE even at k=1 - and quality falls "
+        f"long before that (L-30, prereg #107)"
+    )
     pf = expert_ceiling_prefill(s)
     if pf:
         pshare, pceil = pf
-        out += (f"\n                 PREFILL is the better place for it: {pshare*100:.0f}% of "
-                f"active PARAMS are routed, and\n"
-                f"                 measured gains beat this {pceil:.2f}x floor (1.6x at k=4, "
-                f"3.8x at k=2 - V-23, prereg #108).\n"
-                f"                 Neither is free: halving the experts cost +1.51 perplexity "
-                f"on the measured model.")
+        out += (
+            f"\n                 PREFILL is the better place for it: {pshare * 100:.0f}% of "
+            f"active PARAMS are routed, and\n"
+            f"                 measured gains beat this {pceil:.2f}x floor (1.6x at k=4, "
+            f"3.8x at k=2 - V-23, prereg #108).\n"
+            f"                 Neither is free: halving the experts cost +1.51 perplexity "
+            f"on the measured model."
+        )
     return out
 
 
@@ -327,31 +367,42 @@ def apply(a, quiet=False):
         return False
     used = []
     if getattr(a, "total", None) is None and getattr(a, "model", None) is None:
-        a.total = s["t"]; a.active = a.active or s["a"]; a.always_active = a.always_active or s["ne"]
+        a.total = s["t"]
+        a.active = a.active or s["a"]
+        a.always_active = a.always_active or s["ne"]
         used.append(f"{s['t']:.1f}B total, {s['a']:.1f}B active")
     if getattr(a, "bits", None) is None:
-        a.bits = s["bits"]; used.append(f"{s['bits']:g} effective bits")
+        a.bits = s["bits"]
+        used.append(f"{s['bits']:g} effective bits")
     if getattr(a, "kv_per_pos", None) is None:
         a.kv_per_pos = s["kvp"] / 1024
         if s.get("kv_layers", s["n_layer"]) < s["n_layer"]:
-            used.append(f"KV {s['kvp']/1024:.0f} KB/pos (hybrid: {s['kv_layers']} of "
-                        f"{s['n_layer']} layers cache KV)")
+            used.append(
+                f"KV {s['kvp'] / 1024:.0f} KB/pos (hybrid: {s['kv_layers']} of "
+                f"{s['n_layer']} layers cache KV)"
+            )
         else:
-            used.append(f"KV {s['kvp']/1024:.0f} KB/pos")
+            used.append(f"KV {s['kvp'] / 1024:.0f} KB/pos")
     if getattr(a, "n_layer", None) is None:
-        a.n_layer = s["n_layer"]        # enables the MoE partial-offload -ot regex (needs real layer indices)
-    a.iq_share = s.get("iq_share", 0.0)  # read-only: lets plan warn when IQ weights land on a CPU tier
-    a.arch = s.get("arch")               # read-only: report's recipe matching needs (arch, n_layer)
-    a.kv_layers = s.get("kv_layers")     # read-only: report's hybrid-KV line ("N of L layers cache KV")
-    a.codebook_share = s.get("codebook_share", 0.0)   # the share that actually pays the tax (C-13)
-    a.fmt_bw_attn = s.get("fmt_bw_attn")              # prereg #79: per-tier format pricing
+        a.n_layer = s[
+            "n_layer"
+        ]  # enables the MoE partial-offload -ot regex (needs real layer indices)
+    a.iq_share = s.get(
+        "iq_share", 0.0
+    )  # read-only: lets plan warn when IQ weights land on a CPU tier
+    a.arch = s.get("arch")  # read-only: report's recipe matching needs (arch, n_layer)
+    a.kv_layers = s.get(
+        "kv_layers"
+    )  # read-only: report's hybrid-KV line ("N of L layers cache KV")
+    a.codebook_share = s.get("codebook_share", 0.0)  # the share that actually pays the tax (C-13)
+    a.fmt_bw_attn = s.get("fmt_bw_attn")  # prereg #79: per-tier format pricing
     a.fmt_bw_exp = s.get("fmt_bw_exp")
     a.codebook_share_exp = s.get("codebook_share_exp", 0.0)
-    a.fmt_bw = s.get("fmt_bw")           # read-only: lets anchored predictions rescale by format (L-16)
-    a._spec = s                          # read-only: L-30's expert ceiling needs the byte split,
+    a.fmt_bw = s.get("fmt_bw")  # read-only: lets anchored predictions rescale by format (L-16)
+    a._spec = s  # read-only: L-30's expert ceiling needs the byte split,
     #                                      and re-scanning the GGUF to recover it would be silly
     if used and not quiet:
-        print(f"[quantprobe] read from GGUF: " + ", ".join(used))
+        print("[quantprobe] read from GGUF: " + ", ".join(used))
     return True
 
 
@@ -366,15 +417,23 @@ def apply(a, quiet=False):
 # tensor silently landed at the aggressive base level (fixed in v1.6.4, cost -24% ppl).
 # Anything unrecognised is now REPORTED rather than silently compressed.
 TENSOR_ROLES = [
-    ("routed-expert", r"ffn_(gate|up|down)_exps",  "compressible: ~8 of N experts fire per token"),
-    ("shared-expert", r"ffn_.*_shexp",             "ALWAYS ACTIVE on every token - protect"),
-    ("attention",     r"attn_",                     "ALWAYS ACTIVE - protect"),
-    ("recurrent/SSM", r"ssm_",                      "ALWAYS ACTIVE - protect"),
-    ("embedding",     r"(token_embd|output\.)",     "ALWAYS ACTIVE - protect"),
-    ("mtp-head",      r"nextn",                      "ALWAYS ACTIVE when MTP is on - protect"),
-    ("router",        r"ffn_gate_inp",              "tiny, kept at full precision"),
-    ("norm",          r"(_norm|norm\.)",            "tiny, kept at full precision"),
-    ("dense-ffn",     r"ffn_(gate|up|down)\.",      "dense FFN - the depth-aware band applies here"),
+    (
+        "routed-expert",
+        r"ffn_(gate|up|down)_exps",
+        "compressible: ~8 of N experts fire per token",
+    ),
+    ("shared-expert", r"ffn_.*_shexp", "ALWAYS ACTIVE on every token - protect"),
+    ("attention", r"attn_", "ALWAYS ACTIVE - protect"),
+    ("recurrent/SSM", r"ssm_", "ALWAYS ACTIVE - protect"),
+    ("embedding", r"(token_embd|output\.)", "ALWAYS ACTIVE - protect"),
+    ("mtp-head", r"nextn", "ALWAYS ACTIVE when MTP is on - protect"),
+    ("router", r"ffn_gate_inp", "tiny, kept at full precision"),
+    ("norm", r"(_norm|norm\.)", "tiny, kept at full precision"),
+    (
+        "dense-ffn",
+        r"ffn_(gate|up|down)\.",
+        "dense FFN - the depth-aware band applies here",
+    ),
 ]
 
 
@@ -382,7 +441,9 @@ def tensor_roles(path):
     """Classify a GGUF's tensors by role. Returns (roles, unknown) with byte totals, so the
     builder can warn about weight classes it has no protection rule for."""
     import re
+
     from gguf import GGUFReader
+
     tensors = []
     for p in split_siblings(path):
         tensors.extend(GGUFReader(p).tensors)

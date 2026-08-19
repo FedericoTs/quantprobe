@@ -21,19 +21,28 @@ Results persist to ~/.quantprobe/calibration.json. `plan` (and everything built 
 measured RAM/disk numbers automatically whenever it would otherwise auto-detect, and labels them
 [calibrated] instead of [table]/[default]. Delete the file to go back to detection.
 """
-from __future__ import annotations
-import json, os, platform, subprocess, threading, time
 
-from .spec import gguf_size as _gguf_size    # split-GGUF-aware size (issue #1)
+from __future__ import annotations
+
+import json
+import os
+import platform
+import subprocess
+import threading
+import time
+
+from .spec import gguf_size as _gguf_size  # split-GGUF-aware size (issue #1)
 
 CAL_DIR = os.path.join(os.path.expanduser("~"), ".quantprobe")
 CAL_PATH = os.path.join(CAL_DIR, "calibration.json")
-STALE_DAYS = 60          # hardware does not drift, but drivers and RAM configs do
+STALE_DAYS = 60  # hardware does not drift, but drivers and RAM configs do
 
 
 def _run(cmd, timeout=30):
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout).stdout
+        return subprocess.run(
+            cmd, capture_output=True, text=True, check=False, timeout=timeout
+        ).stdout
     except Exception:
         return ""
 
@@ -71,14 +80,25 @@ def measure_ram_stream(gb=1.0, passes=3):
 
 def gpu_state_nvidia():
     """Current + max clocks and temperature via nvidia-smi; None if no NVIDIA GPU."""
-    out = _run(["nvidia-smi", "--query-gpu=name,clocks.sm,clocks.max.sm,clocks.mem,temperature.gpu",
-                "--format=csv,noheader,nounits"])
+    out = _run(
+        [
+            "nvidia-smi",
+            "--query-gpu=name,clocks.sm,clocks.max.sm,clocks.mem,temperature.gpu",
+            "--format=csv,noheader,nounits",
+        ]
+    )
     line = out.strip().splitlines()[0] if out.strip() else ""
     if "," not in line:
         return None
     try:
         name, sm, sm_max, mem, temp = [v.strip() for v in line.rsplit(",", 4)]
-        return dict(name=name, sm=int(sm), sm_max=int(sm_max), mem=int(mem), temp=int(temp))
+        return {
+            "name": name,
+            "sm": int(sm),
+            "sm_max": int(sm_max),
+            "mem": int(mem),
+            "temp": int(temp),
+        }
     except ValueError:
         return None
 
@@ -90,12 +110,18 @@ def gpu_state_amd():
     cal_id, and drift_vs all stay untouched.
     """
     from .detect import _rocm_state
+
     state = _rocm_state()
     if not state:
         return None
     d = state[0]
-    return dict(name=d["name"], sm=d["sclk"], sm_max=d["sclk_max"],
-                mem=d["mclk"], temp=d["temp"])
+    return {
+        "name": d["name"],
+        "sm": d["sclk"],
+        "sm_max": d["sclk_max"],
+        "mem": d["mclk"],
+        "temp": d["temp"],
+    }
 
 
 def gpu_state():
@@ -146,38 +172,60 @@ def boost_verdict(sustained, sm_max, temp):
         return f"healthy: sustained {sustained} of {sm_max} MHz max [measured]"
     hot = temp is not None and temp >= 80
     if hot:
-        return (f"THROTTLED: sustained {sustained} of {sm_max} MHz at {temp} C - thermal; "
-                "check cooling")
-    return (f"STUCK BOOST STATE: sustained {sustained} of {sm_max} MHz at cool temps - the "
-            "failure mode measured in preregistrations #60/#61 (-25-30%% real speed). Consumer "
-            "cards cannot reset it live: REBOOT, then re-run calibrate")
+        return (
+            f"THROTTLED: sustained {sustained} of {sm_max} MHz at {temp} C - thermal; check cooling"
+        )
+    return (
+        f"STUCK BOOST STATE: sustained {sustained} of {sm_max} MHz at cool temps - the "
+        "failure mode measured in preregistrations #60/#61 (-25-30%% real speed). Consumer "
+        "cards cannot reset it live: REBOOT, then re-run calibrate"
+    )
 
 
 def _bench_anchor(model_path, ngl, metric_tokens, llama_dir=None):
     """One llama-bench arm on the user's own file, clocks sampled. Returns (dict, err)."""
     from .runtime import find_llama
+
     try:
         binp = find_llama(llama_dir, "llama-bench")
     except SystemExit:
         return None, "llama-bench not found - anchor skipped (pass --llama-dir)"
     tag = f"tg{metric_tokens}"
     with ClockSampler() as clk:
-        out = _run([binp, "-m", model_path, "-ngl", str(ngl), "-n", str(metric_tokens),
-                    "-p", "0", "-r", "1"], timeout=1800)
+        out = _run(
+            [
+                binp,
+                "-m",
+                model_path,
+                "-ngl",
+                str(ngl),
+                "-n",
+                str(metric_tokens),
+                "-p",
+                "0",
+                "-r",
+                "1",
+            ],
+            timeout=1800,
+        )
     for line in out.splitlines():
         if tag in line and "|" in line:
             try:
                 toks = float(line.split("|")[-2].strip().split()[0])
-                anchor = dict(placement=("pure CPU (-ngl 0)" if ngl == 0 else "all-in-VRAM (-ngl 99)"),
-                              metric=tag, tok_s=toks,
-                              model=os.path.basename(model_path),
-                              model_gb=round(_gguf_size(model_path) / 1e9, 3),
-                              sustained_sm=clk.sustained())
+                anchor = {
+                    "placement": ("pure CPU (-ngl 0)" if ngl == 0 else "all-in-VRAM (-ngl 99)"),
+                    "metric": tag,
+                    "tok_s": toks,
+                    "model": os.path.basename(model_path),
+                    "model_gb": round(_gguf_size(model_path) / 1e9, 3),
+                    "sustained_sm": clk.sustained(),
+                }
                 # the anchor's own spec, so plan can price this arm with the SAME formula it uses
                 # for every row (active bytes with the 1.08 overhead), and rescale the ratio by
                 # format (L-16) when the target's format mix differs from the anchor's
                 try:
                     from . import spec as specmod
+
                     s = specmod.from_gguf(model_path)
                     anchor["act_gb"] = round(s["a"] * s["bits"] / 8 * 1.08, 4)
                     anchor["fmt_bw"] = s.get("fmt_bw")
@@ -205,7 +253,10 @@ def gpu_anchor(model_path, vram_gb, llama_dir=None):
     sampler to collect real loaded samples (see ClockSampler.sustained)."""
     gb = _gguf_size(model_path) / 1e9
     if not vram_gb or gb > 0.8 * vram_gb:
-        return None, f"model {gb:.1f} GB does not clearly fit {vram_gb or 0:.0f} GB VRAM - GPU anchor skipped"
+        return (
+            None,
+            f"model {gb:.1f} GB does not clearly fit {vram_gb or 0:.0f} GB VRAM - GPU anchor skipped",
+        )
     return _bench_anchor(model_path, 99, 128, llama_dir)
 
 
@@ -220,6 +271,7 @@ def cal_id(cal):
     records which one it was taken under.
     """
     import hashlib
+
     if not cal:
         return None
     parts = [f"{cal.get('ram_bw_measured')}", f"{cal.get('disk_bw_measured')}"]
@@ -231,9 +283,11 @@ def cal_id(cal):
 def drift_vs(prev, cur, tol=0.03):
     """[(field, old, new, pct)] for measured values that moved more than tol between states."""
     out = []
+
     def cmp(name, a, b):
         if a and b and abs(b - a) / a > tol:
             out.append((name, a, b, (b - a) / a * 100))
+
     cmp("ram_bw", prev.get("ram_bw_measured"), cur.get("ram_bw_measured"))
     cmp("disk_bw", prev.get("disk_bw_measured"), cur.get("disk_bw_measured"))
     pa = {a.get("placement"): a for a in (prev.get("anchors") or [])}
@@ -257,27 +311,36 @@ def load():
 
 def run(a):
     print("quantprobe calibrate - measuring THIS machine (nothing is sent anywhere)\n")
-    cal = dict(ts=time.time(), date=time.strftime("%Y-%m-%d"), host=platform.node(),
-               tool_version=__import__("quantprobe").__version__)
+    cal = {
+        "ts": time.time(),
+        "date": time.strftime("%Y-%m-%d"),
+        "host": platform.node(),
+        "tool_version": __import__("quantprobe").__version__,
+    }
 
     ram_bw, why = measure_ram_stream()
     if ram_bw:
         cal["ram_bw_measured"] = ram_bw
-        print(f"  RAM stream: {ram_bw:.2f} GB/s [measured] - this replaces the spec-sheet "
-              "number, which overstates what decode gets")
+        print(
+            f"  RAM stream: {ram_bw:.2f} GB/s [measured] - this replaces the spec-sheet "
+            "number, which overstates what decode gets"
+        )
     else:
         print(f"  RAM stream: {why}")
 
     st = gpu_state()
     if st:
         cal["gpu"] = st
-        print(f"  GPU: {st['name']}, idle {st['sm']} MHz (max {st['sm_max'] or '?'}, {st['temp']} C) [os]")
+        print(
+            f"  GPU: {st['name']}, idle {st['sm']} MHz (max {st['sm_max'] or '?'}, {st['temp']} C) [os]"
+        )
     else:
         print("  GPU: none detected (nvidia-smi absent/empty)")
 
     model = getattr(a, "model", None)
     if model and os.path.isfile(model):
         from .detect import measure_disk
+
         bw, info = measure_disk(model, detail=True)
         cal["disk_bw_measured"] = round(bw, 2)
         cal["disk_probe"] = info
@@ -286,28 +349,39 @@ def run(a):
         # minimum over disjoint regions is the estimate, because nothing reads faster than the
         # device except cache. Measured: 6 of 8 single draws on a 73%-warm file returned
         # >1.5 GB/s (max 2.854, a 6.3x error) while the minimum stayed correct.
-        print(f"        (minimum of {info['samples']} probes at random offsets: "
-              f"{info['draws']})")
+        print(f"        (minimum of {info['samples']} probes at random offsets: {info['draws']})")
         if info["warm_draws"]:
-            print(f"        {info['warm_draws']} of {info['samples']} draws came back >2x the "
-                  f"minimum - those regions were served from page cache,\n         not disk. The "
-                  f"minimum above is used and is the right number; this line is only telling you "
-                  f"why\n         the draws disagree. A single-sample probe could have shipped "
-                  f"one of the fast ones. (C-17/#97)")
+            print(
+                f"        {info['warm_draws']} of {info['samples']} draws came back >2x the "
+                f"minimum - those regions were served from page cache,\n         not disk. The "
+                f"minimum above is used and is the right number; this line is only telling you "
+                f"why\n         the draws disagree. A single-sample probe could have shipped "
+                f"one of the fast ones. (C-17/#97)"
+            )
         if not getattr(a, "skip_bench", False):
             cal["anchors"] = []
-            print("  anchor: running llama-bench -ngl 0 tg32 on your file (1-10 min on big models)...")
+            print(
+                "  anchor: running llama-bench -ngl 0 tg32 on your file (1-10 min on big models)..."
+            )
             anchor, why = cpu_anchor(model, getattr(a, "llama_dir", None))
             if anchor:
                 cal["anchors"].append(anchor)
-                print(f"  anchor: {anchor['tok_s']:.2f} tok/s pure-CPU on "
-                      f"{anchor['model']} ({anchor['model_gb']:g} GB) [measured]")
+                print(
+                    f"  anchor: {anchor['tok_s']:.2f} tok/s pure-CPU on "
+                    f"{anchor['model']} ({anchor['model_gb']:g} GB) [measured]"
+                )
             else:
                 print(f"  anchor: {why}")
             vram_gb = None
             if st:
                 # Try nvidia-smi first, fall back to rocm-smi for AMD
-                out = _run(["nvidia-smi", "--query-gpu=memory.total", "--format=csv,noheader,nounits"])
+                out = _run(
+                    [
+                        "nvidia-smi",
+                        "--query-gpu=memory.total",
+                        "--format=csv,noheader,nounits",
+                    ]
+                )
                 if out.strip():
                     try:
                         vram_gb = float(out.strip().splitlines()[0]) / 1024
@@ -315,16 +389,22 @@ def run(a):
                         pass
                 if not vram_gb:
                     from .detect import _rocm_state
+
                     rc = _rocm_state()
                     if rc and rc[0].get("vram_gb"):
                         vram_gb = rc[0]["vram_gb"]
             ganchor, gwhy = gpu_anchor(model, vram_gb, getattr(a, "llama_dir", None))
             if ganchor:
                 cal["anchors"].append(ganchor)
-                print(f"  anchor: {ganchor['tok_s']:.2f} tok/s all-in-VRAM on "
-                      f"{ganchor['model']} [measured]")
-                v = boost_verdict(ganchor.get("sustained_sm"), st and st.get("sm_max"),
-                                  st and st.get("temp"))
+                print(
+                    f"  anchor: {ganchor['tok_s']:.2f} tok/s all-in-VRAM on "
+                    f"{ganchor['model']} [measured]"
+                )
+                v = boost_verdict(
+                    ganchor.get("sustained_sm"),
+                    st and st.get("sm_max"),
+                    st and st.get("temp"),
+                )
                 if v:
                     cal["boost_verdict"] = v
                     print(f"  GPU under load: {v}")
@@ -342,14 +422,18 @@ def run(a):
     if prev:
         moved = drift_vs(prev, cal)
         if moved:
-            print(f"\n  DRIFT since the last calibration ({prev.get('date')}, "
-                  f"id {prev.get('cal_id', '?')}):")
-            for name, a, b, pct in moved:
-                print(f"    {name}: {a} -> {b}  ({pct:+.1f}%)")
-            print("    Measurements taken under the OLD state cannot be scored against "
-                  "predictions from this one - that comparison moved every arm of our own model "
-                  "ladder by 5-12 points, more than most real effects (C-14). Re-measure, or "
-                  "compare only within one state.")
+            print(
+                f"\n  DRIFT since the last calibration ({prev.get('date')}, "
+                f"id {prev.get('cal_id', '?')}):"
+            )
+            for name, old, new, pct in moved:
+                print(f"    {name}: {old} -> {new}  ({pct:+.1f}%)")
+            print(
+                "    Measurements taken under the OLD state cannot be scored against "
+                "predictions from this one - that comparison moved every arm of our own model "
+                "ladder by 5-12 points, more than most real effects (C-14). Re-measure, or "
+                "compare only within one state."
+            )
         else:
             print(f"\n  no drift since {prev.get('date')} (same machine state)")
     os.makedirs(CAL_DIR, exist_ok=True)

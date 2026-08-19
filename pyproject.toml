@@ -1,31 +1,40 @@
 [build-system]
-requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+requires = [ "setuptools>=68" ]
 
 [project]
 name = "quantprobe"
 version = "1.33.1"
-description = "Probe-then-quantize for LLMs: measure a model's fragility curve, plan bit/tier placement by the tiered decode law, and emit ready-to-run llama.cpp recipes."
+description = """\
+  Probe-then-quantize for LLMs: measure a model's fragility curve, plan bit/tier placement by the tiered decode law, \
+  and emit ready-to-run llama.cpp recipes.\
+  """
 readme = "README.md"
+keywords = [ "gguf", "inference", "llama.cpp", "llm", "moe", "quantization" ]
 license = { text = "MIT" }
-authors = [{ name = "Federico Sciuca" }]
+authors = [ { name = "Federico Sciuca" } ]
 requires-python = ">=3.9"
-dependencies = ["gguf>=0.9", "requests>=2.28"]
-keywords = ["llm", "quantization", "llama.cpp", "gguf", "inference", "moe"]
 classifiers = [
   "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-
-[project.urls]
-Homepage = "https://github.com/FedericoTs/quantprobe"
-
-[project.scripts]
-quantprobe = "quantprobe.cli:main"
+dependencies = [ "gguf>=0.9", "requests>=2.28" ]
+urls.Homepage = "https://github.com/FedericoTs/quantprobe"
+scripts.quantprobe = "quantprobe.cli:main"
 
 [tool.setuptools]
-packages = ["quantprobe"]
+packages = [ "quantprobe" ]
+package-data.quantprobe = [ "recipes/*.json" ]
 
-[tool.setuptools.package-data]
-quantprobe = ["recipes/*.json"]
+[tool.ruff]
+line-length = 100
+# BLE001/S110/S112: this tool probes external CLIs (ollama, nvidia-smi, llama-bench);
+# swallowing their failures is intentional, not an accident.
+lint.ignore = [ "BLE001", "S110", "S112" ]

@@ -1,7 +1,7 @@
 """Smoke suite for quantprobe — plain asserts, no pytest dependency.
 Run:  python tests/smoke.py   (needs the package installed; llama.cpp NOT required for these)"""
 from __future__ import annotations
-import io, os, subprocess, sys
+import io, os, re, subprocess, sys
 from contextlib import redirect_stdout
 
 # Test the code in THIS repo, not whatever happens to be installed.
@@ -4851,16 +4851,20 @@ def t_no_command_predicts_for_a_silently_wrong_machine_or_model():
 
     # 4. The wiring: the five entry points that used to skip the guard now call it. Source-level,
     #    because these handlers each need a real box/file/server to run end to end.
+    # Source-level, but format-agnostic: ruff format may wrap the call across lines
+    # (planmod.check_presets(\n    args\n)) and a literal-string check would then fail on whitespace alone.
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     rt = open(os.path.join(root, "quantprobe", "runtime.py"), encoding="utf-8").read()
-    assert "check_presets(a)" in rt, "runtime.best_flags lost its check_presets (covers run/bench/dashboard)"
+    m_rt = re.search(r"check_presets\(\s*a\s*\)", rt)
+    assert m_rt, "runtime.best_flags lost its check_presets (covers run/bench/dashboard)"
     # best_flags is the shared resolver for run, bench AND dashboard - so guarding it covers three.
-    assert rt.index("check_presets(a)") < rt.index("def run("), \
+    assert m_rt.start() < rt.index("def run("), \
         "check_presets must sit in best_flags (before run/bench), the shared machine resolver"
     rp = open(os.path.join(root, "quantprobe", "report.py"), encoding="utf-8").read()
-    assert "check_presets(args)" in rp, "report.run lost its check_presets - a forwardable report for the wrong box"
+    assert re.search(r"check_presets\(\s*args\s*\)", rp), \
+        "report.run lost its check_presets - a forwardable report for the wrong box"
     ol = open(os.path.join(root, "quantprobe", "ollama.py"), encoding="utf-8").read()
-    assert "check_presets(a)" in ol, "ollama.run (audit-ollama) lost its check_presets"
+    assert re.search(r"check_presets\(\s*a\s*\)", ol), "ollama.run (audit-ollama) lost its check_presets"
     return None
 
 

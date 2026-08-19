@@ -16,16 +16,18 @@ Levers and their measured gates:
   hardware  upgrade deltas from the projections table: XMP (free), +16GB RAM, NVMe. Ranked by
             relative cost internally; no currency figures are shown (region- and time-dependent).
 """
+
 from __future__ import annotations
+
 from . import plan as planmod
 
 BITS_LADDER = [2.0, 2.5, 3.0, 3.5, 4.5]
 REALIZE = {
-    2.0: 'quantize --gguf <f16> --protect-late 8   (base Q2_K, narrow probed band)',
-    2.5: 'quantize --gguf <f16> --protect-late 12  (base Q2_K - the validated default)',
-    3.0: 'quantize --gguf <f16> --protect-late 20  (or base Q3_K_S)',
-    3.5: 'fetch a Q3_K_M and probe --apply',
-    4.5: 'fetch a Q4_K_M (straight; no probe needed at 4-bit)',
+    2.0: "quantize --gguf <f16> --protect-late 8   (base Q2_K, narrow probed band)",
+    2.5: "quantize --gguf <f16> --protect-late 12  (base Q2_K - the validated default)",
+    3.0: "quantize --gguf <f16> --protect-late 20  (or base Q3_K_S)",
+    3.5: "fetch a Q3_K_M and probe --apply",
+    4.5: "fetch a Q4_K_M (straight; no probe needed at 4-bit)",
 }
 HW_DELTAS = [
     ("as-is", 0, {}),
@@ -39,6 +41,7 @@ def resolve(a):
     planmod.check_presets(a)
     """Model + machine resolution, same semantics as plan.run (autospec + autodetect included)."""
     from . import spec as specmod
+
     specmod.apply(a, quiet=True)
     if getattr(a, "bits", None) is None:
         a.bits = 2.5
@@ -47,13 +50,25 @@ def resolve(a):
     ac = a.active or m.get("a") or t
     ne = a.always_active or m.get("ne") or (ac if ac >= t * 0.9 else ac * 0.35)
     moe = m.get("moe", ac < t * 0.9)
-    hw = dict(planmod.MACHINES[a.machine]) if getattr(a, "machine", None) in planmod.MACHINES else {}
-    if not hw and all(getattr(a, k, None) is None for k in ("vram", "vram_bw", "ram", "ram_bw", "disk_bw")):
+    hw = (
+        dict(planmod.MACHINES[a.machine]) if getattr(a, "machine", None) in planmod.MACHINES else {}
+    )
+    if not hw and all(
+        getattr(a, k, None) is None for k in ("vram", "vram_bw", "ram", "ram_bw", "disk_bw")
+    ):
         from . import detect as detmod
+
         auto, _ = detmod.detect()
-        hw = dict(vc=auto["vram"], vb=auto["vram_bw"], rc=auto["ram"], rb=auto["ram_bw"],
-                  db=auto["disk_bw"], geta=auto.get("geta", 0.45), gl=auto.get("gl"),
-                  hint="THIS machine [auto-detected]")
+        hw = {
+            "vc": auto["vram"],
+            "vb": auto["vram_bw"],
+            "rc": auto["ram"],
+            "rb": auto["ram_bw"],
+            "db": auto["disk_bw"],
+            "geta": auto.get("geta", 0.45),
+            "gl": auto.get("gl"),
+            "hint": "THIS machine [auto-detected]",
+        }
         print("[quantprobe] hardware auto-detected (pass --machine/flags to optimize another box)")
         # the SAME calibration path plan/bench use - without it optimize searched over
         # uncalibrated constants and disagreed with plan about the same machine (the v1.10.5
@@ -64,15 +79,27 @@ def resolve(a):
     rc = a.ram if a.ram is not None else hw.get("rc", 16)
     rb = a.ram_bw if a.ram_bw is not None else hw.get("rb", 40)
     db = planmod.agg_bw(a.disk_bw, 0.75) if a.disk_bw is not None else hw.get("db", 0.5)
-    geta = hw.get("geta", 0.45); gl = hw.get("gl")
+    geta = hw.get("geta", 0.45)
+    gl = hw.get("gl")
     # size-classed anchor dispatch, same function as plan/bench. Bits are being SEARCHED here,
     # so the size class is evaluated at a representative 4.5 bits - the class boundary is a 4x
     # band, which no bits choice inside the search range crosses for a given model.
     vb, geta = planmod.resolve_gpu_eta(hw, a, ac, getattr(a, "bits", None) or 4.5, vb or 0, geta)
     rb = planmod.resolve_cpu_bw(hw, a, ac, getattr(a, "bits", None) or 4.5, rb or 40)
     ctx = getattr(a, "ctx", 0) or 0
-    kvp = (a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None) else m.get("kvp", planmod.DEFAULT_KVP))
-    return m, t, ac, ne, moe, (vc or 0, vb or 0, rc or 16, rb or 40, db or 0.5, geta, gl), ctx, kvp
+    kvp = (
+        a.kv_per_pos * 1024 if getattr(a, "kv_per_pos", None) else m.get("kvp", planmod.DEFAULT_KVP)
+    )
+    return (
+        m,
+        t,
+        ac,
+        ne,
+        moe,
+        (vc or 0, vb or 0, rc or 16, rb or 40, db or 0.5, geta, gl),
+        ctx,
+        kvp,
+    )
 
 
 def run(a):
@@ -80,22 +107,37 @@ def run(a):
     tgt = getattr(a, "tps", None)
     maxq = getattr(a, "max_quality", None) or 1.12
     allow_prune = getattr(a, "allow_prune", False)
-    kvq_ok = geta >= 0.5                      # measured gate: Pascal-class collapses (-83% @16k)
+    kvq_ok = geta >= 0.5  # measured gate: Pascal-class collapses (-83% @16k)
     rows = []
     for hw_name, euro, delta in HW_DELTAS:
         rc2 = rc + delta.get("rc", 0)
         db2 = max(db, delta.get("db_min", db))
         if euro and rc2 == rc and db2 == db:
-            continue                           # delta changes nothing on this box
+            continue  # delta changes nothing on this box
         for bits in BITS_LADDER:
             for prune, pf in ((False, 1.0),) + (((True, 0.82),) if allow_prune and moe else ()):
                 for kvq, kf in ((False, 1.0),) + (((True, 0.75),) if kvq_ok and ctx > 0 else ()):
-                    q = planmod.qual_of(moe, bits) * (1.0 if not prune else 1.0)  # in-domain qual; OOD flagged in text
+                    q = planmod.qual_of(moe, bits)  # in-domain qual; OOD flagged in text
                     if q > maxq:
                         continue
-                    _, _, cfgs = planmod.evaluate(t * pf, ac, ne, moe, bits, vc, vb, rc2, rb, db2,
-                                                  geta, 1.0, gl, ctx=ctx, kvp=kvp * kf,
-                                                  n_layer=planmod.effective_n_layer(a, m))
+                    _, _, cfgs = planmod.evaluate(
+                        t * pf,
+                        ac,
+                        ne,
+                        moe,
+                        bits,
+                        vc,
+                        vb,
+                        rc2,
+                        rb,
+                        db2,
+                        geta,
+                        1.0,
+                        gl,
+                        ctx=ctx,
+                        kvp=kvp * kf,
+                        n_layer=planmod.effective_n_layer(a, m),
+                    )
                     if not cfgs:
                         continue
                     if not getattr(a, "any_runtime", False):
@@ -109,26 +151,49 @@ def run(a):
                         tags.append("KV q8 [est - needs FA; measured trap on Pascal-class]")
                     if hw_name != "as-is":
                         desc += f" + {hw_name}"
-                    rows.append(dict(tps=tps, q=q, euro=euro, bits=bits, desc=desc,
-                                     tags=tags, flags=flags, warn=warn))
+                    rows.append(
+                        {
+                            "tps": tps,
+                            "q": q,
+                            "euro": euro,
+                            "bits": bits,
+                            "desc": desc,
+                            "tags": tags,
+                            "flags": flags,
+                            "warn": warn,
+                        }
+                    )
     # Pareto: drop rows beaten on every axis
     keep = []
     for r in sorted(rows, key=lambda x: (-x["tps"], x["q"], x["euro"])):
-        if not any(k["tps"] >= r["tps"] and k["q"] <= r["q"] and k["euro"] <= r["euro"]
-                   and (k["tps"], k["q"], k["euro"]) != (r["tps"], r["q"], r["euro"]) for k in keep):
+        if not any(
+            k["tps"] >= r["tps"]
+            and k["q"] <= r["q"]
+            and k["euro"] <= r["euro"]
+            and (k["tps"], k["q"], k["euro"]) != (r["tps"], r["q"], r["euro"])
+            for k in keep
+        ):
             keep.append(r)
     if tgt:
         meeting = [r for r in keep if r["tps"] >= tgt]
-        ranked = (sorted(meeting, key=lambda x: (x["q"], x["euro"], -x["tps"])) or
-                  sorted(keep, key=lambda x: -x["tps"])[:1])
-        headline = "cheapest configuration meeting the target" if meeting else \
-                   "TARGET NOT REACHABLE on this hardware - fastest available:"
+        ranked = (
+            sorted(meeting, key=lambda x: (x["q"], x["euro"], -x["tps"]))
+            or sorted(keep, key=lambda x: -x["tps"])[:1]
+        )
+        headline = (
+            "cheapest configuration meeting the target"
+            if meeting
+            else "TARGET NOT REACHABLE on this hardware - fastest available:"
+        )
     else:
         ranked = sorted(keep, key=lambda x: (-x["tps"], x["q"], x["euro"]))
-        headline = "speed frontier (quality ceiling x%.2f)" % maxq
-    print(f"\nquantprobe optimize - {m.get('hint', 'custom model')} on "
-          f"{'this machine' if not getattr(a, 'machine', None) else a.machine}"
-          + (f" | target {tgt:g} tok/s" if tgt else "") + (f" | ctx {ctx}" if ctx else ""))
+        headline = f"speed frontier (quality ceiling x{maxq:.2f})"
+    print(
+        f"\nquantprobe optimize - {m.get('hint', 'custom model')} on "
+        f"{'this machine' if not getattr(a, 'machine', None) else a.machine}"
+        + (f" | target {tgt:g} tok/s" if tgt else "")
+        + (f" | ctx {ctx}" if ctx else "")
+    )
     print(f"  {headline}\n")
     for i, r in enumerate(ranked[:6]):
         star = "*" if i == 0 else " "
@@ -145,19 +210,27 @@ def run(a):
     # gives is the inconsistency class that cost us the plan-vs-bench correction.
     roomier = next((r for r in ranked if r["bits"] >= 4.5 and "all in VRAM" in r["desc"]), None)
     if "all in VRAM" in best["desc"]:
-        print(f"\n  note: we do not have a point prediction for all-in-VRAM - measured efficiency")
-        print(f"  varies too much across models for the number above to carry a band. What we can")
-        print(f"  state is one-sided and exception-free: in 13 of 13 benchmarks real speed was")
-        print(f"  >= 0.90x this number, and in 12 of 13 it was HIGHER, typically 1.1x-1.8x. Read it")
-        print(f"  as a floor, not a ceiling.")
+        print("\n  note: we do not have a point prediction for all-in-VRAM - measured efficiency")
+        print("  varies too much across models for the number above to carry a band. What we can")
+        print("  state is one-sided and exception-free: in 13 of 13 benchmarks real speed was")
+        print("  >= 0.90x this number, and in 12 of 13 it was HIGHER, typically 1.1x-1.8x. Read it")
+        print("  as a floor, not a ceiling.")
         if roomier and best["bits"] < 4.5:
-            print(f"  It also already fits, and a lower quant buys almost nothing once it does: the same")
-            print(f"  7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. The honest pick here is")
-            print(f"  {roomier['bits']:g}-bit (quality x{roomier['q']:.2f}) - same speed in practice, better answers.")
-        print(f"  We only have one GPU, and one GPU cannot fix this. `quantprobe bench --contribute`")
-        print(f"  turns your machine into the datapoint that would - you review it before sending, and")
-        print(f"  results OUTSIDE our predicted band are the most valuable ones we can receive.")
-    print(f"\n  realize the pick:")
+            print(
+                "  It also already fits, and a lower quant buys almost nothing once it does: the same"
+            )
+            print("  7B at Q2_K vs Q4_K_M is 36% smaller and 4% SLOWER. The honest pick here is")
+            print(
+                f"  {roomier['bits']:g}-bit (quality x{roomier['q']:.2f}) - same speed in practice, better answers."
+            )
+        print(
+            "  We only have one GPU, and one GPU cannot fix this. `quantprobe bench --contribute`"
+        )
+        print(
+            "  turns your machine into the datapoint that would - you review it before sending, and"
+        )
+        print("  results OUTSIDE our predicted band are the most valuable ones we can receive.")
+    print("\n  realize the pick:")
     print(f"    quantprobe {REALIZE.get(best['bits'], 'quantize')}")
     print(f"    quantprobe run --gguf <the file> ...   # launches with: {best['flags']}")
     print("\n  (search over the validated law only - no new physics; quality = depth-aware recipe,")
