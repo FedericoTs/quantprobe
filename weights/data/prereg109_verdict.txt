@@ -1,0 +1,19 @@
+DECODE  baseline k=6: 16.67 tok/s +/-0.55 (3.3% spread)
+   k=6:    16.67 +/- 0.55    1.000x   ceiling 1.000x      +0.0%
+   k=4:    18.43 +/- 0.75    1.106x   ceiling 1.224x      -9.6%
+   k=2:    23.00 +/- 0.35    1.380x   ceiling 1.577x     -12.5%
+   k=1:    25.47 +/- 0.15    1.528x   ceiling 1.843x     -17.1%
+
+PREFILL  baseline k=6: 305.83 tok/s +/-2.40 (0.8% spread)
+   k=6:   305.83 +/- 2.40    1.000x   ceiling 1.000x      +0.0%
+   k=4:   316.50 +/- 1.95    1.035x   ceiling 1.225x     -15.5%
+   k=2:   339.00 +/- 1.00    1.108x   ceiling 1.580x     -29.8%
+   k=1:   362.60 +/- 1.10    1.186x   ceiling 1.848x     -35.8%
+
+P-1  decode k=1 within +/-15% of 1.843x ... MISS (1.528x, -17.1%)
+P-2  prefill k=2 within +/-25% of 1.580x ... MISS (1.108x, -29.8%)
+P-3  prefill excess < 60% ......... HIT (-29.8%, against 180% on the model that does NOT fit)
+
+KILL RULE -> RESIDENCY IS NOT THE WHOLE STORY.
+  Part of the excess survives where nothing can be evicted, so a per-expert
+  term exists even if residency also contributes. Size it before claiming it.

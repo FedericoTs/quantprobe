@@ -1,0 +1,35 @@
+override check:  I print_info: n_expert_used         = 2
+
+== decode: warm-up then 3 descending passes ==
+  warm 1/2: 10.4   free RAM 12.85 GB  (DISCARDED)
+  warm 2/2: 17.2   free RAM 12.85 GB  (DISCARDED)
+  p1 k=6: 16.0 tok/s   free RAM 12.84 GB
+  p1 k=4: 18.2 tok/s   free RAM 12.83 GB
+  p1 k=2: 23.4 tok/s   free RAM 12.83 GB
+  p1 k=1: 25.3 tok/s   free RAM 12.83 GB
+  p2 k=6: 17.1 tok/s   free RAM 12.82 GB
+  p2 k=4: 19.3 tok/s   free RAM 12.83 GB
+  p2 k=2: 22.9 tok/s   free RAM 12.83 GB
+  p2 k=1: 25.6 tok/s   free RAM 12.82 GB
+  p3 k=6: 16.9 tok/s   free RAM 12.78 GB
+  p3 k=4: 17.8 tok/s   free RAM 12.74 GB
+  p3 k=2: 22.7 tok/s   free RAM 12.72 GB
+  p3 k=1: 25.5 tok/s   free RAM 12.71 GB
+
+== prefill: warm-up then 3 descending passes ==
+  warm 1/2: 306.7   free RAM 12.71 GB  (DISCARDED)
+  warm 2/2: 307.5   free RAM 12.71 GB  (DISCARDED)
+  p1 k=6: 307.8 tok/s   free RAM 12.72 GB
+  p1 k=4: 318.0 tok/s   free RAM 12.71 GB
+  p1 k=2: 337.8 tok/s   free RAM 12.75 GB
+  p1 k=1: 362.8 tok/s   free RAM 12.74 GB
+  p2 k=6: 303.0 tok/s   free RAM 12.73 GB
+  p2 k=4: 317.4 tok/s   free RAM 12.75 GB
+  p2 k=2: 339.4 tok/s   free RAM 12.73 GB
+  p2 k=1: 363.6 tok/s   free RAM 12.73 GB
+  p3 k=6: 306.7 tok/s   free RAM 12.73 GB
+  p3 k=4: 314.1 tok/s   free RAM 12.72 GB
+  p3 k=2: 339.8 tok/s   free RAM 12.73 GB
+  p3 k=1: 361.4 tok/s   free RAM 12.71 GB
+
+wrote C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill/weights/data/prereg109_control.json in 5.3 min

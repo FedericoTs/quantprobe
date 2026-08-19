@@ -8,11 +8,11 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 31 |
+| Established laws | 32 |
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 32 |
-| Untried levers | 45 |
+| Untried levers | 46 |
 | External work to study | 28 |
 
 ## Established laws
@@ -204,6 +204,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** Prefill on Qwen3.6-35B-A3B, five interleaved passes. Arms preceded by an equal-or-higher k: 0.8-1.8% spread. The SAME arms preceded by a lower k: 20.9% (k=4 after k=2) and 72.4% (k=8 after k=4). Same command, same file, same session - only the predecessor differs. Individual k=8 readings ranged 11.3 to 70.7 tok/s, a 6.3x span, entirely explained by run order.
 
 `measured 2026-08-19 under prereg #108 (order effect, n=20 arms)` · `measured and structured, not inferred - the split by predecessor separates 0.8% spreads from 72% spreads with no overlap, across 20 arms` · scope: Files LARGER than free RAM (L-29's regime), MoE models where the working set is k-dependent. Where the model fits, there is nothing to evict and this should vanish - untested. Direction matters: low-k predecessors poison high-k successors, not the reverse. · evidence: prereg #108; weights/data/prereg108_order_effect.txt; raw weights/data/prereg108_run2.log · wired into: `quantprobe/detect.py:residency (the same free-RAM condition that predicts it)`
+
+### L-32 — The expert ceiling is a genuine UPPER BOUND: on a model that fits free RAM, real gains land 10-36% BELOW it, because a fixed cost that does not shrink with k - the always-active path, per-token sampling, kernel launch - sets an Amdahl floor under the knob.
+
+**Magnitude:** DeepSeek-Coder-V2-Lite-Base-IQ2_XS (5.56 GiB, 6.6 GiB of headroom). Decode: k=4 1.106x against a 1.224x ceiling (-9.6%), k=2 1.380x against 1.577x (-12.5%), k=1 1.528x against 1.843x (-17.1%). Prefill falls further short: -15.5% / -29.8% / -35.8%. Nothing exceeded its ceiling on either resource.
+
+`measured 2026-08-19 under prereg #109 (control model, scored 1/3)` · `measured, 3 descending passes under the L-31 protocol, every arm inside 3.3% spread. Found by a prereg that was asking a different question and whose own P-1/P-2 were mis-specified as two-sided tests of an upper bound.` · scope: One control model (deepseek2, 64 experts, k=6, 54.9% routed byte share) on a GTX 1060 6GB box, -ngl 12, llama.cpp b10098. The DIRECTION (a bound, undershot) is what is claimed; the size of the shortfall is one model and does not transfer. · evidence: prereg #109; weights/data/prereg109_control.json; scorer weights/prereg109_score.py committed before the arms ran · wired into: `quantprobe/spec.py:expert_ceiling_note - the shipped wording already says 'buys at most', which is exactly what a bound of this kind licenses`
 
 ## Shipped levers
 
@@ -1130,7 +1136,17 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** It is the cheapest possible discriminator between two explanations that are indistinguishable on the model measured so far. Residency CANNOT operate where there is nothing to evict, so a fitting model separates them in one session: if the excess survives, Law 4 is missing a term that scales with k and not with bytes, and that is a law amendment. If it vanishes, no new physics is owed and L-29/L-31 absorb both prereg #107's and prereg #108's open edge. The control is also a different architecture (deepseek2, 64 experts, k=6) with a far larger routed share, so its ceilings are 1.84x rather than 1.24x - more room for a measurement to land inside the band by luck, which makes the test harder on the hypothesis rather than easier.
 
-`STAKED under prereg #109; scorer committed before the control model was measured` · `the ceilings are read from the control file and are not in doubt. Which way the measurement falls is the whole question, and both branches of the kill rule lead somewhere useful.` · scope: One control model on one box. A single fitting model cannot prove the term is absent everywhere - it can only show residency suffices HERE, which is what the kill rule claims and no more.
+`PARTIALLY ANSWERED 2026-08-19 - prereg #109 scored 1/3; produced L-32 (the ceiling is a real upper bound, undershot by 10-36%) and left the residency question open as U-57 because P-1 and P-2 were mis-specified` · `the ceilings are read from the control file and are not in doubt. Which way the measurement falls is the whole question, and both branches of the kill rule lead somewhere useful.` · scope: One control model on one box. A single fitting model cannot prove the term is absent everywhere - it can only show residency suffices HERE, which is what the kill rule claims and no more.
+
+### U-57 — The excess over the expert ceiling is residency (L-29/L-31), and a model that fits free RAM will NEVER exceed its ceiling on any architecture.
+
+**Magnitude:** decides whether Law 4 gains a per-expert term or a stated regime; see prereg #109's verdict for why its own answer is not sufficient
+
+**Predicted effect (staked):** One-sided: measured gain / ceiling <= 1.0 on every fitting model tested. prereg #109 saw exactly that on one control (-9.6% to -35.8% across six arms) against +15.2% decode and +180% prefill on the non-fitting model, but with n=1 architecture.
+
+**Why it is promising:** It would close the open edge left by prereg #107 and prereg #108 with no new physics owed - the excess would be a regime statement, not a missing term. prereg #109's P-3 is the only correctly-specified test so far and it hit decisively; its P-1 and P-2 asked whether the measurement lands ON an upper bound, which is not a question a bound answers, so they missed LOW and told us nothing about the excess. The clean version is one-sided and spans more than one architecture.
+
+`OPEN - prereg #109 answered its question only partially; the clean stake is owed` · `the direction is consistent across every arm measured so far, and the reason it is not yet claimed is a specification error in prereg #109, not a conflicting measurement` · scope: needs at least two more fitting MoEs of different architectures before the excess can be called explained
 
 ## External work to study
 

@@ -1,7 +1,7 @@
 # Pre-registration #109: the excess over Law 4 — a missing term, or just residency?
 
 **Author:** Federico Sciuca · **Date staked:** 2026-08-19, **before any arm on the control model
-was run.** **STAKED.**
+was run.** **SCORED 2026-08-19 - 1 of 3, and two predictions were mis-specified. See the verdict at the foot.**
 
 ## Why
 
@@ -83,3 +83,68 @@ Scored by [`weights/prereg109_score.py`](../weights/prereg109_score.py), written
 
 Whichever fires, #107's and #108's verdicts stand as scored; this decides only what the excess
 *means*.
+
+---
+
+## Verdict: SCORED 1/3 — and two of my three predictions were mis-specified (2026-08-19)
+
+Scored by [`weights/prereg109_score.py`](../weights/prereg109_score.py), committed before the
+control arms ran. Raw: [`prereg109_run.log`](../weights/data/prereg109_run.log) ·
+[`prereg109_control.json`](../weights/data/prereg109_control.json) ·
+[`prereg109_verdict.txt`](../weights/data/prereg109_verdict.txt).
+
+**DeepSeek-Coder-V2-Lite-Base-IQ2_XS, 5.56 GiB against 12.8 GB free — it fits, with room.**
+
+| | k=4 | k=2 | k=1 |
+|---|---|---|---|
+| decode measured | 1.106x | 1.380x | 1.528x |
+| decode ceiling | 1.224x | 1.577x | 1.843x |
+| | −9.6% | −12.5% | **−17.1%** |
+| prefill measured | 1.035x | 1.108x | 1.186x |
+| prefill ceiling | 1.225x | 1.580x | 1.848x |
+| | −15.5% | **−29.8%** | −35.8% |
+
+- **P-1 decode k=1 within ±15% of 1.843x — MISS (1.528x, −17.1%).**
+- **P-2 prefill k=2 within ±25% of 1.580x — MISS (1.108x, −29.8%).**
+- **P-3 prefill excess below 60% — HIT (−29.8%, against +180% where the model does not fit).**
+
+**Kill rule as printed: "RESIDENCY IS NOT THE WHOLE STORY."** That branch's text presumes the
+misses were HIGH. **They were LOW.** The scorer routed correctly on the booleans it was given and
+its prose does not fit the data, exactly as #106's kill rule failed to anticipate its own
+(False, True) combination. Reported as printed, and then read properly below.
+
+### The predictions were badly written, and that is the first finding
+
+P-1 and P-2 asked whether the measurement lands **on** the ceiling. A ceiling is an **upper
+bound**: it forbids landing above, and says nothing about landing below. Testing it with a
+two-sided ±15% band means any model with unmodelled *fixed* costs fails a test it was never in
+tension with. That is my error in specification, not evidence of a missing term.
+
+**P-3 was the only one written as a one-sided test, and P-3 is the discriminator.** It hit
+decisively: the fitting model shows **no excess at all** (−29.8%) where the non-fitting model
+showed **+180%**.
+
+### What the data supports
+
+**The excess appears only where the model does not fit.** On 6.6 GiB of headroom, nothing
+exceeds its ceiling on either resource; on a 1.0 GiB deficit, both do. The only structural
+difference between the two runs is residency, and that is consistent with L-29/L-31 rather than
+with a per-expert term — a per-expert overhead would not care about page cache and would have
+followed the knob here too.
+
+**A second, separate finding falls out: the ceiling over-promises on models that fit, by
+10–36%.** Real gains fall short of the bound because something *fixed* — the always-active path,
+per-token sampling, kernel launch — does not shrink with k. That is an Amdahl floor, not a
+per-expert term (a per-expert cost would make low k *faster* than predicted, not slower). It
+also means `quantprobe`'s wording is already right: the line says **"buys at most ~1.24x"**, and
+"at most" is exactly what a bound of this kind licenses.
+
+### What is NOT claimed
+
+Residency is **not confirmed** by this prereg. P-3 is one correctly-specified test on one control
+model, and the two tests meant to corroborate it were unusable by construction. The clean version
+is a one-sided stake — *does a fitting model ever EXCEED its ceiling?* — across more than one
+architecture, and it is owed before the open edge in #107 and #108 is called closed. Registered
+as untried rather than resolved.
+
+#107's and #108's verdicts stand as scored; this decides nothing about them.
