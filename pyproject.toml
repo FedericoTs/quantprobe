@@ -27,6 +27,14 @@ dependencies = [ "gguf>=0.9", "requests>=2.28" ]
 urls.Homepage = "https://github.com/FedericoTs/quantprobe"
 scripts.quantprobe = "quantprobe.cli:main"
 
+[dependency-groups]
+dev = [
+  "bandit==1.9.4",
+  "pre-commit==4.6.2",
+  "pyproject-fmt==2.28.0",
+  "ruff==0.16.4",
+]
+
 [tool.setuptools]
 packages = [ "quantprobe" ]
 package-data.quantprobe = [ "recipes/*.json" ]
@@ -36,3 +44,6 @@ line-length = 100
 # BLE001/S110/S112: this tool probes external CLIs (ollama, nvidia-smi, llama-bench);
 # swallowing their failures is intentional, not an accident.
 lint.ignore = [ "BLE001", "S110", "S112" ]
+
+[tool.pyproject-fmt]
+keep_full_version = true

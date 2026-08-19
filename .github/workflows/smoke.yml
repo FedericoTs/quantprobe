@@ -16,6 +16,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install pre-commit
+      - run: pre-commit run --show-diff-on-failure --all-files
   smoke:
     # Windows is the platform this project is DEVELOPED and RELEASED from, and until now nothing
     # tested it: CI was ubuntu-only, so every Windows-specific path shipped on manual checks alone.
