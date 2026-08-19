@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 32 |
-| Untried levers | 44 |
+| Untried levers | 45 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1121,6 +1121,16 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** prereg #107 closed the decode question with a clean negative - the dial is bounded at 1.24x and costs +1.51 PPL to halve the experts. But quantization shrinks BYTES, not FLOPs, so the same knob is a different size on a compute-bound resource. Prefill is where agentic and coding workloads live: long files, retrieved context, repeated re-reads. A lever worth nothing at decode can still be worth having if it moves time-to-first-token. This costs one short run because quality does not need re-measuring - k is k, and #107 already priced it.
 
 `CLOSED 2026-08-19 - prereg #108 scored 2/3; became V-23 (the prefill lever) and L-31 (predecessor contamination, found while measuring it)` · `the param split is read from the file. Whether prefill follows it is the question. prereg #107's PPL wall times fell far faster than 1.426x, which hints at a per-expert overhead term the FLOP model lacks - but that hint is confounded by a cold first arm (L-29) and is explicitly NOT what is staked.` · scope: Qwen3.6-35B-A3B at -ngl 12 on a GTX 1060 6GB, llama.cpp b10098, ~2000-token prompt. The unit argument (compute follows params, bandwidth follows bytes) generalises; the numbers do not.
+
+### U-56 — The excess over Law 4's expert ceiling - +15.2% on decode, +180% on prefill - is RESIDENCY, not a missing per-expert term, and will vanish on an MoE that comfortably fits free RAM.
+
+**Magnitude:** decides whether Law 4 gains a per-expert term or merely a stated regime; the excess being explained would close the open edge recorded in prereg #107 and prereg #108
+
+**Predicted effect (staked):** On DeepSeek-Coder-V2-Lite-Base-IQ2_XS (5.56 GiB against ~12.2 GB free, so 6.6 GiB of headroom), decode k=1 lands within +/-15% of its 1.843x ceiling and prefill k=2 within +/-25% of 1.580x, with the prefill excess under 60% against the 180% measured where the model does NOT fit.
+
+**Why it is promising:** It is the cheapest possible discriminator between two explanations that are indistinguishable on the model measured so far. Residency CANNOT operate where there is nothing to evict, so a fitting model separates them in one session: if the excess survives, Law 4 is missing a term that scales with k and not with bytes, and that is a law amendment. If it vanishes, no new physics is owed and L-29/L-31 absorb both prereg #107's and prereg #108's open edge. The control is also a different architecture (deepseek2, 64 experts, k=6) with a far larger routed share, so its ceilings are 1.84x rather than 1.24x - more room for a measurement to land inside the band by luck, which makes the test harder on the hypothesis rather than easier.
+
+`STAKED under prereg #109; scorer committed before the control model was measured` · `the ceilings are read from the control file and are not in doubt. Which way the measurement falls is the whole question, and both branches of the kill rule lead somewhere useful.` · scope: One control model on one box. A single fitting model cannot prove the term is absent everywhere - it can only show residency suffices HERE, which is what the kill rule claims and no more.
 
 ## External work to study
 
