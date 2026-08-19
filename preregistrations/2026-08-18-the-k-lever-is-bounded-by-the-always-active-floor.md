@@ -190,3 +190,34 @@ effect, and prefill is compute-bound rather than bandwidth-bound, so k should bi
 But **k=8 ran first and was therefore cold**, and L-29 prices that at up to 46% on this file. Among
 the warm arms alone it is 142s → 96s. Suggestive, confounded, unstaked — a candidate for its own
 pre-registration, not a finding.
+
+---
+
+## Addendum, 2026-08-19: re-audited under L-31, verdict unchanged
+
+L-31 was measured a day after this prereg was scored, on a different question (#108, prefill):
+**an arm preceded by a lower-k arm is contaminated** by the previous run's page-cache working
+set. This prereg's decode arms ran fwd / rev / fwd2, so the reverse pass's k=2, k=4 and k=8 arms
+were exactly that condition. Our own published number was therefore built partly on data a later
+finding calls suspect, and the honest response is to re-score it rather than wait to be asked.
+
+Re-scored from the committed log using only arms whose predecessor was ≥ their own k — no new
+measurement ([`prereg107_audit_under_L31.txt`](../weights/data/prereg107_audit_under_L31.txt)):
+
+| k | clean gain | as published | Law 4 | clean vs Law 4 |
+|---|---|---|---|---|
+| 4 | 1.117x | 1.146x | 1.125x | **−0.7%** |
+| 2 | 1.131x | 1.175x | 1.200x | −5.7% |
+| 1 | **1.430x** | 1.451x | 1.242x | **+15.2%** |
+
+**Nothing qualitative changes.** P-1 still holds (1.430x, below the staked 1.50x). P-2's
+monotonicity still holds. P-3 still hits, and k=4's agreement with Law 4 *improves* to −0.7%.
+Three of twelve arms were contaminated; removing them moves the gains by 1–4 points.
+
+**The k=1 overshoot is real.** It was the one result that could have been an artefact of the
+defect, and it survives at +15.2% against the bandwidth-only ceiling. So the open edge of Law 4
+recorded in this verdict stands, and it is a genuine target rather than a measurement error.
+
+Three arms were dropped and none of the surviving figures were re-tuned to compensate. The
+published table above stays as the record of what was scored on the day; this addendum is what
+the same data says once a later law is applied to it.

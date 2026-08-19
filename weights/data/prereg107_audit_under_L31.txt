@@ -1,0 +1,28 @@
+       arm   k   tok/s  predecessor  clean?
+   fwd k=8   8   13.60          k=8  yes
+   fwd k=4   4   15.40          k=8  yes
+   fwd k=2   2   15.00          k=4  yes
+   fwd k=1   1   19.70          k=2  yes
+   rev k=1   1   20.40          k=1  yes
+   rev k=2   2   17.10          k=1  NO - contaminated
+   rev k=4   4   16.30          k=2  NO - contaminated
+   rev k=8   8   13.50          k=4  NO - contaminated
+  fwd2 k=8   8   14.60          k=8  yes
+  fwd2 k=4   4   16.10          k=8  yes
+  fwd2 k=2   2   16.90          k=4  yes
+  fwd2 k=1   1   20.40          k=2  yes
+
+clean arms only (predecessor k >= arm k):
+  k=8: [13.6, 14.6]  mean 14.100
+  k=4: [15.4, 16.1]  mean 15.750
+  k=2: [15.0, 16.9]  mean 15.950
+  k=1: [19.7, 20.4, 20.4]  mean 20.167
+
+  k  clean gain  published    Law 4   vs Law 4
+  8      1.000x     1.000x   1.000x      +0.0%
+  4      1.117x     1.146x   1.125x      -0.7%
+  2      1.131x     1.175x   1.200x      -5.7%
+  1      1.430x     1.451x   1.242x     +15.2%
+
+P-1 (k=1 below 1.50x): HOLDS at 1.430x
+k=1 overshoot of the 1.242x ceiling: +15.2% (published figure said +16.8%)
