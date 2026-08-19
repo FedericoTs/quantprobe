@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 32 |
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
-| Open contradictions | 32 |
+| Open contradictions | 33 |
 | Untried levers | 46 |
 | External work to study | 28 |
 
@@ -205,11 +205,11 @@ What we believe, and the measurement that earned it.
 
 `measured 2026-08-19 under prereg #108 (order effect, n=20 arms)` · `measured and structured, not inferred - the split by predecessor separates 0.8% spreads from 72% spreads with no overlap, across 20 arms` · scope: Files LARGER than free RAM (L-29's regime), MoE models where the working set is k-dependent. Where the model fits, there is nothing to evict and this should vanish - untested. Direction matters: low-k predecessors poison high-k successors, not the reverse. · evidence: prereg #108; weights/data/prereg108_order_effect.txt; raw weights/data/prereg108_run2.log · wired into: `quantprobe/detect.py:residency (the same free-RAM condition that predicts it)`
 
-### L-32 — The expert ceiling is a genuine UPPER BOUND: on a model that fits free RAM, real gains land 10-36% BELOW it, because a fixed cost that does not shrink with k - the always-active path, per-token sampling, kernel launch - sets an Amdahl floor under the knob.
+### L-32 — On a CAPACITY-BOUND row, the bandwidth-derived expert ceiling is not reached: measured gains fell 10-36% short of it. This says nothing about whether the ceiling holds on the bandwidth-bound rows it was derived for.
 
 **Magnitude:** DeepSeek-Coder-V2-Lite-Base-IQ2_XS (5.56 GiB, 6.6 GiB of headroom). Decode: k=4 1.106x against a 1.224x ceiling (-9.6%), k=2 1.380x against 1.577x (-12.5%), k=1 1.528x against 1.843x (-17.1%). Prefill falls further short: -15.5% / -29.8% / -35.8%. Nothing exceeded its ceiling on either resource.
 
-`measured 2026-08-19 under prereg #109 (control model, scored 1/3)` · `measured, 3 descending passes under the L-31 protocol, every arm inside 3.3% spread. Found by a prereg that was asking a different question and whose own P-1/P-2 were mis-specified as two-sided tests of an upper bound.` · scope: One control model (deepseek2, 64 experts, k=6, 54.9% routed byte share) on a GTX 1060 6GB box, -ngl 12, llama.cpp b10098. The DIRECTION (a bound, undershot) is what is claimed; the size of the shortfall is one model and does not transfer. · evidence: prereg #109; weights/data/prereg109_control.json; scorer weights/prereg109_score.py committed before the arms ran · wired into: `quantprobe/spec.py:expert_ceiling_note - the shipped wording already says 'buys at most', which is exactly what a bound of this kind licenses`
+`QUALIFIED 2026-08-19, hours after being registered - measured on a row where the ceiling it tests does not apply. See C-33.` · `the NUMBERS are measured and tight (3 descending passes, every arm inside 3.3%). The INTERPRETATION registered first - 'a fixed cost sets an Amdahl floor under the knob' - outran them, because the fixed cost may simply be the 56% of layers left on CPU by a placement nobody would choose.` · scope: DeepSeek-Coder-V2-Lite-Base-IQ2_XS at -ngl 12 on a GTX 1060 6GB - a placement that leaves 3.5 GiB of VRAM idle and runs at roughly HALF the speed quantprobe's own planner predicts for this model's recommended placement (16.67 measured against 33.0 predicted at 65% experts-in-VRAM). The planner classifies that recommended row CAPACITY-BOUND (VRAM), not bandwidth-bound. The expert ceiling is derived from Law 4, which prices BANDWIDTH. Applying it to a row bound by a different resource is a category error, and the shortfall measured here is evidence about the placement, not about the ceiling. · evidence: prereg #109; weights/data/prereg109_control.json; scorer weights/prereg109_score.py committed before the arms ran · wired into: `quantprobe/spec.py:expert_ceiling_note - the shipped wording already says 'buys at most', which is exactly what a bound of this kind licenses`
 
 ## Shipped levers
 
@@ -729,6 +729,12 @@ A: Let's think step by step.') never asks for - the pattern is inherited from th
 **Magnitude:** published 14.86 +/- 0.36 as a point estimate; reproduced range 11.0-14.43 tok/s over six warming runs, best attempt 14.43 - 2.9% short of the published figure and short of its error bar. prereg #105 VOID, prereg #106 scored with P-1 and P-3 REFUTED against me.
 
 `CLOSED 2026-08-18 - prereg #106 scored; every surface corrected the same day` · `the FAILURE to reproduce is measured and stable - 11.0 via llama-bench, 11.40 x3 via llama-cli, versus a published 14.86 +/- 0.36. The CAUSE is staked, not established: prereg #106's P-3 tests page-cache residency directly by priming, and it can fail.` · scope: GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K, llama.cpp b10098, one hybrid-MoE file at -ngl 12. Whether the gap is this large on other hardware is unmeasured. · evidence: prereg #106 (preregistrations/2026-08-18-is-the-headline-reproducible.md), scorer weights/prereg106_score.py committed before its arms ran; superseded prereg #105 (VOID, preregistrations/2026-08-18-published-speed-vs-experienced-speed.md); weights/data/qwen36_generation_sanity.log; weights/data/prereg105_run.log · wired into: `quantprobe/detect.py:residency, quantprobe/runtime.py:bench, quantprobe/recipes/qwen3.6-35b.json, the HuggingFace model card`
+
+### C-33 — L-32: the expert ceiling is a genuine upper bound, undershot by 10-36% on a model that fits free RAM (prereg #109)
+
+**Magnitude:** invalidates the interpretation of prereg #109's L-32 as a statement about the ceiling; the measured numbers stand as a statement about that placement
+
+`OPEN - found the same day L-32 was registered, by a direct challenge to it` · `certain - the planner's classification and the idle 3.5 GiB are both checkable in one command, and were checkable before the run` · scope: prereg #109's control arm only. prereg #107 and prereg #108 measured one model throughout and are not affected. · evidence: prereg #109; quantprobe plan on the control file (CAPACITY-BOUND, 33.0 tok/s predicted at the recommended placement against 16.67 measured at -ngl 12) · wired into: `findings/REGISTER.json:L-32 (qualified), preregistrations/2026-08-19-is-the-excess-overhead-or-residency.md`
 
 ## Untried levers
 

@@ -1,7 +1,7 @@
 # Pre-registration #109: the excess over Law 4 — a missing term, or just residency?
 
 **Author:** Federico Sciuca · **Date staked:** 2026-08-19, **before any arm on the control model
-was run.** **SCORED 2026-08-19 - 1 of 3, and two predictions were mis-specified. See the verdict at the foot.**
+was run.** **SCORED 2026-08-19 - 1 of 3, two predictions mis-specified, and the control arm later found to be measured in the wrong REGIME. See the verdict and the correction at the foot.**
 
 ## Why
 
@@ -148,3 +148,43 @@ architecture, and it is owed before the open edge in #107 and #108 is called clo
 as untried rather than resolved.
 
 #107's and #108's verdicts stand as scored; this decides nothing about them.
+
+---
+
+## Correction, 2026-08-19 (same day): the control arm was measured in the wrong regime
+
+Challenged within hours of the verdict: *is this a real inversion, or GPU/CPU overload?* It is
+the second. Two commands settle it, and both were available before the run.
+
+**1. The flag was matched; the condition was not.** `-ngl 12` was copied from #107/#108 so the
+two models would "share a placement". They do not:
+
+| | layers | `-ngl 12` is | to VRAM | VRAM idle |
+|---|---|---|---|---|
+| Qwen3.6-35B | 40 | **30%** of layers | ~3.94 GiB | ~2 GiB |
+| DeepSeek-Lite | 27 | **44%** of layers | ~2.47 GiB | **~3.5 GiB** |
+
+**2. The control ran at about half speed, in a different binding regime.** `quantprobe plan` on
+the control file recommends 65% of experts in VRAM, predicts **33.0 tok/s** there, and classifies
+that row **CAPACITY-BOUND (VRAM)**. Measured here at `-ngl 12`: **16.67**.
+
+The expert ceiling is derived from **Law 4, which prices bandwidth**. Applying it to a row bound
+by capacity is a category error, so the 10–36% shortfall is evidence about *the placement I
+chose*, not about the ceiling. **L-32 is qualified accordingly and [C-33](../FINDINGS.md) logged.**
+
+**What this does to the verdict.** P-3's numbers stand as measured, but the reading "the excess
+appears only where the model does not fit" **cannot be supported**: the two-model comparison
+confounds four variables — residency (intended), GPU-layer fraction (30% vs 44%), absolute VRAM
+load, and architecture. The prereg's own "What is NOT claimed" section was already right to
+refuse the residency conclusion; it was right for a weaker reason than the real one.
+
+**The clean experiment, and it is cheaper than this one was.** Vary residency on **one model, one
+placement, one architecture**, changing nothing else: measure the k-curve, then repeat it with
+free RAM driven below the model size by holding a memory balloon. Same binding constraint, same
+split, same everything — only residency moves. That isolates in one session what two models
+cannot isolate at all, and it is staked next rather than folded in here.
+
+**The lesson, which is the generalisable part:** matching a *flag* across models is not matching
+a *condition*. `-ngl N` means a different split, a different VRAM load, and possibly a different
+binding constraint on every model it touches. The tool prints the regime; I did not read it
+before running.
