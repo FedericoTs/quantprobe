@@ -76,6 +76,14 @@ cite-or-refuse, misses at full size, render-review before shipping.
     bytes. Ships with the k=1 overshoot labelled as beating the ceiling, which is a Law 4 edge
     and not a win (prereg #107, L-30/V-22).
 
+29. ✔ **SHIPPED `neighbour_effect`** — your benchmark runs contaminate each other. Five runs of
+    one unchanged command spanning 11.3 to 70.7 tok/s, and the scatter vanishes when you split
+    it by *which config ran immediately before*: matched predecessor 0.8–1.8%, mismatched
+    21–72%. The strongest methodology piece in the atlas, because it invalidates the thing
+    everyone does (back-to-back A/B) in the regime most people are in (model bigger than RAM),
+    and it ships the fix on the asset — interleave and repeat. Found while measuring something
+    else entirely (prereg #108, L-31).
+
 ## Lens 7 — The ecosystem (retrodictions and transfers)
 27. ● The retrodiction gallery: Kimi 0.3%, airllm's 30x spread bracketed, DGX Spark, the
     Blackwell +2..7.6%, AMD +0.1% - one scatter, "the law on machines we never touched."
