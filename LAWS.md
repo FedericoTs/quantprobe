@@ -279,6 +279,57 @@ The honest engineering advice remains to **avoid the regime**: keep attention on
 `-ngl`), quantize the KV cache (`-ctk q8_0 -ctv q8_0`, +37% at depth measured), or use a MoE model,
 whose splits are validated to 32k here.
 
+### Law 4 — scope boundary: the law prices bytes streaming from **RAM** (2026-08-18/20, preregs #106–#111)
+
+Law 4 divides bytes-per-token by a tier's bandwidth. That assumes the bytes are *in* that tier. When
+the model file is **larger than free RAM**, part of every pass comes off disk instead, and the law is
+being applied outside the regime it was fitted in. Three measured consequences, and one open question
+we could not close.
+
+**L-29 — throughput becomes a function of page-cache residency, and it warms.** Our own published
+headline did not reproduce: `llama-bench tg128` on a 13.15 GiB build returned **14.86 ± 0.36 tok/s**
+one day and **11.0** later, same file, same binary, same box. Six fresh runs of the identical command
+then climbed monotonically — `13.04 → 13.14 → 13.89 → 14.33 → 14.43 → 14.23` — as the cache filled,
+while a 4.68 GB model that *fits* held a **2.1%** spread with no ramp at all. A single benchmark in
+this regime measures the cache state, not the model. Free RAM was never recorded next to a tok/s
+figure, which is why nothing caught it (C-32; prereg #106 scored 2/4, both misses ours).
+
+*Corollary, counter-intuitive and measured:* **do not "warm the cache" by reading the file first.**
+`cat model.gguf > /dev/null` on a file bigger than RAM measured **11.89 tok/s against a 13.84 mean** —
+it *cost* 1.95. A file that cannot be held whole ends with the cache holding its **last** N GB, while
+real runs leave it holding the pages the workload re-reads. Priming swaps a frequency-adapted cache
+for a position-adapted one, and position is the wrong key (D-29; prereg #106 P-3, staked at +1.0 and
+measured with the sign wrong).
+
+**L-31 — in this regime, consecutive benchmark runs are not independent samples.** The page cache
+carries the previous process's working set into the next one. Splitting twenty arms by *which config
+ran immediately before*: arms whose predecessor matched spread **0.8–1.8%**; the same arms whose
+predecessor differed spread **21–72%**, with individual readings ranging **6.3×** (11.3 to 70.7 tok/s)
+on run order alone. Back-to-back A/B here compares cache states as much as configurations. The
+protocol that works is interleave-and-repeat, comparing only readings whose predecessor matched
+(prereg #108, found while measuring something else).
+
+**L-30 — the expert-count corollary.** Law 4 also bounds the MoE `expert_used_count` knob without any
+measurement: the ceiling is set by the routed experts' share of *active bytes*. On Qwen3.6-35B-A3B
+that share is **22%**, so even at k=1 — one expert of 256 — **96.5% of the active bytes are still
+read** and the knob cannot beat **~1.24×**. Measured against predictions made from the file alone:
+k=4 **1.146×** vs 1.125 predicted (+1.9%), k=2 **1.175×** vs 1.200 (−2.1%). Prefill divides
+*parameters* rather than bytes (quantization shrinks bytes, not FLOPs), so the same knob is larger
+there — measured 1.61× at k=4 and 3.77× at k=2 — but the quality bill is unchanged: halving the
+experts cost **+1.51 perplexity**, and k=1 destroys the model (PPL 2277). Shipped: `plan` prints both
+ceilings for your file (preregs #107 scored 4/4, #108 scored 2/3).
+
+**What we could not close.** Both the decode (+15%) and prefill (+180%) measurements *overshot* the
+byte ceiling on the non-fitting model. Two candidate mechanisms — residency, or an unpriced
+per-expert cost — and three attempts failed to separate them, each for a hardware reason this box
+cannot escape: every GPU placement that fits is capacity-bound rather than bandwidth-bound (C-33), a
+fitting MoE's experts do not fit a 6 GB card, and pure-CPU decode at ~5 tok/s is too jittery to
+resolve the ceiling to ±15% even at n=5 (prereg #111, VOID). One intermediate probe appeared to rule
+residency out; a five-pass median later showed that probe's headline was a single-sample artefact, so
+that elimination was **withdrawn** and residency is back on the table (C-34). The mechanism is open
+and blocked on hardware. Knowing an instrument's floor is a result; the register says so in plain
+type rather than shipping a story the data did not buy.
+
 ---
 
 **The umbrella claim:** at low bits on commodity hardware, *placement beats budget* — which layers get

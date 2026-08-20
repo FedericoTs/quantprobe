@@ -188,6 +188,34 @@ byte-identical output: 48.2 → **88.5** in one step, up to **132.1 tok/s (5.8×
 
 Copyability is the whole mechanism: code answers repeat their input, prose invents. The 1.03× row is the *full* expert-offload arm only — on the expert-split placement the quickstart recommends, **tuned** ngram (`--spec-ngram-simple-size-m 384 --spec-ngram-simple-size-n 4`) measured **4.7×** decode at ~3-bit (21.3 → 98.8 tok/s), shrinking with bit-width (3.4× at Q3_K_M) because the verify round is compute-bound (V-04; preregs #28/#36/#37/#40). Turn it on whenever your output copies its context, on any placement except full expert-offload; on novel generation it drafts nothing and changes nothing.
 
+## Your benchmark is probably lying to you
+
+We ran the **same command five times** and got **11.3 to 70.7 tok/s**. Nothing changed between runs — except which config we'd benchmarked *just before*.
+
+<p align="center"><img src="media/neighbour_effect.png" width="820" alt="Five runs of one unchanged command ranging 11.3 to 70.7 tok/s. The three whose predecessor used the same config cluster at 1.8 percent spread; the two whose predecessor differed are the far outliers."></p>
+
+If your model is **bigger than your free RAM**, the page cache carries the previous run's working set into the next process. Arms whose predecessor matched spread **0.8–1.8%**; the same arms whose predecessor differed spread **21–72%** — a **6.3× span from run order alone**. Back-to-back A/B in that regime compares cache states as much as configurations, which quietly invalidates a lot of published local-LLM benchmarking.
+
+**The fix is free:** interleave your arms and repeat them, and compare only readings whose predecessor matched. Three passes put every arm inside 2%. Since v1.31 `bench` tells you when you're in that regime instead of letting you find out later:
+
+```
+RESIDENCY: free RAM 12.2 GiB vs model 13.1 GiB - THE MODEL DOES NOT FIT IN FREE RAM.
+           COMPARING CONFIGURATIONS? In this regime a run is contaminated by the one before it.
+```
+
+We found this while measuring something else, and it cost us our own headline: a published **14.86 tok/s** returned **11.0** days later on the same box, because nothing recorded free RAM next to the number. That correction is [C-32](FINDINGS.md); the law is L-29/L-31. ([the whole arc, misses and voids included →](https://claude.ai/code/artifact/983fa798-9be4-4e06-92e0-cf414453e537))
+
+## The MoE speed dial that isn't free
+
+Turning `expert_used_count` down is traded as free speed for mixture-of-experts models. **It's bounded, and the bound is readable off your file before you run anything.** On Qwen3.6-35B-A3B the routed experts own **22% of the active bytes** — so even at one expert of 256, 96.5% of the bytes are still read and the knob cannot beat **~1.24×**. Law 4 predicted the curve to within 2% (k=4: 1.146× measured vs 1.125 predicted).
+
+And it is never free: halving the experts cost **+1.51 perplexity**, and k=1 destroys the model (PPL 2277). Prefill is the one place it pays — 3.77× at k=2, because quantization shrinks bytes but not compute — and it carries the same quality bill. `plan` prints both ceilings for your own file, so you can skip the afternoon:
+
+```
+experts  routed experts are 22% of the active bytes, so lowering expert_used_count
+         buys at most ~1.24x DECODE even at k=1 - and quality falls long before that
+```
+
 ## Measured results
 
 | result | number |
@@ -199,6 +227,8 @@ Copyability is the whole mechanism: code answers repeat their input, prose inven
 | Context window trade, measured | median **20.8 tok/s at 4k ctx → 11.2 at 16k** (**1.86x**), from 1,231 and 634 decode requests in two live sessions — KV displaces weights on a 6 GB card; run 4k for chat, open it for long chains |
 | Same bytes, different layers protected (Gemma 4 12B) | **byte-identical files, 2.25 ppl apart** |
 | Same bytes, different layers protected (Qwen3.6-35B-A3B, hybrid MoE) | **29.2% less quality loss** - 5.7796 vs 5.9088 PPL at 14,115,658,720 bytes *each*, decode unchanged ([prereg #104](preregistrations/2026-08-18-qwen36-recipe-vs-naive.md), [the build](https://huggingface.co/FedericoSciuca/Qwen3.6-35B-A3B-depthaware-GGUF)) |
+| Benchmark contamination, model > free RAM | **6.3× span from run order alone** - one unchanged command returned 11.3-70.7 tok/s; arms whose predecessor matched spread 0.8-1.8%, arms whose predecessor differed 21-72% ([prereg #108](preregistrations/2026-08-19-is-the-expert-dial-a-prefill-lever.md), L-31) |
+| MoE expert dial, predicted from the file *before* measuring | ceiling **1.24×** decode (routed experts = 22% of active bytes); measured k=4 **1.146×** vs **1.125 predicted** (+1.9%), k=2 1.175× vs 1.200 (-2.1%) - and halving the experts costs **+1.51 PPL** ([prereg #107](preregistrations/2026-08-18-the-k-lever-is-bounded-by-the-always-active-floor.md), L-30) |
 | Gemma 4 12B depth-aware 2-bit | 1.91× → **1.45×** quality cost, ~4.5 GB resident |
 | GLM-4.5-Air **110B** from a SATA drive, 16 GB RAM | **0.19 tok/s** (capacity demo, not usable inference) |
 | RAM overclock (XMP, 2133→3000) | dense **+52%** |
