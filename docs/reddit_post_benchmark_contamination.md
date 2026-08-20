@@ -12,21 +12,30 @@ two different measurements — don't merge them.
 
 ## Title (pick one)
 
-**A. (recommended)** Consecutive llama.cpp benchmark runs aren't independent when the model is
-larger than free RAM
+**A. (recommended)** Same llama.cpp command, five runs: 11.3 to 70.7 tok/s — the variable was
+which config I ran *before* it
 
-**B.** Benchmarking an MoE: consecutive runs contaminate each other through the page cache
+**B.** My benchmark was measuring the previous run's page cache. 6.3× spread, same command.
 
-**C.** Run order changed my prefill numbers by 6.3× — measured, with the protocol that fixes it
+**C.** Run order changed my prefill numbers 6.3×, and the fix costs nothing
 
-*Why A: it states the condition and the finding, and nothing else. No "PSA", no "lying to you", no
-number stacked on the end as a hook. r/LocalLLaMA reads hype as a tell, and a finding this
-specific doesn't need amplifying — the table in the first screen does the work. A also carries the
-precondition in the title, which keeps it from being wrong for the many readers whose model fits.*
+*The line between a hook and clickbait: **clickbait withholds the payoff to make you click; a hook
+delivers it.** "PSA:" and "your benchmark is lying to you" were hype because the adjectives were
+doing the work. A startling measurement stated plainly is the opposite — someone who reads only
+the title still learns something true, and the surprise comes from the number, not from me
+telling them to be surprised.*
 
-*B is the humbler "here's what I ran into" register, which also plays well there. C leads with the
-6.3× and is the one to avoid unless the others underperform — it's the closest to a hook, and it
-front-loads the least trustworthy number (a full span including both outliers).*
+*Why A: the span is the whole finding, and the second clause hands over the mechanism instead of
+teasing it. No adjective anywhere. It also can't be dismissed as hardware noise, because the
+mechanism is named up front.*
+
+*Don't over-hedge the 11.3 and 70.7 — both are real readings of the same command, the raw log is
+committed, and the body gives the median effect and the split. Reporting the span you measured is
+honest; burying it would be the odd choice.*
+
+*B is the same finding in the "here's what bit me" register, which plays well in that sub. C is
+the weakest — "the fix costs nothing" is a promise rather than a fact, which is the clickbait
+move in miniature.*
 
 ---
 
