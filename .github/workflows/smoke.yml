@@ -17,7 +17,21 @@ concurrency:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    # Windows is the platform this project is DEVELOPED and RELEASED from, and until now nothing
+    # tested it: CI was ubuntu-only, so every Windows-specific path shipped on manual checks alone.
+    # detect.py is the exposure - the driver registry read, the CIM DIMM query, the
+    # GlobalMemoryStatusEx ctypes struct and the whole `os.name == "nt"` family have no Linux
+    # counterpart, so a regression there is invisible to the ubuntu job. This is the v1.28.1 lesson
+    # inverted: that release broke on GPU-less Linux and CI caught it precisely because CI was not
+    # the devbox. The same argument requires a runner for the devbox's own OS.
+    #
+    # fail-fast: false so a break on one OS still reports the other - knowing whether a failure is
+    # platform-specific or universal is most of the diagnosis.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
