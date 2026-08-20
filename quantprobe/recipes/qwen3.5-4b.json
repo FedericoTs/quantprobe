@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "model": {
+    "key": "qwen3.5-4b",
+    "name": "Qwen3.5-4B",
+    "arch": "qwen35",
+    "n_layer": 32,
+    "moe": false
+  },
+  "probe": {
+    "reference_ppl": 8.3322,
+    "band_deltas": [
+      {
+        "lo": 0,
+        "hi": 7,
+        "delta_ppl": 0.1778
+      },
+      {
+        "lo": 8,
+        "hi": 15,
+        "delta_ppl": 0.3727
+      },
+      {
+        "lo": 16,
+        "hi": 23,
+        "delta_ppl": 0.6275
+      },
+      {
+        "lo": 24,
+        "hi": 31,
+        "delta_ppl": 1.0677
+      }
+    ],
+    "fragile_band": [
+      24,
+      31
+    ],
+    "fragility_ratio": 2.13,
+    "shape": "late"
+  },
+  "provenance": {
+    "measured": "2026-08-11",
+    "eval": "WikiText-2 test (held out)",
+    "hardware": "GTX 1060 6GB / 16GB DDR4-3000 / i5-7600K",
+    "base_quant": "Q6_K",
+    "raw_log": "weights/data/prereg100_probe_4b.log",
+    "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference. Source was BF16 (16.02 bits read from the file), so the Q6_K reference and the band files are both built from genuine high precision - the cleanest source in the atlas.",
+    "note": "fragility_ratio 2.13 uses the atlas convention - worst delta over the TRUE median of the four bands (0.5001). The probe's own log line prints '+1.07 vs median 0.63' (~1.70) because it displays a rounded upper-middle value; both numbers describe the same curve and neither is wrong. Same divergence disclosed on the qwen3.6-35b and qwen3.8-27b entries. Monotone and back-heavy, like every Qwen measured so far and unlike Mistral-7B, whose fragile band is at the FRONT (0-7, ratio 27) - Law 3 holds: fragility is measurable, not predictable.",
+    "contributor": "FedericoTs",
+    "prereg": "preregistrations/2026-08-11-4b-ceiling-chain.md",
+    "harvested": "Committed to the atlas 2026-08-20. The probe ran 2026-08-11 under prereg #100 and its curve sat in the raw log for nine days without becoming reusable - a measured result that never turned into an artifact. Nothing was re-measured; every number here is read from that log."
+  }
+}
