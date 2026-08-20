@@ -11,10 +11,14 @@ def main():
         sys.stdout.reconfigure(errors="replace")
     except Exception:
         pass
+    from . import __version__
     ap = argparse.ArgumentParser(
         prog="quantprobe",
         description="Probe-then-quantize for LLMs: fragility curves, placement plans, recipes. "
                     "Laws + evidence: github.com/FedericoTs/quantprobe")
+    # Packagers and bug reports expect `--version`; before this it errored with
+    # `unrecognized arguments` and the number was only visible in the no-args banner.
+    ap.add_argument("--version", action="version", version=f"quantprobe {__version__}")
     sub = ap.add_subparsers(dest="cmd")   # not required: bare `quantprobe` shows the banner + help
 
     p = sub.add_parser("probe", help="measure a GGUF's depth-fragility curve, emit the recipe (Law 3)")

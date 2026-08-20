@@ -30,6 +30,11 @@ def best_flags(a):
     """Run the planner, return (best_config, flags_list) for the winning placement."""
     from . import spec as specmod
     from_file = specmod.apply(a)      # True when the spec came from the GGUF itself
+    # A typo'd --machine used to fall through to auto-detect here (line ~40) and quietly predict
+    # for the wrong box. run / bench / dashboard all route through best_flags, so one guard here
+    # gives them the same loud refusal plan/optimize/target already have. Runs AFTER apply so a
+    # --gguf has already filled the spec.
+    planmod.check_presets(a)
     if getattr(a, "bits", None) is None:
         a.bits = 2.5
     m = dict(planmod.MODELS[a.model]) if getattr(a, "model", None) in planmod.MODELS else {}

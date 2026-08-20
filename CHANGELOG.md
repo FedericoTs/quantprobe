@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.32.0 - 2026-08-20
+
+- **No command silently predicts for the wrong machine.** run / bench / report / dashboard /
+  audit-ollama accepted a typo'd --machine (rtx4090 for rtx-4090) and quietly predicted for the
+  auto-detected box instead, while claiming no hardware flags were passed. For a tool whose whole
+  value is a trustworthy number, silently changing the target is the worst failure it can have.
+  All five now route through the same loud check_presets refusal plan/optimize/target already used.
+- **Bare `plan` labels its 13B assumption.** `quantprobe plan` with no model described silently
+  assumed a generic 13B dense model; it now says so, unmissably (new warn_if_no_model). Kept out of
+  check_presets so audit-ollama, which prices real stored models, does not false-fire it.
+- **`quantprobe --version`** now works (was: unrecognized arguments).
+- **README speculation fix.** `--spec-type ngram-simple` is a llama.cpp flag, not a quantprobe
+  one; the README now shows the working `quantprobe run --extra "..."` passthrough instead of a
+  command that errored on copy-paste.
+- Product-gap sweep recorded in docs/PRODUCT_GAPS.md (four fixed here, four deferred with reasons).
+
 ## v1.31.0 - 2026-08-19
 
 - **The expert ceiling now separates DECODE from PREFILL.** Quantization shrinks bytes, not

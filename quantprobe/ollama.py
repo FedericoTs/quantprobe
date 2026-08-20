@@ -235,6 +235,8 @@ def unload(name, need_free_mib=4500, tries=20):
 
 def run(a):
     from . import plan as planmod, spec as specmod
+    planmod.check_presets(a)   # audit-ollama prices every stored model against --machine; a typo'd
+                               # preset must refuse, not silently price them for the auto box
     root = store_root(getattr(a, "store", None))
     models = installed(root)
     print(f"quantprobe audit-ollama - store: {root}")

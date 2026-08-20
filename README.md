@@ -168,7 +168,11 @@ Most guides put *all* of a mixture-of-experts model's experts in system RAM and 
 
 ## Free speed, part two: if you write code
 
-`--spec-type ngram-simple` drafts tokens by finding repeated spans in your own context, then verifies them — output is **identical**, it's one flag, nothing is downloaded.
+llama.cpp's `--spec-type ngram-simple` drafts tokens by finding repeated spans in your own context, then verifies them — output is **identical** and nothing is downloaded. It is a **llama.cpp** flag, so `quantprobe run` forwards it (and picks the placement for you):
+
+```bash
+quantprobe run --gguf model.gguf --extra "--spec-type ngram-simple --spec-ngram-simple-size-m 384 --spec-ngram-simple-size-n 4"
+```
 
 <p align="center"><img src="weights/data/chart_kpi_draft_cliff.svg" width="760" alt="Decode speed against speculation draft length: drafts of 4 to 7 sit near 50 tok/s in the slow kernel, then jump to 88.5 at draft 8 and climb to 132 at draft 24"></p>
 

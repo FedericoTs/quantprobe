@@ -1405,7 +1405,14 @@ def qual_of(moe, bits):
 
 
 def check_presets(args):
-    """Refuse unknown preset names LOUDLY instead of silently falling back to defaults."""
+    """Refuse unknown preset names LOUDLY, and never predict from a silently-fabricated model.
+
+    The whole product is a trustworthy number, so every prediction entry point calls this -
+    plan/optimize/target AND run/bench/report/dashboard/audit-ollama. It refuses a typo'd
+    --machine/--model that used to quietly predict for the WRONG box or model (e.g.
+    `--machine rtx4090` for `rtx-4090` fell through to auto-detect and nobody said so). The
+    companion warn_if_no_model() labels the separate generic-13B fallback for the commands that
+    actually reach it."""
     mdl = getattr(args, "model", None)
     if mdl and mdl not in MODELS and not getattr(args, "total", None):
         raise SystemExit(
@@ -1419,6 +1426,20 @@ def check_presets(args):
             "unknown --machine '%s'.\n"
             "  presets: %s\n"
             "  or pass flags: --vram/--vram-bw/--ram/--ram-bw/--disk-bw   (no flags = auto-detect this box)" % (mac, ", ".join(sorted(MACHINES))))
+
+
+def warn_if_no_model(args):
+    """Label the generic-13B assumption, unmissably, when the user described no model at all.
+
+    Separate from check_presets because only the commands that actually FALL BACK to 13B should
+    say so: `plan` can (no required --gguf), but audit-ollama prices real stored models and
+    run/bench/dashboard require --gguf, so none of them assume 13B and none should print this."""
+    if not (getattr(args, "model", None) or getattr(args, "total", None)
+            or getattr(args, "gguf", None)):
+        print("[quantprobe] NO MODEL GIVEN - assuming a generic 13B DENSE model. This number is "
+              "illustrative, not about your model.\n"
+              "             Pass --gguf model.gguf (exact, read from the file), --model <preset>, "
+              "or --total <B> for yours.")
 
 
 CAL_COMPONENTS = (("RAM stream", "ram_bw_measured"), ("disk", "disk_bw_measured"),
@@ -1931,6 +1952,7 @@ def build_rows(args):
     from . import spec as specmod
     specmod.apply(args)
     check_presets(args)
+    warn_if_no_model(args)
     if getattr(args, "bits", None) is None:
         args.bits = 2.5
     m = dict(MODELS[args.model]) if args.model in MODELS else {}

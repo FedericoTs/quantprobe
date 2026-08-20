@@ -870,6 +870,8 @@ def run(args):
         raise SystemExit(f"report needs the file it is about: --gguf {g or '<missing>'} "
                          f"not found.\nA preset-only report is a v2 item "
                          f"(docs/DESIGN_REPORT_CMD.md section 6).")
+    planmod.check_presets(args)   # a typo'd --machine must refuse here too, not report a number
+                                  # for the wrong box (the report is the forwardable artifact)
     # Snapshot what the USER passed before build_rows lets autospec fill the gaps in place -
     # the Reproduce section echoes the invocation, not the resolved state.
     snap = {attr: getattr(args, attr, None) for _f, attr in _RECON_FLAGS}

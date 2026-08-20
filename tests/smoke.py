@@ -4795,6 +4795,69 @@ def t_a_contaminated_neighbour_is_disclosed_when_the_model_exceeds_ram():
     return None
 
 
+def t_no_command_predicts_for_a_silently_wrong_machine_or_model():
+    """Every prediction command must REFUSE a typo'd --machine/--model, not quietly use another.
+
+    Product gap (2026-08-20 sweep): plan/optimize/target called plan.check_presets and refused an
+    unknown preset loudly, but run/bench/report/dashboard/audit-ollama did NOT - a typo'd
+    `--machine rtx4090` (for `rtx-4090`) fell through to auto-detect and printed a confident number
+    for the WRONG box. For a tool whose entire product is a trustworthy prediction, silently
+    changing the target is the worst failure it can have. All five now route through check_presets.
+
+    Also pins the companion split: warn_if_no_model() labels the generic-13B fallback, and it lives
+    OUTSIDE check_presets so audit-ollama (which prices real stored models, never a 13B) does not
+    false-fire it. Mutations owed and discharged: dropping any of the five check_presets calls, or
+    folding the 13B warning back into check_presets, fails this test.
+    """
+    import io as _io, contextlib
+    from quantprobe import plan as pl
+
+    # 1. check_presets is the loud refusal, in-process, no box or file needed.
+    bad_mac = type("A", (), {"machine": "rtx4090", "model": None, "total": None, "gguf": None})()
+    try:
+        pl.check_presets(bad_mac)
+        raise AssertionError("check_presets accepted a typo'd --machine 'rtx4090' - it must refuse")
+    except SystemExit as e:
+        assert "rtx-4090" in str(e), f"the refusal must show the correct spelling: {e}"
+
+    good = type("A", (), {"machine": "rtx-4090", "model": "qwen3-30b", "total": None, "gguf": None})()
+    pl.check_presets(good)   # valid preset: must NOT raise
+
+    # 2. check_presets must NOT print the 13B label (that belongs to warn_if_no_model, so
+    #    audit-ollama and friends can call check_presets without a false 13B warning).
+    buf = _io.StringIO()
+    none_given = type("A", (), {"machine": "2016-xmp", "model": None, "total": None, "gguf": None})()
+    with contextlib.redirect_stdout(buf):
+        pl.check_presets(none_given)
+    assert "13B" not in buf.getvalue(), \
+        "check_presets printed the 13B label - audit-ollama would false-fire it; keep it in warn_if_no_model"
+
+    # 3. warn_if_no_model DOES label the fabricated 13B, and only when nothing describes a model.
+    buf = _io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        pl.warn_if_no_model(none_given)
+    assert "13B" in buf.getvalue() and "illustrative" in buf.getvalue(), \
+        f"warn_if_no_model must label the generic-13B assumption: {buf.getvalue()!r}"
+    buf = _io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        pl.warn_if_no_model(type("A", (), {"model": "qwen3-30b", "total": None, "gguf": None})())
+    assert buf.getvalue() == "", "warn_if_no_model fired when a model WAS given"
+
+    # 4. The wiring: the five entry points that used to skip the guard now call it. Source-level,
+    #    because these handlers each need a real box/file/server to run end to end.
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    rt = open(os.path.join(root, "quantprobe", "runtime.py"), encoding="utf-8").read()
+    assert "check_presets(a)" in rt, "runtime.best_flags lost its check_presets (covers run/bench/dashboard)"
+    # best_flags is the shared resolver for run, bench AND dashboard - so guarding it covers three.
+    assert rt.index("check_presets(a)") < rt.index("def run("), \
+        "check_presets must sit in best_flags (before run/bench), the shared machine resolver"
+    rp = open(os.path.join(root, "quantprobe", "report.py"), encoding="utf-8").read()
+    assert "check_presets(args)" in rp, "report.run lost its check_presets - a forwardable report for the wrong box"
+    ol = open(os.path.join(root, "quantprobe", "ollama.py"), encoding="utf-8").read()
+    assert "check_presets(a)" in ol, "ollama.run (audit-ollama) lost its check_presets"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
