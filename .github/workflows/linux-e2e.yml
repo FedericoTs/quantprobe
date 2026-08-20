@@ -125,3 +125,29 @@ jobs:
           set -o pipefail
           quantprobe plan --gguf "models/${MODEL_FILE}" | tee plan.out
           grep -F 'tok/s' plan.out
+
+      - name: probe must fetch its own corpus and emit a curve
+        # The steps above cover calibrate/plan/bench; NOTHING covered probe or quantize - the
+        # "measure YOUR model" path the README leads with. v1.33.0 then made --eval default to
+        # `auto`, which performs a NETWORK FETCH (auto.py WIKI_URL). If that URL moves, probe
+        # breaks for every user and a green CI would have said nothing. This step is that alarm.
+        #
+        # Deliberately the smallest real probe: --bands 2 --chunks 2 on a 360M source is 3
+        # quantize passes + 3 perplexity runs, minutes inside the job's 20-minute stop, and it
+        # exercises the whole chain - corpus fetch, llama-quantize --allow-requantize from a Q8_0
+        # source, llama-perplexity, and the emitted recipe. --llama-dir is derived from the same
+        # find as the bench step, so an archive-layout shuffle costs one line, not two.
+        run: |
+          set -o pipefail
+          BIN="$(find llama-cpp -type f -name llama-bench | head -n 1)"
+          LDIR="$(dirname "$BIN")"
+          chmod +x "$LDIR"/llama-* || true
+          export LD_LIBRARY_PATH="$(find llama-cpp -name 'lib*.so*' -printf '%h\n' | sort -u | paste -sd:):${LD_LIBRARY_PATH:-}"
+          quantprobe probe --gguf "models/${MODEL_FILE}" --llama-dir "$LDIR" \
+            --bands 2 --chunks 2 --ngl 0 --workdir probewd | tee probe.out
+          # The corpus really was fetched (not silently skipped), and the probe really named a
+          # band. "fragile band:" is probe.py's own success signal - its comment at the emit site
+          # reads "a probe that cannot name the fragile band has FAILED" - so this is the contract,
+          # not a convenient substring. (delta_ppl is the JSON key, never stdout: checked.)
+          test -s probewd/wiki.test.raw
+          grep -Fq 'fragile band:' probe.out
