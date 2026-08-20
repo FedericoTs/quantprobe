@@ -188,7 +188,7 @@ byte-identical output: 48.2 → **88.5** in one step, up to **132.1 tok/s (5.8×
 
 Copyability is the whole mechanism: code answers repeat their input, prose invents. The 1.03× row is the *full* expert-offload arm only — on the expert-split placement the quickstart recommends, **tuned** ngram (`--spec-ngram-simple-size-m 384 --spec-ngram-simple-size-n 4`) measured **4.7×** decode at ~3-bit (21.3 → 98.8 tok/s), shrinking with bit-width (3.4× at Q3_K_M) because the verify round is compute-bound (V-04; preregs #28/#36/#37/#40). Turn it on whenever your output copies its context, on any placement except full expert-offload; on novel generation it drafts nothing and changes nothing.
 
-## Your benchmark is probably lying to you
+## Your benchmark may be measuring the run before it
 
 We ran the **same command five times** and got **11.3 to 70.7 tok/s**. Nothing changed between runs — except which config we'd benchmarked *just before*.
 

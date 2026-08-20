@@ -12,16 +12,21 @@ two different measurements — don't merge them.
 
 ## Title (pick one)
 
-**A.** PSA: if your model is bigger than your free RAM, your back-to-back benchmarks are comparing
-cache states, not configs — same command, 11.3 to 70.7 tok/s
+**A. (recommended)** Consecutive llama.cpp benchmark runs aren't independent when the model is
+larger than free RAM
 
-**B.** I ran one unchanged llama.cpp command five times and got a 6.3× spread. The variable was
-*which config I benchmarked before it.*
+**B.** Benchmarking an MoE: consecutive runs contaminate each other through the page cache
 
-**C.** Your A/B benchmark is probably measuring the run before it
+**C.** Run order changed my prefill numbers by 6.3× — measured, with the protocol that fixes it
 
-*(A is the most useful-sounding and states the precondition up front — that precondition is what
-stops it being wrong for the many people whose model does fit.)*
+*Why A: it states the condition and the finding, and nothing else. No "PSA", no "lying to you", no
+number stacked on the end as a hook. r/LocalLLaMA reads hype as a tell, and a finding this
+specific doesn't need amplifying — the table in the first screen does the work. A also carries the
+precondition in the title, which keeps it from being wrong for the many readers whose model fits.*
+
+*B is the humbler "here's what I ran into" register, which also plays well there. C leads with the
+6.3× and is the one to avoid unless the others underperform — it's the closest to a hook, and it
+front-loads the least trustworthy number (a full span including both outliers).*
 
 ---
 
