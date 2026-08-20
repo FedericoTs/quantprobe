@@ -1,6 +1,6 @@
 # Pre-registration #111: is the pure-CPU overshoot real, or was it baseline noise?
 
-**Author:** Federico Sciuca · **Date staked:** 2026-08-20, **before any arm was run.** **STAKED.**
+**Author:** Federico Sciuca · **Date staked:** 2026-08-20, **before any arm was run.** **VOID 2026-08-20 - baseline unusable at n=5; and the void reopens the residency question I had closed. See the verdict at the foot.**
 
 ## Why, and why this is narrow on purpose
 
@@ -81,3 +81,70 @@ Scored by [`weights/prereg111_score.py`](../weights/prereg111_score.py), committ
   weakens, and L-32's undershoot reading stands. Said plainly.
 
 #107–#110 stand as scored. This confirms or dissolves one number; it decides nothing about them.
+
+---
+
+## Verdict: VOID (2026-08-20). And the void reopens something I had closed.
+
+Scored by [`weights/prereg111_score.py`](../weights/prereg111_score.py), committed before the run.
+Raw: [`prereg111_ngl0.json`](../weights/data/prereg111_ngl0.json) ·
+[`prereg111_run.log`](../weights/data/prereg111_run.log) ·
+[`prereg111_verdict.txt`](../weights/data/prereg111_verdict.txt).
+
+| k | median tok/s (n=5) | gain | ceiling | excess |
+|---|---|---|---|---|
+| 6 | 5.90 | 1.000x | — | 1.000 |
+| 4 | 5.90 | 1.000x | 1.224x | 0.817 |
+| 2 | 8.30 | 1.407x | 1.577x | 0.892 |
+| 1 | 9.30 | **1.576x** | 1.843x | **0.855** |
+
+- **P-2 baseline spread ≤ 15% — MISS (23.7%).** Five passes, median, and the k=6 baseline still
+  ranged 4.9–6.0. Pure-CPU decode at ~5 tok/s on four 2016 cores carries irreducible scheduler
+  jitter. **Kill rule fires: VOID.** P-1 and P-3 are not evaluated — you cannot build a ratio on a
+  divisor this loose. This box cannot measure the overshoot cleanly; the honest label is a hardware
+  limit, not a result.
+
+### What the void nonetheless shows — and the claim it forces me to walk back
+
+The gains are VOID and I claim nothing from them as measurements. But one qualitative fact does not
+need a tight baseline to read: **the k=1 median gain is 1.58×, nowhere near the probe's 2.0×.**
+The [#110](2026-08-19-does-starving-ram-enlarge-the-expert-lever.md) probe's overshoot came from a
+single low k=6 reading (3.73) inflating one ratio; five passes put k=6 at 5.9 and the overshoot
+disappears.
+
+That matters because **the #110 probe's overshoot was my sole basis for ruling residency out.** I
+wrote there that the excess "happens without memory pressure, so residency cannot be the
+mechanism." That inference rested on a number this run shows was not robust. So I have to withdraw
+the strength of it: **residency is not ruled out.** It is back on the table.
+
+And the larger pattern, read across every attempt, actually points back toward it:
+
+| model | fits free RAM? | ceiling | reading |
+|---|---|---|---|
+| Qwen3.6 (#107/#108) | **no** (deficit) | crossed | **overshoot** +15% / +180% |
+| DeepSeek −ngl 12 (#109) | yes | — | undershoot (but capacity-bound, C-33) |
+| DeepSeek −ngl 0 (#110 probe) | yes | — | "overshoot" 2× — **now shown to be noise** |
+| DeepSeek −ngl 0 (#111) | yes | — | undershoot-leaning, but VOID |
+
+The overshoot correlates with **not fitting**. The one fitting-model overshoot was an artefact.
+That is the residency story #109's kill rule first proposed — reinstated, not by new clean data,
+but by the removal of the one datapoint that had displaced it.
+
+### The real conclusion: this box cannot resolve U-59
+
+Three attempts, three non-answers, each for a hardware reason this machine cannot escape:
+
+- **#109** — every GPU placement that fits is capacity-bound, not bandwidth-bound (C-33).
+- **#110** — can't hold a fitting MoE's experts on the 6 GB GPU to contrast CPU vs GPU per-expert cost.
+- **#111** — pure-CPU decode is too jittery to resolve the ceiling to ±15%, even at n=5.
+
+The 6 GB card and the four old cores structurally entangle or blur every version of the question.
+**U-59 needs different hardware** — a box that can hold a fitting MoE's experts fully in VRAM (to
+price GPU per-expert cost) or fit a large MoE in RAM with headroom and a CPU fast enough for a tight
+baseline. I am marking U-59 blocked-on-hardware and stopping the box thread here rather than
+running a fourth confounded variant. Knowing an instrument's floor is a result; pretending past it
+is how C-31, C-32 and C-33 happened.
+
+#107 and #108 (the non-fitting model) stand as scored — their overshoot is real and, if anything,
+this reinforces its link to non-residency. #109/#110 stand with their existing verdicts; this only
+withdraws the *strength* of #110's residency-ruled-out inference.

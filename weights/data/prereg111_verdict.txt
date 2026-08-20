@@ -1,0 +1,12 @@
+k=6 baseline: median 5.90 tok/s, spread 23.7% (gate 15%)  UNUSABLE
+  k   median   n     gain  ceiling   excess
+  6     5.90   5   1.000x   1.000x   1.000
+  4     5.90   5   1.000x   1.224x   0.817
+  2     8.30   5   1.407x   1.577x   0.892
+  1     9.30   5   1.576x   1.843x   0.855
+
+P-2  baseline spread <= 15% .......... MISS (23.7%)
+
+KILL RULE -> VOID. The baseline is still unusable, so gains built on it are
+  not trustworthy. This box cannot measure the overshoot cleanly; U-59 needs
+  different hardware. A hardware limit, not a result.

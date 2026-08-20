@@ -1,0 +1,36 @@
+free RAM: 11.55 GB  (model 5.56 GiB - fits)
+== warm-up: 2 discards at k=6 ==
+  warm 1/2: 5.6  (DISCARDED)
+  warm 2/2: 5.7  (DISCARDED)
+
+== pass 1/5 (descending) ==
+  k=6: 5.9 tok/s   free RAM 13.49 GB
+  k=4: 5.7 tok/s   free RAM 13.73 GB
+  k=2: 7.5 tok/s   free RAM 13.58 GB
+  k=1: 11.3 tok/s   free RAM 13.6 GB
+
+== pass 2/5 (descending) ==
+  k=6: 6.3 tok/s   free RAM 13.4 GB
+  k=4: 5.8 tok/s   free RAM 13.62 GB
+  k=2: 8.8 tok/s   free RAM 13.59 GB
+  k=1: 8.9 tok/s   free RAM 13.49 GB
+
+== pass 3/5 (descending) ==
+  k=6: 6.0 tok/s   free RAM 13.59 GB
+  k=4: 5.9 tok/s   free RAM 13.64 GB
+  k=2: 8.0 tok/s   free RAM 12.98 GB
+  k=1: 9.3 tok/s   free RAM 13.28 GB
+
+== pass 4/5 (descending) ==
+  k=6: 5.4 tok/s   free RAM 13.3 GB
+  k=4: 6.0 tok/s   free RAM 13.62 GB
+  k=2: 8.3 tok/s   free RAM 13.65 GB
+  k=1: 9.1 tok/s   free RAM 13.56 GB
+
+== pass 5/5 (descending) ==
+  k=6: 4.9 tok/s   free RAM 13.67 GB
+  k=4: 6.1 tok/s   free RAM 13.78 GB
+  k=2: 8.3 tok/s   free RAM 13.47 GB
+  k=1: 10.0 tok/s   free RAM 13.32 GB
+
+wrote C:/Users/Federico/Documents/evo-compress/.claude/worktrees/law5-prefill/weights/data/prereg111_ngl0.json in 211.5 min

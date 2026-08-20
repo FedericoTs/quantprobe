@@ -1355,6 +1355,21 @@
       "scope": "prereg #109's control arm only. prereg #107 and prereg #108 measured one model throughout and are not affected.",
       "wired_into": "findings/REGISTER.json:L-32 (qualified), preregistrations/2026-08-19-is-the-excess-overhead-or-residency.md",
       "confidence": "certain - the planner's classification and the idle 3.5 GiB are both checkable in one command, and were checkable before the run"
+    },
+    {
+      "id": "C-34",
+      "kind": "contradiction",
+      "status": "OPEN 2026-08-20 - self-caught: a claim I made rested on a number that did not replicate",
+      "claim": "prereg #110's verdict: 'the excess happens without memory pressure, so residency cannot be the mechanism' - which VOIDed U-58 (residency) and opened U-59 (per-expert term)",
+      "what_is_wrong": "That inference rested entirely on the #110 pre-balloon probe showing a ~2x overshoot with the model fitting. prereg #111 re-ran the same placement with a 5-pass median and got k=1 gain 1.576x - an UNDERSHOOT. The probe's 2x came from one low k=6 reading (3.73 vs a 5.9 median) inflating a single ratio. The overshoot that ruled residency out does not replicate.",
+      "what_the_data_says": "prereg111_ngl0.json: k=6 median 5.90, k=1 median 9.30, gain 1.576x, excess 0.855 (below the 1.843 ceiling). #111 is itself VOID (baseline 23.7% spread), so this withdraws the STRENGTH of #110's inference rather than asserting a new result. Net: residency is back on the table, and the overshoot correlates with not-fitting across Qwen3.6 (overshoot, deficit) vs DeepSeek (undershoot-leaning, fits).",
+      "how_it_was_found": "prereg #111 was staked to confirm the #110 overshoot was real before building U-59 on it. It could not confirm it - and in failing, removed the datapoint that had displaced the residency hypothesis. The stake that was meant to strengthen the new thread dissolved its premise instead.",
+      "generalisation": "A hypothesis eliminated by a single un-replicated number is not eliminated. #110 read one probe (47% baseline spread, flagged even then) as decisive enough to VOID a hypothesis and open a new programme. The confirming run should have come before the redirect, not after. Confirm the load-bearing number FIRST.",
+      "magnitude": "reopens U-58 (residency) and downgrades U-59 (per-expert term) from 'the likely mechanism' to 'one of two, both blocked on hardware'",
+      "evidence": "prereg #111 (VOID) and its verdict; prereg #110 verdict; prereg111_ngl0.json",
+      "scope": "the mechanism behind the expert-ceiling excess only. #107/#108's overshoot on the non-fitting model stands as scored and is unaffected.",
+      "wired_into": "findings/REGISTER.json:U-58 (reopened), U-59 (blocked); preregistrations/2026-08-20-is-the-cpu-overshoot-real.md",
+      "confidence": "certain about the fragility (the median is committed and reproducible); the residency reinstatement is a return-to-open, not a positive claim - the clean test remains unrun and blocked on hardware."
     }
   ],
   "untried": [
@@ -1900,7 +1915,7 @@
     {
       "id": "U-58",
       "kind": "untried",
-      "status": "VOID 2026-08-19 - prereg #110's residency framing was refuted before its balloon ran: the expert lever is ~2x at -ngl 0 with the model FITTING comfortably (13 GB free), so the excess is not memory pressure. The mechanism hunt moves to a placement-dependent per-expert CPU term; see U-59.",
+      "status": "VOID 2026-08-19 - prereg #110's residency framing was refuted before its balloon ran: the expert lever is ~2x at -ngl 0 with the model FITTING comfortably (13 GB free), so the excess is not memory pressure. The mechanism hunt moves to a placement-dependent per-expert CPU term; see U-59. -- REOPENED 2026-08-20: prereg #111 showed the #110 probe's 2x overshoot (the sole basis for 'residency ruled out') was a low-k=6-outlier artefact; the 5-pass median gain is 1.58x, an undershoot. Residency is not ruled out. The overshoot still correlates with NOT fitting free RAM across all models, which is the residency story #109's kill rule first proposed. Blocked on the same hardware limit as U-59.",
       "claim": "The excess over the expert ceiling is RESIDENCY and it is LEVERAGE: on a box where the model does not fit free RAM, lowering expert_used_count buys MORE speed than the file's bandwidth ceiling predicts, because a smaller touched-expert set stays cache-resident.",
       "predicted_effect": "On DeepSeek-Coder-V2-Lite at -ngl 0 (pure CPU, whole model in page cache), the k=1 gain is >=1.15x larger when free RAM is starved (7.5 GiB balloon -> ~3.8 GiB free) than when it fits, and the starved k=1 gain overshoots the 1.843x ceiling (>2.03x) while the fitting one does not.",
       "why_it_is_promising": "It is the clean version of the test C-33 invalidated: one model, one placement, one architecture, only free RAM varied by a memory balloon. -ngl 0 removes the GPU entirely, so the result cannot be GPU/CPU overload or a capacity cliff - the exact objection that sank prereg #109. If it holds, quantprobe gains a concrete recommendation for its core audience: the expert dial is worth more on constrained hardware, which is where trading quality for speed is most likely worth it.",
@@ -1911,7 +1926,7 @@
     {
       "id": "U-59",
       "kind": "untried",
-      "status": "OPEN - the clean CPU-vs-GPU sweep is UNMEASURABLE on this box (6 GB card + 5.56 GiB model entangles expert placement with the capacity boundary; regime check under prereg #111 confirmed only the pure-CPU row is bandwidth-bound). prereg #111 runs the one clean sub-question the box can answer: does the -ngl 0 overshoot survive a usable baseline?",
+      "status": "BLOCKED ON HARDWARE 2026-08-20 - prereg #111 VOID (pure-CPU baseline 23.7% spread at n=5, past the usability gate). Three attempts, three non-answers, each for a reason this box cannot escape: GPU placements that fit are capacity-bound (#109/C-33), a fitting MoE's experts do not fit the 6 GB card (#110), pure-CPU decode is too jittery to resolve the ceiling (#111). Needs a box that fits a MoE's experts in VRAM, or a large MoE in RAM with a fast CPU.",
       "claim": "The excess over the byte-share expert ceiling is a per-expert CPU overhead (gather + a small matmul launch per routed expert), NOT residency: it is placement-dependent - overshoots when experts run on CPU, undershoots when they run on GPU - with the model fitting free RAM in both cases.",
       "predicted_effect": "On one model in one session, sweeping -ngl from high (GPU-heavy) to 0 (CPU-only) with the model fitting throughout, the k=1 gain rises monotonically relative to the byte ceiling: undershoots at high -ngl (DeepSeek-Lite measured 1.528x at -ngl 12, prereg #109) and overshoots at -ngl 0 (~2x, prereg #110 probe, baseline noisy). Narrowed: prereg #111 (staked 2026-08-20) tests only whether pure-CPU DeepSeek-Lite robustly overshoots its 1.843x byte ceiling at k=1 with a usable baseline, the load-bearing observation the whole thread rests on.",
       "why_it_is_promising": "It is the OTHER hypothesis #108 named, and prereg #110's probe just made it the likelier one by ruling residency out (overshoot with the model fitting). If it holds, Law 4 gains a per-expert term keyed to the compute tier - a real amendment - and quantprobe can predict when the expert dial beats its bandwidth ceiling (CPU-heavy placements) versus falls short (GPU-heavy).",

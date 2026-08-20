@@ -11,7 +11,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Established laws | 32 |
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
-| Open contradictions | 33 |
+| Open contradictions | 34 |
 | Untried levers | 48 |
 | External work to study | 28 |
 
@@ -736,6 +736,12 @@ A: Let's think step by step.') never asks for - the pattern is inherited from th
 
 `OPEN - found the same day L-32 was registered, by a direct challenge to it` · `certain - the planner's classification and the idle 3.5 GiB are both checkable in one command, and were checkable before the run` · scope: prereg #109's control arm only. prereg #107 and prereg #108 measured one model throughout and are not affected. · evidence: prereg #109; quantprobe plan on the control file (CAPACITY-BOUND, 33.0 tok/s predicted at the recommended placement against 16.67 measured at -ngl 12) · wired into: `findings/REGISTER.json:L-32 (qualified), preregistrations/2026-08-19-is-the-excess-overhead-or-residency.md`
 
+### C-34 — prereg #110's verdict: 'the excess happens without memory pressure, so residency cannot be the mechanism' - which VOIDed U-58 (residency) and opened U-59 (per-expert term)
+
+**Magnitude:** reopens U-58 (residency) and downgrades U-59 (per-expert term) from 'the likely mechanism' to 'one of two, both blocked on hardware'
+
+`OPEN 2026-08-20 - self-caught: a claim I made rested on a number that did not replicate` · `certain about the fragility (the median is committed and reproducible); the residency reinstatement is a return-to-open, not a positive claim - the clean test remains unrun and blocked on hardware.` · scope: the mechanism behind the expert-ceiling excess only. #107/#108's overshoot on the non-fitting model stands as scored and is unaffected. · evidence: prereg #111 (VOID) and its verdict; prereg #110 verdict; prereg111_ngl0.json · wired into: `findings/REGISTER.json:U-58 (reopened), U-59 (blocked); preregistrations/2026-08-20-is-the-cpu-overshoot-real.md`
+
 ## Untried levers
 
 Staked predictions written BEFORE measuring, so a miss is visible. Ordered by expected value.
@@ -1162,7 +1168,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** It is the clean version of the test C-33 invalidated: one model, one placement, one architecture, only free RAM varied by a memory balloon. -ngl 0 removes the GPU entirely, so the result cannot be GPU/CPU overload or a capacity cliff - the exact objection that sank prereg #109. If it holds, quantprobe gains a concrete recommendation for its core audience: the expert dial is worth more on constrained hardware, which is where trading quality for speed is most likely worth it.
 
-`VOID 2026-08-19 - prereg #110's residency framing was refuted before its balloon ran: the expert lever is ~2x at -ngl 0 with the model FITTING comfortably (13 GB free), so the excess is not memory pressure. The mechanism hunt moves to a placement-dependent per-expert CPU term; see U-59.` · `the balloon is verified to drop free RAM 11.3 -> 3.5 GiB on 8 GiB touched, and the within-condition ratio design is robust to the placement being unusual - only the MECHANISM's presence is in question, not the arithmetic.` · scope: one model, one box, two RAM levels. Proves the mechanism operates HERE; a second architecture is owed before it is called general.
+`VOID 2026-08-19 - prereg #110's residency framing was refuted before its balloon ran: the expert lever is ~2x at -ngl 0 with the model FITTING comfortably (13 GB free), so the excess is not memory pressure. The mechanism hunt moves to a placement-dependent per-expert CPU term; see U-59. -- REOPENED 2026-08-20: prereg #111 showed the #110 probe's 2x overshoot (the sole basis for 'residency ruled out') was a low-k=6-outlier artefact; the 5-pass median gain is 1.58x, an undershoot. Residency is not ruled out. The overshoot still correlates with NOT fitting free RAM across all models, which is the residency story #109's kill rule first proposed. Blocked on the same hardware limit as U-59.` · `the balloon is verified to drop free RAM 11.3 -> 3.5 GiB on 8 GiB touched, and the within-condition ratio design is robust to the placement being unusual - only the MECHANISM's presence is in question, not the arithmetic.` · scope: one model, one box, two RAM levels. Proves the mechanism operates HERE; a second architecture is owed before it is called general.
 
 ### U-59 — The excess over the byte-share expert ceiling is a per-expert CPU overhead (gather + a small matmul launch per routed expert), NOT residency: it is placement-dependent - overshoots when experts run on CPU, undershoots when they run on GPU - with the model fitting free RAM in both cases.
 
@@ -1172,7 +1178,7 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Why it is promising:** It is the OTHER hypothesis #108 named, and prereg #110's probe just made it the likelier one by ruling residency out (overshoot with the model fitting). If it holds, Law 4 gains a per-expert term keyed to the compute tier - a real amendment - and quantprobe can predict when the expert dial beats its bandwidth ceiling (CPU-heavy placements) versus falls short (GPU-heavy).
 
-`OPEN - the clean CPU-vs-GPU sweep is UNMEASURABLE on this box (6 GB card + 5.56 GiB model entangles expert placement with the capacity boundary; regime check under prereg #111 confirmed only the pure-CPU row is bandwidth-bound). prereg #111 runs the one clean sub-question the box can answer: does the -ngl 0 overshoot survive a usable baseline?` · `the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy.` · scope: needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.
+`BLOCKED ON HARDWARE 2026-08-20 - prereg #111 VOID (pure-CPU baseline 23.7% spread at n=5, past the usability gate). Three attempts, three non-answers, each for a reason this box cannot escape: GPU placements that fit are capacity-bound (#109/C-33), a fitting MoE's experts do not fit the 6 GB card (#110), pure-CPU decode is too jittery to resolve the ceiling (#111). Needs a box that fits a MoE's experts in VRAM, or a large MoE in RAM with a fast CPU.` · `the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy.` · scope: needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.
 
 ## External work to study
 
