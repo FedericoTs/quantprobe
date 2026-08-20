@@ -25,7 +25,9 @@ def main():
     p.add_argument("--gguf", required=True, help="f16/bf16 (or high-precision) source GGUF")
     p.add_argument("--bands", type=int, default=4)
     p.add_argument("--chunks", type=int, default=32)
-    p.add_argument("--eval", required=True, help="raw text eval file (e.g. wikitext-2 test)")
+    p.add_argument("--eval", default="auto",
+                   help="raw text eval file (e.g. wikitext-2 test), or 'auto' (the default) to "
+                        "fetch WikiText-2 once, 1.3 MB, into --workdir")
     p.add_argument("--ngl", type=int, default=99, help="GPU layers for perplexity (0 for CPU)")
     p.add_argument("--workdir", default=None)
     p.add_argument("--llama-dir", default=None, help="dir containing llama-quantize/llama-perplexity")

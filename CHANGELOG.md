@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.33.0 - 2026-08-20
+
+- **`probe --eval` is optional now and defaults to `auto`** - it fetches WikiText-2 once (1.3 MB)
+  instead of requiring a corpus the README never told you where to get. This was the single
+  biggest first-run stall: the pitch is "measure YOUR model" and step one asked for wiki.test.raw.
+  `auto` already owned the downloader; probe now reuses it. A typo'd `--eval` path also fails
+  immediately with the fix, rather than surfacing an hour into a quantize.
+- **Linux/macOS RAM note points at `calibrate`.** DIMM speed comes from CIM on Windows and has no
+  rootless equivalent elsewhere, so RAM bandwidth falls to a tagged 48 GB/s default there. The note
+  now recommends `quantprobe calibrate`, which MEASURES the delivered stream, instead of asking
+  you to pass a --ram-bw number your OS would not tell you.
+
 ## v1.32.0 - 2026-08-20
 
 - **No command silently predicts for the wrong machine.** run / bench / report / dashboard /

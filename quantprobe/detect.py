@@ -379,7 +379,12 @@ def detect():
                      f"datapoint, not a population). Run `quantprobe calibrate` to measure yours")
     else:
         ram_bw = 48
-        notes.append(f"RAM: {total:.0f} GB [os]; speed unknown -> 48 GB/s [default: DDR4-3000 dual, pass --ram-bw]")
+        # DIMM speed comes from CIM on Windows; there is no rootless equivalent on Linux/macOS, so
+        # this is a blind default there. Point at `calibrate`, which MEASURES the delivered stream -
+        # asking a user to pass --ram-bw assumes they know a number their OS would not tell them.
+        notes.append(f"RAM: {total:.0f} GB [os]; speed unknown -> 48 GB/s [default: DDR4-3000 dual]"
+                     f" - run `quantprobe calibrate` to MEASURE your real stream (the delivered "
+                     f"number is well below DIMM peak anyway), or pass --ram-bw")
 
     # GPU(s)
     gs = gpus() or gpus_amd()

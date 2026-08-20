@@ -183,6 +183,24 @@ def run(a):
     quant = os.path.join(llama, exe("llama-quantize"))
     perp = os.path.join(llama, exe("llama-perplexity"))
     wd = a.workdir or os.path.dirname(os.path.abspath(a.gguf))
+    # `--eval auto` (the default): fetch the held-out corpus rather than making the user find one.
+    # `auto` already owned this downloader; probe requiring a hand-sourced wiki.test.raw was the
+    # single biggest first-run stall - the README pitched "measure YOUR model" and then asked for a
+    # file it never told you where to get. Resolved HERE, before any quantize, so a network failure
+    # or a typo'd path costs a second instead of surfacing after an hour of build.
+    #
+    # --dry-run stays PURE: it creates no directory and fetches nothing, so it only reports the
+    # path it would use. The workdir is created further down, under its own `if not a.dry_run`.
+    if str(getattr(a, "eval", "auto")).lower() == "auto":
+        if getattr(a, "dry_run", False):
+            a.eval = os.path.join(wd, "wiki.test.raw")
+        else:
+            from .auto import ensure_eval
+            os.makedirs(wd, exist_ok=True)
+            a.eval = ensure_eval(wd)
+    elif not os.path.isfile(a.eval) and not getattr(a, "dry_run", False):
+        raise SystemExit(f"--eval file not found: {a.eval}\n"
+                         f"  drop the flag (or pass --eval auto) to fetch WikiText-2 once, 1.3 MB.")
     # A --workdir that does not exist made llama-quantize fail at stream-open
     # (ios_base::failbit) on the very first step, and every later step then failed on the
     # missing files while the step counter marched to 10/10. Create it; creating a directory

@@ -3045,7 +3045,13 @@ def t_probe_creates_workdir_and_refuses_to_bless_an_incomplete_curve():
     shutil.rmtree(os.path.join(tf.gettempdir(), "qp_probe_wd_guard"), ignore_errors=True)
     gguf = os.path.join(tf.gettempdir(), "qp_probe_fake.gguf")
     open(gguf, "wb").write(b"\0" * 1024)
-    a = types.SimpleNamespace(gguf=gguf, workdir=wd, bands=4, chunks=2, eval="e.raw",
+    # A REAL eval file: since `--eval auto` landed, probe resolves/validates the corpus up front so
+    # a typo'd path costs a second instead of an hour of quantize. Both contracts this test guards
+    # (workdir created; nonzero exit on an incomplete curve) are unchanged - the fixture just stopped
+    # relying on probe tolerating a path that does not exist.
+    ev = os.path.join(tf.gettempdir(), "qp_probe_fake_eval.raw")
+    open(ev, "w", encoding="utf-8").write("the quick brown fox\n" * 64)
+    a = types.SimpleNamespace(gguf=gguf, workdir=wd, bands=4, chunks=2, eval=ev,
                               ngl=0, llama_dir=None, dry_run=False, apply=False,
                               out=None, imatrix=None)
     try:
