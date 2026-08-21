@@ -65,6 +65,17 @@ quantprobe auto
 
 Detects your machine, asks which model you want, picks the best quant for it, downloads it, and launches. No flags to learn.
 
+Or skip straight to a model we already did the surgery on — the 35B whose depth-aware build loses
+**29.2% less quality at byte-identical size** ([the numbers](#measured-results)):
+
+```bash
+quantprobe fetch qwen3.6-35b ./models
+```
+
+Every model in the [fragility atlas](quantprobe/recipes/) answers to its own name. Ask `auto` about
+one and it tells you where that model breaks and what proved it, whether or not it can build it for
+you.
+
 ## What it does
 
 One pipeline, end to end — most tools ship the first line only:

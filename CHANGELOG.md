@@ -1,5 +1,37 @@
 # Changelog
 
+## v1.35.0 - 2026-08-21
+
+**Every model we measured is now reachable by the name it is published under.**
+
+`fetch`, `auto` and the recipe atlas had each grown their own vocabulary and none of them
+cross-referenced the others. The result was a dead end on this project's own flagship:
+
+```
+$ quantprobe auto qwen3.6-35b
+'qwen3.6-35b' is not a preset (qwen3-30b, qwen3-coder, glm-air, ...)
+```
+
+That is the exact string someone types after reading the [HuggingFace model
+card](https://huggingface.co/FedericoSciuca/Qwen3.6-35B-A3B-depthaware-GGUF) that links here — so
+the tool was answering "never heard of it" about the one build it exists to demonstrate.
+
+- **`auto <recipe-key>`** now cites the measured band, the log that proves it, and the published
+  GGUF, instead of refusing. It still won't drive the full pipeline (a recipe carries no fetchable
+  high-precision source), but it hands over everything it knows.
+- **`fetch <recipe-key>`** resolves to the published build and downloads it — `quantprobe fetch
+  qwen3.6-35b ./models` is now a complete path from `pip install` to a running model. Where only
+  the repo is known (an `auto` preset such as `laguna-s`), it says so and points at `auto`, which
+  is what picks the right quant for your hardware.
+- **`auto --custom` warns before the hours, not after.** If the atlas already holds a band for the
+  target, it prints it, offers the direct `quantize --recipe` command, and explains the one reason
+  to re-measure anyway (your source file may differ from the one that was probed — the band is a
+  property of the weights, not of the name). Re-deriving a band sitting in our own repo was the
+  most expensive thing this command could silently do.
+
+Guarded as a **property over the whole atlas**, not as a fix to the two broken keys: every recipe
+added from here on must resolve, so a contributor cannot re-open the leak by adding a JSON file.
+
 ## v1.34.0 - 2026-08-21
 
 **⚠️ Breaking: `requires-python` is now `>=3.11`** (was `>=3.9`). Python 3.10 reaches EOL in

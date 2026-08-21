@@ -375,7 +375,9 @@ def main():
     f = sub.add_parser("fetch", help="robust HF download (Range-resume, retry)")
     f.add_argument(
         "repo",
-        help="HF repo, or a preset: qwen3-30b, glm-air, deepseek-16b, qwen3-0.6b",
+        help="HF repo, a fetch preset (qwen3-30b, glm-air, deepseek-16b, qwen3-0.6b), an `auto` "
+        "preset, or a recipe key with a published build (e.g. qwen3.6-35b) - listing them by "
+        "hand is how the four vocabularies drifted apart, so `fetch` now resolves all of them",
     )
     f.add_argument("dest")
     f.add_argument("files", nargs="*")

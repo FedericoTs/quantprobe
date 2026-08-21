@@ -16,6 +16,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 
 
 def _dir():
@@ -54,6 +55,17 @@ def find(key=None, arch=None, n_layer=None):
     return None
 
 
+def _repo_from_url(url):
+    """`https://huggingface.co/Owner/Name` -> `Owner/Name`, or None if it isn't an HF model URL.
+
+    A published artifact URL is the only place a recipe records where its build lives, so this
+    is what makes `fetch <recipe-key>` able to download it rather than merely name it."""
+    if not url:
+        return None
+    m = re.match(r"https?://(?:www\.)?huggingface\.co/([^/\s]+/[^/\s?#]+)", url)
+    return m.group(1) if m else None
+
+
 def artifact(r):
     """The prebuilt file for this recipe, if someone already built and published it.
 
@@ -64,21 +76,20 @@ def artifact(r):
     if not a:
         return None
     if isinstance(a, str):
-        import re
-
         m = re.search(r"https?://\S+", a)
-        return (
-            {
-                "url": m.group(0).rstrip(".,)") if m else None,
-                "file": None,
-                "bytes": None,
-                "note": a,
-            }
-            if m
-            else None
-        )
+        if not m:
+            return None
+        url = m.group(0).rstrip(".,)")
+        return {
+            "url": url,
+            "repo": _repo_from_url(url),
+            "file": None,
+            "bytes": None,
+            "note": a,
+        }
     return {
         "url": a.get("url"),
+        "repo": a.get("repo") or _repo_from_url(a.get("url")),
         "file": a.get("file"),
         "bytes": a.get("bytes"),
         "note": a.get("note", ""),

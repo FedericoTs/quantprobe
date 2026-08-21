@@ -222,6 +222,22 @@ def _wizard(a):
 ModelSpec = namedtuple("ModelSpec", "repo total active always_active moe n_layer")
 
 
+def atlas_lines(rec):
+    """The two facts a measured recipe carries: where the fragile band is, and what proved it.
+
+    `auto`'s preset table and the measured recipe atlas grew as separate lists, so the command
+    that spends the hours never asked whether the answer was already recorded. Both callers below
+    print these; keeping the wording in one place stops the two paths from drifting apart."""
+    lo, hi = rec["probe"]["fragile_band"]
+    return [
+        (
+            f"  fragile band: layers {lo}-{hi} ({rec['probe']['shape']}-fragile, "
+            f"{rec['probe']['fragility_ratio']}x the median band)"
+        ),
+        f"  evidence:     {rec['provenance']['raw_log']}",
+    ]
+
+
 def resolve_model(a, target):
     """Resolve the model once: preset if we know it, explicit parameters otherwise."""
     if target in MODEL_REPOS:
@@ -229,6 +245,32 @@ def resolve_model(a, target):
     else:
         repo = target
         if not getattr(a, "total", None):
+            # Before refusing: is this a model we have MEASURED? The fragility atlas and the
+            # `auto` preset table are separate lists, so `auto qwen3.6-35b` used to dead-end on
+            # the one model we published a build of - the exact name someone arrives with after
+            # reading its HuggingFace card. A recipe cannot drive `auto` (it carries no fetchable
+            # high-precision source repo), but answering "not a preset" while holding a measured
+            # band and a finished GGUF is the tool withholding what it knows.
+            from . import recipes as recmod
+
+            rec = recmod.find(key=target)
+            if rec:
+                msg = [
+                    f"'{target}' is not an `auto` preset - but quantprobe HAS MEASURED it.",
+                    "",
+                    *atlas_lines(rec),
+                ]
+                built = recmod.prebuilt_notice(rec)
+                if built:
+                    msg += ["", built.replace("[quantprobe] ", "  ")]
+                msg += [
+                    "",
+                    "  build it yourself from a high-precision source (f16/bf16/Q8_0):",
+                    f"    quantprobe quantize --gguf <source.gguf> --recipe {target}",
+                    "",
+                    "  `auto` needs a fetchable source repo, which this recipe does not carry yet.",
+                ]
+                raise SystemExit("\n".join(msg))
             raise SystemExit(
                 f"'{target}' is not a preset ({', '.join(MODEL_REPOS)}) - for a raw HF "
                 "repo also pass --total (B params) and, for MoE, --active/--always-active"
@@ -423,6 +465,26 @@ def run(a):
             if getattr(a, "no_imatrix", False)
             else "calibrate (importance matrix)"
         )
+        # Say this BEFORE the hours, not after them. A preset can also be a model we already
+        # probed, and re-deriving a band that is sitting in our own repo is the most expensive
+        # thing this command can silently do.
+        from . import recipes as recmod
+
+        known = recmod.find(key=target)
+        if known:
+            print(f"\n[quantprobe auto --custom] the atlas ALREADY has a band for '{target}':")
+            for ln in atlas_lines(known):
+                print(ln)
+            print("  skip the probe below and build straight from it (minutes, not hours):")
+            # The path the fetch below will actually produce, not the bare repo filename - a
+            # command the user cannot paste yet is worse than no command.
+            print(
+                f"    quantprobe quantize --gguf "
+                f"{os.path.join(dest, os.path.basename(spath))} --recipe {target}"
+            )
+            print("  Continuing re-measures it on YOUR file, which is the right call if your")
+            print("  source differs from the one above: the band is a property of the weights,")
+            print("  not of the name. If it is the same source, you are paying twice.\n")
         print(f"  pipeline: fetch source -> probe the fragile band -> {cal} -> build the")
         print("  depth-aware GGUF. Each stage prints its own time estimate before it starts;")
         print("  on a large source this is HOURS, not minutes. Interrupt anytime; fetch resumes.")

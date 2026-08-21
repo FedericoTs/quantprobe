@@ -4909,6 +4909,51 @@ def t_a_spawned_llama_server_is_pinned_to_loopback():
     return None
 
 
+def t_every_measured_model_is_reachable_by_the_name_it_is_published_under():
+    """A recipe key must resolve in the commands a user would type it into.
+
+    `fetch`, `auto` and the recipe atlas each grew their own vocabulary. Nothing cross-referenced
+    them, so `quantprobe auto qwen3.6-35b` answered "not a preset" for the one model this project
+    published a build of and links from its own HuggingFace card - the exact string someone
+    arrives with after reading it. A funnel that dead-ends on your flagship is worse than a
+    missing feature, because the user concludes the tool does not know its own work.
+
+    This is a PROPERTY over the whole atlas, not a check of the two keys that were broken: every
+    recipe added from here on gets the same guarantee, so a contributor cannot re-open the leak
+    by adding a JSON file. Mutation owed and discharged: deleting the recipe branch in
+    auto.resolve_model fails this, as does deleting the alias branch in fetch.run.
+    """
+    import argparse
+
+    from quantprobe import auto as au, fetch as fe, recipes as rec
+
+    keys = [r["model"]["key"] for r in rec.load_all()]
+    assert len(keys) >= 8, f"atlas shrank to {len(keys)} - did load_all() stop finding recipes?"
+    for k in keys:
+        # 1. `auto <key>` must never claim ignorance of a model we measured.
+        a = argparse.Namespace(total=None, active=None, always_active=None, n_layer=None)
+        try:
+            au.resolve_model(a, k)
+            resolved = True  # it is an `auto` preset - fetchable, nothing to prove
+        except SystemExit as e:
+            resolved = False
+            msg = str(e)
+            assert "HAS MEASURED it" in msg, f"auto {k}: dead-ends instead of citing the atlas"
+            assert str(rec.find(key=k)["probe"]["fragile_band"][0]) in msg, (
+                f"auto {k}: cites the atlas but does not print the band it holds"
+            )
+        # 2. If we PUBLISHED a build, `fetch <key>` must resolve to a real repo + file, and
+        #    `auto <key>` must have offered the URL rather than only a build recipe.
+        art = rec.artifact(rec.find(key=k))
+        if art and art.get("file"):
+            repo, fn, why = fe.resolve_alias(k)
+            assert repo and fn, f"fetch {k}: published build is not downloadable by name"
+            assert "/" in repo and fn.endswith(".gguf"), f"fetch {k}: bogus target {repo}/{fn}"
+            if not resolved:
+                assert art["url"] in msg, f"auto {k}: withheld the published build it knows about"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):

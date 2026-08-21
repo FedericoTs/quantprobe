@@ -29,15 +29,16 @@ A product-gap pass over the CLI (not the physics): where a real user hits fricti
 
 ## Deferred (roadmap, with the reason)
 
-- **[MED] Three preset vocabularies drift.** `fetch.py` knows 4 models, `auto.py` knows 13,
-  `plan.py MODELS` a different set, and the measured `recipes/*.json` atlas (6, incl. the flagship
-  qwen3.6-35b) is a **fourth** list none of the others cross-reference. So `quantprobe auto
-  qwen3.6-35b` — the model our own HF build and artifact are about — returns "not a preset," and
-  `fetch laguna-s` fails though `auto laguna-s` works. *Fix (M): one shared preset table, and have
-  `auto`/`target` fall back to the recipe atlas so any recipe we add becomes reachable by name — and
-  surface the prebuilt HF file when one exists.* Deferred because it is a structural refactor across
-  four modules, and a full `auto` preset also needs a fetchable high-precision source repo we do not
-  yet have committed for every recipe model.
+- **[LOW] Preset vocabularies are bridged, not yet merged.** *Mostly closed in v1.35.0.* The four
+  lists (`fetch.PRESETS`, `auto.MODEL_REPOS`, `plan.MODELS`, `recipes/*.json`) still exist
+  separately, but they no longer strand a user: `auto <recipe-key>` cites the measured band and the
+  published build instead of refusing, `fetch <recipe-key>` downloads that build, and `fetch
+  <auto-preset>` redirects to `auto` rather than claiming the name is unknown. A property test over
+  the whole atlas keeps every future recipe reachable. What remains is cosmetic rather than a funnel
+  leak — one table instead of four, and `plan.MODELS` still unbridged — plus the real blocker
+  underneath: a full `auto` preset needs a fetchable high-precision **source** repo, which most
+  recipes do not carry. Adding a `source_repo` field to the recipe schema is the honest next step
+  and would let `auto` drive the whole pipeline from any recipe key.
 
 - **[MED] `probe --eval` forces a manual wikitext download.** `--eval` is required, but `auto.py`
   already implements the wikitext download+unzip (`WIKI_URL`). The README pitches `probe --gguf …

@@ -112,6 +112,27 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
     return False
 
 
+def resolve_alias(name):
+    """Turn a bare model name into (repo, file, why) using every list we have, not just ours.
+
+    `fetch`, `auto` and the recipe atlas each grew their own vocabulary, so a name that works in
+    one command used to fail in another - worst of all for a recipe we PUBLISHED A BUILD OF,
+    where the file is sitting on HuggingFace and we were the only thing standing between the
+    user and it. Returns file=None when we know the repo but not which quant to take."""
+    from . import recipes as recmod
+
+    rec = recmod.find(key=name)
+    if rec:
+        art = recmod.artifact(rec)
+        if art and art.get("repo") and art.get("file"):
+            return art["repo"], art["file"], "published depth-aware build"
+    from .auto import MODEL_REPOS
+
+    if name in MODEL_REPOS:
+        return MODEL_REPOS[name][0], None, "`auto` preset"
+    return None, None, None
+
+
 def run(a):
     import sys as _s
 
@@ -120,6 +141,20 @@ def run(a):
         repo, f = PRESETS[repo]
         files = [f]
         print(f"[quantprobe] preset '{a.repo}' -> {repo}/{f}")
+    elif not files:
+        alias, afile, why = resolve_alias(repo)
+        if alias and afile:
+            print(f"[quantprobe] '{repo}' -> {alias}/{afile} ({why})")
+            repo, files = alias, [afile]
+        elif alias:
+            # We know WHERE it lives but not which quant is right for this box - and picking
+            # that is `auto`'s whole job, so hand off instead of guessing a file.
+            _s.exit(
+                f"'{repo}' is an {why} -> {alias}, but `fetch` needs a filename and the right\n"
+                f"quant depends on your hardware. Either:\n"
+                f"  quantprobe auto {repo}            # picks the file your machine can run\n"
+                f"  quantprobe fetch {alias} {a.dest} <name.gguf>"
+            )
     if not files:
         _s.exit("no files given (or use a preset: " + ", ".join(PRESETS) + ")")
     ok = all(fetch(repo, a.dest, fn, token(), force=getattr(a, "force", False)) for fn in files)
