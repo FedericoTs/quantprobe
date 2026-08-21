@@ -20,6 +20,28 @@ A model whose fragile end breaks the current pattern is a finding, not a failure
 PRs welcome for the `quantprobe` package (plan/calibrate/optimize/auto/target/fetch/quantize/probe/run/bench/dashboard) (keep `python tests/smoke.py` green). For claims/laws,
 open an issue with data first — the bar for prose is measurements.
 
+## How this repo is written
+
+Much of the code, the pre-registrations, and the review comments here are drafted with **Claude
+(Opus)**, working from the method below. The commit trailers say so — `Co-Authored-By: Claude
+Opus 4.8` is on essentially every commit — and this section exists so it is stated plainly in
+one place rather than left to be inferred from `git log`.
+
+A human owns every merge, every published number, and every claim. That is the part that does not
+delegate.
+
+It is worth saying why this is disclosed without embarrassment: **the method is the thing that
+makes a claim here trustworthy, and it does not care who typed it.** A prediction is written and
+committed before the data exists; a scorer is committed before the run; the verdict is whatever
+that code prints, including when it is a miss or a void. Several entries in
+[FINDINGS.md](FINDINGS.md) are corrections of this project's own published numbers, found by that
+process and kept at full size. An argument that survives a staked falsification test is worth the
+same whoever drafted it — and one that does not, is worth nothing however it was produced.
+
+The practical consequence for you: **argue with the reasoning, not the author.** If a review
+comment gets a fact wrong, say so with the number — that has already happened, more than once, and
+the review was the thing that changed.
+
 ## The method: measure, stake, wire, audit
 
 Every number this tool prints is supposed to be traceable to a measurement. Keeping that true
