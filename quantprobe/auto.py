@@ -228,13 +228,15 @@ def atlas_lines(rec):
     `auto`'s preset table and the measured recipe atlas grew as separate lists, so the command
     that spends the hours never asked whether the answer was already recorded. Both callers below
     print these; keeping the wording in one place stops the two paths from drifting apart."""
+    from . import recipes as recmod
+
     lo, hi = rec["probe"]["fragile_band"]
     return [
         (
             f"  fragile band: layers {lo}-{hi} ({rec['probe']['shape']}-fragile, "
             f"{rec['probe']['fragility_ratio']}x the median band)"
         ),
-        f"  evidence:     {rec['provenance']['raw_log']}",
+        f"  evidence:     {recmod.evidence_url(rec)}",
     ]
 
 

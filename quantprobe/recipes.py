@@ -66,6 +66,22 @@ def _repo_from_url(url):
     return m.group(1) if m else None
 
 
+REPO_URL = "https://github.com/FedericoTs/quantprobe/blob/master/"
+
+
+def evidence_url(r):
+    """The raw log that proves this recipe, as something the reader can actually open.
+
+    The module docstring says a recipe you cannot check is a recipe you should not use - but the
+    stored path is repo-relative, so for anyone who arrived through `pip install` the citation
+    named a file they do not have. Every recipe's log is committed on master (checked before this
+    was added); a path that resolves nowhere would be worse than no citation at all."""
+    p = (r.get("provenance") or {}).get("raw_log")
+    if not p or "://" in p:
+        return p
+    return REPO_URL + p.replace("\\", "/").lstrip("./")
+
+
 def artifact(r):
     """The prebuilt file for this recipe, if someone already built and published it.
 
@@ -126,7 +142,7 @@ def describe(r):
         f"fragile band layers {lo}-{hi} ({p['shape']}-fragile, {p['fragility_ratio']}x "
         f"the median band)\n"
         f"    measured {pr['measured']} on {pr['hardware']}, eval {pr['eval']}\n"
-        f"    evidence: {pr['raw_log']}"
+        f"    evidence: {evidence_url(r)}"
     )
     a = artifact(r)
     if a and a["url"]:

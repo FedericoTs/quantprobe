@@ -4927,6 +4927,7 @@ def t_every_measured_model_is_reachable_by_the_name_it_is_published_under():
 
     from quantprobe import auto as au, fetch as fe, recipes as rec
 
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     keys = [r["model"]["key"] for r in rec.load_all()]
     assert len(keys) >= 8, f"atlas shrank to {len(keys)} - did load_all() stop finding recipes?"
     for k in keys:
@@ -4942,6 +4943,13 @@ def t_every_measured_model_is_reachable_by_the_name_it_is_published_under():
             assert str(rec.find(key=k)["probe"]["fragile_band"][0]) in msg, (
                 f"auto {k}: cites the atlas but does not print the band it holds"
             )
+        # 1b. The evidence it cites has to be openable by someone who arrived via `pip install`,
+        #     not a repo-relative path they do not have. And the file must really be committed -
+        #     a citation that 404s is worse than no citation, which is the whole point of it.
+        ev = rec.evidence_url(rec.find(key=k))
+        assert ev and ev.startswith("http"), f"{k}: evidence '{ev}' is not reachable by a user"
+        local = os.path.join(root, ev.split("/blob/master/", 1)[-1])
+        assert os.path.isfile(local), f"{k}: cites {ev}, but {local} is not in the repo"
         # 2. If we PUBLISHED a build, `fetch <key>` must resolve to a real repo + file, and
         #    `auto <key>` must have offered the URL rather than only a build recipe.
         art = rec.artifact(rec.find(key=k))

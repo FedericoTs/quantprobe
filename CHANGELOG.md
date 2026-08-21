@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.35.1 - 2026-08-21
+
+**The evidence a recipe cites is now something you can open.**
+
+`recipes.py` opens with the claim that *a recipe you cannot check is a recipe you should not
+use* — and then cited its proof as `weights/data/prereg103_probe_qwen36.log`, a repo-relative
+path that means nothing to anyone who arrived through `pip install`. Caught by verifying v1.35.0
+from a clean PyPI install rather than from the working tree, where the path resolves and the bug
+is invisible.
+
+Every citation is now a full URL. All eight were confirmed present on `master` before linking and
+HEAD-checked 200, because a citation that 404s is worse than no citation at all. The smoke suite
+now fails if a recipe's evidence is unreachable or its log is missing from the repo.
+
 ## v1.35.0 - 2026-08-21
 
 **Every model we measured is now reachable by the name it is published under.**
