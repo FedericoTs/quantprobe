@@ -1,5 +1,37 @@
 # Changelog
 
+## v1.36.0 - 2026-08-21
+
+**`plan --model <recipe-key>` now answers the question you have *before* you download.**
+
+"Will this model run on my machine, and how fast?" is the first line of this README, and for the
+models in our own atlas it could only be answered *after* you had already pulled 14 GB
+(`plan --gguf`). Every recipe now carries a `params` block, so:
+
+```bash
+quantprobe plan --model qwen3.6-35b --bits 2.9    # 28.2 tok/s, BANDWIDTH-BOUND, no download
+```
+
+**The numbers are measured, not typed.** `recipes.params_from_gguf()` reads them from a real file;
+all eight were backfilled that way, and the smoke suite refuses any recipe whose params lack a
+`measured_from` or whose layer count disagrees with the band that was probed.
+
+**Gated before shipping**, because storing params is only sound if they are a property of the
+architecture rather than the file. Staked in advance and checked: parameter counts moved **0.000%
+across 12 comparisons**, including four quants of Qwen3.5-35B spanning 8.52-bit to 2.63-bit.
+
+**The one apparent violation was the interesting part — now L-33.** Unsloth's Qwen3.6-35B
+`UD-Q2_K_XL` reports **41 blocks and 35.5053B** where every other build of the same model reports
+**40 and 34.6606B**. It is not a quantization effect: that file carries
+`qwen35moe.nextn_predict_layers = 1` — an **MTP head** the other conversions strip (753 tensors vs
+733; the extra 20 are a complete `blk.40.*`). Two uploads, one name, a whole transformer block
+apart. That is why a params block is stored with the file it came from, and why the layer count is
+checked rather than trusted.
+
+The pricing consequence is deliberately *not* fixed here — quantprobe still counts that block,
+overstating active bytes ~2.2% on such files. It is staked as **U-60** with a kill rule, because
+[spec.py:205](quantprobe/spec.py) already said one change at a time and it is right.
+
 ## v1.35.1 - 2026-08-21
 
 **The evidence a recipe cites is now something you can open.**

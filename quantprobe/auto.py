@@ -269,6 +269,14 @@ def resolve_model(a, target):
                     "",
                     "  build it yourself from a high-precision source (f16/bf16/Q8_0):",
                     f"    quantprobe quantize --gguf <source.gguf> --recipe {target}",
+                ]
+                if recmod.params(rec):
+                    msg += [
+                        "",
+                        "  or find out what it does on THIS box before downloading anything:",
+                        f"    quantprobe plan --model {target}",
+                    ]
+                msg += [
                     "",
                     "  `auto` needs a fetchable source repo, which this recipe does not carry yet.",
                 ]

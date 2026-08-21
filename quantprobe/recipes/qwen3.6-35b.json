@@ -55,5 +55,14 @@
       "bytes": 14115658720,
       "note": "The depth-aware build from this recipe. Decode is a RANGE on a box this size, not a point: 11.0-14.4 tok/s at -ngl 12 on a GTX 1060 6GB, cold to warm, because the file (13.15 GiB) is larger than free RAM (~12.2 GB) and cannot stay page-cache resident. Six consecutive runs of one unchanged command climbed 13.04 -> 14.43; a 4.68 GB model that fits holds a 2.1% spread. This entry previously quoted 14.86 +/- 0.36 as a point estimate and that figure was not reproduced in six attempts - corrected 2026-08-18 under prereg #106 (scored 2/4, P-1 and P-3 refuted). See L-29, D-29, C-32. Its model card carries the fragility curve, the equal-bytes comparison, and the one prediction left unscored."
     }
+  },
+  "params": {
+    "total_b": 34.6606,
+    "active_b": 2.9464,
+    "always_active_b": 1.9398,
+    "moe": true,
+    "kv_per_pos": 20480,
+    "n_layer": 40,
+    "measured_from": "Qwen3.6-35B-A3B-Q8_0.gguf"
   }
 }

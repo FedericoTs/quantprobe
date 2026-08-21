@@ -69,6 +69,41 @@ def _repo_from_url(url):
 REPO_URL = "https://github.com/FedericoTs/quantprobe/blob/master/"
 
 
+def params_from_gguf(path):
+    """Measure the `params` block for a recipe from a real file. Never type these by hand.
+
+    Parameter counts are what `plan --model <key>` needs to answer "will this run on my machine"
+    BEFORE the user downloads. They are safe to store because they are a property of the
+    architecture, not of the quantization: measured across 12 comparisons (4 quants of Qwen3.5-35B
+    from 8.52 to 2.63 bit, 2 of Qwen2.5-7B, 2 of DeepSeek-V2-Lite) the spread was 0.000%.
+
+    The one apparent violation was not one, and it is why `measured_from` is recorded alongside:
+    Unsloth's Qwen3.6-35B UD-Q2_K_XL build reports 41 blocks and 35.51B where every other build of
+    "the same" model reports 40 and 34.66B. It carries `nextn_predict_layers = 1` - an MTP head
+    the other conversions strip. Two files under one name, differing by a whole block. Storing
+    which file a number came from is the difference between a measurement and a rumour."""
+    from . import spec as specmod
+
+    s = specmod.from_gguf(path)
+    return {
+        "total_b": round(s["t"], 4),
+        "active_b": round(s["a"], 4),
+        "always_active_b": round(s["ne"], 4),
+        "moe": bool(s["moe"]),
+        "kv_per_pos": int(s["kvp"]),  # context pricing; without it `--ctx` falls back to a guess
+        "n_layer": s["n_layer"],
+        "measured_from": os.path.basename(path),
+    }
+
+
+def params(r):
+    """The stored parameter block, if this recipe carries one. None is a normal answer."""
+    p = (r or {}).get("params")
+    if not p or not all(p.get(k) for k in ("total_b", "active_b", "always_active_b")):
+        return None
+    return p
+
+
 def evidence_url(r):
     """The raw log that proves this recipe, as something the reader can actually open.
 

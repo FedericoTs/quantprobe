@@ -8,11 +8,11 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 32 |
+| Established laws | 33 |
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 34 |
-| Untried levers | 48 |
+| Untried levers | 49 |
 | External work to study | 28 |
 
 ## Established laws
@@ -210,6 +210,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** DeepSeek-Coder-V2-Lite-Base-IQ2_XS (5.56 GiB, 6.6 GiB of headroom). Decode: k=4 1.106x against a 1.224x ceiling (-9.6%), k=2 1.380x against 1.577x (-12.5%), k=1 1.528x against 1.843x (-17.1%). Prefill falls further short: -15.5% / -29.8% / -35.8%. Nothing exceeded its ceiling on either resource.
 
 `CONTRADICTED FROM BOTH SIDES 2026-08-19 - already qualified by C-33 (measured on a capacity-bound row), and prereg #110's -ngl 0 probe then measured the same fitting model OVERSHOOTING the ceiling ~2x. 'The ceiling is a genuine upper bound undershot by 10-36%' is refuted: it is crossed in both directions by placement. Superseded by the U-59 program.` · `the NUMBERS are measured and tight (3 descending passes, every arm inside 3.3%). The INTERPRETATION registered first - 'a fixed cost sets an Amdahl floor under the knob' - outran them, because the fixed cost may simply be the 56% of layers left on CPU by a placement nobody would choose.` · scope: DeepSeek-Coder-V2-Lite-Base-IQ2_XS at -ngl 12 on a GTX 1060 6GB - a placement that leaves 3.5 GiB of VRAM idle and runs at roughly HALF the speed quantprobe's own planner predicts for this model's recommended placement (16.67 measured against 33.0 predicted at 65% experts-in-VRAM). The planner classifies that recommended row CAPACITY-BOUND (VRAM), not bandwidth-bound. The expert ceiling is derived from Law 4, which prices BANDWIDTH. Applying it to a row bound by a different resource is a category error, and the shortfall measured here is evidence about the placement, not about the ceiling. · evidence: prereg #109; weights/data/prereg109_control.json; scorer weights/prereg109_score.py committed before the arms ran · wired into: `quantprobe/spec.py:expert_ceiling_note - the shipped wording already says 'buys at most', which is exactly what a bound of this kind licenses`
+
+### L-33 — Two GGUF uploads sharing a model's name can differ by a whole transformer block: an MTP (next-N prediction) head that some conversions keep and others strip. Parameter counts are otherwise invariant across quantization, so a params block is only meaningful together with the file it was measured on.
+
+**Magnitude:** Qwen3.6-35B-A3B: Unsloth UD-Q2_K_XL reports block_count=41, 35.5053B total / 3.0109B active and carries qwen35moe.nextn_predict_layers=1 (753 tensors); the Q8_0 source, our depth-aware build and the naive Q2_K build all report block_count=40, 34.6606B / 2.9464B (733 tensors). The extra 20 tensors are a complete blk.40.*. Difference: +2.4% total, +2.2% active, +2.0% always-active. Against this, quantization itself moved the counts 0.000% across 12 comparisons (4 quants of Qwen3.5-35B spanning 8.52 to 2.63 bit, 2 of Qwen2.5-7B, 2 of DeepSeek-V2-Lite).
+
+`established` · `measured` · scope: GGUF files for models with an MTP/next-N head (observed on qwen35moe; DeepSeek-V3-class architectures also ship one). Says nothing about whether a given runtime EXECUTES the block - only that it is present in the file and counted by block_count. · evidence: Measured 2026-08-21 while gating whether params were safe to store in a recipe; scratch harness compared 4 model groups. Pre-existing note at quantprobe/spec.py:205 had already flagged the MTP block as counted-by-convention and deferred the change. · wired into: `quantprobe/recipes.py:params_from_gguf (records measured_from) and the two smoke guards that refuse a params block whose n_layer disagrees with the recipe's own`
 
 ## Shipped levers
 
@@ -1179,6 +1185,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Why it is promising:** It is the OTHER hypothesis #108 named, and prereg #110's probe just made it the likelier one by ruling residency out (overshoot with the model fitting). If it holds, Law 4 gains a per-expert term keyed to the compute tier - a real amendment - and quantprobe can predict when the expert dial beats its bandwidth ceiling (CPU-heavy placements) versus falls short (GPU-heavy).
 
 `BLOCKED ON HARDWARE 2026-08-20 - prereg #111 VOID (pure-CPU baseline 23.7% spread at n=5, past the usability gate). Three attempts, three non-answers, each for a reason this box cannot escape: GPU placements that fit are capacity-bound (#109/C-33), a fitting MoE's experts do not fit the 6 GB card (#110), pure-CPU decode is too jittery to resolve the ceiling (#111). Needs a box that fits a MoE's experts in VRAM, or a large MoE in RAM with a fast CPU.` · `the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy.` · scope: needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.
+
+### U-60 — An MTP block should count toward FOOTPRINT but not toward per-token ACTIVE bytes when the runtime does not execute it, so excluding nextn_predict_layers from the active-byte and decode-layer counts should make predictions for such files ~2% less pessimistic and closer to measured.
+
+**Magnitude:** Bounded by L-33: +2.2% active on Qwen3.6-35B UD-Q2_K_XL. Small, but it is a systematic bias in one direction on every MTP-carrying file, not noise.
+
+**Predicted effect (staked):** Staked before any run: (P-1) llama.cpp does NOT execute the MTP head during ordinary single-stream decode, so measured decode on Qwen3.6-35B UD-Q2_K_XL will match the 40-layer active-byte figure better than the 41-layer one. (P-2) The improvement in predicted-vs-measured error will be between 1% and 3% - the size of the byte difference, no more, because nothing else changes. (P-3) Footprint (file bytes resident) will NOT improve, because the block is still loaded: this is a bandwidth correction, not a capacity one. Kill rule: if measured decode lands closer to the 41-layer prediction, the runtime is running the head and the current arithmetic is already right.
+
+`open 2026-08-21 - deliberately deferred; spec.py:205 says one change at a time and the blast radius is narrow (only files with nextn_predict_layers > 0).` · `inferred` · scope: Files with nextn_predict_layers > 0. No effect on any other model. · evidence: Untested. Requires measuring decode on an MTP-carrying build and comparing against the prediction with and without the block, plus establishing whether llama.cpp runs the head at all - which must be READ from the runtime, not assumed.
 
 ## External work to study
 

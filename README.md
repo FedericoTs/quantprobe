@@ -72,9 +72,18 @@ Or skip straight to a model we already did the surgery on — the 35B whose dept
 quantprobe fetch qwen3.6-35b ./models
 ```
 
-Every model in the [fragility atlas](quantprobe/recipes/) answers to its own name. Ask `auto` about
-one and it tells you where that model breaks and what proved it, whether or not it can build it for
-you.
+Every model in the [fragility atlas](quantprobe/recipes/) answers to its own name — including the
+opening question, *before* you spend the download:
+
+```bash
+quantprobe plan --model qwen3.6-35b --bits 2.9
+```
+
+Those parameter counts are read from a real GGUF, never typed in. Worth knowing why that matters:
+two uploads under the same model name can differ by a **whole transformer block** — one Qwen3.6-35B
+build ships an MTP head that others strip, 41 layers against 40 ([L-33](FINDINGS.md)). So a stored
+number travels with the file it was measured on, and quantprobe checks the layer count instead of
+trusting the name.
 
 ## What it does
 

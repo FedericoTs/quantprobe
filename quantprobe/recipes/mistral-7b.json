@@ -46,5 +46,14 @@
     "raw_log": "weights/data/mistral_atlas.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
     "contributor": "FedericoTs"
+  },
+  "params": {
+    "total_b": 7.248,
+    "active_b": 7.1138,
+    "always_active_b": 7.1138,
+    "moe": false,
+    "kv_per_pos": 131072,
+    "n_layer": 32,
+    "measured_from": "Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"
   }
 }

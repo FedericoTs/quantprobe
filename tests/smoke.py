@@ -4925,7 +4925,7 @@ def t_every_measured_model_is_reachable_by_the_name_it_is_published_under():
     """
     import argparse
 
-    from quantprobe import auto as au, fetch as fe, recipes as rec
+    from quantprobe import auto as au, fetch as fe, plan as plmod, recipes as rec
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     keys = [r["model"]["key"] for r in rec.load_all()]
@@ -4959,6 +4959,56 @@ def t_every_measured_model_is_reachable_by_the_name_it_is_published_under():
             assert "/" in repo and fn.endswith(".gguf"), f"fetch {k}: bogus target {repo}/{fn}"
             if not resolved:
                 assert art["url"] in msg, f"auto {k}: withheld the published build it knows about"
+        # 3. `plan --model <key>` must answer "how fast on my box" BEFORE the download, which is
+        #    the only time that answer changes a decision. Needs a measured params block.
+        p = rec.params(rec.find(key=k))
+        assert p, f"{k}: no params block - `plan --model {k}` cannot answer before download"
+        assert p.get("measured_from"), f"{k}: params with no measured_from is a number, not a fact"
+        assert p["n_layer"] == rec.find(key=k)["model"]["n_layer"], (
+            f"{k}: params measured on a {p['n_layer']}-layer file but the recipe probed "
+            f"{rec.find(key=k)['model']['n_layer']} - two architectures under one name"
+        )
+        assert 0 < p["always_active_b"] <= p["active_b"] <= p["total_b"], (
+            f"{k}: params not ordered always<=active<=total: {p}"
+        )
+        pm = plmod.recipe_model(k)
+        assert pm and pm["t"] == p["total_b"] and pm["nl"] == p["n_layer"], f"{k}: plan bridge broke"
+    return None
+
+
+def t_a_stored_param_block_is_pinned_to_the_file_it_was_measured_on():
+    """Two uploads can share a model's name and differ by a whole transformer block.
+
+    Found while checking whether params are safe to store at all. They are - across 12 comparisons
+    the spread was 0.000%, including four quants of Qwen3.5-35B from 8.52-bit down to 2.63-bit.
+    The single apparent violation turned out not to be a quantization effect: Unsloth's
+    Qwen3.6-35B `UD-Q2_K_XL` reports 41 blocks and 35.5053B where every other build of the same
+    model reports 40 and 34.6606B, because it carries `nextn_predict_layers = 1` - an MTP head
+    the other conversions strip (753 tensors vs 733; the extra 20 are a complete `blk.40.*`).
+
+    So a params block is only meaningful together with the file it came from, and layer count is
+    the cheap check that catches a swapped file. Without it a recipe could silently carry the
+    MTP-inflated numbers and `plan --model` would over-price every prediction by ~2.4%.
+
+    Mutation owed and discharged: setting any shipped recipe's params.n_layer to a value its
+    model block disagrees with fails this test.
+    """
+    from quantprobe import recipes as rec
+
+    checked = 0
+    for r in rec.load_all():
+        p = rec.params(r)
+        if not p:
+            continue
+        checked += 1
+        assert p["n_layer"] == r["model"]["n_layer"], (
+            f"{r['model']['key']}: params say {p['n_layer']} layers, recipe probed "
+            f"{r['model']['n_layer']} - the numbers describe a different architecture"
+        )
+        assert p.get("measured_from", "").endswith(".gguf"), (
+            f"{r['model']['key']}: measured_from must name the GGUF, got {p.get('measured_from')!r}"
+        )
+    assert checked >= 8, f"only {checked} recipes carry params - expected the whole atlas"
     return None
 
 

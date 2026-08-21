@@ -48,5 +48,14 @@
     "note": "FLATTEST curve in the atlas, and that is the useful part: ratio 1.87 against 2.13-3.68 for the Qwen family and 26.99 for Mistral-7B. Depth-aware placement therefore buys LESS on this model than on any other measured - the bits matter close to equally everywhere, and a user should expect a smaller win from the recipe here. The curve is also NON-MONOTONE (0.147 / 0.184 / 0.157 / 0.319): the third band dips below the second, unlike every Qwen measured, which ramped cleanly. The last band is still the worst by a clear margin, so 'late' is the right shape label, but the interior ordering is not a smooth gradient. fragility_ratio 1.87 uses the atlas convention - worst delta over the TRUE median of the four bands (0.1704); the probe's own log prints '+0.32 vs median 0.18' (~1.78) from a rounded display, the same divergence disclosed on the qwen3.6-35b, qwen3.8-27b and qwen3.5-4b entries.",
     "contributor": "FedericoTs",
     "why_this_model": "Fifth architecture family in the atlas (deepseek2), added to break a Qwen monoculture: before this, 5 of 7 recipes were Qwen3.x and only 4 arches were represented. Architecture is where the variance lives - Mistral-7B is FRONT-fragile (band 0-7, ratio 27) where every Qwen is back-heavy - so a new family is worth more than another Qwen. A 64-expert / 6-active MoE at only 27 layers is also a very different shape from the 40-48 layer Qwen MoEs already covered."
+  },
+  "params": {
+    "total_b": 15.7065,
+    "active_b": 2.4514,
+    "always_active_b": 1.1019,
+    "moe": true,
+    "kv_per_pos": 31104,
+    "n_layer": 27,
+    "measured_from": "DeepSeek-Coder-V2-Lite-Base-Q4_K_M.gguf"
   }
 }

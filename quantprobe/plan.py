@@ -1822,7 +1822,10 @@ def check_presets(args):
     companion warn_if_no_model() labels the separate generic-13B fallback for the commands that
     actually reach it."""
     mdl = getattr(args, "model", None)
-    if mdl and mdl not in MODELS and not getattr(args, "total", None):
+    # A key in the measured atlas is a known model, not an unknown one - it resolves from its
+    # params block below. Must NOT early-return here: the --machine check further down is the
+    # other half of "no command predicts for a silently wrong machine or model".
+    if mdl and mdl not in MODELS and not getattr(args, "total", None) and not recipe_model(mdl):
         raise SystemExit(
             "unknown --model '{}' (and no --total to describe it).\n"
             "  presets: {}\n"
@@ -1840,6 +1843,33 @@ def check_presets(args):
                 mac, ", ".join(sorted(MACHINES))
             )
         )
+
+
+def recipe_model(mdl):
+    """A MODELS-shaped dict for a key in the measured atlas, or None.
+
+    "Will this run on my machine, and how fast?" is the first question this tool exists to
+    answer, and for a model in our OWN atlas it could only be answered after the user had
+    already downloaded the file (`plan --gguf`) - which is exactly backwards from when they
+    need it. The params come from `recipes.params_from_gguf`, measured, never hand-entered.
+    Returns None for keys with no params block, so the normal unknown-model error still fires."""
+    if not mdl:
+        return None
+    from . import recipes as recmod
+
+    r = recmod.find(key=mdl)
+    p = recmod.params(r) if r else None
+    if not p:
+        return None
+    return {
+        "t": p["total_b"],
+        "a": p["active_b"],
+        "ne": p["always_active_b"],
+        "moe": p.get("moe", p["active_b"] < p["total_b"] * 0.9),
+        "kvp": p.get("kv_per_pos") or DEFAULT_KVP,
+        "nl": p.get("n_layer") or r["model"]["n_layer"],
+        "hint": r["model"]["name"],
+    }
 
 
 def warn_if_no_model(args):
@@ -2457,7 +2487,7 @@ def build_rows(args):
     warn_if_no_model(args)
     if getattr(args, "bits", None) is None:
         args.bits = 2.5
-    m = dict(MODELS[args.model]) if args.model in MODELS else {}
+    m = dict(MODELS[args.model]) if args.model in MODELS else (recipe_model(args.model) or {})
     t = args.total or m.get("t") or 13.0
     a = args.active or m.get("a") or t
     ne = args.always_active or m.get("ne") or (a if a >= t * 0.9 else a * 0.35)

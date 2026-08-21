@@ -384,6 +384,17 @@
       "scope": "DeepSeek-Coder-V2-Lite-Base-IQ2_XS at -ngl 12 on a GTX 1060 6GB - a placement that leaves 3.5 GiB of VRAM idle and runs at roughly HALF the speed quantprobe's own planner predicts for this model's recommended placement (16.67 measured against 33.0 predicted at 65% experts-in-VRAM). The planner classifies that recommended row CAPACITY-BOUND (VRAM), not bandwidth-bound. The expert ceiling is derived from Law 4, which prices BANDWIDTH. Applying it to a row bound by a different resource is a category error, and the shortfall measured here is evidence about the placement, not about the ceiling.",
       "wired_into": "quantprobe/spec.py:expert_ceiling_note - the shipped wording already says 'buys at most', which is exactly what a bound of this kind licenses",
       "confidence": "the NUMBERS are measured and tight (3 descending passes, every arm inside 3.3%). The INTERPRETATION registered first - 'a fixed cost sets an Amdahl floor under the knob' - outran them, because the fixed cost may simply be the 56% of layers left on CPU by a placement nobody would choose."
+    },
+    {
+      "id": "L-33",
+      "kind": "law",
+      "status": "established",
+      "claim": "Two GGUF uploads sharing a model's name can differ by a whole transformer block: an MTP (next-N prediction) head that some conversions keep and others strip. Parameter counts are otherwise invariant across quantization, so a params block is only meaningful together with the file it was measured on.",
+      "magnitude": "Qwen3.6-35B-A3B: Unsloth UD-Q2_K_XL reports block_count=41, 35.5053B total / 3.0109B active and carries qwen35moe.nextn_predict_layers=1 (753 tensors); the Q8_0 source, our depth-aware build and the naive Q2_K build all report block_count=40, 34.6606B / 2.9464B (733 tensors). The extra 20 tensors are a complete blk.40.*. Difference: +2.4% total, +2.2% active, +2.0% always-active. Against this, quantization itself moved the counts 0.000% across 12 comparisons (4 quants of Qwen3.5-35B spanning 8.52 to 2.63 bit, 2 of Qwen2.5-7B, 2 of DeepSeek-V2-Lite).",
+      "evidence": "Measured 2026-08-21 while gating whether params were safe to store in a recipe; scratch harness compared 4 model groups. Pre-existing note at quantprobe/spec.py:205 had already flagged the MTP block as counted-by-convention and deferred the change.",
+      "scope": "GGUF files for models with an MTP/next-N head (observed on qwen35moe; DeepSeek-V3-class architectures also ship one). Says nothing about whether a given runtime EXECUTES the block - only that it is present in the file and counted by block_count.",
+      "wired_into": "quantprobe/recipes.py:params_from_gguf (records measured_from) and the two smoke guards that refuse a params block whose n_layer disagrees with the recipe's own",
+      "confidence": "measured"
     }
   ],
   "levers": [
@@ -1933,6 +1944,18 @@
       "magnitude": "reconciles #109's undershoot with #110's overshoot on the SAME fitting model as a placement effect; would replace the qualified/contradicted L-32",
       "scope": "needs one clean placement sweep with tight baselines (the #110 probe's k=6 spread was 47%, past the usability gate) before anything is claimed. Regime checked via the planner BEFORE the run.",
       "confidence": "the DIRECTION is suggested by two datapoints on one model (undershoot at -ngl 12, overshoot at -ngl 0); the magnitude at -ngl 0 is not yet trustworthy."
+    },
+    {
+      "id": "U-60",
+      "kind": "untried",
+      "status": "open 2026-08-21 - deliberately deferred; spec.py:205 says one change at a time and the blast radius is narrow (only files with nextn_predict_layers > 0).",
+      "claim": "An MTP block should count toward FOOTPRINT but not toward per-token ACTIVE bytes when the runtime does not execute it, so excluding nextn_predict_layers from the active-byte and decode-layer counts should make predictions for such files ~2% less pessimistic and closer to measured.",
+      "magnitude": "Bounded by L-33: +2.2% active on Qwen3.6-35B UD-Q2_K_XL. Small, but it is a systematic bias in one direction on every MTP-carrying file, not noise.",
+      "evidence": "Untested. Requires measuring decode on an MTP-carrying build and comparing against the prediction with and without the block, plus establishing whether llama.cpp runs the head at all - which must be READ from the runtime, not assumed.",
+      "scope": "Files with nextn_predict_layers > 0. No effect on any other model.",
+      "wired_into": null,
+      "confidence": "inferred",
+      "predicted_effect": "Staked before any run: (P-1) llama.cpp does NOT execute the MTP head during ordinary single-stream decode, so measured decode on Qwen3.6-35B UD-Q2_K_XL will match the 40-layer active-byte figure better than the 41-layer one. (P-2) The improvement in predicted-vs-measured error will be between 1% and 3% - the size of the byte difference, no more, because nothing else changes. (P-3) Footprint (file bytes resident) will NOT improve, because the block is still loaded: this is a bandwidth correction, not a capacity one. Kill rule: if measured decode lands closer to the 41-layer prediction, the runtime is running the head and the current arithmetic is already right."
     }
   ],
   "external": [

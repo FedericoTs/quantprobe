@@ -46,5 +46,14 @@
     "raw_log": "weights/data/qwen_mech_probe.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
     "contributor": "FedericoTs"
+  },
+  "params": {
+    "total_b": 7.6156,
+    "active_b": 7.0706,
+    "always_active_b": 7.0706,
+    "moe": false,
+    "kv_per_pos": 57344,
+    "n_layer": 28,
+    "measured_from": "Qwen2.5-7B-Instruct-Q4_K_M.gguf"
   }
 }

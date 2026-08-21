@@ -46,5 +46,14 @@
     "raw_log": "weights/data/q30_bands.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
     "contributor": "FedericoTs"
+  },
+  "params": {
+    "total_b": 30.5321,
+    "active_b": 3.0419,
+    "always_active_b": 1.2299,
+    "moe": true,
+    "kv_per_pos": 98304,
+    "n_layer": 48,
+    "measured_from": "Qwen3-30B-A3B-Q2_K.gguf"
   }
 }

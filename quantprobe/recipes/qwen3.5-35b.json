@@ -46,5 +46,14 @@
     "raw_log": "weights/data/apex_ab_stageA2.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
     "contributor": "FedericoTs"
+  },
+  "params": {
+    "total_b": 34.6606,
+    "active_b": 2.9464,
+    "always_active_b": 1.9398,
+    "moe": true,
+    "kv_per_pos": 20480,
+    "n_layer": 40,
+    "measured_from": "Qwen3.5-35B-A3B-Q8_0.gguf"
   }
 }

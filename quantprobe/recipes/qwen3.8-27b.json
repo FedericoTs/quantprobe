@@ -48,5 +48,14 @@
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
     "contributor": "FedericoTs",
     "note": "Probed launch-day+1 (weights landed 2026-08-14; prereg #101). Source was Q4_K_M, not BF16: a BF16 probe is infeasible on this box (prereg #101 amendment 2026-08-15), so band deltas are relative to a Q6_K reference requantized from Q4_K_M. The source's own quantization is common-mode and cancels in the deltas; band LOCATION is trustworthy, absolute BF16 loss is not measured here. fragility_ratio follows the atlas convention (max delta / statistics.median of the 4 deltas = 0.5926/0.25235 = 2.35), matching every sibling recipe; the probe binary's own banner printed 2.04 because it divides by its upper-median (0.29) - same data, different median convention, disclosed so the two published numbers do not read as a discrepancy."
+  },
+  "params": {
+    "total_b": 27.3207,
+    "active_b": 26.0493,
+    "always_active_b": 26.0493,
+    "moe": false,
+    "kv_per_pos": 69632,
+    "n_layer": 65,
+    "measured_from": "Qwen3.8-27B-Q4_K_M.gguf"
   }
 }

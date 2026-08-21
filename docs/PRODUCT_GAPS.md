@@ -38,15 +38,15 @@ A product-gap pass over the CLI (not the physics): where a real user hits fricti
   leak — one table instead of four — plus two schema gaps that block the rest, both found by
   trying to write a true sentence about the tool and discovering it wasn't:
 
-  - **`plan --model <recipe-key>` cannot work, and that is the one users most want.** A recipe
-    carries `arch/n_layer/moe` but no parameter counts, so nothing can build a plan spec from it.
-    "Will this run on my machine, and how fast?" is the README's opening question and the reason
-    someone on a model card hesitates before 14 GB — and for a model in our own atlas we can only
-    answer it *after* they download (`plan --gguf`). *Fix (S): optional `params: {total_b,
-    active_b, always_active_b}` on the recipe schema, measured from the GGUF at recipe-harvest
-    time — never hand-entered, or the atlas starts carrying numbers with no evidence behind them.*
+  - ~~**`plan --model <recipe-key>` cannot work.**~~ **Done in v1.36.0.** All eight recipes now
+    carry a `params` block measured from a real GGUF (never hand-entered), so `plan --model
+    qwen3.6-35b` answers "how fast on my box" *before* the 14 GB download. Gated first: parameter
+    counts moved **0.000% across 12 quant comparisons** (8.52-bit to 2.63-bit), so they are safe
+    to store — see **L-33** for the one case that looked like a violation and wasn't.
   - **`auto` still cannot build from a key** for want of a fetchable high-precision `source_repo`
-    field. *Fix (S) once the above lands, since both are recorded at harvest time.*
+    field. *Fix (S): record it at harvest time alongside `params`. Note L-33 first — a repo id is
+    not enough on its own, since two uploads under one name can differ by a whole block; the
+    stored file name and layer count are what make it checkable.*
 
 - **[MED] `probe --eval` forces a manual wikitext download.** `--eval` is required, but `auto.py`
   already implements the wikitext download+unzip (`WIKI_URL`). The README pitches `probe --gguf …
