@@ -22,6 +22,7 @@ corrections started as someone else's contradicting measurement.
 | DGX Spark (third-party reports) | out-of-sample retrodiction | 32B dense **1.27× low**, 30B MoE **1.09× low** — inside the documented floor band; the Gemma-26B "violation" dissolved once its 480 KB/pos KV was priced at the reporter's context |
 | airllm hosts (third-party reports) | retrodiction | the unexplained **30× spread** (0.07–2 tok/s) resolves as a RAM/disk tier boundary |
 | 1.56 TB Kimi K3 rig (third-party) | retrodiction | laptop preset lands within **0.3%** under the corrected trunk-dominated byte model; the relayed "10 tok/s" was a 200–320× unit inversion |
+| **AMD RX 5700 XT 8GB** (RDNA1/gfx1010, Vulkan, Win11) | community, `--contribute` ([issue #1](https://github.com/FedericoTs/quantprobe/issues/1)) | **the most accurate prediction in this table: 73.1 predicted vs 73.18 ± 0.16 measured (+0.1%)** on Qwen2.5-7B Q4_0, all in VRAM — and the first non-NVIDIA point. Carried two independent confirmations for free: **Q4_0 +18.4% over Q5_K_M** (61.8 → 73.18), extending the format lever (L-15/V-17) from Pascal to RDNA1, and ngram-simple measuring **no gain on novel generation** exactly as D-10 predicts. Also exposed the bug in its own title — the payload reported `total=None active=None` — now fixed and pinned by two tests |
 
 ## What your datapoint settles
 
