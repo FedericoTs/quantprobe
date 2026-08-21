@@ -26,6 +26,30 @@ def find_llama(explicit, tool):
     raise SystemExit(f"{tool} not found: pass --llama-dir, set QUANTPROBE_LLAMA_DIR, or add to PATH")
 
 
+LOOPBACK = "127.0.0.1"
+
+
+def bind_loopback(cmd):
+    """Pin a spawned llama-server to loopback unless the user explicitly chose a host.
+
+    llama.cpp's server starts with **CORS '*' and no API key** - that is its own startup warning,
+    not our characterisation - so whatever it binds to is an unauthenticated LLM endpoint that any
+    origin may script. We passed --port and inherited the host, which is a DEPENDENCY DEFAULT we do
+    not control and which has moved across llama.cpp versions. Inheriting it means a future release
+    could silently put a user's model on every interface of their LAN, from a tool they ran to
+    measure tok/s.
+
+    So quantprobe states the bind instead of assuming it. The dashboard already binds ITS own proxy
+    to 127.0.0.1 explicitly and addresses the upstream as http://127.0.0.1 - the intent was always
+    loopback; only the enforcement was missing.
+
+    Serving on the network is a legitimate thing to want, so an explicit `--host` (via `--extra`)
+    still wins - this sets a safe default, it does not remove the choice."""
+    if "--host" in cmd:
+        return cmd
+    return cmd + ["--host", LOOPBACK]
+
+
 def best_flags(a):
     """Run the planner, return (best_config, flags_list) for the winning placement."""
     from . import spec as specmod
@@ -127,6 +151,10 @@ def run(a):
         cmd += ["-cnv"]
     if a.extra:
         cmd += a.extra.split()
+    if a.serve:
+        # After --extra, so a user's explicit `--extra "--host 0.0.0.0"` is honoured rather than
+        # duplicated. Loopback is the DEFAULT here, not a restriction.
+        cmd = bind_loopback(cmd)
     print(f"[quantprobe] placement: {best[0]}  (predicted {best[1]:.1f} tok/s"
           + (f", {best[2]}" if best[2] else "") + ")")
     print("[quantprobe] exec:", " ".join(cmd), "\n")

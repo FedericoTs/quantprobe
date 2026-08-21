@@ -328,7 +328,10 @@ def dashboard(a):
     best, flags = runtime.best_flags(a)
     binp = runtime.find_llama(a.llama_dir, "llama-server")
     sport = a.server_port
-    cmd = [binp, "-m", a.gguf, "--port", str(sport)] + flags
+    # Loopback-pinned: the proxy below already binds 127.0.0.1 and talks to the upstream over
+    # 127.0.0.1, so inheriting llama.cpp's default host was the one place the intent was not
+    # enforced. See runtime.bind_loopback - llama-server ships CORS '*' and no API key.
+    cmd = runtime.bind_loopback([binp, "-m", a.gguf, "--port", str(sport)] + flags)
     print(f"[quantprobe] placement: {best[0]}  (predicted {best[1]:.1f} tok/s)")
     print("[quantprobe] llama-server:", " ".join(cmd))
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

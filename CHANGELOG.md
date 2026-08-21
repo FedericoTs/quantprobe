@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.33.1 - 2026-08-21
+
+- **Security: a spawned `llama-server` is pinned to loopback.** `run --serve` and `dashboard`
+  passed `--port` and then *inherited* llama.cpp's default host — a dependency default we do not
+  control and which has moved across versions. llama.cpp's server starts with **CORS `*` and no
+  API key** (its own startup warning), so whatever it binds to is an unauthenticated LLM endpoint
+  any origin can script. Had that default ever become `0.0.0.0`, a tool someone ran to measure
+  tok/s would silently have served their model to every machine on their LAN. Both call sites now
+  pass `--host 127.0.0.1` explicitly. The intent was always loopback — `dashboard` already bound
+  its own proxy to 127.0.0.1 — only the enforcement was missing. Serving to a network is still
+  available deliberately: an explicit `--extra "--host 0.0.0.0"` wins.
+
 ## v1.33.0 - 2026-08-20
 
 - **`probe --eval` is optional now and defaults to `auto`** - it fetches WikiText-2 once (1.3 MB)

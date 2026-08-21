@@ -4864,6 +4864,47 @@ def t_no_command_predicts_for_a_silently_wrong_machine_or_model():
     return None
 
 
+def t_a_spawned_llama_server_is_pinned_to_loopback():
+    """quantprobe must never put an unauthenticated LLM endpoint on the user's network.
+
+    llama.cpp's server starts with CORS '*' and no API key - its own startup warning says so - and
+    quantprobe spawns it from two places (`run --serve`, `dashboard`). Both passed --port and
+    INHERITED the host: a dependency default we do not control and which has moved across llama.cpp
+    versions. If a future release defaults to 0.0.0.0, a tool someone ran to measure tok/s would
+    silently serve their model to every machine on the LAN.
+
+    The intent was always loopback - the dashboard binds its own proxy to 127.0.0.1 and addresses
+    the upstream as http://127.0.0.1 - only the enforcement was missing. Serving on the network is
+    still allowed, explicitly, via --extra.
+
+    Mutations owed and discharged: deleting either bind_loopback call, or letting it override a
+    user's explicit --host, fails this test.
+    """
+    from quantprobe import runtime as rt
+
+    # 1. The default: a plain server command gains an explicit loopback bind.
+    got = rt.bind_loopback(["llama-server", "-m", "m.gguf", "--port", "8080"])
+    assert "--host" in got, "a spawned llama-server inherited llama.cpp's default host"
+    assert got[got.index("--host") + 1] == "127.0.0.1", f"bound somewhere other than loopback: {got}"
+
+    # 2. An explicit user choice WINS - this is a safe default, not a cage. Someone deliberately
+    #    serving to their LAN must still be able to.
+    chosen = ["llama-server", "-m", "m.gguf", "--host", "0.0.0.0"]
+    assert rt.bind_loopback(chosen) == chosen, \
+        "an explicit --host was overridden; the default must yield to a deliberate choice"
+
+    # 3. Both spawn sites actually call it. Source-level, because running either needs a real
+    #    llama.cpp and a model - and the point is that neither site may quietly stop calling it.
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    rts = open(os.path.join(root, "quantprobe", "runtime.py"), encoding="utf-8").read()
+    assert "cmd = bind_loopback(cmd)" in rts, "run --serve stopped pinning the bind"
+    assert rts.index("if a.extra:") < rts.index("cmd = bind_loopback(cmd)"), \
+        "bind_loopback must run AFTER --extra, or a user's explicit --host cannot win"
+    dsh = open(os.path.join(root, "quantprobe", "dashboard.py"), encoding="utf-8").read()
+    assert "runtime.bind_loopback(" in dsh, "dashboard stopped pinning the bind"
+    return None
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
