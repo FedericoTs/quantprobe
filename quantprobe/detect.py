@@ -7,52 +7,103 @@ Every printed value is tagged with its source:
 Bandwidths are THEORETICAL peaks (the law's eta absorbs realism, same convention as the presets).
 Nothing is sent anywhere; this only reads local OS interfaces.
 """
+
 from __future__ import annotations
-import os, platform, re, shutil, subprocess
+
+import os
+import platform
+import re
+import subprocess
 
 
 def _run(cmd, timeout=10):
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout).stdout
+        return subprocess.run(
+            cmd, capture_output=True, text=True, check=False, timeout=timeout
+        ).stdout
     except Exception:
         return ""
 
 
 # name-fragment -> (VRAM bandwidth GB/s, geta, gl). 1060 measured on the reference box; rest spec-sheet [table].
 GPU_TABLE = [
-    ("5090", 1792, 0.62, 0.42), ("5080", 960, 0.62, 0.42), ("5070 ti", 896, 0.62, 0.42),
-    ("5070", 672, 0.6, 0.4), ("5060 ti", 448, 0.58, 0.38), ("5060", 448, 0.58, 0.38),
-    ("4090", 1008, 0.62, 0.42), ("4080", 717, 0.6, 0.4),
-    ("4070", 504, 0.55, 0.35), ("4060", 272, 0.5, 0.3),
-    ("3090", 936, 0.6, 0.4), ("3080", 760, 0.58, 0.38), ("3070", 448, 0.52, 0.32),
-    ("3060 ti", 448, 0.5, 0.3), ("3060", 360, 0.5, 0.3), ("3050", 224, 0.45, 0.28),
-    ("2080", 448, 0.45, 0.25), ("2070", 448, 0.45, 0.25), ("2060", 336, 0.42, 0.22),
-    ("1080", 320, 0.38, 0.06), ("1070", 256, 0.36, 0.05), ("1060", 192, 0.35, 0.04),
-    ("a100", 1935, 0.7, 0.55), ("h100", 3350, 0.75, 0.6), ("rtx 6000", 960, 0.62, 0.42),
+    ("5090", 1792, 0.62, 0.42),
+    ("5080", 960, 0.62, 0.42),
+    ("5070 ti", 896, 0.62, 0.42),
+    ("5070", 672, 0.6, 0.4),
+    ("5060 ti", 448, 0.58, 0.38),
+    ("5060", 448, 0.58, 0.38),
+    ("4090", 1008, 0.62, 0.42),
+    ("4080", 717, 0.6, 0.4),
+    ("4070", 504, 0.55, 0.35),
+    ("4060", 272, 0.5, 0.3),
+    ("3090", 936, 0.6, 0.4),
+    ("3080", 760, 0.58, 0.38),
+    ("3070", 448, 0.52, 0.32),
+    ("3060 ti", 448, 0.5, 0.3),
+    ("3060", 360, 0.5, 0.3),
+    ("3050", 224, 0.45, 0.28),
+    ("2080", 448, 0.45, 0.25),
+    ("2070", 448, 0.45, 0.25),
+    ("2060", 336, 0.42, 0.22),
+    ("1080", 320, 0.38, 0.06),
+    ("1070", 256, 0.36, 0.05),
+    ("1060", 192, 0.35, 0.04),
+    ("a100", 1935, 0.7, 0.55),
+    ("h100", 3350, 0.75, 0.6),
+    ("rtx 6000", 960, 0.62, 0.42),
     # AMD / Intel, added for issue #1 (an RX 5700 XT owner got "GPU: none detected" and had to
     # hand-pass the exact 448 this table now carries). Spec-sheet peaks, same [table] convention
     # as above; the geta/gl hints are the generic-unknown values because NO eta has been
     # measured on RDNA/Arc backends here - resolve_gpu_eta's size-classed floor and the user's
     # own `calibrate` anchors do the honest work, exactly as they did for E-13's +0.1%.
-    ("rx 9070 xt", 640, 0.45, 0.27), ("rx 9070", 640, 0.45, 0.27),
-    ("rx 7900 xtx", 960, 0.45, 0.27), ("rx 7900 xt", 800, 0.45, 0.27),
-    ("rx 7900 gre", 576, 0.45, 0.27), ("rx 7800 xt", 624, 0.45, 0.27),
-    ("rx 7700 xt", 432, 0.45, 0.27), ("rx 7600 xt", 288, 0.45, 0.27),
-    ("rx 7600", 288, 0.45, 0.27), ("rx 6950 xt", 576, 0.45, 0.27),
-    ("rx 6900 xt", 512, 0.45, 0.27), ("rx 6800 xt", 512, 0.45, 0.27),
-    ("rx 6800", 512, 0.45, 0.27), ("rx 6750 xt", 432, 0.45, 0.27),
-    ("rx 6700 xt", 384, 0.45, 0.27), ("rx 6700", 320, 0.45, 0.27),
-    ("rx 6650 xt", 280, 0.45, 0.27), ("rx 6600 xt", 256, 0.45, 0.27),
-    ("rx 6600", 224, 0.45, 0.27), ("rx 5700 xt", 448, 0.45, 0.27),
-    ("rx 5700", 448, 0.45, 0.27), ("rx 5600 xt", 288, 0.45, 0.27),
-    ("radeon vii", 1024, 0.45, 0.27), ("vega 64", 484, 0.45, 0.27), ("vega 56", 410, 0.45, 0.27),
-    ("arc a770", 560, 0.45, 0.27), ("arc a750", 512, 0.45, 0.27),
-    ("arc b580", 456, 0.45, 0.27), ("arc b570", 380, 0.45, 0.27),
+    ("rx 9070 xt", 640, 0.45, 0.27),
+    ("rx 9070", 640, 0.45, 0.27),
+    ("rx 7900 xtx", 960, 0.45, 0.27),
+    ("rx 7900 xt", 800, 0.45, 0.27),
+    ("rx 7900 gre", 576, 0.45, 0.27),
+    ("rx 7800 xt", 624, 0.45, 0.27),
+    ("rx 7700 xt", 432, 0.45, 0.27),
+    ("rx 7600 xt", 288, 0.45, 0.27),
+    ("rx 7600", 288, 0.45, 0.27),
+    ("rx 6950 xt", 576, 0.45, 0.27),
+    ("rx 6900 xt", 512, 0.45, 0.27),
+    ("rx 6800 xt", 512, 0.45, 0.27),
+    ("rx 6800", 512, 0.45, 0.27),
+    ("rx 6750 xt", 432, 0.45, 0.27),
+    ("rx 6700 xt", 384, 0.45, 0.27),
+    ("rx 6700", 320, 0.45, 0.27),
+    ("rx 6650 xt", 280, 0.45, 0.27),
+    ("rx 6600 xt", 256, 0.45, 0.27),
+    ("rx 6600", 224, 0.45, 0.27),
+    ("rx 5700 xt", 448, 0.45, 0.27),
+    ("rx 5700", 448, 0.45, 0.27),
+    ("rx 5600 xt", 288, 0.45, 0.27),
+    ("radeon vii", 1024, 0.45, 0.27),
+    ("vega 64", 484, 0.45, 0.27),
+    ("vega 56", 410, 0.45, 0.27),
+    ("arc a770", 560, 0.45, 0.27),
+    ("arc a750", 512, 0.45, 0.27),
+    ("arc b580", 456, 0.45, 0.27),
+    ("arc b570", 380, 0.45, 0.27),
 ]
-MAC_BW = {"m1 ultra": 800, "m1 max": 400, "m1 pro": 200, "m1": 68,
-          "m2 ultra": 800, "m2 max": 400, "m2 pro": 200, "m2": 100,
-          "m3 ultra": 819, "m3 max": 400, "m3 pro": 150, "m3": 100,
-          "m4 max": 546, "m4 pro": 273, "m4": 120}
+MAC_BW = {
+    "m1 ultra": 800,
+    "m1 max": 400,
+    "m1 pro": 200,
+    "m1": 68,
+    "m2 ultra": 800,
+    "m2 max": 400,
+    "m2 pro": 200,
+    "m2": 100,
+    "m3 ultra": 819,
+    "m3 max": 400,
+    "m3 pro": 150,
+    "m3": 100,
+    "m4 max": 546,
+    "m4 pro": 273,
+    "m4": 120,
+}
 
 
 def _parse_rocm_text(text):
@@ -75,8 +126,17 @@ def _parse_rocm_text(text):
             # Bare "GPU[n] :" — terminates any active section
             in_sclk_section = False
             continue
-        cur = cards.setdefault(gpu_id, dict(name=None, vram_gb=None, sclk=None,
-                                            mclk=None, temp=None, sclk_max=None))
+        cur = cards.setdefault(
+            gpu_id,
+            {
+                "name": None,
+                "vram_gb": None,
+                "sclk": None,
+                "mclk": None,
+                "temp": None,
+                "sclk_max": None,
+            },
+        )
         rest_lower = rest.lower()
         # Name: "Card series" contains the full product name (e.g. "AMD Radeon RX 9070 XT").
         if "card series" in rest_lower:
@@ -193,8 +253,20 @@ def gpu_lookup(name):
 def _parse_win_adapters(text):
     """'DriverDesc|bytes' lines -> [(name, vram_gb)], virtual adapters filtered, dedup by max.
     Pure parser so the smoke suite can test it without the registry."""
-    VIRTUAL = ("basic display", "basic render", "remote", "virtual", "vnc", "dameware",
-               "parsec", "spacedesk", "idd", "usb", "mirage", "citrix")
+    VIRTUAL = (
+        "basic display",
+        "basic render",
+        "remote",
+        "virtual",
+        "vnc",
+        "dameware",
+        "parsec",
+        "spacedesk",
+        "idd",
+        "usb",
+        "mirage",
+        "citrix",
+    )
     out = {}
     for line in (text or "").strip().splitlines():
         if "|" not in line:
@@ -218,23 +290,33 @@ def gpus_other():
     tool printed 'GPU: none detected'; this function is the fix."""
     if os.name != "nt":
         return []
-    ps = ("$k='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\"
-          "{4d36e968-e325-11ce-bfc1-08002be10318}\\0*';"
-          "$r=Get-ItemProperty $k -ErrorAction SilentlyContinue | "
-          "Where-Object { $_.DriverDesc } | "
-          "ForEach-Object { $_.DriverDesc + '|' + $_.'HardwareInformation.qwMemorySize' };"
-          "if (-not $r) { $r = Get-CimInstance Win32_VideoController | "
-          "ForEach-Object { $_.Name + '|' + $_.AdapterRAM } };"
-          "$r")
+    ps = (
+        "$k='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\"
+        "{4d36e968-e325-11ce-bfc1-08002be10318}\\0*';"
+        "$r=Get-ItemProperty $k -ErrorAction SilentlyContinue | "
+        "Where-Object { $_.DriverDesc } | "
+        "ForEach-Object { $_.DriverDesc + '|' + $_.'HardwareInformation.qwMemorySize' };"
+        "if (-not $r) { $r = Get-CimInstance Win32_VideoController | "
+        "ForEach-Object { $_.Name + '|' + $_.AdapterRAM } };"
+        "$r"
+    )
     return _parse_win_adapters(_run(["powershell", "-NoProfile", "-c", ps]))
 
 
 def ram_windows():
     """(total_gb[os], mts[os], channels[os]) via CIM (wmic fallback)."""
-    ps = _run(["powershell", "-NoProfile", "-c",
-               "$m=Get-CimInstance Win32_PhysicalMemory; "
-               "($m|Measure-Object Capacity -Sum).Sum; "
-               "($m|Select-Object -First 1).ConfiguredClockSpeed; ($m|Measure-Object).Count"])
+    ps = _run(
+        [
+            "powershell",
+            "-NoProfile",
+            "-c",
+            (
+                "$m=Get-CimInstance Win32_PhysicalMemory; "
+                "($m|Measure-Object Capacity -Sum).Sum; "
+                "($m|Select-Object -First 1).ConfiguredClockSpeed; ($m|Measure-Object).Count"
+            ),
+        ]
+    )
     vals = [v.strip() for v in ps.strip().splitlines() if v.strip()]
     if len(vals) >= 3:
         try:
@@ -258,14 +340,17 @@ def ram_free_gb():
             import ctypes
 
             class _MS(ctypes.Structure):
-                _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
-                            ("ullTotalPhys", ctypes.c_ulonglong),
-                            ("ullAvailPhys", ctypes.c_ulonglong),
-                            ("ullTotalPageFile", ctypes.c_ulonglong),
-                            ("ullAvailPageFile", ctypes.c_ulonglong),
-                            ("ullTotalVirtual", ctypes.c_ulonglong),
-                            ("ullAvailVirtual", ctypes.c_ulonglong),
-                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+                _fields_ = [
+                    ("dwLength", ctypes.c_ulong),
+                    ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong),
+                    ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong),
+                    ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong),
+                    ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+                ]
 
             m = _MS()
             m.dwLength = ctypes.sizeof(m)
@@ -297,11 +382,16 @@ def residency(model_bytes, free_gb=None):
         return None, None
     gb = ram_free_gb() if free_gb is None else free_gb
     if gb is None:
-        return None, "free RAM: unreadable - residency unknown, so treat any tok/s as one sample"
+        return (
+            None,
+            "free RAM: unreadable - residency unknown, so treat any tok/s as one sample",
+        )
     m = model_bytes / 2**30
     if m <= gb:
-        return True, (f"free RAM {gb:.1f} GiB vs model {m:.1f} GiB - the weights fit, so this "
-                      f"number should repeat")
+        return True, (
+            f"free RAM {gb:.1f} GiB vs model {m:.1f} GiB - the weights fit, so this "
+            f"number should repeat"
+        )
     return False, (
         f"free RAM {gb:.1f} GiB vs model {m:.1f} GiB - THE MODEL DOES NOT FIT IN FREE RAM.\n"
         f"             Part of every pass streams from disk, so this figure describes this "
@@ -314,11 +404,20 @@ def residency(model_bytes, free_gb=None):
         f"             the next process. Measured: identical arms spread 0.8-1.8% when the\n"
         f"             predecessor matched and 21-72% when it did not, a 6.3x span from run "
         f"order\n"
-        f"             alone (L-31). Interleave your arms and repeat them, or A/B here is noise.")
+        f"             alone (L-31). Interleave your arms and repeat them, or A/B here is noise."
+    )
 
 
-WIDE_CPU = ("threadripper", "epyc", "xeon w-3", "xeon(r) w9", "xeon(r) w7", "xeon gold",
-            "xeon platinum", "xeon silver")
+WIDE_CPU = (
+    "threadripper",
+    "epyc",
+    "xeon w-3",
+    "xeon(r) w9",
+    "xeon(r) w7",
+    "xeon gold",
+    "xeon platinum",
+    "xeon silver",
+)
 
 
 def ram_channels(sticks, cpu_name):
@@ -342,8 +441,9 @@ def ram_channels(sticks, cpu_name):
         return n, f"assumes {n}-channel [HEDT/server CPU detected]"
     n = min(sticks, 2) if sticks else 2
     if sticks and sticks > 2:
-        return n, (f"dual-channel [consumer platform; {sticks} sticks does NOT mean {sticks} "
-                   f"channels]")
+        return n, (
+            f"dual-channel [consumer platform; {sticks} sticks does NOT mean {sticks} channels]"
+        )
     return n, f"assumes {n}-channel"
 
 
@@ -356,47 +456,74 @@ def detect():
         mem = _run(["sysctl", "-n", "hw.memsize"]).strip()
         chip = _run(["sysctl", "-n", "machdep.cpu.brand_string"]).lower()
         total = float(mem) / 2**30 if mem else 16.0
-        bw = next((b for frag, b in sorted(MAC_BW.items(), key=lambda x: -len(x[0])) if frag in chip), 100)
-        hw = dict(vram=round(total * 0.8), vram_bw=bw, ram=8, ram_bw=bw, disk_bw=3.5,
-                  geta=0.26, gl=0.24)
-        notes.append(f"Apple unified memory: {total:.0f} GB [os], {bw} GB/s [table, est eta 0.26 - unvalidated: bench me]")
+        bw = next(
+            (b for frag, b in sorted(MAC_BW.items(), key=lambda x: -len(x[0])) if frag in chip),
+            100,
+        )
+        hw = {
+            "vram": round(total * 0.8),
+            "vram_bw": bw,
+            "ram": 8,
+            "ram_bw": bw,
+            "disk_bw": 3.5,
+            "geta": 0.26,
+            "gl": 0.24,
+        }
+        notes.append(
+            f"Apple unified memory: {total:.0f} GB [os], {bw} GB/s [table, est eta 0.26 - unvalidated: bench me]"
+        )
         return hw, notes
 
     # RAM
-    total, mts, sticks = (ram_windows() if os.name == "nt" else (None, None, None))
+    total, mts, sticks = ram_windows() if os.name == "nt" else (None, None, None)
     if total is None and os.path.exists("/proc/meminfo"):
         with open("/proc/meminfo") as f:
             kb = int(re.search(r"MemTotal:\s*(\d+)", f.read()).group(1))
         total, mts, sticks = kb / 2**20, None, None
     if total is None:
-        total = 16.0; notes.append("RAM capacity: 16 GB [default - detection failed]")
+        total = 16.0
+        notes.append("RAM capacity: 16 GB [default - detection failed]")
     channels, chan_src = ram_channels(sticks, platform.processor())
     if mts:
-        ram_bw = round(channels * mts * 8 / 1000)   # theoretical peak, preset convention
-        notes.append(f"RAM: {total:.0f} GB, {sticks} stick(s) @ {mts:.0f} MT/s [os] -> {ram_bw} GB/s peak "
-                     f"({chan_src}); the DELIVERED stream is far below peak - the one box we have "
-                     f"measured ran 26.1 of a 48 GB/s peak (0.544; n=1 machine, so this is a "
-                     f"datapoint, not a population). Run `quantprobe calibrate` to measure yours")
+        ram_bw = round(channels * mts * 8 / 1000)  # theoretical peak, preset convention
+        notes.append(
+            f"RAM: {total:.0f} GB, {sticks} stick(s) @ {mts:.0f} MT/s [os] -> {ram_bw} GB/s peak "
+            f"({chan_src}); the DELIVERED stream is far below peak - the one box we have "
+            f"measured ran 26.1 of a 48 GB/s peak (0.544; n=1 machine, so this is a "
+            f"datapoint, not a population). Run `quantprobe calibrate` to measure yours"
+        )
     else:
         ram_bw = 48
         # DIMM speed comes from CIM on Windows; there is no rootless equivalent on Linux/macOS, so
         # this is a blind default there. Point at `calibrate`, which MEASURES the delivered stream -
         # asking a user to pass --ram-bw assumes they know a number their OS would not tell them.
-        notes.append(f"RAM: {total:.0f} GB [os]; speed unknown -> 48 GB/s [default: DDR4-3000 dual]"
-                     f" - run `quantprobe calibrate` to MEASURE your real stream (the delivered "
-                     f"number is well below DIMM peak anyway), or pass --ram-bw")
+        notes.append(
+            f"RAM: {total:.0f} GB [os]; speed unknown -> 48 GB/s [default: DDR4-3000 dual]"
+            f" - run `quantprobe calibrate` to MEASURE your real stream (the delivered "
+            f"number is well below DIMM peak anyway), or pass --ram-bw"
+        )
 
     # GPU(s)
     gs = gpus() or gpus_amd()
     if gs:
         vram = sum(g[1] for g in gs)
-        per = [gpu_lookup(g[0]) for g in gs]                        # per-card lookup (mixed pairs differ)
+        per = [gpu_lookup(g[0]) for g in gs]  # per-card lookup (mixed pairs differ)
         bw_sum = sum(p[0] for p in per)
-        vram_bw = bw_sum * (1.0 if len(gs) == 1 else 0.85)          # aggregate w/ tensor-parallel loss
-        geta, gl, src = per[0][1], per[0][2], per[0][3]             # eta class from the primary card
+        vram_bw = bw_sum * (1.0 if len(gs) == 1 else 0.85)  # aggregate w/ tensor-parallel loss
+        geta, gl, src = (
+            per[0][1],
+            per[0][2],
+            per[0][3],
+        )  # eta class from the primary card
         names = " + ".join(g[0] for g in gs)
-        notes.append(f"GPU: {names}, {vram:.0f} GB total [os], {vram_bw:.0f} GB/s {src}"
-                     + (f" (x{len(gs)} per-card sum, 0.85 TP efficiency [est]; slower card gates its share)" if len(gs) > 1 else ""))
+        notes.append(
+            f"GPU: {names}, {vram:.0f} GB total [os], {vram_bw:.0f} GB/s {src}"
+            + (
+                f" (x{len(gs)} per-card sum, 0.85 TP efficiency [est]; slower card gates its share)"
+                if len(gs) > 1
+                else ""
+            )
+        )
         hw.update(vram=vram, vram_bw=round(vram_bw), geta=geta, gl=gl)
     else:
         # nvidia-smi saw nothing - check AMD via rocm-smi, then Windows driver registry for
@@ -414,26 +541,41 @@ def detect():
             vram_bw = sum(p[2] for p in known) * (1.0 if len(known) == 1 else 0.85)
             names = " + ".join(p[0] for p in known)
             is_amd = bool(amd)
-            hw.update(vram=round(vram, 1), vram_bw=round(vram_bw),
-                      geta=known[0][3], gl=known[0][4])
-            src_note = ("AMD via rocm-smi (amdgpu driver required)" if is_amd
-                        else "non-NVIDIA path: VRAM from the driver registry, bandwidth from spec")
-            notes.append(f"GPU: {names}, {vram:.0f} GB [os], {vram_bw:.0f} GB/s [table] - "
-                         f"{src_note}; eta on this backend is UNVALIDATED here, so run "
-                         f"`quantprobe calibrate` with your llama.cpp build to anchor it")
+            hw.update(
+                vram=round(vram, 1),
+                vram_bw=round(vram_bw),
+                geta=known[0][3],
+                gl=known[0][4],
+            )
+            src_note = (
+                "AMD via rocm-smi (amdgpu driver required)"
+                if is_amd
+                else "non-NVIDIA path: VRAM from the driver registry, bandwidth from spec"
+            )
+            notes.append(
+                f"GPU: {names}, {vram:.0f} GB [os], {vram_bw:.0f} GB/s [table] - "
+                f"{src_note}; eta on this backend is UNVALIDATED here, so run "
+                f"`quantprobe calibrate` with your llama.cpp build to anchor it"
+            )
         elif unknown:
             names = ", ".join(f"{p[0]} ({p[1]:.0f} GB)" for p in unknown)
             hw.update(vram=0, vram_bw=0)
-            notes.append(f"GPU: {names} detected [os] but not in the bandwidth table - pass "
-                         f"--vram <GB> --vram-bw <GB/s> (spec sheet) to include the GPU tier; "
-                         f"planning CPU-only until then")
+            notes.append(
+                f"GPU: {names} detected [os] but not in the bandwidth table - pass "
+                f"--vram <GB> --vram-bw <GB/s> (spec sheet) to include the GPU tier; "
+                f"planning CPU-only until then"
+            )
         else:
             hw.update(vram=0, vram_bw=0)
-            notes.append("GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]")
+            notes.append(
+                "GPU: none detected (nvidia-smi absent/empty; AMD/Intel: pass --vram/--vram-bw) [os]"
+            )
 
     # disk: class default; a real measured number needs `quantprobe hw --measure` (reads a large file)
     hw.update(ram=round(total), ram_bw=ram_bw, disk_bw=0.5)
-    notes.append("disk: 0.5 GB/s [default: SATA-class; NVMe ~3.5, Gen4 ~7 - pass --disk-bw or run hw --measure]")
+    notes.append(
+        "disk: 0.5 GB/s [default: SATA-class; NVMe ~3.5, Gen4 ~7 - pass --disk-bw or run hw --measure]"
+    )
     return hw, notes
 
 
@@ -466,6 +608,7 @@ def probe_offset(size, span, rnd=None):
 def _one_read(path, mb):
     """One timed read of one random region. GB/s."""
     import time
+
     size = os.path.getsize(path)
     span = min(mb * 1024 * 1024, size)
     off = probe_offset(size, span)
@@ -521,8 +664,12 @@ def measure_disk(path, mb=512, samples=5, detail=False):
     # been confirmed on an independent run. It is reported, never used to alter the estimate.
     warm = sum(1 for r in reads if r > 2.0 * lo)
     if detail:
-        return lo, {"draws": [round(r, 4) for r in reads], "disk_gbs": round(lo, 4),
-                    "warm_draws": warm, "samples": len(reads)}
+        return lo, {
+            "draws": [round(r, 4) for r in reads],
+            "disk_gbs": round(lo, 4),
+            "warm_draws": warm,
+            "samples": len(reads),
+        }
     return lo
 
 
@@ -539,16 +686,20 @@ def run(a):
             print(f"  disk MEASURED on {os.path.basename(p)}: {bw:.2f} GB/s sequential [measured]")
             print(f"    minimum of {info['samples']} probes at random offsets: {info['draws']}")
             if info["warm_draws"]:
-                print(f"    {info['warm_draws']} of {info['samples']} draws returned >2x the "
-                      f"minimum - page cache, not disk. The minimum is\n    used and is the "
-                      f"right number. Measured on a deliberately warmed 13.7 GB file, 6 of 8 "
-                      f"single\n    draws came back above 1.5 GB/s (max 2.854, a 6.3x error) "
-                      f"while the minimum stayed correct;\n    even after evicting 16 GB, 1 in 8 "
-                      f"draws still hit cache. One sample was never safe. (#97)")
+                print(
+                    f"    {info['warm_draws']} of {info['samples']} draws returned >2x the "
+                    f"minimum - page cache, not disk. The minimum is\n    used and is the "
+                    f"right number. Measured on a deliberately warmed 13.7 GB file, 6 of 8 "
+                    f"single\n    draws came back above 1.5 GB/s (max 2.854, a 6.3x error) "
+                    f"while the minimum stayed correct;\n    even after evicting 16 GB, 1 in 8 "
+                    f"draws still hit cache. One sample was never safe. (#97)"
+                )
         else:
             print(f"  --measure: file not found: {p}")
-    flags = (f"--vram {hw['vram']:g} --vram-bw {hw['vram_bw']:g} --ram {hw['ram']:g} "
-             f"--ram-bw {hw['ram_bw']:g} --disk-bw {hw['disk_bw']:g}")
+    flags = (
+        f"--vram {hw['vram']:g} --vram-bw {hw['vram_bw']:g} --ram {hw['ram']:g} "
+        f"--ram-bw {hw['ram_bw']:g} --disk-bw {hw['disk_bw']:g}"
+    )
     print(f"\n  equivalent flags (for sharing / estimating this box elsewhere):\n  {flags}")
     print("\n  every command now uses these automatically when you pass no hardware flags;")
     print("  pass --machine or explicit flags to estimate a DIFFERENT machine instead.")

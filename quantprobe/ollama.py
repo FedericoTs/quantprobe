@@ -14,8 +14,15 @@ own assumption about a runtime we did not run. That is the shape of every defect
 has published: a confident number with nothing behind it. --measure runs both sides and reports
 what actually happened, including when the prediction is the thing that was wrong.
 """
+
 from __future__ import annotations
-import json, os, glob, shutil, subprocess, time
+
+import glob
+import json
+import os
+import shutil
+import subprocess
+import time
 
 MODEL_MEDIA = "application/vnd.ollama.image.model"
 
@@ -46,9 +53,10 @@ def installed(root=None):
         if not os.path.isfile(f):
             continue
         try:
-            m = json.load(open(f, encoding="utf-8"))
+            with open(f, encoding="utf-8") as fh:
+                m = json.load(fh)
         except Exception:
-            continue                       # not a manifest; skip rather than guess
+            continue  # not a manifest; skip rather than guess
         layers = [l for l in m.get("layers", []) if l.get("mediaType") == MODEL_MEDIA]
         if not layers:
             continue
@@ -78,16 +86,19 @@ def loaded_placement(name):
     if not b:
         return None, None
     try:
-        out = subprocess.run([b, "ps"], capture_output=True, text=True, timeout=30).stdout
+        out = subprocess.run(
+            [b, "ps"], capture_output=True, text=True, check=False, timeout=30
+        ).stdout
     except Exception:
         return None, None
     import re
+
     for line in out.splitlines():
         if not line.startswith(name.split(":")[0]):
             continue
         m = re.search(r"(\d+)%/(\d+)%\s*CPU/GPU", line)
         gpu = int(m.group(2)) if m else (100 if "100% GPU" in line else None)
-        c = re.search(r"\b(\d{3,6})\b\s*$", line.replace("from now", "").strip())
+        re.search(r"\b(\d{3,6})\b\s*$", line.replace("from now", "").strip())
         ctxm = re.search(r"\s(\d{3,6})\s+\d+\s*(?:minutes?|seconds?|hours?)", line)
         return gpu, int(ctxm.group(1)) if ctxm else None
     return None, None
@@ -99,17 +110,37 @@ def bench_blob(blob, ngl, ctx, bench_bin, n=64, reps=3, timeout=900):
     Both sides of the comparison go through this, at the SAME context depth, on the SAME
     file - so the number that comes out is a placement difference and nothing else.
     """
-    cmd = [bench_bin, "-m", blob, "-ngl", str(ngl), "-n", str(n), "-p", "0", "-r", str(reps),
-           "-o", "json"]
+    cmd = [
+        bench_bin,
+        "-m",
+        blob,
+        "-ngl",
+        str(ngl),
+        "-n",
+        str(n),
+        "-p",
+        "0",
+        "-r",
+        str(reps),
+        "-o",
+        "json",
+    ]
     if ctx:
         cmd += ["-d", str(ctx)]
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, errors="replace", timeout=timeout)
+        p = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            check=False,
+            timeout=timeout,
+        )
     except subprocess.TimeoutExpired:
         return None
     out = p.stdout + p.stderr
     try:
-        return json.loads(out[out.index("["):out.rindex("]") + 1])[0].get("avg_ts")
+        return json.loads(out[out.index("[") : out.rindex("]") + 1])[0].get("avg_ts")
     except Exception:
         return None
 
@@ -146,8 +177,14 @@ def measure(name, prompt="Count from 1 to 40, one number per line.", timeout=300
     if not b:
         return None, "ollama not on PATH"
     try:
-        p = subprocess.run([b, "run", name, "--verbose", prompt],
-                           capture_output=True, text=True, errors="replace", timeout=timeout)
+        p = subprocess.run(
+            [b, "run", name, "--verbose", prompt],
+            capture_output=True,
+            text=True,
+            errors="replace",
+            check=False,
+            timeout=timeout,
+        )
     except subprocess.TimeoutExpired:
         return None, f"timed out after {timeout}s"
     r = _parse_rate(p.stdout + p.stderr)
@@ -167,11 +204,12 @@ def _parse_rate(out):
     Anchoring at line start is the fix.
     """
     import re
-    m = re.search(r"^\s*eval rate:\s*([0-9.]+)\s*tokens/s", out, re.M)
+
+    m = re.search(r"^\s*eval rate:\s*([0-9.]+)\s*tokens/s", out, re.MULTILINE)
     if m:
         return float(m.group(1))
-    ec = re.search(r"^\s*eval count:\s*(\d+)", out, re.M)
-    ed = re.search(r"^\s*eval duration:\s*([0-9.]+)\s*(ms|s|m)\b", out, re.M)
+    ec = re.search(r"^\s*eval count:\s*(\d+)", out, re.MULTILINE)
+    ed = re.search(r"^\s*eval duration:\s*([0-9.]+)\s*(ms|s|m)\b", out, re.MULTILINE)
     if ec and ed:
         v = float(ed.group(1)) * {"ms": 1e-3, "s": 1.0, "m": 60.0}[ed.group(2)]
         return (int(ec.group(1)) / v) if v else None
@@ -193,7 +231,13 @@ def unload(name, need_free_mib=4500, tries=20):
     b = ollama_bin()
     if b:
         try:
-            subprocess.run([b, "stop", name], capture_output=True, text=True, timeout=60)
+            subprocess.run(
+                [b, "stop", name],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=60,
+            )
         except Exception:
             pass
     # Three outcomes, and the caller prints a different refusal for each - so "no tool could
@@ -205,9 +249,17 @@ def unload(name, need_free_mib=4500, tries=20):
     for _ in range(tries):
         # Try nvidia-smi first
         try:
-            r = subprocess.run(["nvidia-smi", "--query-gpu=memory.used,memory.total",
-                                "--format=csv,noheader,nounits"],
-                               capture_output=True, text=True, timeout=20).stdout.strip()
+            r = subprocess.run(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=memory.used,memory.total",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=20,
+            ).stdout.strip()
             used, total = [int(x) for x in r.splitlines()[0].split(",")]
             probed = True
             if (total - used) >= need_free_mib:
@@ -217,6 +269,7 @@ def unload(name, need_free_mib=4500, tries=20):
         # Fall back to rocm-smi for AMD
         try:
             from .detect import _rocm_state
+
             rc = _rocm_state()
             if rc:
                 vram_total_b = rc[0].get("vram_gb", 0) * 2**30 if rc[0].get("vram_gb") else 0
@@ -234,9 +287,11 @@ def unload(name, need_free_mib=4500, tries=20):
 
 
 def run(a):
-    from . import plan as planmod, spec as specmod
-    planmod.check_presets(a)   # audit-ollama prices every stored model against --machine; a typo'd
-                               # preset must refuse, not silently price them for the auto box
+    from . import plan as planmod
+    from . import spec as specmod
+
+    planmod.check_presets(a)  # audit-ollama prices every stored model against --machine; a typo'd
+    # preset must refuse, not silently price them for the auto box
     root = store_root(getattr(a, "store", None))
     models = installed(root)
     print(f"quantprobe audit-ollama - store: {root}")
@@ -245,26 +300,46 @@ def run(a):
         print("  (or point at a different store with --store, or set OLLAMA_MODELS)")
         return
     vc, vb, rc, rb, db, geta, gl, hw = planmod.resolve_hw(a, announce=False)
-    print(f"  this machine: vram {vc:g} GB @ {vb:g} | ram {rc:g} GB @ {rb:g} | disk {db:g} GB/s"
-          + (f"  [{hw['hint']}]" if hw.get("hint") else ""))
+    print(
+        f"  this machine: vram {vc:g} GB @ {vb:g} | ram {rc:g} GB @ {rb:g} | disk {db:g} GB/s"
+        + (f"  [{hw['hint']}]" if hw.get("hint") else "")
+    )
     print(f"  {len(models)} model(s) on disk\n")
 
     for name, blob, size in models:
-        print(f"  {name}   ({size/1e9:.2f} GB)")
+        print(f"  {name}   ({size / 1e9:.2f} GB)")
         try:
             s = specmod.from_gguf(blob)
         except Exception as e:
             print(f"     header unreadable ({type(e).__name__}) - skipped, not guessed\n")
             continue
-        print(f"     from the file's own header: {s['t']:.2f}B total, {s['a']:.2f}B active, "
-              f"{s['bits']:.2f} effective bits, {s['n_layer']} layers"
-              + (", MoE" if s["moe"] else ", dense"))
+        print(
+            f"     from the file's own header: {s['t']:.2f}B total, {s['a']:.2f}B active, "
+            f"{s['bits']:.2f} effective bits, {s['n_layer']} layers"
+            + (", MoE" if s["moe"] else ", dense")
+        )
         # Same evaluate() the `plan` command calls, with hardware from the same resolver, so
         # the two commands cannot quote different numbers for one file on one box.
         _, _, allrows = planmod.evaluate(
-            s["t"], s["a"], s["ne"], s["moe"], s["bits"], vc, vb, rc, rb, db, geta,
-            1.0, gl, ctx=getattr(a, "ctx", 0) or 0, kvp=s["kvp"], n_layer=s["n_layer"],
-            true_size_gb=size / 1e9, codebook_share=s.get("codebook_share", 0.0))
+            s["t"],
+            s["a"],
+            s["ne"],
+            s["moe"],
+            s["bits"],
+            vc,
+            vb,
+            rc,
+            rb,
+            db,
+            geta,
+            1.0,
+            gl,
+            ctx=getattr(a, "ctx", 0) or 0,
+            kvp=s["kvp"],
+            n_layer=s["n_layer"],
+            true_size_gb=size / 1e9,
+            codebook_share=s.get("codebook_share", 0.0),
+        )
         # only rows a user can actually execute: the expert-cache and layer-streaming rows
         # need runtimes ollama does not ship, so recommending them here would be a non-command
         rows = [r for r in allrows if getattr(r, "runnable", True)]
@@ -279,12 +354,14 @@ def run(a):
             gpu_pct, octx = loaded_placement(name)
             if err:
                 print(f"     ollama measurement FAILED: {err} - no comparison made")
-                print("")
+                print()
                 continue
             print(f"     ollama MEASURED: {got:.1f} tok/s (its own eval rate)")
             if gpu_pct is not None:
-                print(f"     ollama's PLACEMENT: {100-gpu_pct}%/{gpu_pct}% CPU/GPU"
-                      + (f" at ctx {octx}" if octx else ""))
+                print(
+                    f"     ollama's PLACEMENT: {100 - gpu_pct}%/{gpu_pct}% CPU/GPU"
+                    + (f" at ctx {octx}" if octx else "")
+                )
             # The comparison that means something: BOTH placements timed by the same tool, on
             # the SAME blob, at the SAME depth. Prediction-vs-ollama would compare different
             # placements and read as a speed claim while being a category error.
@@ -296,34 +373,46 @@ def run(a):
                 clean, freed = unload(name)
                 if clean is None:
                     print("     cannot read GPU memory (no nvidia-smi or rocm-smi), so a clean")
-                    print("     comparison cannot be VERIFIED. Refusing to compare rather than guess.")
-                    print("")
+                    print(
+                        "     comparison cannot be VERIFIED. Refusing to compare rather than guess."
+                    )
+                    print()
                     continue
                 if not clean:
                     print("     ollama is still holding the GPU. REFUSING to compare - a")
                     print("     contaminated bench reports the right config as slower and would")
                     print("     hand you exactly the wrong advice. Retry in a minute.")
-                    print("")
+                    print()
                     continue
-                print(f"     GPU free: {freed} MiB. Timing BOTH placements at ctx {octx or 0}...",
-                      flush=True)
+                print(
+                    f"     GPU free: {freed} MiB. Timing BOTH placements at ctx {octx or 0}...",
+                    flush=True,
+                )
                 mine = bench_blob(blob, 99, octx or 0, bb)
                 thrs = bench_blob(blob, theirs_ngl, octx or 0, bb)
                 if mine and thrs:
                     print(f"       ollama's split  (-ngl {theirs_ngl}): {thrs:.2f} tok/s")
                     print(f"       all layers      (-ngl 99):        {mine:.2f} tok/s")
                     if mine > thrs:
-                        print(f"     >> {mine/thrs:.2f}x AVAILABLE by forcing all layers onto the "
-                              f"GPU. It fits - no OOM at ctx {octx or 0}.")
-                        print(f"        In ollama:  PARAMETER num_gpu {nl}   (Modelfile), or set "
-                              f"OLLAMA_NUM_GPU={nl}")
+                        print(
+                            f"     >> {mine / thrs:.2f}x AVAILABLE by forcing all layers onto the "
+                            f"GPU. It fits - no OOM at ctx {octx or 0}."
+                        )
+                        print(
+                            f"        In ollama:  PARAMETER num_gpu {nl}   (Modelfile), or set "
+                            f"OLLAMA_NUM_GPU={nl}"
+                        )
                     else:
-                        print(f"     >> ollama's split is FASTER here ({thrs/mine:.2f}x). Its "
-                              f"conservatism is correct on this box; no change recommended.")
-                    print(f"        Both timed by llama-bench on the same blob at the same depth, "
-                          f"so this is a\n        placement difference and nothing else. ollama's "
-                          f"own {got:.1f} sits below both - the\n        remainder is its server "
-                          f"and sampling overhead, which this does not measure.")
+                        print(
+                            f"     >> ollama's split is FASTER here ({thrs / mine:.2f}x). Its "
+                            f"conservatism is correct on this box; no change recommended."
+                        )
+                    print(
+                        f"        Both timed by llama-bench on the same blob at the same depth, "
+                        f"so this is a\n        placement difference and nothing else. ollama's "
+                        f"own {got:.1f} sits below both - the\n        remainder is its server "
+                        f"and sampling overhead, which this does not measure."
+                    )
                 else:
                     print("     could not time both placements - no comparison claimed")
             elif gpu_pct == 100:
@@ -331,7 +420,7 @@ def run(a):
             elif not bb:
                 print("     llama-bench not found, so no measured comparison was made. The")
                 print("     prediction above is NOT a substitute for one.")
-        print("")
+        print()
 
     if not getattr(a, "measure", False):
         print("  No speed comparison was made. Numbers above are PREDICTIONS for this machine;")

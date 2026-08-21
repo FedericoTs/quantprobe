@@ -11,8 +11,16 @@ expert illumination is sampled uniformly — which Law 2's measured flat routing
 makes the statistically exact picture. Topic-affinity atlases require an engine that exports
 router data; this page shows nothing it cannot back.
 """
+
 from __future__ import annotations
-import json, os, subprocess, threading, time, urllib.request, webbrowser
+
+import json
+import os
+import subprocess
+import threading
+import time
+import urllib.request
+import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import runtime
@@ -267,14 +275,16 @@ def make_handler(upstream, page):
             body = json.loads(self.rfile.read(n) or b"{}")
             body.setdefault("timings_per_token", True)
             body.setdefault("max_tokens", 2048)
-            if body.pop("think", True) is False:      # UI toggle: skip thinking entirely
+            if body.pop("think", True) is False:  # UI toggle: skip thinking entirely
                 body["chat_template_kwargs"] = {"enable_thinking": False}
             stream = bool(body.get("stream", False))
-            req = urllib.request.Request(upstream + "/v1/chat/completions",
-                                         data=json.dumps(body).encode(),
-                                         headers={"Content-Type": "application/json"})
+            req = urllib.request.Request(
+                upstream + "/v1/chat/completions",
+                data=json.dumps(body).encode(),
+                headers={"Content-Type": "application/json"},
+            )
             try:
-                r = urllib.request.urlopen(req, timeout=600)
+                r = urllib.request.urlopen(req, timeout=600)  # nosec B310  local ollama upstream
                 self.send_response(200)
                 if stream:
                     self.send_header("Content-Type", "text/event-stream")
@@ -303,6 +313,7 @@ def make_handler(upstream, page):
                     self.wfile.write(err)
                 except Exception:
                     pass
+
     return H
 
 
@@ -310,6 +321,7 @@ def _anatomy(gguf):
     """Exact layer/expert counts from the file, for the galaxy."""
     try:
         from gguf import GGUFReader
+
         r = GGUFReader(gguf)
         nl = ne = nk = 0
         for f in r.fields.values():
@@ -336,14 +348,23 @@ def dashboard(a):
     print("[quantprobe] llama-server:", " ".join(cmd))
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     upstream = f"http://127.0.0.1:{sport}"
-    print("[quantprobe] waiting for the model to finish loading (big models on slow disks take minutes)...")
-    ready_req = json.dumps({"messages": [{"role": "user", "content": "hi"}], "max_tokens": 1}).encode()
+    print(
+        "[quantprobe] waiting for the model to finish loading (big models on slow disks take minutes)..."
+    )
+    ready_req = json.dumps(
+        {"messages": [{"role": "user", "content": "hi"}], "max_tokens": 1}
+    ).encode()
     for _ in range(600):
         try:
-            urllib.request.urlopen(urllib.request.Request(
-                upstream + "/v1/chat/completions", data=ready_req,
-                headers={"Content-Type": "application/json"}), timeout=8)
-            break                                   # a real completion answered: weights are up
+            urllib.request.urlopen(  # nosec B310  local ollama upstream
+                urllib.request.Request(
+                    upstream + "/v1/chat/completions",
+                    data=ready_req,
+                    headers={"Content-Type": "application/json"},
+                ),
+                timeout=8,
+            )
+            break  # a real completion answered: weights are up
         except Exception:
             if proc.poll() is not None:
                 raise SystemExit("llama-server exited during startup — check the model path/flags")
@@ -351,9 +372,11 @@ def dashboard(a):
     tiers = ""
     for name, cap, used in runtime.tier_view(a, best):
         pct = min(100, used / cap * 100) if cap else 0
-        tiers += (f'<div class="tier"><div class="l"><span>{name}</span>'
-                  f'<span>{used:.1f} / {cap:.0f} GB</span></div>'
-                  f'<div class="bar"><div class="fill" style="width:{pct:.0f}%"></div></div></div>')
+        tiers += (
+            f'<div class="tier"><div class="l"><span>{name}</span>'
+            f"<span>{used:.1f} / {cap:.0f} GB</span></div>"
+            f'<div class="bar"><div class="fill" style="width:{pct:.0f}%"></div></div></div>'
+        )
     nl, ne, nk = _anatomy(a.gguf)
     pname = best[0]
     if "hybrid" in pname:
@@ -364,17 +387,27 @@ def dashboard(a):
         atier, etier, ecolv = "RAM", "disk (streamed, RAM-cached)", "--disk"
     else:
         atier, etier, ecolv = "RAM", "RAM", "--ram"
-    page = (DASH_HTML.replace("{{MODEL}}", os.path.basename(a.gguf))
-            .replace("{{PLACEMENT}}", pname).replace("{{PRED}}", f"{best[1]:.1f}")
-            .replace("{{FLAGS}}", " ".join(flags)).replace("{{TIERS}}", tiers)
-            .replace("{{NL}}", str(nl)).replace("{{NE}}", str(ne)).replace("{{NK}}", str(nk))
-            .replace("{{ATIER}}", atier).replace("{{ETIER}}", etier).replace("{{ECOLV}}", ecolv))
-    ThreadingHTTPServer.allow_reuse_address = False   # Windows: reuse allows silent double-binds
+    page = (
+        DASH_HTML.replace("{{MODEL}}", os.path.basename(a.gguf))
+        .replace("{{PLACEMENT}}", pname)
+        .replace("{{PRED}}", f"{best[1]:.1f}")
+        .replace("{{FLAGS}}", " ".join(flags))
+        .replace("{{TIERS}}", tiers)
+        .replace("{{NL}}", str(nl))
+        .replace("{{NE}}", str(ne))
+        .replace("{{NK}}", str(nk))
+        .replace("{{ATIER}}", atier)
+        .replace("{{ETIER}}", etier)
+        .replace("{{ECOLV}}", ecolv)
+    )
+    ThreadingHTTPServer.allow_reuse_address = False  # Windows: reuse allows silent double-binds
     try:
         srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(upstream, page))
     except OSError:
         proc.terminate()
-        raise SystemExit(f"port {a.port} is already in use - another dashboard running? (pass --port N)")
+        raise SystemExit(
+            f"port {a.port} is already in use - another dashboard running? (pass --port N)"
+        )
     url = f"http://127.0.0.1:{a.port}"
     print(f"[quantprobe] dashboard v2.1: {url}  (Ctrl-C stops both)")
     if not a.no_open:

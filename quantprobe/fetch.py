@@ -2,16 +2,23 @@
 hf CLI's Xet-backend stalls. Usage: python -m weights.hf_fetch <repo_id> <dest_dir> <file1> [file2 ...]
 Resumes partial .part files; token from HF_TOKEN env or ~/.cache/huggingface/token.
 """
+
 from __future__ import annotations
-import os, sys, time
+
+import os
+import sys
+import time
+
 import requests
 
-
 PRESETS = {
-    "qwen3-30b":   ("unsloth/Qwen3-30B-A3B-GGUF", "Qwen3-30B-A3B-Q2_K.gguf"),
-    "glm-air":     ("unsloth/GLM-4.5-Air-GGUF", "GLM-4.5-Air-UD-IQ2_XXS.gguf"),
-    "deepseek-16b": ("bartowski/DeepSeek-Coder-V2-Lite-Base-GGUF", "DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf"),
-    "qwen3-0.6b":  ("unsloth/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"),
+    "qwen3-30b": ("unsloth/Qwen3-30B-A3B-GGUF", "Qwen3-30B-A3B-Q2_K.gguf"),
+    "glm-air": ("unsloth/GLM-4.5-Air-GGUF", "GLM-4.5-Air-UD-IQ2_XXS.gguf"),
+    "deepseek-16b": (
+        "bartowski/DeepSeek-Coder-V2-Lite-Base-GGUF",
+        "DeepSeek-Coder-V2-Lite-Base-IQ2_XS.gguf",
+    ),
+    "qwen3-0.6b": ("unsloth/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"),
 }
 
 
@@ -38,10 +45,13 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
         except requests.exceptions.RequestException:
             remote = 0
         if remote and have != remote:
-            print(f"  {fname}: EXISTING FILE IS NOT THIS FILE - local {have:,} B vs remote "
-                  f"{remote:,} B. A same-named file from another source is on disk; it may be an "
-                  f"incompatible model. Re-run with --force to replace it, or fetch to a "
-                  f"different dest.", flush=True)
+            print(
+                f"  {fname}: EXISTING FILE IS NOT THIS FILE - local {have:,} B vs remote "
+                f"{remote:,} B. A same-named file from another source is on disk; it may be an "
+                f"incompatible model. Re-run with --force to replace it, or fetch to a "
+                f"different dest.",
+                flush=True,
+            )
             return False
         note = "size matches remote" if remote else "remote size unavailable, name+presence only"
         print(f"  {fname}: already complete ({note}; --force re-downloads)", flush=True)
@@ -52,7 +62,7 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
             os.remove(part)
     r = requests.head(url, headers=hdr0, allow_redirects=True, timeout=60)
     total = int(r.headers.get("Content-Length", 0))
-    print(f"  {fname}: {total/1e9:.2f} GB", flush=True)
+    print(f"  {fname}: {total / 1e9:.2f} GB", flush=True)
     t = 0
     while t < tries:
         have = os.path.getsize(part) if os.path.exists(part) else 0
@@ -64,21 +74,36 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
                 h["Range"] = f"bytes={have}-"
             r = requests.get(url, headers=h, stream=True, timeout=(30, 120), allow_redirects=True)
             if r.status_code not in (200, 206):
-                print(f"    status {r.status_code}, retry", flush=True); time.sleep(5); t += 1; continue
+                print(f"    status {r.status_code}, retry", flush=True)
+                time.sleep(5)
+                t += 1
+                continue
             mode = "ab" if (have and r.status_code == 206) else "wb"
-            t0 = last = time.time(); base = have if mode == "ab" else 0
+            t0 = last = time.time()
+            base = have if mode == "ab" else 0
             with open(part, mode) as f:
                 for chunk in r.iter_content(1 << 22):
                     if chunk:
                         f.write(chunk)
                     if time.time() - last > 20:
                         sz = os.path.getsize(part)
-                        print(f"    {sz/1e9:.2f}/{total/1e9:.2f} GB ({(sz-base)/1e6/max(1e-6,time.time()-t0):.1f} MB/s)", flush=True)
+                        print(
+                            f"    {sz / 1e9:.2f}/{total / 1e9:.2f} GB ({(sz - base) / 1e6 / max(1e-6, time.time() - t0):.1f} MB/s)",
+                            flush=True,
+                        )
                         last = time.time()
-        except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError,
-                requests.exceptions.ReadTimeout, requests.exceptions.Timeout) as e:
-            print(f"    break at {os.path.getsize(part) if os.path.exists(part) else 0:,}, retry {t+1}: {str(e)[:60]}", flush=True)
-            time.sleep(3); t += 1
+        except (
+            requests.exceptions.ChunkedEncodingError,
+            requests.exceptions.ConnectionError,
+            requests.exceptions.ReadTimeout,
+            requests.exceptions.Timeout,
+        ) as e:
+            print(
+                f"    break at {os.path.getsize(part) if os.path.exists(part) else 0:,}, retry {t + 1}: {str(e)[:60]}",
+                flush=True,
+            )
+            time.sleep(3)
+            t += 1
     if total and os.path.exists(part) and os.path.getsize(part) == total:
         os.replace(part, out)
         print(f"  {fname}: DONE", flush=True)
@@ -89,6 +114,7 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
 
 def run(a):
     import sys as _s
+
     repo, files = a.repo, a.files
     if repo in PRESETS and not files:
         repo, f = PRESETS[repo]
