@@ -9,4 +9,4 @@ Every constant in `plan` is fitted from measurements published in the repo, incl
 pre-registered hardware predictions confirmed within 8%.
 """
 
-__version__ = "1.33.1"
+__version__ = "1.34.0"

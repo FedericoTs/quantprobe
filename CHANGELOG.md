@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.34.0 - 2026-08-21
+
+**⚠️ Breaking: `requires-python` is now `>=3.11`** (was `>=3.9`). Python 3.10 reaches EOL in
+October 2026; Debian 12 *oldstable* already ships 3.11 and Amazon Linux 2023 defaults to it. On an
+older interpreter, `pip` will resolve to v1.33.x rather than upgrading.
+
+This release also carries **v1.33.0 and v1.33.1, which were tagged in the changelog but never
+published** — so if you are upgrading from 1.32.0 you are getting the `llama-server` loopback
+security fix and `probe --eval auto` for the first time. See their entries below.
+
+### Thanks to [@fboudra](https://github.com/fboudra) — [PR #6](https://github.com/FedericoTs/quantprobe/pull/6)
+
+A repo-wide code-quality pass, and it found real bugs rather than only style:
+
+- **Three file-handle leaks closed.** `json.load(open(f))` in `recipes.py` leaked a descriptor on
+  *every* recipe load — the kind of defect that stays invisible until someone runs the tool in a
+  loop. Also fixed in `report.py` and `detect.py`.
+- **`ruff` format + lint** across `quantprobe/`, at `line-length = 100` so the reflow stays off
+  the ~96% of lines that were already under it.
+- **`pre-commit` config and a `checks` CI job**, so formatting is enforced by machine rather than
+  by review.
+- **A `bandit` security-scan job** with its false positives triaged — unasked-for and well timed.
+- Pinned dev dependencies, `pyproject-fmt`, and the `requires-python` bump above.
+
+Verified before merge by parsing every file before and after and comparing ASTs: control flow,
+exception clauses, `subprocess` calls and comparison rewrites were **all net zero**, so the only
+behavioural changes were the three leaks being closed.
+
 ## v1.33.1 - 2026-08-21
 
 - **Security: a spawned `llama-server` is pinned to loopback.** `run --serve` and `dashboard`

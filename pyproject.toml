@@ -4,7 +4,7 @@ requires = [ "setuptools>=68" ]
 
 [project]
 name = "quantprobe"
-version = "1.33.1"
+version = "1.34.0"
 description = """\
   Probe-then-quantize for LLMs: measure a model's fragility curve, plan bit/tier placement by the tiered decode law, \
   and emit ready-to-run llama.cpp recipes.\
