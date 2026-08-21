@@ -284,7 +284,7 @@ def make_handler(upstream, page):
                 headers={"Content-Type": "application/json"},
             )
             try:
-                r = urllib.request.urlopen(req, timeout=600)
+                r = urllib.request.urlopen(req, timeout=600)  # nosec B310  local ollama upstream
                 self.send_response(200)
                 if stream:
                     self.send_header("Content-Type", "text/event-stream")
@@ -356,7 +356,7 @@ def dashboard(a):
     ).encode()
     for _ in range(600):
         try:
-            urllib.request.urlopen(
+            urllib.request.urlopen(  # nosec B310  local ollama upstream
                 urllib.request.Request(
                     upstream + "/v1/chat/completions",
                     data=ready_req,

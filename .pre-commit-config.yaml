@@ -14,8 +14,18 @@ repos:
       - id: ruff-format
         files: ^quantprobe/
 
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        additional_dependencies:
+          - "bandit[toml]"
+        args:
+          - "--configfile=pyproject.toml"
+          - "--severity-level=medium"
+        files: ^quantprobe/
+
   - repo: https://github.com/tox-dev/pyproject-fmt
     rev: v2.28.0
     hooks:
       - id: pyproject-fmt
-

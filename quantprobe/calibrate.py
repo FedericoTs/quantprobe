@@ -277,7 +277,9 @@ def cal_id(cal):
     parts = [f"{cal.get('ram_bw_measured')}", f"{cal.get('disk_bw_measured')}"]
     for a in cal.get("anchors") or []:
         parts.append(f"{a.get('placement')}:{a.get('tok_s')}:{a.get('sustained_sm')}")
-    return hashlib.sha1("|".join(parts).encode()).hexdigest()[:8]
+    return hashlib.sha1("|".join(parts).encode(), usedforsecurity=False).hexdigest()[
+        :8
+    ]  # fingerprint, not auth
 
 
 def drift_vs(prev, cur, tol=0.03):

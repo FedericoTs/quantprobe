@@ -90,7 +90,7 @@ def list_ggufs(repo):
         f"https://huggingface.co/api/models/{repo}/tree/main?recursive=true",
         headers=headers,
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=30) as r:  # nosec B310  fixed https://huggingface.co endpoint
         raw = [
             (f["path"], f.get("size", 0))
             for f in json.load(r)
@@ -151,7 +151,7 @@ def ensure_eval(dest_dir):
     if os.path.isfile(path):
         return path
     print("[quantprobe auto] fetching the WikiText-2 eval corpus (1.3 MB, one time)...")
-    with urllib.request.urlopen(WIKI_URL, timeout=60) as r:
+    with urllib.request.urlopen(WIKI_URL, timeout=60) as r:  # nosec B310  fixed https://huggingface.co URL
         z = zipfile.ZipFile(io.BytesIO(r.read()))
     with z.open("wikitext-2-raw/wiki.test.raw") as f, open(path, "wb") as out:
         out.write(f.read())
