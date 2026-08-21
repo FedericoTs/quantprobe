@@ -35,10 +35,18 @@ A product-gap pass over the CLI (not the physics): where a real user hits fricti
   published build instead of refusing, `fetch <recipe-key>` downloads that build, and `fetch
   <auto-preset>` redirects to `auto` rather than claiming the name is unknown. A property test over
   the whole atlas keeps every future recipe reachable. What remains is cosmetic rather than a funnel
-  leak — one table instead of four, and `plan.MODELS` still unbridged — plus the real blocker
-  underneath: a full `auto` preset needs a fetchable high-precision **source** repo, which most
-  recipes do not carry. Adding a `source_repo` field to the recipe schema is the honest next step
-  and would let `auto` drive the whole pipeline from any recipe key.
+  leak — one table instead of four — plus two schema gaps that block the rest, both found by
+  trying to write a true sentence about the tool and discovering it wasn't:
+
+  - **`plan --model <recipe-key>` cannot work, and that is the one users most want.** A recipe
+    carries `arch/n_layer/moe` but no parameter counts, so nothing can build a plan spec from it.
+    "Will this run on my machine, and how fast?" is the README's opening question and the reason
+    someone on a model card hesitates before 14 GB — and for a model in our own atlas we can only
+    answer it *after* they download (`plan --gguf`). *Fix (S): optional `params: {total_b,
+    active_b, always_active_b}` on the recipe schema, measured from the GGUF at recipe-harvest
+    time — never hand-entered, or the atlas starts carrying numbers with no evidence behind them.*
+  - **`auto` still cannot build from a key** for want of a fetchable high-precision `source_repo`
+    field. *Fix (S) once the above lands, since both are recorded at harvest time.*
 
 - **[MED] `probe --eval` forces a manual wikitext download.** `--eval` is required, but `auto.py`
   already implements the wikitext download+unzip (`WIKI_URL`). The README pitches `probe --gguf …
