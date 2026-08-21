@@ -338,8 +338,15 @@ Then the placements, the binding constraint with its per-lever ceilings ("faster
 
 ## Docs
 
+**Seeing an id like `L-30`, `C-17` or `U-23` in the output?** Every one resolves in
+[FINDINGS.md](FINDINGS.md) — the register of everything this project has measured, refuted, or
+left untried. The tool cites it rather than asserting, so any claim it prints at you can be
+traced to the measurement behind it. (CI fails if the tool ever prints an id the register does
+not contain.)
+
 | | |
 |---|---|
+| [FINDINGS.md](FINDINGS.md) | **the register** — every law, lever, dead end, contradiction and untried idea, with its evidence. Where the ids in the output resolve |
 | [QUICKSTART.md](QUICKSTART.md) | get running, three levels; recipes for fine-tunes, coding agents, hardware buying |
 | [LAWS.md](LAWS.md) | the four laws — statements, measurements, falsifiable predictions |
 | [docs/MATRIX.md](docs/MATRIX.md) | **what to run on what** — 11 machines × 11 models, every cell priced by the shipped engine, scored against third-party reports |

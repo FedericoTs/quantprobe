@@ -104,6 +104,34 @@ def validate(reg):
         if num not in cited:
             problems.append(f"pre-registration #{num} ({fn}) is not cited by any register entry")
 
+    # The reverse direction of `wired_into`: an ID the TOOL PRINTS must exist in the register.
+    #
+    # The tool cites its own register at users - "(L-30, prereg #107)", "see C-17", "U-23". Those
+    # resolve in FINDINGS.md, which is generated from this file, so the lookup is always complete
+    # BY CONSTRUCTION. What is not guaranteed is that the id still exists: renumber an entry,
+    # supersede it, or fat-finger it, and the tool sends a user to chase a finding that is not
+    # there. That is worse than printing nothing, because it spends the reader's trust.
+    #
+    # This is the same shape as the pre-registration citation gate above, pointed the other way,
+    # and it exists because the class kept recurring by hand: L-29/L-30/L-31 shipped into user
+    # output with no doc entry for a day, and V-23 was printed by spec.py the same day it was
+    # registered. A validator catches that; remembering does not.
+    known = {e["id"] for _, e in entries}
+    ID = re.compile(r"\b([LVCDUX]-\d{1,2})\b")
+    qdir = os.path.join(ROOT, "quantprobe")
+    for fn in sorted(os.listdir(qdir)) if os.path.isdir(qdir) else []:
+        if not fn.endswith(".py"):
+            continue
+        for n, line in enumerate(open(os.path.join(qdir, fn), encoding="utf-8"), 1):
+            s = line.lstrip()
+            if s.startswith("#") or ('"' not in line and "'" not in line):
+                continue          # comments are for us; only strings reach the user
+            for rid in ID.findall(line):
+                if rid not in known:
+                    problems.append(
+                        f"quantprobe/{fn}:{n} prints '{rid}', which is not in the register - "
+                        f"a reader who looks it up in FINDINGS.md finds nothing")
+
     # `wired_into` must point at something that exists. A finding that claims to have reached the
     # code, and has not, is the exact failure layer 5 of verify.py was built for.
     for _, e in entries:
