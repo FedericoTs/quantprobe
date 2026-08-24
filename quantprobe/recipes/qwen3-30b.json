@@ -45,7 +45,8 @@
     "base_quant": "Q4_K_M",
     "raw_log": "weights/data/q30_bands.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
-    "contributor": "FedericoTs"
+    "contributor": "FedericoTs",
+    "source_repo": "unsloth/Qwen3-30B-A3B-GGUF"
   },
   "params": {
     "total_b": 30.5321,
@@ -54,6 +55,7 @@
     "moe": true,
     "kv_per_pos": 98304,
     "n_layer": 48,
+    "n_block": 48,
     "measured_from": "Qwen3-30B-A3B-Q2_K.gguf"
   }
 }

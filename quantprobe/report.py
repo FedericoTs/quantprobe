@@ -1161,7 +1161,10 @@ def run(args):
     from . import recipes as recmod
 
     rec = (
-        recmod.find(arch=px["inputs"]["arch"], n_layer=px["inputs"]["nlay"])
+        recmod.find(
+            arch=px["inputs"]["arch"],
+            n_layer=px["inputs"].get("n_block") or px["inputs"]["nlay"],
+        )
         if px["inputs"]["arch"] and px["inputs"]["nlay"]
         else None
     )

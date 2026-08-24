@@ -105,7 +105,20 @@ def from_gguf(path):
     # Part 1 carries the full metadata (gguf-split copies the KV store there; later parts hold
     # only split bookkeeping). Tensors, however, live where they live: every part contributes.
     r = GGUFReader(paths[0])
-    n_layer = _field(r, ".block_count") or 32
+    # U-60 P-1/P-3, CONFIRMED by reading llama.cpp rather than timing it (the effect is ~2% and
+    # this box's decode noise is an order of magnitude larger). An MTP/NextN head is appended
+    # beyond the main stack: models/qwen35moe.cpp loads it (`for i = n_layer; i < n_layer_all`)
+    # and then says so outright above its graph loop - "MTP/NextN layers are loaded as extra
+    # decoder blocks but not executed in the main pass" - iterating only `il < n_layer`, where
+    # llama-hparams.cpp:272 defines n_layer() = n_layer_all - n_layer_nextn.
+    #
+    # So the block costs CAPACITY (it is resident) and no BANDWIDTH (it is never run). Counting
+    # it as a decode layer overstated active bytes 2.2% on every file that carries one. L-33.
+    n_layer_all = _field(r, ".block_count") or 32
+    n_nextn = _field(r, ".nextn_predict_layers") or 0
+    n_layer = n_layer_all - n_nextn  # decode depth: llama.cpp's own hparams.n_layer()
+    mtp_params = 0  # resident but never executed: subtracted from ACTIVE, kept in the footprint
+    mtp_routed = 0
     total = 0
     routed = 0
     iq_bytes = all_bytes = unpriced_cb = codebook_bytes = 0
@@ -125,14 +138,21 @@ def from_gguf(path):
     for extra in paths[1:]:
         tensors.extend(GGUFReader(extra).tensors)
     for t in tensors:
-        if ".attn_k." in t.name and t.name.startswith("blk."):
+        # An MTP block carries attn_k like any other, so it must be excluded here too or it
+        # would be priced as a KV-growing full-attention layer it never becomes (U-51/U-60).
+        is_mtp = _mtp_block(t.name, n_layer)
+        if ".attn_k." in t.name and t.name.startswith("blk.") and not is_mtp:
             kv_blocks.add(t.name.split(".")[1])
         n = 1
         for d in t.shape:
             n *= int(d)
         total += n
+        if is_mtp:
+            mtp_params += n
         if "exps" in t.name or "_expert" in t.name:
             routed += n
+            if is_mtp:
+                mtp_routed += n
         if "token_embd" in t.name:
             embd_params += n
             embd_bytes += int(t.n_bytes)  # L-30 needs the BYTE version of the same exclusion
@@ -180,16 +200,21 @@ def from_gguf(path):
     # Measured share of active bytes on untied models: 4.2-17.2%, the sign and size of the
     # MoE-K-quant under-prediction family.
     gather_only = embd_params if has_output else 0
-    ne_params = total - routed - gather_only
+    # Everything from here prices a TOKEN, so it runs on the executed stack only: the MTP block
+    # is resident (it stays in `total`, which is what the footprint is built from) but is never
+    # read per token, so it is subtracted from the decode-side counts. U-60 P-1/P-3.
+    total_dec = total - mtp_params
+    routed_dec = routed - mtp_routed
+    ne_params = total_dec - routed_dec - gather_only
 
     n_exp = _field(r, ".expert_count")
     n_used = _field(r, ".expert_used_count")
-    if routed and n_exp and n_used:
-        active = ne_params + routed * n_used / n_exp
+    if routed_dec and n_exp and n_used:
+        active = ne_params + routed_dec * n_used / n_exp
         moe = True
     else:
         active, moe = (
-            total - gather_only,
+            total_dec - gather_only,
             False,
         )  # same gather correction on the dense path
 
@@ -259,6 +284,10 @@ def from_gguf(path):
         "bits": round(bits, 2),
         "kvp": int(kvp),
         "n_layer": n_layer,
+        # The FILE's block count, which is what a recipe's band is indexed in. Equal to n_layer
+        # on every model without an MTP head; one larger where there is one. Recipe matching must
+        # use this, not the decode depth, or a probe's block 64 would mean two different things.
+        "n_block": n_layer_all,
         "arch": arch,
         "kv_layers": kv_layers,  # U-51: < n_layer marks a hybrid (linear-attn) model
         "iq_share": (iq_bytes / all_bytes) if all_bytes else 0.0,
@@ -269,6 +298,20 @@ def from_gguf(path):
         "codebook_share_exp": (tier_exp["cb"] / tier_exp["bytes"]) if tier_exp["bytes"] else 0.0,
         "fmt_bw": round(fmt_bw, 1) if fmt_bw else None,
     }
+
+
+def _mtp_block(name, n_trunk):
+    """Is this tensor in an MTP/NextN block - i.e. beyond the executed stack?
+
+    Mirrors llama.cpp exactly: it loads the trunk with `for i = 0; i < n_layer` and the MTP
+    blocks with `for i = n_layer; i < n_layer_all`, so block index >= n_layer IS the test.
+    Non-block tensors (token_embd, output) are never MTP."""
+    if not name.startswith("blk."):
+        return False
+    parts = name.split(".")
+    if len(parts) < 2 or not parts[1].isdigit():
+        return False
+    return int(parts[1]) >= n_trunk
 
 
 def expert_ceiling(s):
@@ -390,7 +433,10 @@ def apply(a, quiet=False):
     a.iq_share = s.get(
         "iq_share", 0.0
     )  # read-only: lets plan warn when IQ weights land on a CPU tier
-    a.arch = s.get("arch")  # read-only: report's recipe matching needs (arch, n_layer)
+    a.arch = s.get("arch")  # read-only: report's recipe matching needs (arch, n_block)
+    # A recipe's band is indexed over the FILE's blocks, so matching must use the block count,
+    # not the decode depth - they differ by the MTP head on the models that carry one (L-33).
+    a.n_block = s.get("n_block", s.get("n_layer"))
     a.kv_layers = s.get(
         "kv_layers"
     )  # read-only: report's hybrid-KV line ("N of L layers cache KV")

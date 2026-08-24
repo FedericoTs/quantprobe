@@ -1948,14 +1948,26 @@
     {
       "id": "U-60",
       "kind": "untried",
-      "status": "open 2026-08-21 - deliberately deferred; spec.py:205 says one change at a time and the blast radius is narrow (only files with nextn_predict_layers > 0).",
+      "status": "SCORED 2/3 2026-08-24, and SHIPPED. P-1 and P-3 CONFIRMED by reading llama.cpp rather than timing it - the honest instrument here, since the effect is ~2% and this box's decode noise has been 15-24% (prereg #110/#111 both VOID on spread). src/models/qwen35moe.cpp loads the MTP blocks (`for i = n_layer; i < n_layer_all; ++i) load_block_mtp(i)`) and states above its graph loop: 'MTP/NextN layers are loaded as extra decoder blocks but not executed in the main pass', iterating only `il < n_layer` where src/llama-hparams.cpp:272 defines n_layer() = n_layer_all - n_layer_nextn. Loaded (P-3: footprint unchanged) and never run (P-1: no per-token bytes). P-2 (the 1-3% error improvement) stays UNSCORED: it needs a timing run this hardware cannot resolve, and is not claimed.",
       "claim": "An MTP block should count toward FOOTPRINT but not toward per-token ACTIVE bytes when the runtime does not execute it, so excluding nextn_predict_layers from the active-byte and decode-layer counts should make predictions for such files ~2% less pessimistic and closer to measured.",
-      "magnitude": "Bounded by L-33: +2.2% active on Qwen3.6-35B UD-Q2_K_XL. Small, but it is a systematic bias in one direction on every MTP-carrying file, not noise.",
+      "magnitude": "Qwen3.6-35B UD-Q2_K_XL: active 3.0109B -> 2.9464B (-2.2%), now byte-identical to every other build of the model, with footprint correctly unchanged at 35.5053B. Qwen3.8-27B (the only atlas recipe affected): n_layer 65 -> 64, KV 69,632 -> 65,536 B/pos (-5.9%), active 26.0493B -> 25.6246B (-1.6%). Seven other atlas recipes: no change at all.",
       "evidence": "Untested. Requires measuring decode on an MTP-carrying build and comparing against the prediction with and without the block, plus establishing whether llama.cpp runs the head at all - which must be READ from the runtime, not assumed.",
       "scope": "Files with nextn_predict_layers > 0. No effect on any other model.",
-      "wired_into": null,
-      "confidence": "inferred",
+      "wired_into": "quantprobe/spec.py:from_gguf - n_layer is now the decode depth, and MTP-block tensors are subtracted from active/routed params and excluded from kv_blocks while staying in the footprint total; tests/smoke.py:t_kv_is_priced_on_full_attention_layers_only pins it",
+      "confidence": "measured",
       "predicted_effect": "Staked before any run: (P-1) llama.cpp does NOT execute the MTP head during ordinary single-stream decode, so measured decode on Qwen3.6-35B UD-Q2_K_XL will match the 40-layer active-byte figure better than the 41-layer one. (P-2) The improvement in predicted-vs-measured error will be between 1% and 3% - the size of the byte difference, no more, because nothing else changes. (P-3) Footprint (file bytes resident) will NOT improve, because the block is still loaded: this is a bandwidth correction, not a capacity one. Kill rule: if measured decode lands closer to the 41-layer prediction, the runtime is running the head and the current arithmetic is already right."
+    },
+    {
+      "id": "U-61",
+      "kind": "untried",
+      "status": "open 2026-08-24 - testable in the next depth-aware build, which targets this model.",
+      "claim": "The qwen3.8-27b recipe's fragile band [51,64] includes blk.64, which is the MTP head and is never executed, so protecting it at higher precision buys no quality and costs bytes: a band trimmed to [51,63] should be strictly better - same perplexity, smaller file.",
+      "magnitude": "Unknown until measured. One of 14 protected blocks, so the byte saving is roughly 1/14 of the band's precision premium; the quality delta should be indistinguishable from zero.",
+      "evidence": "Untested. blk.64 confirmed as the MTP block by tensor inspection (15 tensors including nextn.*, against 11 in blk.63) and by qwen35.nextn_predict_layers=1. The band was measured under prereg #101 before any of this was known.",
+      "predicted_effect": "Staked before the build: (P-1) PPL of the [51,63] build equals the [51,64] build within the noise of the eval (|delta| < 0.01 on 32 chunks of WikiText-2). (P-2) The [51,63] file is SMALLER, by between 0.2% and 2% of total bytes. (P-3) Decode speed is unchanged within 2%, because the block is resident in both and executed in neither. Kill rule: if PPL measurably WORSENS when blk.64 is dropped from the band, the block is being executed by some path this analysis missed and U-60 P-1 must be re-opened.",
+      "scope": "Qwen3.8-27B specifically; generalizes to any recipe whose band was measured over a block range that includes an MTP head.",
+      "wired_into": null,
+      "confidence": "inferred"
     }
   ],
   "external": [

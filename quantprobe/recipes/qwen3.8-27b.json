@@ -37,7 +37,8 @@
       64
     ],
     "fragility_ratio": 2.35,
-    "shape": "late"
+    "shape": "late",
+    "band_note": "Measured as 51-64 (prereg #101), indexed over the file 65 blocks. blk.64 is the MTP head: llama.cpp loads it and never executes it (L-33, U-60 P-1, from models/qwen35moe.cpp), so the DECODE stack is 0..63 while the FILE has 65 blocks - model.n_layer is the block count the band is indexed in, and params.n_layer is the decode depth. Protecting blk.64 therefore spends bytes on a block that never runs; U-61 stakes the A/B that tests trimming the applied band to 51-63 (predicted: same PPL, smaller file). The measurement above is left exactly as measured."
   },
   "provenance": {
     "measured": "2026-08-15",
@@ -47,15 +48,18 @@
     "raw_log": "weights/data/prereg101_probe_qwen38_q4.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
     "contributor": "FedericoTs",
-    "note": "Probed launch-day+1 (weights landed 2026-08-14; prereg #101). Source was Q4_K_M, not BF16: a BF16 probe is infeasible on this box (prereg #101 amendment 2026-08-15), so band deltas are relative to a Q6_K reference requantized from Q4_K_M. The source's own quantization is common-mode and cancels in the deltas; band LOCATION is trustworthy, absolute BF16 loss is not measured here. fragility_ratio follows the atlas convention (max delta / statistics.median of the 4 deltas = 0.5926/0.25235 = 2.35), matching every sibling recipe; the probe binary's own banner printed 2.04 because it divides by its upper-median (0.29) - same data, different median convention, disclosed so the two published numbers do not read as a discrepancy."
+    "note": "Probed launch-day+1 (weights landed 2026-08-14; prereg #101). Source was Q4_K_M, not BF16: a BF16 probe is infeasible on this box (prereg #101 amendment 2026-08-15), so band deltas are relative to a Q6_K reference requantized from Q4_K_M. The source's own quantization is common-mode and cancels in the deltas; band LOCATION is trustworthy, absolute BF16 loss is not measured here. fragility_ratio follows the atlas convention (max delta / statistics.median of the 4 deltas = 0.5926/0.25235 = 2.35), matching every sibling recipe; the probe binary's own banner printed 2.04 because it divides by its upper-median (0.29) - same data, different median convention, disclosed so the two published numbers do not read as a discrepancy.",
+    "note_mtp": "This file carries nextn_predict_layers=1: blk.64 is an MTP head that llama.cpp loads but does not execute in the main pass (L-33, U-60 P-1, confirmed from models/qwen35moe.cpp). n_layer was 65 under the old all-blocks convention and is 64 here, the decode depth llama.cpp itself reports. The band was trimmed from 51-64 to 51-63 for the same reason; see probe.band_note and U-61.",
+    "source_repo": "unsloth/Qwen3.8-27B-GGUF"
   },
   "params": {
     "total_b": 27.3207,
-    "active_b": 26.0493,
-    "always_active_b": 26.0493,
+    "active_b": 25.6246,
+    "always_active_b": 25.6246,
     "moe": false,
-    "kv_per_pos": 69632,
-    "n_layer": 65,
+    "kv_per_pos": 65536,
+    "n_layer": 64,
+    "n_block": 65,
     "measured_from": "Qwen3.8-27B-Q4_K_M.gguf"
   }
 }

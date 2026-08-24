@@ -2565,6 +2565,7 @@ def build_rows(args):
             "ctx": ctx,
             "kvp": kvp,
             "nlay": nlay,
+            "n_block": getattr(args, "n_block", None) or nlay,
             "true_size_gb": true_size,
             "gguf": _g,
             "arch": getattr(args, "arch", None),

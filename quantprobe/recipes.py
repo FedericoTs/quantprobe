@@ -91,9 +91,23 @@ def params_from_gguf(path):
         "always_active_b": round(s["ne"], 4),
         "moe": bool(s["moe"]),
         "kv_per_pos": int(s["kvp"]),  # context pricing; without it `--ctx` falls back to a guess
+        # Two different numbers, equal on every model without an MTP head (L-33): n_layer is the
+        # DECODE depth (what prices a token), n_block is the FILE's block count (what a probe's
+        # band is indexed in). Conflating them put a band's upper bound out of its own range.
         "n_layer": s["n_layer"],
+        "n_block": s.get("n_block", s["n_layer"]),
         "measured_from": os.path.basename(path),
     }
+
+
+def source_repo(r):
+    """The HF repo holding a high-precision source this recipe can be built FROM, or None.
+
+    Separate from the published artifact: that is the finished low-bit build, this is the f16/
+    bf16/Q8_0 input the depth-aware quantize consumes. Every entry was checked against the Hub
+    for existence AND for at least one high-precision file before being written - an unverified
+    repo id would send the user on a 30 GB download that 404s."""
+    return ((r or {}).get("provenance") or {}).get("source_repo")
 
 
 def params(r):

@@ -45,7 +45,8 @@
     "base_quant": "Q6_K",
     "raw_log": "weights/data/mistral_atlas.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
-    "contributor": "FedericoTs"
+    "contributor": "FedericoTs",
+    "source_repo": "bartowski/Mistral-7B-Instruct-v0.3-GGUF"
   },
   "params": {
     "total_b": 7.248,
@@ -54,6 +55,7 @@
     "moe": false,
     "kv_per_pos": 131072,
     "n_layer": 32,
+    "n_block": 32,
     "measured_from": "Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"
   }
 }

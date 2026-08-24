@@ -4263,12 +4263,16 @@ def t_kv_is_priced_on_full_attention_layers_only():
         return "SKIP: needs the Qwen3.8 + Qwen2.5-7B GGUFs on D: (this box only)"
 
     h = from_gguf(hybrid)
-    # 1. The hybrid counts KV blocks from the file: 17 of 65 (16 full-attn + the MTP block,
-    #    which carries attn_k too - the pre-existing n_layer convention, unchanged here).
-    assert h["kv_layers"] == 17 and h["n_layer"] == 65, (h["kv_layers"], h["n_layer"])
-    # 2. And prices ONLY those: 17 x 4 KV-heads x (256+256) x 2B = 69,632 B/pos. The old
-    #    formula gave 65/17 = 3.8x more; if kvp comes back near 260 KB the fix has regressed.
-    assert h["kvp"] == 17 * 4 * 512 * 2, h["kvp"]
+    # 1. The hybrid counts KV blocks from the file: 16 full-attention blocks of a 64-deep stack.
+    #    These were 17 of 65 until v1.37.0, when U-60 P-1 was confirmed by reading llama.cpp:
+    #    this file carries nextn_predict_layers=1, and blk.64 is an MTP head that is loaded but
+    #    "not executed in the main pass" (models/qwen35moe.cpp). It carries attn_k like any
+    #    block, so it was being priced as a KV-growing layer it never becomes. The old numbers
+    #    were the deferred convention this test used to pin deliberately; the deferral is over.
+    assert h["kv_layers"] == 16 and h["n_layer"] == 64, (h["kv_layers"], h["n_layer"])
+    # 2. And prices ONLY those: 16 x 4 KV-heads x (256+256) x 2B = 65,536 B/pos. The all-layers
+    #    formula gave 64/16 = 4x more; if kvp comes back near 260 KB the fix has regressed.
+    assert h["kvp"] == 16 * 4 * 512 * 2, h["kvp"]
 
     d = from_gguf(dense)
     # 3. REGRESSION GUARD: on a full-attention model every block has attn_k, so the new count
@@ -4964,15 +4968,31 @@ def t_every_measured_model_is_reachable_by_the_name_it_is_published_under():
         p = rec.params(rec.find(key=k))
         assert p, f"{k}: no params block - `plan --model {k}` cannot answer before download"
         assert p.get("measured_from"), f"{k}: params with no measured_from is a number, not a fact"
-        assert p["n_layer"] == rec.find(key=k)["model"]["n_layer"], (
-            f"{k}: params measured on a {p['n_layer']}-layer file but the recipe probed "
+        # Compare like with like: a recipe's model.n_layer is the FILE's block count (the frame
+        # its band is indexed in), and params.n_block is the same quantity measured. params
+        # .n_layer is the DECODE depth, smaller by the MTP head where one exists (L-33). These
+        # were conflated at first, which put qwen3.8-27b's band 51-64 outside its own 0..63 range.
+        assert p["n_block"] == rec.find(key=k)["model"]["n_layer"], (
+            f"{k}: params measured on a {p['n_block']}-block file but the recipe probed "
             f"{rec.find(key=k)['model']['n_layer']} - two architectures under one name"
+        )
+        assert p["n_layer"] <= p["n_block"], f"{k}: decode depth exceeds the block count"
+        assert rec.find(key=k)["probe"]["fragile_band"][1] <= p["n_block"] - 1, (
+            f"{k}: band upper bound is outside the file's blocks"
         )
         assert 0 < p["always_active_b"] <= p["active_b"] <= p["total_b"], (
             f"{k}: params not ordered always<=active<=total: {p}"
         )
         pm = plmod.recipe_model(k)
         assert pm and pm["t"] == p["total_b"] and pm["nl"] == p["n_layer"], f"{k}: plan bridge broke"
+        # 4. And `auto <key>` can BUILD it: a recipe needs a verified high-precision source repo,
+        #    or the atlas can only describe models it cannot make.
+        sr = rec.source_repo(rec.find(key=k))
+        assert sr and sr.count("/") == 1 and " " not in sr, f"{k}: bad source_repo {sr!r}"
+        spec_out = au.resolve_model(argparse.Namespace(total=None, active=None,
+                                                       always_active=None, n_layer=None), k)
+        assert spec_out.repo == sr, f"auto {k}: did not resolve to its recorded source {sr}"
+        assert spec_out.n_layer == p["n_layer"], f"auto {k}: layer count disagrees with params"
     return None
 
 
@@ -5001,9 +5021,14 @@ def t_a_stored_param_block_is_pinned_to_the_file_it_was_measured_on():
         if not p:
             continue
         checked += 1
-        assert p["n_layer"] == r["model"]["n_layer"], (
-            f"{r['model']['key']}: params say {p['n_layer']} layers, recipe probed "
+        # n_block, not n_layer: a recipe's model.n_layer is the file's BLOCK COUNT, which is the
+        # frame its band is indexed in. The decode depth is smaller wherever an MTP head exists.
+        assert p["n_block"] == r["model"]["n_layer"], (
+            f"{r['model']['key']}: params measured {p['n_block']} blocks, recipe probed "
             f"{r['model']['n_layer']} - the numbers describe a different architecture"
+        )
+        assert p["n_layer"] <= p["n_block"], (
+            f"{r['model']['key']}: decode depth {p['n_layer']} exceeds block count {p['n_block']}"
         )
         assert p.get("measured_from", "").endswith(".gguf"), (
             f"{r['model']['key']}: measured_from must name the GGUF, got {p.get('measured_from')!r}"

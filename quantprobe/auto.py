@@ -28,7 +28,10 @@ MODEL_REPOS = {
     "glm-air": ("unsloth/GLM-4.5-Air-GGUF", 110, 12, 2.7, True),
     "laguna-s": ("unsloth/Laguna-S-2.1-GGUF", 117.6, 8, 2.5, True),
     "gemma-12b": ("unsloth/gemma-4-12b-it-GGUF", 11.9, 11.9, 11.9, False),
-    "mistral-7b": ("unsloth/Mistral-7B-Instruct-v0.3-GGUF", 7.2, 7.2, 7.2, False),
+    # unsloth/Mistral-7B-Instruct-v0.3-GGUF was gated and now 404s outright (verified 2026-08-24
+    # against the Hub). bartowski's is public and carries a Q8_0 source, and it is the repo the
+    # measured recipe records - a preset pointing at a dead repo is worse than no preset.
+    "mistral-7b": ("bartowski/Mistral-7B-Instruct-v0.3-GGUF", 7.2, 7.2, 7.2, False),
     "qwen3-235b": (
         "unsloth/Qwen3-235B-A22B-GGUF",
         235.1,
@@ -256,6 +259,28 @@ def resolve_model(a, target):
             from . import recipes as recmod
 
             rec = recmod.find(key=target)
+            # A recipe that records a verified high-precision source CAN drive the whole
+            # pipeline - that was the only thing `auto` was missing to build any atlas model
+            # from its name. Params supply the spec; the repo supplies the bytes.
+            src = recmod.source_repo(rec) if rec else None
+            p = recmod.params(rec) if rec else None
+            if rec and src and p:
+                repo = src
+                t, ac, ne = p["total_b"], p["active_b"], p["always_active_b"]
+                moe = p.get("moe", ac < t * 0.9)
+                print(f"[quantprobe auto] '{target}' resolved from the measured atlas -> {repo}")
+                print(
+                    f"  {rec['model']['name']}: {t:.1f}B total, {ac:.1f}B active, "
+                    f"{p['n_layer']} layers, band {rec['probe']['fragile_band']}"
+                )
+                return ModelSpec(
+                    repo=repo,
+                    total=t,
+                    active=ac,
+                    always_active=ne,
+                    moe=moe,
+                    n_layer=p["n_layer"],
+                )
             if rec:
                 msg = [
                     f"'{target}' is not an `auto` preset - but quantprobe HAS MEASURED it.",

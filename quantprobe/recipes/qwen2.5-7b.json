@@ -45,7 +45,8 @@
     "base_quant": "Q6_K",
     "raw_log": "weights/data/qwen_mech_probe.log",
     "method": "band probe: one band's FFNs -> q2_k at a time, rest at base; delta vs reference",
-    "contributor": "FedericoTs"
+    "contributor": "FedericoTs",
+    "source_repo": "bartowski/Qwen2.5-7B-Instruct-GGUF"
   },
   "params": {
     "total_b": 7.6156,
@@ -54,6 +55,7 @@
     "moe": false,
     "kv_per_pos": 57344,
     "n_layer": 28,
+    "n_block": 28,
     "measured_from": "Qwen2.5-7B-Instruct-Q4_K_M.gguf"
   }
 }

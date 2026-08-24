@@ -1,5 +1,37 @@
 # Changelog
 
+## v1.37.0 - 2026-08-24
+
+**A block that is never executed no longer costs you predicted speed.**
+
+U-60 P-1/P-3 are **confirmed — by reading llama.cpp rather than timing it.** That was the honest
+instrument: the effect is ~2%, and this box's decode noise has been 15–24% (preregs #110 and #111
+both VOID on spread). `src/models/qwen35moe.cpp` loads the MTP blocks and then says so above its
+graph loop — *"MTP/NextN layers are loaded as extra decoder blocks but not executed in the main
+pass"* — iterating only `il < n_layer`, where `llama-hparams.cpp:272` defines
+`n_layer() = n_layer_all - n_layer_nextn`.
+
+So an MTP head costs **capacity** (it is resident) and **no bandwidth** (it never runs). quantprobe
+now prices it that way:
+
+- Qwen3.6-35B `UD-Q2_K_XL`: active **3.0109B → 2.9464B**, now identical to every other build of
+  that model, with footprint correctly unchanged at 35.5053B.
+- Qwen3.8-27B (the only atlas recipe affected): KV **69,632 → 65,536 B/pos**, active −1.6%.
+- The other seven recipes: **no change at all.**
+
+**`quantprobe auto <recipe-key>` can now build any model in the atlas.** Every recipe records a
+`source_repo`, each one checked against the Hub for existence *and* for a high-precision file
+before being written — an unverified repo id is a 30 GB download that 404s. This also caught a
+dead preset: `auto mistral-7b` pointed at a repo that now 404s, and is repointed at the verified
+one.
+
+**One modelling error of mine, caught by the repo's own gates.** I initially collapsed two
+different quantities into `n_layer`, which put Qwen3.8-27B's measured band 51–64 outside its own
+0..63 range. They are distinct: `n_layer` is the **decode depth** (what prices a token), `n_block`
+is the **file's block count** (the frame a probe's band is indexed in). They differ only where an
+MTP head exists. The measured band is left exactly as measured — protecting `blk.64` is wasted
+bytes, and **U-61** stakes the A/B that tests trimming it rather than assuming.
+
 ## v1.36.0 - 2026-08-21
 
 **`plan --model <recipe-key>` now answers the question you have *before* you download.**
