@@ -1,0 +1,12 @@
+1 hours 37.42 minutes
+[1]4.2894,[2]6.0517,[3]5.8261,[4]5.7846,[5]5.7835,[6]6.0077,[7]6.1563,[8]6.6148,[9]6.9947,[10]7.3514,[11]7.2347,[12]7.2879,[13]7.6158,[14]7.2319,[15]7.2019,[16]7.3886,[17]6.9769,[18]7.0647,[19]6.9944,[20]6.9353,[21]6.6940,[22]6.6037,[23]6.3772,[24]6.0861,[25]5.9727,[26]5.8370,[27]5.7400,[28]5.6599,[29]5.6564,[30]5.6315,[31]5.5841,[32]5.5950,
+
+0.01.041.108 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 12, abort
+0.18.741.302 W resolve_fused_ops: layer 0 is assigned to device CPU but fused Gated Delta Net (chunked) is assigned to device CUDA0 (usually due to missing support)
+0.18.741.306 W resolve_fused_ops: fused Gated Delta Net (chunked) not supported, set to disabled
+2.03.932.572 I 
+2.03.941.487 I system_info: n_threads = 4 (n_threads_batch = 4) / 4 | CUDA : ARCHS = 500,610,700,750,800,860,890,900 | USE_GRAPHS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+2.03.942.889 I perplexity: tokenizing the input ..
+2.04.875.908 I perplexity: tokenization took 933.015 ms
+2.04.876.403 I perplexity: calculating perplexity over 32 chunks, n_ctx=512, batch_size=2048, n_seq=4
+14.15.547.855 I perplexity: 730.67 seconds per pass - ETA 99.08.581.874 I Final estimate: PPL = 5.5950 +/- 0.14702

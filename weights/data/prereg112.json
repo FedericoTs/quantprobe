@@ -1,0 +1,24 @@
+{
+  "arms": {
+    "OURS": {
+      "bytes": 12483292128,
+      "ppl": 6.059,
+      "log": "C:\\Users\\Federico\\Documents\\evo-compress\\.claude\\worktrees\\law5-prefill\\weights\\data\\prereg112_ppl_OURS.log"
+    },
+    "SPREAD": {
+      "bytes": 12483292128,
+      "ppl": 6.4136,
+      "log": "C:\\Users\\Federico\\Documents\\evo-compress\\.claude\\worktrees\\law5-prefill\\weights\\data\\prereg112_ppl_SPREAD.log"
+    }
+  },
+  "protocol": {
+    "chunks": 32,
+    "ngl": 12,
+    "eval": "D:/evo-compress-data/eval/wiki.test.raw",
+    "llama": "llamacpp-b10098",
+    "imatrix": null,
+    "note": "same protocol as prereg #104 - no imatrix on any arm"
+  },
+  "ref_ppl": 5.595,
+  "ref_bytes": 29047086048
+}

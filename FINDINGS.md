@@ -8,7 +8,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 
 | section | count |
 |---|---|
-| Established laws | 33 |
+| Established laws | 34 |
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 34 |
@@ -216,6 +216,12 @@ What we believe, and the measurement that earned it.
 **Magnitude:** Qwen3.6-35B-A3B: Unsloth UD-Q2_K_XL reports block_count=41, 35.5053B total / 3.0109B active and carries qwen35moe.nextn_predict_layers=1 (753 tensors); the Q8_0 source, our depth-aware build and the naive Q2_K build all report block_count=40, 34.6606B / 2.9464B (733 tensors). The extra 20 tensors are a complete blk.40.*. Difference: +2.4% total, +2.2% active, +2.0% always-active. Against this, quantization itself moved the counts 0.000% across 12 comparisons (4 quants of Qwen3.5-35B spanning 8.52 to 2.63 bit, 2 of Qwen2.5-7B, 2 of DeepSeek-V2-Lite).
 
 `established` · `measured` · scope: GGUF files for models with an MTP/next-N head (observed on qwen35moe; DeepSeek-V3-class architectures also ship one). Says nothing about whether a given runtime EXECUTES the block - only that it is present in the file and counted by block_count. · evidence: Measured 2026-08-21 while gating whether params were safe to store in a recipe; scratch harness compared 4 model groups. Pre-existing note at quantprobe/spec.py:205 had already flagged the MTP block as counted-by-convention and deferred the change. · wired into: `quantprobe/recipes.py:params_from_gguf (records measured_from) and the two smoke guards that refuse a params block whose n_layer disagrees with the recipe's own`
+
+### L-34 — Depth-aware quantization is not a mixture-of-experts artefact: concentrating a fixed byte budget on a measured fragile band beats spreading it evenly on a DENSE model too, and by a larger margin than on MoE.
+
+**Magnitude:** Qwen3.8-27B (dense, 27.3B, 64 decode blocks): 43.3% of the control's excess loss over an 8.51-bit reference removed, at BYTE-IDENTICAL size (12,483,292,128 B each; the two arms differ only in which 13 of 64 blocks hold Q4_K). Against 29.2% on Qwen3.6-35B MoE under prereg #104, same protocol, same llama.cpp b10098, no imatrix on any arm.
+
+`established` · `measured` · scope: ONE dense model, and both arms come from the same architecture family (qwen35) that supplied the MoE comparison. Establishes that the MoE-only scope line is unnecessary; does NOT establish the effect across all dense architectures. A Gemma or Llama arm would be the next independent test. · evidence: Pre-registration #112, staked with its scorer and build method committed before any arm existed. weights/data/prereg112.json; scorer weights/prereg112_score.py (--self-check: 12 fixtures, 9 distinct verdicts). · wired into: `quantprobe/recipes/qwen3.8-27b.json (the band this used) and README.md's measured-results table, which no longer needs an MoE-only qualifier`
 
 ## Shipped levers
 
@@ -1204,11 +1210,11 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 ### U-62 — Depth-aware placement pays on a DENSE model at equal bytes, not only on mixture-of-experts. If it does not, the technique is an MoE artefact - routed experts move between tiers independently, which a dense stack cannot do - and every headline here needs a scope line saying so.
 
-**Magnitude:** Unknown. The MoE reference point is prereg #104: 29.2% of the excess loss over the reference removed at byte-identical size on Qwen3.6-35B.
+**Magnitude:** Qwen3.8-27B dense, Q8_0 reference 5.5950. OURS (band 51-63) 6.0590, +0.4640 excess. SPREAD (13 blocks at 0,4,9...59) 6.4136, +0.8186 excess. Both files 12,483,292,128 bytes - identical, not merely within the 0.5% gate. Share of excess removed 43.3% vs 29.2% on the MoE (#104).
 
 **Predicted effect (staked):** P-1: PPL(depth-aware) < PPL(evenly-spread control) at equal bytes, removing at least 14.6% of the control's excess loss - half the MoE effect. P-2: the share removed is BELOW 29.2%, staked so that dense matching or beating MoE registers as news rather than a shrug. P-4: decode unchanged within 3%, since placement moves which blocks hold which format, not bytes read per token. Size gate before any quality number is read: the two arms must land within 0.5% in bytes or the control is rebuilt. Refuted if the depth-aware arm removes less than 14.6%; INVERTED if it loses.
 
-`STAKED 2026-08-24 - pre-registration #112, arms building. The scoping question behind every equal-bytes claim this project has published.` · `speculative` · scope: Qwen3.8-27B specifically, WikiText-2 held out, 32 chunks - the same corpus and chunk count as #104 so the two are comparable. One dense model is one dense model: a win here does not establish the technique across all dense architectures. · evidence: Pre-registration #112, staked before any arm was built. Qwen3.8-27B (dense, 27.3B, 64 decode blocks), band 51-63 from prereg #101, three arms off one Q8_0 source.
+`SCORED 1/2, two unscored - pre-registration #112, 2026-08-24. P-1 HIT: depth-aware removes 43.3% of the control's excess loss on a DENSE model at byte-identical size, against a staked floor of 14.6%. P-2 MISS and it is the interesting half: staked BELOW the MoE's 29.2%, measured 43.3% - about 1.5x the MoE effect. P-3 (the MTP arm) and P-4 (decode) are UNSCORED, not passed: arm C was never built (disk), and a 3% decode threshold cannot be resolved on a box whose decode spread VOIDed preregs #110 and #111 at 15-24%. Promoted to L-34.` · `measured` · scope: Qwen3.8-27B specifically, WikiText-2 held out, 32 chunks - the same corpus and chunk count as #104 so the two are comparable. One dense model is one dense model: a win here does not establish the technique across all dense architectures. · evidence: Pre-registration #112, staked before any arm was built. Qwen3.8-27B (dense, 27.3B, 64 decode blocks), band 51-63 from prereg #101, three arms off one Q8_0 source.
 
 ## External work to study
 

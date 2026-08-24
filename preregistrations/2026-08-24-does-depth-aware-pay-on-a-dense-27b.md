@@ -85,3 +85,69 @@ blocks hold which format, not how many bytes are read per token.
 Scored either way, at full size, including an inversion. If P-1 is refuted the README's claim gets
 a scope line saying depth-aware placement is demonstrated on MoE and does not transfer to dense —
 which is exactly the kind of boundary this register exists to record.
+
+---
+
+# VERDICT — scored 1/2, two unscored (2026-08-24)
+
+**P-1 HIT. P-2 MISS — and the miss is the result worth reading.**
+
+| arm | placement | bytes | PPL (32 chunks, held-out WikiText-2) | excess over reference |
+|---|---|---|---|---|
+| reference | Q8_0 source, 8.51 bits | 29,047,086,048 | 5.5950 | — |
+| **OURS** | measured band **51-63** | **12,483,292,128** | **6.0590** | **+0.4640** |
+| SPREAD | 13 blocks at 0,4,9…59 | **12,483,292,128** | 6.4136 | +0.8186 |
+
+**The size gate passed at 0.000% — the files are byte-identical, not merely close.** That is not
+luck. In a dense stack every decode block has the same FFN dimensions, so moving *which* thirteen
+get Q4_K changes placement and literally nothing else. This is the strongest form this control can
+take, and it passed before any perplexity number was read.
+
+## P-1 — HIT
+
+Depth-aware placement removes **43.3%** of the control's excess loss (staked: ≥ 14.6%).
+
+> **Depth-aware quantization is not a mixture-of-experts artefact.** It pays on a dense model, at
+> byte-identical size, by a wide margin.
+
+That was the real question. Every equal-bytes win this project had published was on MoE, where
+most of a layer's weight sits in routed experts that move between tiers independently — a
+structure a dense stack does not have. Had P-1 failed, every headline here would have needed a
+scope line. It did not.
+
+## P-2 — MISS. Dense did not merely match MoE; it beat it.
+
+Staked: the dense share would come in **below** the MoE's 29.2% (prereg #104). Measured: **43.3%**,
+about 1.5× the MoE effect.
+
+I staked P-2 in that direction precisely so this outcome would count as news rather than a shrug,
+and it does. The reasoning behind the prediction — that some of the MoE result came from expert
+structure — is refuted. If anything the causation runs the other way: on an MoE only the routed
+experts of a protected block get the better format while the always-active path is already
+protected everywhere, so a "protected block" is a weaker intervention there than here, where the
+whole FFN changes format. **Concentration of a fixed byte budget matters more when every protected
+block is fully read every token.**
+
+This does not license a general claim. One dense model is one dense model, and the same
+architecture family (qwen35) supplied both arms. What it does establish is that the MoE-only
+scope line is unnecessary, and that the dense case is worth more attention than it has had here.
+
+## P-3, P-4 — UNSCORED, and stated as such
+
+- **P-3 (U-61, the MTP block)** needs arm C, which is not built: the box was deliberately run
+  without deleting the user's models, and three 12.5 GB arms do not fit beside a 29 GB source.
+- **P-4 (decode unchanged)** needs a decode measurement on at least two arms. Not attempted here.
+  It should be read against this box's record: preregs #110 and #111 both VOIDed on decode spread
+  of 15-24%, and a 3% threshold cannot be resolved against that. Attempting it would produce a
+  number, not an answer.
+
+Neither is reported as a pass. An unscored prediction is unscored.
+
+## Cost note, recorded because it shaped the design
+
+The reference took **99.2 minutes**; each 12.5 GB arm took **4.9**. The reference is 29 GB against
+16 GB of RAM on a disk that was 100% full, so every forward pass streamed the weights (L-29/D-29).
+A 20× wall-clock penalty for one arm being over the RAM boundary is the same effect this project
+documents for decode, showing up in evaluation. Had the arms themselves been that size, this
+experiment would not have been practical on this hardware.
+
