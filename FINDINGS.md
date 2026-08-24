@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 34 |
-| Untried levers | 50 |
+| Untried levers | 51 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1200,7 +1200,15 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 
 **Predicted effect (staked):** Staked before the build: (P-1) PPL of the [51,63] build equals the [51,64] build within the noise of the eval (|delta| < 0.01 on 32 chunks of WikiText-2). (P-2) The [51,63] file is SMALLER, by between 0.2% and 2% of total bytes. (P-3) Decode speed is unchanged within 2%, because the block is resident in both and executed in neither. Kill rule: if PPL measurably WORSENS when blk.64 is dropped from the band, the block is being executed by some path this analysis missed and U-60 P-1 must be re-opened.
 
-`open 2026-08-24 - testable in the next depth-aware build, which targets this model.` · `inferred` · scope: Qwen3.8-27B specifically; generalizes to any recipe whose band was measured over a block range that includes an MTP head. · evidence: Untested. blk.64 confirmed as the MTP block by tensor inspection (15 tensors including nextn.*, against 11 in blk.63) and by qwen35.nextn_predict_layers=1. The band was measured under prereg #101 before any of this was known.
+`STAKED 2026-08-24 - pre-registration #112 arm C, arms building.` · `inferred` · scope: Qwen3.8-27B specifically; generalizes to any recipe whose band was measured over a block range that includes an MTP head. · evidence: Untested. blk.64 confirmed as the MTP block by tensor inspection (15 tensors including nextn.*, against 11 in blk.63) and by qwen35.nextn_predict_layers=1. The band was measured under prereg #101 before any of this was known. Now under test as arm C of pre-registration #112, at no extra cost: the same three builds answer it and the dense-vs-MoE question together.
+
+### U-62 — Depth-aware placement pays on a DENSE model at equal bytes, not only on mixture-of-experts. If it does not, the technique is an MoE artefact - routed experts move between tiers independently, which a dense stack cannot do - and every headline here needs a scope line saying so.
+
+**Magnitude:** Unknown. The MoE reference point is prereg #104: 29.2% of the excess loss over the reference removed at byte-identical size on Qwen3.6-35B.
+
+**Predicted effect (staked):** P-1: PPL(depth-aware) < PPL(evenly-spread control) at equal bytes, removing at least 14.6% of the control's excess loss - half the MoE effect. P-2: the share removed is BELOW 29.2%, staked so that dense matching or beating MoE registers as news rather than a shrug. P-4: decode unchanged within 3%, since placement moves which blocks hold which format, not bytes read per token. Size gate before any quality number is read: the two arms must land within 0.5% in bytes or the control is rebuilt. Refuted if the depth-aware arm removes less than 14.6%; INVERTED if it loses.
+
+`STAKED 2026-08-24 - pre-registration #112, arms building. The scoping question behind every equal-bytes claim this project has published.` · `speculative` · scope: Qwen3.8-27B specifically, WikiText-2 held out, 32 chunks - the same corpus and chunk count as #104 so the two are comparable. One dense model is one dense model: a win here does not establish the technique across all dense architectures. · evidence: Pre-registration #112, staked before any arm was built. Qwen3.8-27B (dense, 27.3B, 64 decode blocks), band 51-63 from prereg #101, three arms off one Q8_0 source.
 
 ## External work to study
 
