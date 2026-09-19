@@ -490,6 +490,11 @@ def run(a):
         sbits, ssize, spath = src
         dest = getattr(a, "dir", None) or "./models"
         os.makedirs(dest, exist_ok=True)
+        # Where the fetch below actually puts the file: `fetch` writes dest/<remote path>, and
+        # big repos keep their quants in subfolders (Q8_0/...). Rebuilt from the basename, this
+        # named a file that does not exist - for the probe input AND for the command printed
+        # above it. One expression, so the two cannot drift apart again.
+        srcfull = os.path.join(dest, spath)
         print(
             "\n[quantprobe auto --custom] source: "
             + spath
@@ -513,10 +518,7 @@ def run(a):
             print("  skip the probe below and build straight from it (minutes, not hours):")
             # The path the fetch below will actually produce, not the bare repo filename - a
             # command the user cannot paste yet is worse than no command.
-            print(
-                f"    quantprobe quantize --gguf "
-                f"{os.path.join(dest, os.path.basename(spath))} --recipe {target}"
-            )
+            print(f"    quantprobe quantize --gguf {srcfull} --recipe {target}")
             print("  Continuing re-measures it on YOUR file, which is the right call if your")
             print("  source differs from the one above: the band is a property of the weights,")
             print("  not of the name. If it is the same source, you are paying twice.\n")
@@ -530,12 +532,13 @@ def run(a):
 
         if not fetchmod.fetch(repo, dest, spath, fetchmod.token()):
             raise SystemExit("source download failed (re-run: it resumes)")
-        srcfull = os.path.join(dest, os.path.basename(spath))
         evalf = ensure_eval(dest)
         import argparse
 
         from . import probe as probemod
 
+        # Basename here is deliberate: this artifact is BUILT locally, so it has no remote
+        # directory to preserve - it belongs at the top of --dir, next to nothing.
         out = os.path.join(dest, os.path.basename(spath).rsplit(".gguf", 1)[0] + "-depthaware.gguf")
         pa = argparse.Namespace(
             gguf=srcfull,
@@ -583,7 +586,10 @@ def run(a):
     #       `auto` confidently prints a number derived from a model that is not there. A crash
     #       is recoverable; a confident wrong answer is the defect class this project exists to
     #       remove. The size check below is what catches (b), and it is the more important half.
-    _local = os.path.join(getattr(a, "dir", None) or "./models", os.path.basename(path))
+    # `path` is the REPO-RELATIVE path and `fetch` writes dest/<that>, subfolders included. Built
+    # from the basename this looked one directory too high, so a finished download in a repo that
+    # nests its quants was never found and the pre-download estimate was quoted instead.
+    _local = os.path.join(getattr(a, "dir", None) or "./models", path)
     _s, _why = local_spec_or_none(_local, size, len(parts))
     if _why:
         print("  NOTE: " + _why)
@@ -637,7 +643,7 @@ def run(a):
             print(f"[quantprobe auto] part {i + 1}/{len(parts)}: {os.path.basename(part)}")
         if not fetchmod.fetch(repo, dest, part, fetchmod.token()):
             raise SystemExit("download failed (it resumes: re-run the same command)")
-    full = os.path.join(dest, os.path.basename(path))
+    full = os.path.join(dest, path)  # what fetch just wrote, subdirectories and all
     print("\n[quantprobe auto] ready. Run it:")
     print(f"  quantprobe run --gguf {full}")
     print("\n  Better quality at the SAME size: rerun with --custom - it probes YOUR model's")
