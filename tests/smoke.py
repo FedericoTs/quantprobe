@@ -2888,6 +2888,17 @@ def t_ollama_store_reader_survives_a_broken_store():
     return None
 
 
+def t_ollama_model_identity_survives_registries_and_namespaces():
+    """The name read off a manifest path must be one `ollama run` can resolve.
+
+    Lives in tests/test_ollama_model_identity.py (unittest, synthetic stores, no daemon);
+    this hook keeps `python tests/smoke.py` covering it too.
+    """
+    from test_ollama_model_identity import run_smoke
+
+    return run_smoke()
+
+
 def _business_tasks_mod():
     import importlib.util
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
