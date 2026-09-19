@@ -73,6 +73,29 @@ def ollama_bin():
     return shutil.which("ollama") or shutil.which("ollama.exe")
 
 
+def _is_same_model(row_name, want):
+    """True when an `ollama ps` NAME cell addresses the SAME model as `want`.
+
+    Whole-name equality, because every looser rule has a counter-example on a real store:
+    a tag is part of the identity (qwen2.5:7b and qwen2.5:14b are different weights with
+    different splits), a name is not a prefix namespace (qwen2.5-coder:7b is not qwen2.5),
+    and a registry host may carry its own colon (registry:5000/ml/mistral:v3). The one
+    normalization is ollama's own default tag: `ollama run qwen2.5` loads qwen2.5:latest,
+    and that is what ps prints.
+
+    Whether `want` is already tagged is read off the LAST slash-separated component only,
+    because that is the only place a tag can appear: in hub.example:5000/team/model the
+    colon belongs to the host's port, so treating any colon as a tag leaves that name
+    permanently untagged-but-unnormalized and its resident :latest row unreachable.
+    Nothing else about the namespace is rewritten - no host is added, stripped or aliased -
+    so two names that differ anywhere before the tag stay different models.
+    """
+    if row_name == want:
+        return True
+    tagged = ":" in want.rsplit("/", 1)[-1]
+    return not tagged and row_name == f"{want}:latest"
+
+
 def loaded_placement(name):
     """What ollama ACTUALLY chose: (gpu_percent, ctx) from `ollama ps`, or (None, None).
 
@@ -81,6 +104,10 @@ def loaded_placement(name):
     placements and comparing them would look like a speed claim while actually being a
     category error. Measured here on a 6 GB card: ollama loaded qwen2.5:7b as 16%/84% CPU/GPU
     even though the model fits, so the gap was never evidence about anyone's prediction.
+
+    The row has to be THIS model's. --measure feeds gpu_percent into llama-bench's -ngl and
+    ctx into -d, so a neighbouring row benches one model's layer split at another model's
+    depth and prints the difference as a placement recommendation.
     """
     b = ollama_bin()
     if not b:
@@ -94,7 +121,8 @@ def loaded_placement(name):
     import re
 
     for line in out.splitlines():
-        if not line.startswith(name.split(":")[0]):
+        cells = line.split()  # NAME is the first column; the header and blanks fall out here
+        if not cells or not _is_same_model(cells[0], name):
             continue
         m = re.search(r"(\d+)%/(\d+)%\s*CPU/GPU", line)
         gpu = int(m.group(2)) if m else (100 if "100% GPU" in line else None)

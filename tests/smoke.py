@@ -2846,6 +2846,42 @@ def t_ollama_eval_rate_is_generation_not_prompt():
     return None
 
 
+def t_ollama_placement_reads_the_row_for_the_model_it_was_asked_about():
+    """audit-ollama must read ITS model's `ollama ps` row, not a neighbour's.
+
+    The match was `line.startswith(name.split(":")[0])`: it threw the tag away and then
+    prefix-matched, so with qwen2.5:14b and qwen2.5:7b both resident, asking about the 7b
+    returned the 14b's split and context - and with qwen2.5-coder:7b listed first, a model
+    that is not even the same weights. That number is not cosmetic: --measure feeds gpu_pct
+    into `-ngl` and octx into `-d`, so the wrong row benches one model's layer split at
+    another's depth and prints the result as a placement recommendation.
+
+    The cases live in tests/test_ollama_placement.py - the tags, the prefixed sibling, the
+    registry host that carries a port, the three PROCESSOR shapes, the pre-CONTEXT layout,
+    the not-loaded and no-daemon paths - and this hook runs ALL of them through that file's
+    run_smoke(), which needs no pytest. Copying a few assertions down here instead would be
+    a second copy of the intent: every case added there afterwards would be invisible to
+    `python tests/smoke.py`, which is the same way a test once sat below this runner and
+    never executed. A non-empty return from run_smoke() is a failure, every one of them.
+
+    Fixtures are `ollama ps` output shapes with the subprocess boundary stubbed; no daemon,
+    no model, no network."""
+    import importlib.util
+
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_ollama_placement.py")
+    spec = importlib.util.spec_from_file_location("qp_ollama_placement_cases", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    cases = mod.smoke_cases()
+    assert len(cases) >= 14, (
+        f"only {len(cases)} placement case(s) collected from {os.path.basename(path)} - the "
+        f"suite shrank, which reads as green while covering less")
+    failures = mod.run_smoke()
+    assert not failures, f"{len(failures)}/{len(cases)} failed: " + " | ".join(failures)
+    return None
+
+
 def t_ollama_store_reader_survives_a_broken_store():
     """audit-ollama reads a directory it does not own, so it must degrade rather than crash.
 
