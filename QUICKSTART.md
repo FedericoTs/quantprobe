@@ -166,6 +166,20 @@ quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 quantprobe bench --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 ```
 
+**What `fetch` does when Hugging Face won't say how big the file is.** Completeness here is a
+byte count against the remote's `Content-Length`, and that number is only read off a *successful*
+`HEAD` — an error page carries a length too, of its own body, and it is never compared against
+your file in either direction. So the two cases part ways. A **new download** refuses to start
+(`CANNOT FETCH`, non-zero exit) and writes nothing: it would have no size to certify itself
+against. A **file already on disk** is still reused, exactly as before, but it is reported as
+`already present, NOT VERIFIED` rather than "complete" — presence and a matching name, nothing
+more. That keeps `quantprobe auto` working offline against a model you already have, at the price
+of saying plainly that it was not checked: `fetch` does no checksum, ETag or GGUF-header
+validation, so even a size that *does* match is a length agreeing with a length, not proof of the
+contents. Re-run with the remote reachable to have the size confirmed, or `--force` to download it
+again. A same-named file of a *different* size, confirmed against a good `HEAD`, is still refused
+outright — that one is a real disagreement.
+
 ### Make your own compressed model
 
 The one-command version — picks a requantizable source from the repo, fetches the eval corpus,
