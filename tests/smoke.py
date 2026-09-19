@@ -3634,6 +3634,21 @@ def t_contribute_payload_carries_model_spec_not_none():
     return None
 
 
+def t_bench_never_scores_a_llama_bench_run_that_failed():
+    """`bench` ran llama-bench with check=False and never read the returncode, so a process that
+    died AFTER printing one parseable `tg32 | x +/- y` row - backend OOM, a kill, a crash at
+    teardown - was parsed, stamped with a machine state, printed as `measured:` and offered to
+    --contribute as a data point for the law. A run that did not complete is not a measurement.
+
+    The case set lives in tests/test_bench_exit_status.py: rc 0 positive controls (still measured,
+    still contributes, --dry still runs nothing, argv unchanged), signal-style negative
+    returncodes, a bounded raw tail, a real failing executable through find_llama, and the exit
+    status the `quantprobe bench` subcommand hands back to the shell."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from test_bench_exit_status import run_smoke
+    return run_smoke()
+
+
 def t_decon_screen_mutation_directions_pinned():
     """The Phase B decontamination screen is a kill rule (program law 2026-08-05): a verbatim
     protected-bench text MUST flag, an 8-gram-sharing paraphrase MUST flag, a clean sample

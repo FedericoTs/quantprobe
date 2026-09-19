@@ -212,6 +212,32 @@ def run(a):
     sys.exit(subprocess.call(cmd))
 
 
+# Enough raw output to carry a backend's fatal message, bounded so a failing run cannot dump a
+# multi-megabyte log into the terminal. The tail is the diagnostic; the whole log is noise.
+BENCH_TAIL_LINES = 10
+BENCH_TAIL_WIDTH = 140
+
+
+def _bench_failed(rc, txt):
+    """The refusal message for a llama-bench that exited non-zero, with a bounded raw tail."""
+    why = f"exit {rc}"
+    if rc < 0:  # POSIX: a child killed by a signal reports the negative signal number
+        import signal
+
+        try:
+            why = f"{signal.Signals(-rc).name} (returncode {rc})"
+        except ValueError:
+            why = f"signal {-rc} (returncode {rc})"
+    lines = [ln[:BENCH_TAIL_WIDTH] for ln in txt.strip().splitlines()[-BENCH_TAIL_LINES:]]
+    tail = "\n".join("    " + ln for ln in lines) if lines else "    (no output)"
+    return (
+        f"\n[quantprobe] llama-bench FAILED: {why}. No data point was taken.\n"
+        "  Its output is not a result even when a tok/s row parses out of it - a run that died\n"
+        "  partway prints rows on its way down, and half a sweep is not a benchmark.\n"
+        f"  last output:\n{tail}"
+    )
+
+
 def bench(a):
     if getattr(a, "depth", None):
         a.ctx = a.depth  # prediction at the benched depth
@@ -269,6 +295,16 @@ def bench(a):
     )
     out = subprocess.run(cmd, capture_output=True, text=True, errors="replace", check=False)
     txt = out.stdout + out.stderr
+    # A process that did not complete is not a measurement. llama-bench prints its result table
+    # row by row, so a run that dies partway - backend OOM, a crash at teardown, an external kill
+    # - can leave a perfectly parseable `tg32 | x +/- y` behind it. `check=False` was right (we
+    # want the output either way) but nothing ever read the status, so that leftover number was
+    # parsed, stamped with a machine state, printed as a result and offered to --contribute as a
+    # data point for the law. Everything below this line assumes a completed run, so the status
+    # is read FIRST - and the refusal leaves through a non-zero exit, not a printed note the
+    # shell cannot see.
+    if out.returncode != 0:
+        raise SystemExit(_bench_failed(out.returncode, txt))
     mm = re.findall(r"tg\d+(?:\s*@\s*d\d+)?\s*\|\s*([0-9.]+)\s*(?:Â?±|\+/-)\s*([0-9.]+)", txt)
     if not mm:
         mm = re.findall(r"\|\s*([0-9.]+)\s*(?:Â?±)\s*([0-9.]+)\s*\|\s*$", txt, re.MULTILINE)
