@@ -166,6 +166,14 @@ quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 quantprobe bench --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 ```
 
+`fetch` skips a file that is already there; `--force` re-downloads it. A forced re-download
+**keeps the model you already have until the new one is complete** — the new bytes land in a
+`.part` file and only replace the old file once their size matches the server's. If the refresh
+fails at any point (server down, connection dropped, disk full), the command fails and the model you were running is still there, untouched. Budget disk for both copies while a
+forced refresh is in flight. While a published model exists, each new `--force` invocation
+restarts its replacement from byte zero; only retries within that invocation reuse partial
+progress. To keep a separately resumable download, choose a different destination.
+
 ### Make your own compressed model
 
 The one-command version — picks a requantizable source from the repo, fetches the eval corpus,
