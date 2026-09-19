@@ -222,7 +222,38 @@ def _wizard(a):
 #: - the layer count - and the flagship path silently lost its best placement for every preset
 #: MoE (v1.11.1). Naming the record makes the set of facts reviewable, and `apply_to` makes the
 #: transfer one auditable step instead of N chances to forget.
-ModelSpec = namedtuple("ModelSpec", "repo total active always_active moe n_layer")
+#:
+#: `kv_per_pos` is in KB, the unit the args carry (`--kv-per-pos`), NOT the bytes plan.MODELS and
+#: a recipe's params block store - the conversion happens once, in `known_kv_per_pos`, because it
+#: is exactly the kind of per-call-site arithmetic the record exists to remove. None means no
+#: preset row and no recipe records the fact for this model, and the law's documented DEFAULT_KVP
+#: fallback stands.
+ModelSpec = namedtuple("ModelSpec", "repo total active always_active moe n_layer kv_per_pos")
+
+
+def known_kv_per_pos(a, kvp_bytes):
+    """KV bytes per position in KB, or None if nothing in the repo records it.
+
+    Second field lost the same way the layer count was: `apply_to` clears `a.model`, so
+    optimize/runtime stopped finding `plan.MODELS[a.model]["kvp"]` and fell through to
+    DEFAULT_KVP - 96 KB/pos, the Qwen3-30B class - for every model `auto` resolved. The table
+    carries 320 KB/pos for llama-70b (architecture-derived: 80L x 8KV x 128d), so
+    `auto llama-70b --ctx 32768` priced 3.2 GB of KV against that table's own 10.7 GB and
+    computed a different frontier from `plan --model llama-70b` on the same box. Invisible at
+    the default ctx 0, which is where it survived. This transports the recorded value; it does
+    not re-derive or measure it, and no placement change is claimed.
+
+    An explicit, NONZERO --kv-per-pos is the user measuring their own build and wins over the
+    recorded fact. Truthiness rather than `is not None`, deliberately: optimize.py and plan.py
+    both gate on `if getattr(args, "kv_per_pos", None)`, so a `--kv-per-pos 0` already means
+    "not given" to the law. Using the same test here keeps `auto` from disagreeing with its own
+    consumers about what a 0 means - it falls through to the known fact rather than pricing a
+    free KV cache. Pinned by test_explicit_kv_per_pos_beats_the_preset.
+    """
+    explicit = getattr(a, "kv_per_pos", None)
+    if explicit:
+        return explicit
+    return kvp_bytes / 1024 if kvp_bytes else None
 
 
 def atlas_lines(rec):
@@ -280,6 +311,7 @@ def resolve_model(a, target):
                     always_active=ne,
                     moe=moe,
                     n_layer=p["n_layer"],
+                    kv_per_pos=known_kv_per_pos(a, p.get("kv_per_pos")),
                 )
             if rec:
                 msg = [
@@ -320,6 +352,11 @@ def resolve_model(a, target):
         always_active=ne,
         moe=moe,
         n_layer=planmod.effective_n_layer(a, target),
+        # `auto` knows repos plan.MODELS has no row for (at the time of writing qwen3-coder,
+        # laguna-s, glm-4.7) and a raw HF repo has none by definition: .get, so those keep the
+        # DEFAULT_KVP fallback rather than borrowing another model's number. Adding a real row
+        # for any of them later is an improvement and needs no change here.
+        kv_per_pos=known_kv_per_pos(a, planmod.MODELS.get(target, {}).get("kvp")),
     )
 
 
@@ -332,6 +369,9 @@ def apply_to(spec, a):
     """
     a.total, a.active, a.always_active = spec.total, spec.active, spec.always_active
     a.n_layer = spec.n_layer
+    # Already the effective value: resolve_model let an explicit --kv-per-pos win, and left it
+    # None where nothing is known, so optimize/runtime keep their DEFAULT_KVP fallback.
+    a.kv_per_pos = spec.kv_per_pos
     a.model = None  # deliberate: explicit parameters, not a preset lookup
     return spec
 
@@ -383,6 +423,11 @@ def run(a):
     if a.target is None:
         _wizard(a)
     target = a.target
+    # Captured BEFORE apply_to overwrites it with the preset/recipe value. The prediction wants
+    # the recorded fact (there is no file yet); `--run` hands a real GGUF to runtime, whose own
+    # header read is the better source - so the handoffs below restore exactly what the user
+    # typed, and nothing more.
+    user_kv_per_pos = getattr(a, "kv_per_pos", None)
     spec = apply_to(resolve_model(a, target), a)
     repo, t, ac, ne, moe = (
         spec.repo,
@@ -559,6 +604,7 @@ def run(a):
 
             a.gguf = out
             a.bits = None
+            a.kv_per_pos = user_kv_per_pos  # allow the actual GGUF header to win
             runtime.run(a)
         return out
     parts = split_parts(path)
@@ -647,5 +693,6 @@ def run(a):
 
         a.gguf = full
         a.bits = None  # let autospec read the real file
+        a.kv_per_pos = user_kv_per_pos  # ditto for KV: the header beats the table, 0/None unset
         runtime.run(a)
     return full
