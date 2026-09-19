@@ -5037,6 +5037,18 @@ def t_a_stored_param_block_is_pinned_to_the_file_it_was_measured_on():
     return None
 
 
+def t_fetch_publication_regression():
+    """`fetch --force` deleted the published model BEFORE its first network call, so a HEAD
+    error, a 503, a broken stream or a failed rename left the user with nothing where a working
+    model had been. os.replace is now the only publication point, and it is atomic.
+
+    Restoring the early output deletion makes the preservation regressions fail.
+    """
+    from tests.test_fetch_publication import run_smoke
+
+    return run_smoke()
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):

@@ -56,10 +56,12 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
         note = "size matches remote" if remote else "remote size unavailable, name+presence only"
         print(f"  {fname}: already complete ({note}; --force re-downloads)", flush=True)
         return True
-    if os.path.exists(out) and force:
-        os.remove(out)
-        if os.path.exists(part):
-            os.remove(part)
+    # Reset the prior partial so a forced refresh restarts at byte 0, but LEAVE `out` alone:
+    # deleting it here published the failure instead of the download. A HEAD error, a 503, a
+    # broken stream or a failed rename then left the user with no model at all. The os.replace
+    # below is the only publication point, and it is atomic.
+    if force and os.path.exists(out) and os.path.exists(part):
+        os.remove(part)
     r = requests.head(url, headers=hdr0, allow_redirects=True, timeout=60)
     total = int(r.headers.get("Content-Length", 0))
     print(f"  {fname}: {total / 1e9:.2f} GB", flush=True)
