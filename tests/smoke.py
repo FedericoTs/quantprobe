@@ -2818,6 +2818,33 @@ def t_auto_never_trusts_an_incomplete_local_gguf():
         assert local_spec_or_none(os.path.join(d, "nope.gguf"), 123, 1) == (None, None)
     return None
 
+def t_auto_keeps_the_remote_subdirectory_of_every_download():
+    """`auto` must hand downstream the path `fetch` actually wrote, not dest/basename.
+
+    Large GGUF repos keep their quants in subfolders, `fetch` writes dest/<repo-relative path>,
+    and `auto` rebuilt every path after the download from the basename alone. The download
+    succeeded and the run handoff, the --run launch, the --custom probe input, the pasteable
+    quantize command and the "already on disk" header read all named a file one directory too
+    high. Behavioural, not source-text: the fake download writes sentinel bytes to the real
+    destination and the cases assert the handed-off file EXISTS.
+
+    Shares its scenarios with tests/test_auto_nested_paths.py so the pytest file and this suite
+    cannot drift. Mutation owed and discharged: restoring os.path.basename at any of the four
+    input-file call sites in auto.run fails this.
+    """
+    import importlib.util, tempfile
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = importlib.util.spec_from_file_location(
+        "test_auto_nested_paths", os.path.join(here, "test_auto_nested_paths.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert len(mod.CASES) >= 7, f"only {len(mod.CASES)} nested-path cases - did the file shrink?"
+    for case in mod.CASES:
+        with tempfile.TemporaryDirectory() as d:
+            case(d)                                  # no skip branch: every case runs, always
+    return None
+
+
 def t_ollama_eval_rate_is_generation_not_prompt():
     """audit-ollama must never read the PROMPT rate as the generation rate.
 
