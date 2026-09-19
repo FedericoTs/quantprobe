@@ -31,6 +31,16 @@ def token():
 
 
 def fetch(repo, dest, fname, tok, tries=100, force=False):
+    """Download `fname`, resuming a `.part` across breaks. New downloads are published when
+    their size matches the remote Content-Length. The existing-file skip fallback is unchanged.
+
+    `tries` bounds the number of GET requests issued, NOT elapsed wall time: every request
+    spends one, including a 200/206 that answers cleanly with a short or empty body. That case
+    used to cost nothing, so a remote replying "here are zero more bytes" - or one that sends
+    no Content-Length, which makes the completeness check below unreachable - kept the loop
+    requesting forever with `tries` unable to stop it. A complete `.part` needs no GET;
+    the final publication check also preserves completion when tries=0.
+    """
     url = f"https://huggingface.co/{repo}/resolve/main/{fname}"
     out = os.path.join(dest, fname)
     part = out + ".part"
@@ -68,6 +78,7 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
         have = os.path.getsize(part) if os.path.exists(part) else 0
         if total and have >= total:
             break
+        t += 1  # charged here, before the request: whatever it answers, it was an attempt
         try:
             h = dict(hdr0)
             if have:
@@ -76,7 +87,6 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
             if r.status_code not in (200, 206):
                 print(f"    status {r.status_code}, retry", flush=True)
                 time.sleep(5)
-                t += 1
                 continue
             mode = "ab" if (have and r.status_code == 206) else "wb"
             t0 = last = time.time()
@@ -99,11 +109,10 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
             requests.exceptions.Timeout,
         ) as e:
             print(
-                f"    break at {os.path.getsize(part) if os.path.exists(part) else 0:,}, retry {t + 1}: {str(e)[:60]}",
+                f"    break at {os.path.getsize(part) if os.path.exists(part) else 0:,}, retry {t}: {str(e)[:60]}",
                 flush=True,
             )
             time.sleep(3)
-            t += 1
     if total and os.path.exists(part) and os.path.getsize(part) == total:
         os.replace(part, out)
         print(f"  {fname}: DONE", flush=True)
