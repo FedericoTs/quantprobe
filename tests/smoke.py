@@ -1229,6 +1229,23 @@ def t_auto_custom_dry():
         return
     assert "source:" in out and "fragile band" in out and "nothing downloaded" in out, out[-300:]
 
+def t_auto_custom_forwards_the_confirmation_it_was_given():
+    """`auto --custom --yes` must reach probe.run with the consent, and without it must not.
+
+    Lives in tests/test_auto_confirmation.py as unittest cases (hermetic: HF listing, download,
+    eval fetch and the probe itself are all replaced); this wrapper is what keeps it in the smoke
+    suite, which is the gate CONTRIBUTING names."""
+    import unittest
+    import test_auto_confirmation as mod
+
+    r = unittest.TextTestRunner(stream=io.StringIO(), verbosity=0).run(
+        unittest.defaultTestLoader.loadTestsFromModule(mod)
+    )
+    assert r.testsRun >= 4, f"only {r.testsRun} confirmation-forwarding cases ran"
+    assert not (r.failures or r.errors), "\n".join(
+        f"{t}: {why.strip().splitlines()[-1]}" for t, why in (r.failures + r.errors)
+    )
+
 def t_quantize_missing_file_graceful():
     # quantize on a missing GGUF must give a CLEAN error, never a traceback
     rc, out = cli("quantize", "--gguf", "nope.gguf", "--out", "o.gguf", "--protect-late", "12", "--dry")
