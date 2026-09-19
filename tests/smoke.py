@@ -938,9 +938,25 @@ def t_auto_transfers_every_model_field():
             f"the law reads - this is exactly how the layer count was lost")
     assert spec.n_layer == 48, f"preset layer count lost: {spec.n_layer}"
     # force a decision about any NEW field rather than letting it silently go nowhere
-    assert set(ModelSpec._fields) == {"repo", "total", "active", "always_active", "moe", "n_layer"}, \
+    assert set(ModelSpec._fields) == {"repo", "total", "active", "always_active", "moe", "n_layer",
+                                      "kv_per_pos"}, \
         ("ModelSpec gained or lost a field. Transfer it in apply_to and list it here, or add it "
          "to LOCAL_ONLY if auto consumes it directly.")
+    # qwen3-30b's kvp IS plan.DEFAULT_KVP, so the loop above cannot tell a transferred KV fact
+    # from the fallback - the second field lost this way went unnoticed for exactly that reason.
+    # tests/test_auto_kv_metadata.py checks it on a preset where the two differ (t_auto_kv_metadata).
+    # This test stays the ONE owner of the whole-record policy (LOCAL_ONLY, the field set); the KV
+    # file asserts only its own field and units, so there is no second copy to keep in sync.
+
+
+def t_auto_kv_metadata():
+    """auto must carry a model's known KV-per-position into the law (tests/test_auto_kv_metadata.py).
+
+    Held in its own unittest file because it needs several models, both resolution paths and a
+    deep --ctx; this hook keeps it inside `python tests/smoke.py` rather than pytest-only.
+    """
+    from tests.test_auto_kv_metadata import run_smoke
+    return run_smoke()
 
 
 def t_auto_and_plan_recommend_the_same_placement():
