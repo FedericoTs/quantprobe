@@ -50,7 +50,13 @@
     "contributor": "FedericoTs",
     "note": "Probed launch-day+1 (weights landed 2026-08-14; prereg #101). Source was Q4_K_M, not BF16: a BF16 probe is infeasible on this box (prereg #101 amendment 2026-08-15), so band deltas are relative to a Q6_K reference requantized from Q4_K_M. The source's own quantization is common-mode and cancels in the deltas; band LOCATION is trustworthy, absolute BF16 loss is not measured here. fragility_ratio follows the atlas convention (max delta / statistics.median of the 4 deltas = 0.5926/0.25235 = 2.35), matching every sibling recipe; the probe binary's own banner printed 2.04 because it divides by its upper-median (0.29) - same data, different median convention, disclosed so the two published numbers do not read as a discrepancy.",
     "note_mtp": "This file carries nextn_predict_layers=1: blk.64 is an MTP head that llama.cpp loads but does not execute in the main pass (L-33, U-60 P-1, confirmed from models/qwen35moe.cpp). n_layer was 65 under the old all-blocks convention and is 64 here, the decode depth llama.cpp itself reports. The band was trimmed from 51-64 to 51-63 for the same reason; see probe.band_note and U-61.",
-    "source_repo": "unsloth/Qwen3.8-27B-GGUF"
+    "source_repo": "unsloth/Qwen3.8-27B-GGUF",
+    "published_artifact": {
+      "url": "https://huggingface.co/FedericoSciuca/Qwen3.8-27B-depthaware-GGUF",
+      "file": "Qwen3.8-27B-depthaware-Q2K.gguf",
+      "bytes": 12483292128,
+      "note": "The depth-aware build from this recipe (prereg #112). DENSE 27B at 3.66 effective bits, band 51-63 protected. At byte-identical size it removes 43.3% of the evenly-spread control's excess loss over an 8.51-bit reference (6.0590 vs 6.4136 PPL, ref 5.5950) - against 29.2% on the MoE (#104). We staked that dense would be WEAKER and it was 1.5x stronger; published as a miss. No decode number is published: this box's decode spread (15-24%) cannot resolve a placement-sized change, so P-4 is unscored, not passed. See L-34. The model card carries the full table and the staked miss."
+    }
   },
   "params": {
     "total_b": 27.3207,
