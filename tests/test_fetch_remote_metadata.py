@@ -450,7 +450,16 @@ class TestUpstreamSmokeGuardStillHolds(unittest.TestCase):
     """
 
     def test_u18_force_and_collision_smoke_test_passes_unchanged(self):
-        from tests.smoke import t_fetch_force_and_collision
+        # Loaded by path, not as `tests.smoke`: tests/ is a namespace package, so any regular
+        # package named `tests` installed later on sys.path would shadow it (see smoke.py's
+        # _test_module). Importing smoke.py runs only definitions; its runner is __main__-guarded.
+        import importlib.util
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "smoke.py")
+        spec = importlib.util.spec_from_file_location("_qp_smoke_for_u18", path)
+        smoke = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(smoke)
+        t_fetch_force_and_collision = smoke.t_fetch_force_and_collision
 
         buf = io.StringIO()
         with redirect_stdout(buf):

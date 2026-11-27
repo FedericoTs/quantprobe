@@ -18,6 +18,26 @@ from contextlib import redirect_stdout
 # deliberately and separately; layer 1 should test what the developer just edited.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+def _test_module(name):
+    """Load tests/<name>.py by PATH, never as `tests.<name>`.
+
+    tests/ has no __init__.py, so `from tests.x import ...` resolves it as a namespace package,
+    and Python lets any REGULAR package named `tests` later on sys.path win over a namespace
+    portion found earlier. The dev box has one (a third-party package ships a top-level `tests`),
+    so every contributed hook written that way failed with ModuleNotFoundError there while the
+    same code passed in a clean venv. A contributor's machine can have the same package. Loading
+    by path cannot be shadowed."""
+    import importlib.util
+
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name + ".py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 FAIL, SKIP = [], []
 
 
@@ -1790,15 +1810,13 @@ def t_fetch_force_and_collision():
 def t_fetch_creates_the_destination_it_was_handed():
     # `fetch.run` passes --dest straight through, so a missing dest (or a remote filename with
     # its own subdirectory) used to kill the download on open(). Full cases in the module.
-    from tests.test_fetch_destinations import run_smoke
-    return run_smoke()
+    return _test_module("test_fetch_destinations").run_smoke()
 
 
 def t_fetch_attempt_budget():
     # `tries` bounds ISSUED GETs: a clean-but-short 200/206 used to charge nothing, so the
     # budget could not end the loop. Cases in tests/test_fetch_attempt_budget.py.
-    from tests.test_fetch_attempt_budget import run_smoke
-    return run_smoke()
+    return _test_module("test_fetch_attempt_budget").run_smoke()
 
 
 def t_fetch_remote_metadata_and_range_integrity():
@@ -1815,8 +1833,7 @@ def t_fetch_remote_metadata_and_range_integrity():
     skip path; this runs every one of them inside the pytest-free suite too, so
     `python tests/smoke.py` stays the single gate CONTRIBUTING.md points contributors at.
     """
-    from tests.test_fetch_remote_metadata import run_smoke
-    return run_smoke()
+    return _test_module("test_fetch_remote_metadata").run_smoke()
 
 
 def t_c11_depth_aware_dense_split():
@@ -5119,9 +5136,7 @@ def t_fetch_publication_regression():
 
     Restoring the early output deletion makes the preservation regressions fail.
     """
-    from tests.test_fetch_publication import run_smoke
-
-    return run_smoke()
+    return _test_module("test_fetch_publication").run_smoke()
 
 
 if __name__ == "__main__":
