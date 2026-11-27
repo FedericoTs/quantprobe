@@ -41,6 +41,12 @@ before committing you to anything over two hours. You can stop between stages; n
 and `--custom` will decline and explain why. Custom pays when you're squeezing a model that
 barely fits, or when it's your own fine-tune that nobody has published.
 
+**Where the file lands.** Both paths download into `--dir` (default `./models`) keeping the
+repo's own layout, so a quant published at `Q2_K/Model-Q2_K.gguf` arrives at
+`./models/Q2_K/Model-Q2_K.gguf`. Every path `auto` prints afterwards — the `run` command, the
+`quantize` shortcut — is that full path, copy-pasteable as printed; and a re-run finds the file
+already on disk and predicts from its real header instead of from preset estimates.
+
 ## The free speed most people miss
 
 If you run a mixture-of-experts model (Qwen3-30B-A3B, GLM-Air, most big local models), the usual
