@@ -1,5 +1,57 @@
 # Changelog
 
+## v1.39.0 - 2026-11-27
+
+**Ten fixes from [Divyam Talwar](https://github.com/DivyamTalwar), reviewed and merged — thank
+you.** In September he filed ten bug reports, each paired with a pull request whose regression
+tests fail on the old code and pass on the fix. They sat unanswered for 68 days, which was our
+failure, not his. Each was reviewed for correctness and security and confirmed to fail without
+its fix, then merged with his original commits intact.
+
+**Downloads (`fetch`).**
+- **The command on both Hugging Face cards works now** (#10). `quantprobe fetch qwen3.8-27b
+  ./models` crashed with `FileNotFoundError` whenever `./models` did not already exist, so the
+  first command a new reader ran failed.
+- **A failed `--force` refresh keeps your working model** (#8). It used to be deleted before the
+  first network call, so a dropped connection left you with nothing.
+- **The retry budget can end the loop** (#12). A server answering "zero more bytes" cleanly cost
+  no retries, so the download could request forever.
+- **Sizes are trusted only from a real answer** (#24). An error page's own length could certify
+  or accuse your file, and a resumed range is now checked before any byte lands. A file on disk
+  whose size cannot be confirmed is reused but labeled `NOT VERIFIED`.
+
+**Benchmarks.** **A crashed llama-bench is never scored** (#18). A run that died after printing a
+speed row was stamped with your machine state and offered as a community contribution. It is now
+refused, with the exit code and the tail of its output.
+
+**`auto`.**
+- **`--yes` reaches the probe** (#14). `auto --custom --yes` still stopped to ask.
+- **Each model's own KV size prices the context** (#26). 15 of 19 `auto` targets used a generic
+  default whenever `--ctx` was set.
+- **Files in a repository's subfolders keep their paths** (#20). Most quants of the large models
+  live in subfolders.
+
+**`audit-ollama`.** **Model names keep their registry and namespace** (#16), and **placement is
+matched by exact name** (#22). In a simulated store of seven loaded models, the old code found the
+right `ollama ps` row for 1 of them. With both fixes it finds all 7.
+
+**Integration fixes on top.** #18 was reconciled with v1.38.0's rewrite of `bench`. #20's paths
+are split on `/` so Windows paths are native; as submitted, the Windows CI job would have failed.
+#24 was reconciled with #8, #10 and #12, including a silent double retry charge that git
+auto-merged without a conflict. The new smoke hooks load their test files by path: a third-party
+package named `tests` installed on one machine had shadowed them all.
+
+**Also fixed, found during the review.**
+- **`fetch` refuses a remote file name that would land outside the destination.** `auto` takes
+  names from a repository's own listing, so they are untrusted, and an absolute path, `..` or
+  another drive letter could escape the download folder. The check runs before any network
+  request.
+- **`audit-ollama --measure` reads the context length again.** Ollama 0.40 added a `RUNNER`
+  column to `ollama ps`, and the countdown can read "About a minute from now" with no digit.
+  Either one made the context come back empty, so measurements silently ran at depth 0. The fix is
+  pinned against a row captured verbatim from Ollama 0.40.17.
+- **A test no longer reads your Hugging Face token.**
+
 ## v1.38.0 - 2026-11-27
 
 **The commands quantprobe prints run again on current llama.cpp.** This is a repair release.
