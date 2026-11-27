@@ -101,6 +101,15 @@ quantprobe target --tps 5 --machine gaming --ladder
 quantprobe plan --model qwen3-30b --machine 2016-xmp --ctx 16384
 ```
 
+> **Where `--ctx` gets its KV size.** Before downloading, `auto --ctx` uses the existing
+> KV-per-position value from the model's preset or atlas entry. Without one, the documented
+> 96 KB/pos fallback remains. A nonzero `--kv-per-pos <KB>` overrides those values; zero is
+> treated as absent for this pre-download calculation. At the `--run` handoff the original
+> explicit flag is restored. When that flag was omitted, the downloaded GGUF can supply its
+> own KV metadata. An explicit zero keeps the older runtime fallback behavior rather than
+> enabling header inference. This change transfers existing model metadata, not a new
+> hardware measurement or performance law.
+
 Don't have a preset for your machine? Pass raw numbers:
 
 ```bash
