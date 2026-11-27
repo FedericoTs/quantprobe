@@ -1790,6 +1790,13 @@ def t_fetch_creates_the_destination_it_was_handed():
     return run_smoke()
 
 
+def t_fetch_attempt_budget():
+    # `tries` bounds ISSUED GETs: a clean-but-short 200/206 used to charge nothing, so the
+    # budget could not end the loop. Cases in tests/test_fetch_attempt_budget.py.
+    from tests.test_fetch_attempt_budget import run_smoke
+    return run_smoke()
+
+
 def t_c11_depth_aware_dense_split():
     # C-11 (prereg #66): the dense split must budget for the desktop reserve + compute buffer and
     # shrink its GPU layer count as context deepens - the old flat vc*0.9 emitted a 16k config
