@@ -2027,6 +2027,18 @@
       "scope": "Qwen3.8-27B dense, 30 FFN tensors (blocks 51/54/57/60/63 and 5/15/25/35/45), #113's imatrix, llama.cpp b10098's quantizer, diagonal (imatrix-weighted) error metric only - a full-covariance correction (EoRA, QERA) is not covered.",
       "wired_into": null,
       "confidence": "speculative"
+    },
+    {
+      "id": "U-65",
+      "kind": "untried",
+      "status": "STAKED 2026-11-27 - pre-registration #115, runs on the GTX 1060 box after #114.",
+      "claim": "On a small GPU, VRAM spent on llama.cpp's MoE cache (--moe-cache-mib, merged Nov 2026) beats the same VRAM spent on whole layers of experts - quantprobe's static split - and a routing trace recorded once predicts the cache's behaviour at other sizes and CPU shares. The planner still tells users an expert cache needs a non-stock runtime; since b12815 that is false.",
+      "magnitude": "Unknown on this box. The merge PR (#30966) predicted 42.11 -> 66.7 t/s on a 2080 Ti 11 GiB for Qwen3.6-35B-A3B Q6_K_XL; arXiv 2608.18261 measured an LRU holding 13.4% of Qwen3-30B's experts serving 66% of requests. Each cached layer also costs a host round trip per token.",
+      "evidence": "Pre-registration #115, staked with its runner (weights/prereg115_run.py), scorer (weights/prereg115_score.py, self-check 7 fixtures / 7 distinct verdicts) and a port of llama.cpp's cache policy (weights/moe_cache_replay.py, src/llama-moe-cache.cpp at b12815; synthetic self-check passes) committed before any arm ran.",
+      "predicted_effect": "P-1: the faster equal-VRAM cache arm (layers 0-4 static + 1,008 MiB cache, CPU share 0 or 0.95) decodes >= 1.20x quantprobe's printed static split (layers 0-8, 2,268 MiB). P-2: replaying each cache run's own trace reproduces llama.cpp's logged counters within 0.1% of lookups. P-3: one trace replayed at 504 MiB and at share 0.95 predicts those runs' logged hit rates within +/-2 points.",
+      "scope": "GTX 1060 6 GB, i5-7600K, 16 GB DDR4-3000, Windows 10, llama.cpp b12815; Qwen3.6-35B-A3B-OURS-depthaware (two cache groups: Q2_K and Q4_K experts); decode only; the all-experts-in-RAM (-cmoe) arm is out of scope on a 16 GB machine.",
+      "wired_into": null,
+      "confidence": "speculative"
     }
   ],
   "external": [

@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 35 |
-| Untried levers | 53 |
+| Untried levers | 54 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1237,6 +1237,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** P-1: ffn_down's weighted Q2_K error is the most concentrated in its block (top-16 share) in >= 8/10 blocks. P-2: without the imatrix the top-16 share is higher in >= 25/30 tensors. P-3 (decision): at +0.25 bpw on Q2_K the median equal-bytes margin is below 0 dB for gate, up and down - precision wins; >= +0.5 dB for any kind stakes stage B (a real LoRA, KLD at equal bytes); 0 to +0.5 dB is reported, not pursued.
 
 `STAKED 2026-11-27 - pre-registration #114 (stage A, spectral). Runs after #113 completes; no adapter file is built unless the stage-B rule fires.` · `speculative` · scope: Qwen3.8-27B dense, 30 FFN tensors (blocks 51/54/57/60/63 and 5/15/25/35/45), #113's imatrix, llama.cpp b10098's quantizer, diagonal (imatrix-weighted) error metric only - a full-covariance correction (EoRA, QERA) is not covered. · evidence: Pre-registration #114, staked with its measurement tool (weights/prereg114_spectrum.py, which calls llama.cpp's own quantizer in-process and refuses to run unless it reproduces llama-quantize byte for byte) and scorer (weights/prereg114_score.py, self-check 9 fixtures / 9 distinct verdicts) committed before any spectrum was computed. Disclosed pilot: byte-identity only, on Qwen3.5-4B without an imatrix (6/6 tensors identical).
+
+### U-65 — On a small GPU, VRAM spent on llama.cpp's MoE cache (--moe-cache-mib, merged Nov 2026) beats the same VRAM spent on whole layers of experts - quantprobe's static split - and a routing trace recorded once predicts the cache's behaviour at other sizes and CPU shares. The planner still tells users an expert cache needs a non-stock runtime; since b12815 that is false.
+
+**Magnitude:** Unknown on this box. The merge PR (#30966) predicted 42.11 -> 66.7 t/s on a 2080 Ti 11 GiB for Qwen3.6-35B-A3B Q6_K_XL; arXiv 2608.18261 measured an LRU holding 13.4% of Qwen3-30B's experts serving 66% of requests. Each cached layer also costs a host round trip per token.
+
+**Predicted effect (staked):** P-1: the faster equal-VRAM cache arm (layers 0-4 static + 1,008 MiB cache, CPU share 0 or 0.95) decodes >= 1.20x quantprobe's printed static split (layers 0-8, 2,268 MiB). P-2: replaying each cache run's own trace reproduces llama.cpp's logged counters within 0.1% of lookups. P-3: one trace replayed at 504 MiB and at share 0.95 predicts those runs' logged hit rates within +/-2 points.
+
+`STAKED 2026-11-27 - pre-registration #115, runs on the GTX 1060 box after #114.` · `speculative` · scope: GTX 1060 6 GB, i5-7600K, 16 GB DDR4-3000, Windows 10, llama.cpp b12815; Qwen3.6-35B-A3B-OURS-depthaware (two cache groups: Q2_K and Q4_K experts); decode only; the all-experts-in-RAM (-cmoe) arm is out of scope on a 16 GB machine. · evidence: Pre-registration #115, staked with its runner (weights/prereg115_run.py), scorer (weights/prereg115_score.py, self-check 7 fixtures / 7 distinct verdicts) and a port of llama.cpp's cache policy (weights/moe_cache_replay.py, src/llama-moe-cache.cpp at b12815; synthetic self-check passes) committed before any arm ran.
 
 ## External work to study
 
