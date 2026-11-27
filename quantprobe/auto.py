@@ -550,6 +550,11 @@ def run(a):
             dry_run=False,
             imatrix=None if getattr(a, "no_imatrix", False) else "auto",
             imatrix_chunks=100,
+            # `auto --yes` is answered BEFORE the source download; probe asks its
+            # time-commitment question after it. Omitting this re-asked a consenting user
+            # (and aborted with "re-run with --yes", which is what they did). Forwarded as
+            # given - without the flag the probe still confirms.
+            yes=bool(getattr(a, "yes", False)),
         )
         probemod.run(pa)
         print("\n[quantprobe auto --custom] your personalized model:")
