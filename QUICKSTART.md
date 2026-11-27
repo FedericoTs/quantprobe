@@ -205,6 +205,10 @@ contents. Re-run with the remote reachable to have the size confirmed, or `--for
 again. A same-named file of a *different* size, confirmed against a good `HEAD`, is still refused
 outright — that one is a real disagreement.
 
+`bench` refuses nonzero `llama-bench` exits, even when partial output contains a speed row.
+It reports the failure with a bounded raw-output tail, without scoring or offering that run
+as a contribution. A complete run that fails during teardown is refused too.
+
 ### Make your own compressed model
 
 The one-command version — picks a requantizable source from the repo, fetches the eval corpus,
