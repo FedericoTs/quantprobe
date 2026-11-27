@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 35 |
-| Untried levers | 51 |
+| Untried levers | 52 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1221,6 +1221,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** P-1: PPL(depth-aware) < PPL(evenly-spread control) at equal bytes, removing at least 14.6% of the control's excess loss - half the MoE effect. P-2: the share removed is BELOW 29.2%, staked so that dense matching or beating MoE registers as news rather than a shrug. P-4: decode unchanged within 3%, since placement moves which blocks hold which format, not bytes read per token. Size gate before any quality number is read: the two arms must land within 0.5% in bytes or the control is rebuilt. Refuted if the depth-aware arm removes less than 14.6%; INVERTED if it loses.
 
 `SCORED 1/2, two unscored - pre-registration #112, 2026-08-24. P-1 HIT: depth-aware removes 43.3% of the control's excess loss on a DENSE model at byte-identical size, against a staked floor of 14.6%. P-2 MISS and it is the interesting half: staked BELOW the MoE's 29.2%, measured 43.3% - about 1.5x the MoE effect. P-3 (the MTP arm) and P-4 (decode) are UNSCORED, not passed: arm C was never built (disk), and a 3% decode threshold cannot be resolved on a box whose decode spread VOIDed preregs #110 and #111 at 15-24%. Promoted to L-34.` · `measured` · scope: Qwen3.8-27B specifically, WikiText-2 held out, 32 chunks - the same corpus and chunk count as #104 so the two are comparable. One dense model is one dense model: a win here does not establish the technique across all dense architectures. · evidence: Pre-registration #112, staked before any arm was built. Qwen3.8-27B (dense, 27.3B, 64 decode blocks), band 51-63 from prereg #101, three arms off one Q8_0 source.
+
+### U-63 — The depth-aware quantizer's equal-bytes edge survives an importance matrix: with the same imatrix in both arms, the measured band still beats the evenly spread control on KL divergence. Every published win (#104, #112) was measured with no imatrix in either arm, while every serious quant producer ships with one.
+
+**Magnitude:** Unknown. Reference points: #112 removed 43.3% of the control's excess perplexity without an imatrix; Unsloth's layer selection on top of an imatrix reports ~3-8% KLD.
+
+**Predicted effect (staked):** P-1: mean KLD(OURS-I) < mean KLD(SPREAD-I) at identical bytes - kill rule, pivot to prediction if it fails. P-2: OURS-I removes 5-30% of SPREAD-I's excess perplexity, below #112's 43.3%; under 5% counts as collapse. P-3: the imatrix lowers both arms' perplexity below their #112 twins (6.0590, 6.4136). P-4: it helps the spread arm more than the measured one. VOID if the reference does not reproduce 5.5950 within 0.5%.
+
+`STAKED 2026-11-27 - pre-registration #113, run launched the same day. The decision gate named by the November 2026 opportunity report.` · `speculative` · scope: Qwen3.8-27B dense, Q2_K/Q4_K formats, an imatrix of 128 chunks of WikiText-2 train, evaluated on WikiText-2 test. One model and one calibration set; a pass does not establish the edge for every model or imatrix. · evidence: Pre-registration #113, staked with its scorer (weights/prereg113_score.py, self-check 12 fixtures / 12 distinct verdicts) and runner (weights/prereg113_run.py) committed before the imatrix was computed or any arm built.
 
 ## External work to study
 

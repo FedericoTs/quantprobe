@@ -2003,6 +2003,18 @@
       "scope": "Qwen3.8-27B specifically, WikiText-2 held out, 32 chunks - the same corpus and chunk count as #104 so the two are comparable. One dense model is one dense model: a win here does not establish the technique across all dense architectures.",
       "wired_into": null,
       "confidence": "measured"
+    },
+    {
+      "id": "U-63",
+      "kind": "untried",
+      "status": "STAKED 2026-11-27 - pre-registration #113, run launched the same day. The decision gate named by the November 2026 opportunity report.",
+      "claim": "The depth-aware quantizer's equal-bytes edge survives an importance matrix: with the same imatrix in both arms, the measured band still beats the evenly spread control on KL divergence. Every published win (#104, #112) was measured with no imatrix in either arm, while every serious quant producer ships with one.",
+      "magnitude": "Unknown. Reference points: #112 removed 43.3% of the control's excess perplexity without an imatrix; Unsloth's layer selection on top of an imatrix reports ~3-8% KLD.",
+      "evidence": "Pre-registration #113, staked with its scorer (weights/prereg113_score.py, self-check 12 fixtures / 12 distinct verdicts) and runner (weights/prereg113_run.py) committed before the imatrix was computed or any arm built.",
+      "predicted_effect": "P-1: mean KLD(OURS-I) < mean KLD(SPREAD-I) at identical bytes - kill rule, pivot to prediction if it fails. P-2: OURS-I removes 5-30% of SPREAD-I's excess perplexity, below #112's 43.3%; under 5% counts as collapse. P-3: the imatrix lowers both arms' perplexity below their #112 twins (6.0590, 6.4136). P-4: it helps the spread arm more than the measured one. VOID if the reference does not reproduce 5.5950 within 0.5%.",
+      "scope": "Qwen3.8-27B dense, Q2_K/Q4_K formats, an imatrix of 128 chunks of WikiText-2 train, evaluated on WikiText-2 test. One model and one calibration set; a pass does not establish the edge for every model or imatrix.",
+      "wired_into": null,
+      "confidence": "speculative"
     }
   ],
   "external": [
