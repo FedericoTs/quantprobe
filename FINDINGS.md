@@ -12,7 +12,7 @@ Reference box: i5-7600K, GTX 1060 6GB, 16GB DDR4-3000, SATA MX500, PCIe 3.0 x16 
 | Shipped levers | 22 |
 | Measured dead ends | 27 |
 | Open contradictions | 35 |
-| Untried levers | 52 |
+| Untried levers | 53 |
 | External work to study | 28 |
 
 ## Established laws
@@ -1229,6 +1229,14 @@ Staked predictions written BEFORE measuring, so a miss is visible. Ordered by ex
 **Predicted effect (staked):** P-1: mean KLD(OURS-I) < mean KLD(SPREAD-I) at identical bytes - kill rule, pivot to prediction if it fails. P-2: OURS-I removes 5-30% of SPREAD-I's excess perplexity, below #112's 43.3%; under 5% counts as collapse. P-3: the imatrix lowers both arms' perplexity below their #112 twins (6.0590, 6.4136). P-4: it helps the spread arm more than the measured one. VOID if the reference does not reproduce 5.5950 within 0.5%.
 
 `STAKED 2026-11-27 - pre-registration #113, run launched the same day. The decision gate named by the November 2026 opportunity report.` · `speculative` · scope: Qwen3.8-27B dense, Q2_K/Q4_K formats, an imatrix of 128 chunks of WikiText-2 train, evaluated on WikiText-2 test. One model and one calibration set; a pass does not establish the edge for every model or imatrix. · evidence: Pre-registration #113, staked with its scorer (weights/prereg113_score.py, self-check 12 fixtures / 12 distinct verdicts) and runner (weights/prereg113_run.py) committed before the imatrix was computed or any arm built.
+
+### U-64 — A low-rank correction of the quantization error (a llama.cpp runtime LoRA) buys more quality per byte than spending the same bytes on a better K-quant format. Published correction methods (LQER, QERA, EoRA, arXiv 2610.08164) correct quantizers that do not see activations; none was measured against imatrix K-quants, which already put precision where activations are large.
+
+**Magnitude:** Unknown. First-principles bar: with an i.i.d. weighted error, rank 64 removes ~3% of it on a 5120x17408 FFN matrix while +0.25 bpw of precision removes ~20%; an adapter needs the weighted error roughly six times more concentrated than white noise to break even.
+
+**Predicted effect (staked):** P-1: ffn_down's weighted Q2_K error is the most concentrated in its block (top-16 share) in >= 8/10 blocks. P-2: without the imatrix the top-16 share is higher in >= 25/30 tensors. P-3 (decision): at +0.25 bpw on Q2_K the median equal-bytes margin is below 0 dB for gate, up and down - precision wins; >= +0.5 dB for any kind stakes stage B (a real LoRA, KLD at equal bytes); 0 to +0.5 dB is reported, not pursued.
+
+`STAKED 2026-11-27 - pre-registration #114 (stage A, spectral). Runs after #113 completes; no adapter file is built unless the stage-B rule fires.` · `speculative` · scope: Qwen3.8-27B dense, 30 FFN tensors (blocks 51/54/57/60/63 and 5/15/25/35/45), #113's imatrix, llama.cpp b10098's quantizer, diagonal (imatrix-weighted) error metric only - a full-covariance correction (EoRA, QERA) is not covered. · evidence: Pre-registration #114, staked with its measurement tool (weights/prereg114_spectrum.py, which calls llama.cpp's own quantizer in-process and refuses to run unless it reproduces llama-quantize byte for byte) and scorer (weights/prereg114_score.py, self-check 9 fixtures / 9 distinct verdicts) committed before any spectrum was computed. Disclosed pilot: byte-identity only, on Qwen3.5-4B without an imatrix (6/6 tensors identical).
 
 ## External work to study
 
