@@ -107,8 +107,7 @@ quantprobe plan --model qwen3-30b --machine 2016-xmp --ctx 16384
 > treated as absent for this pre-download calculation. At the `--run` handoff the original
 > explicit flag is restored. When that flag was omitted, the downloaded GGUF can supply its
 > own KV metadata. An explicit zero keeps the older runtime fallback behavior rather than
-> enabling header inference. This change transfers existing model metadata, not a new
-> hardware measurement or performance law.
+> enabling header inference.
 
 Don't have a preset for your machine? Pass raw numbers:
 

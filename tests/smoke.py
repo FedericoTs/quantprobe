@@ -975,8 +975,7 @@ def t_auto_kv_metadata():
     Held in its own unittest file because it needs several models, both resolution paths and a
     deep --ctx; this hook keeps it inside `python tests/smoke.py` rather than pytest-only.
     """
-    from tests.test_auto_kv_metadata import run_smoke
-    return run_smoke()
+    return _test_module("test_auto_kv_metadata").run_smoke()
 
 
 def t_auto_and_plan_recommend_the_same_placement():
