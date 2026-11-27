@@ -5083,6 +5083,18 @@ def t_every_launch_flag_is_accepted_by_the_llama_cpp_that_runs_it():
     return None
 
 
+def t_fetch_publication_regression():
+    """`fetch --force` deleted the published model BEFORE its first network call, so a HEAD
+    error, a 503, a broken stream or a failed rename left the user with nothing where a working
+    model had been. os.replace is now the only publication point, and it is atomic.
+
+    Restoring the early output deletion makes the preservation regressions fail.
+    """
+    from tests.test_fetch_publication import run_smoke
+
+    return run_smoke()
+
+
 if __name__ == "__main__":
     print("quantprobe smoke suite")
     for n, f in list(globals().items()):
