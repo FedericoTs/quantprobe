@@ -485,13 +485,17 @@ class TestAutoReusesAnAlreadyPresentModel(unittest.TestCase):
         self.local = os.path.join(self.dir, self.LISTED[0])
         with open(self.local, "wb") as f:
             f.write(b"GGUF-already-on-disk")
-        real_requests, real_time = fmod.requests, fmod.time
+        real_requests, real_time, real_token = fmod.requests, fmod.time, fmod.token
         fmod.time = FakeClock()
+        # auto.run asks fetch.token() for the developer's real HF credential (env or cache) and
+        # hands it to the transport. The transport here is fake, so it was never sent - but a
+        # test has no business reading a credential at all.
+        fmod.token = lambda: None
         self.net = FakeRequests(requests.exceptions.ConnectionError("no route to host"))
         fmod.requests = self.net
 
         def restore():
-            fmod.requests, fmod.time = real_requests, real_time
+            fmod.requests, fmod.time, fmod.token = real_requests, real_time, real_token
 
         self.addCleanup(restore)
 
