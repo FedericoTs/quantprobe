@@ -80,3 +80,57 @@ quant. Both require downloads and will be staked separately.
 
 Scored either way, at full size. If P-1 fails, the README's quantizer claims get a scope line
 saying the edge did not survive an importance matrix.
+
+## Verdict — scored 2026-11-27, 3 of 4
+
+`python weights/prereg113_score.py --results weights/data/prereg113.json`, run unchanged after
+every arm finished.
+
+| | OURS-I | SPREAD-I | UNIFORM-I (descriptive) |
+|---|---|---|---|
+| bytes | 12,483,292,192 | 12,483,292,192 | 10,864,593,952 |
+| perplexity | 5.8754 | 6.0810 | 6.1079 |
+| mean KLD | **0.0828 ± 0.0024** | 0.1219 ± 0.0035 | 0.1473 ± 0.0037 |
+| p99 KLD | 0.770 | 1.230 | 1.528 |
+| top-1 agreement | 88.55% | 86.31% | 83.90% |
+
+**Protocol checks.** The reference reproduced #112's perplexity exactly (5.5950 against 5.5950),
+and the two scored arms are byte-identical, as in #112.
+
+- **P-1 HIT: the edge survives.** At identical bytes, OURS-I's mean KLD is **32% lower** than
+  SPREAD-I's (0.0828 against 0.1219). The gap is about nine times either arm's standard error.
+  The kill rule does not fire, so the quantizer half of the project keeps its claim.
+- **P-2 MISS: the edge did not erode.** I staked 5–30%. OURS-I removes **42.3%** of SPREAD-I's
+  excess perplexity, against 43.3% in #112. The scorer's pre-committed branch reads "it shrank,
+  but by less than staked". The honest reading is that it did not shrink: one point between two
+  single-calibration runs is not evidence of erosion. My prediction drew on Unsloth's 3–8%, layer
+  selection on top of an imatrix, and expected the imatrix to absorb most of the placement's
+  value. It absorbed none of it.
+- **P-3 HIT.** The imatrix improved both arms: OURS from 6.0590 to 5.8754 (−3.0%), SPREAD from
+  6.4136 to 6.0810 (−5.2%).
+- **P-4 HIT.** It helped the worse arm more in absolute terms: +0.333 PPL for SPREAD against
+  +0.184 for OURS.
+
+**The mechanism.** P-2 and P-4 look contradictory and are not. The imatrix removed about 40% of
+each arm's excess perplexity: SPREAD's excess fell from 0.819 to 0.486 (−40.6%), OURS's from 0.464
+to 0.280 (−39.6%). A proportional cut is larger in absolute terms for the arm with more excess,
+which is P-4, and leaves the ratio between the arms where it was, which is P-2. **On this model
+the importance matrix and the band placement compose; they do not substitute.** The imatrix
+decides how each tensor is rounded, the placement decides which tensors get the bits, and each
+removes about 40% of whatever loss the other leaves.
+
+**Descriptive.** UNIFORM-I is what `llama-quantize --imatrix … Q2_K` gives a careful hobbyist. It
+is 13% smaller and worse on every metric: mean KLD 0.147, which OURS-I beats by 44%. It is not
+byte-matched, so this is scale, not a score.
+
+**Consequences.**
+
+- The README's quality claims stop needing their caveat ("measured with no imatrix in either
+  arm"). They now cite the with-imatrix result alongside.
+- The published 27B build is #112's, made without an imatrix. OURS-I is the same size and better
+  on every metric measured. Republishing it is proposed, not done: it is a public upload.
+- Stage 2 is unblocked: a byte-matched head-to-head against llama.cpp's `--target-bpw` allocator,
+  which b12815 has. It will be staked separately.
+
+**Scope.** One dense model, one calibration set (WikiText-2 train, 128 chunks), evaluated on
+WikiText-2 test, with Q2_K/Q4_K formats. Composition with an imatrix is measured here only.

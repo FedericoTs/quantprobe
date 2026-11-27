@@ -1,0 +1,37 @@
+{
+  "arms": {
+    "OURS-I": {
+      "bytes": 12483292192,
+      "ppl": 5.875385,
+      "kld_mean": 0.082846,
+      "kld_p99": 0.770013,
+      "top1": 88.554
+    },
+    "SPREAD-I": {
+      "bytes": 12483292192,
+      "ppl": 6.081004,
+      "kld_mean": 0.121905,
+      "kld_p99": 1.230028,
+      "top1": 86.311
+    },
+    "UNIFORM-I": {
+      "bytes": 10864593952,
+      "ppl": 6.107925,
+      "kld_mean": 0.147273,
+      "kld_p99": 1.527697,
+      "top1": 83.897
+    }
+  },
+  "protocol": {
+    "imatrix_chunks": 128,
+    "eval_chunks": 32,
+    "ngl": 12,
+    "calibration": "D:/evo-compress-data/eval/wikitext-2-raw/wiki.train.raw",
+    "eval": "D:/evo-compress-data/eval/wiki.test.raw",
+    "llama": "llamacpp-b10098"
+  },
+  "ref_ppl_measured": 5.595,
+  "ref_bytes_base": 4052713236,
+  "imatrix_bytes": 13642656,
+  "status": "complete"
+}
