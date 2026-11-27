@@ -539,7 +539,9 @@ def run(a):
         # big repos keep their quants in subfolders (Q8_0/...). Rebuilt from the basename, this
         # named a file that does not exist - for the probe input AND for the command printed
         # above it. One expression, so the two cannot drift apart again.
-        srcfull = os.path.join(dest, spath)
+        # Hugging Face paths always use "/"; split them so Windows gets native separators rather
+        # than a mixed "models\Q8_0/x.gguf" that opens fine but never compares equal.
+        srcfull = os.path.join(dest, *spath.split("/"))
         print(
             "\n[quantprobe auto --custom] source: "
             + spath
@@ -640,7 +642,7 @@ def run(a):
     # `path` is the REPO-RELATIVE path and `fetch` writes dest/<that>, subfolders included. Built
     # from the basename this looked one directory too high, so a finished download in a repo that
     # nests its quants was never found and the pre-download estimate was quoted instead.
-    _local = os.path.join(getattr(a, "dir", None) or "./models", path)
+    _local = os.path.join(getattr(a, "dir", None) or "./models", *path.split("/"))
     _s, _why = local_spec_or_none(_local, size, len(parts))
     if _why:
         print("  NOTE: " + _why)
@@ -694,7 +696,7 @@ def run(a):
             print(f"[quantprobe auto] part {i + 1}/{len(parts)}: {os.path.basename(part)}")
         if not fetchmod.fetch(repo, dest, part, fetchmod.token()):
             raise SystemExit("download failed (it resumes: re-run the same command)")
-    full = os.path.join(dest, path)  # what fetch just wrote, subdirectories and all
+    full = os.path.join(dest, *path.split("/"))  # what fetch just wrote, subdirectories and all
     print("\n[quantprobe auto] ready. Run it:")
     print(f"  quantprobe run --gguf {full}")
     print("\n  Better quality at the SAME size: rerun with --custom - it probes YOUR model's")
