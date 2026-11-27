@@ -60,6 +60,11 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
         os.remove(out)
         if os.path.exists(part):
             os.remove(part)
+    # The CLI's run() does not create dest, and a remote filename may add nested
+    # directories even when callers such as auto have already created dest.
+    parent = os.path.dirname(part)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
     r = requests.head(url, headers=hdr0, allow_redirects=True, timeout=60)
     total = int(r.headers.get("Content-Length", 0))
     print(f"  {fname}: {total / 1e9:.2f} GB", flush=True)

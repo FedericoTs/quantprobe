@@ -166,6 +166,10 @@ quantprobe run --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 quantprobe bench --gguf ./models/Qwen3-30B-A3B-Q2_K.gguf
 ```
 
+`fetch` creates a missing destination directory and any parent directories in an explicitly
+requested nested filename. A regular file blocking that directory remains an error.
+
+
 ### Make your own compressed model
 
 The one-command version — picks a requantizable source from the repo, fetches the eval corpus,
