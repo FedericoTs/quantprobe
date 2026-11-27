@@ -26,6 +26,31 @@ import time
 
 MODEL_MEDIA = "application/vnd.ollama.image.model"
 
+# The one registry/namespace pair ollama leaves implicit in a name. Everything else is
+# addressable only in full, so nothing else may be stripped.
+DEFAULT_REGISTRY = "registry.ollama.ai"
+DEFAULT_NAMESPACE = "library"
+
+
+def manifest_name(rel):
+    """Manifest path parts under manifests/ -> the name ollama itself answers to.
+
+    rel is [<registry>, <namespace>, <model>, <tag>]. Only `registry.ollama.ai/library` is
+    implicit - that is the pair `ollama pull qwen2.5:7b` writes, and expanding it would print
+    an identity no user recognises. Every other prefix is part of the address: keeping just
+    the last two parts turns `hf.co/bartowski/x:Q4_K_M` into `x:Q4_K_M`, which `ollama run`
+    either cannot resolve or resolves to a DIFFERENT model of that basename that happens to
+    be pulled - so the audit prices one blob and measures another.
+    """
+    if len(rel) < 2:
+        return "/".join(rel)
+    parts = list(rel)
+    if len(parts) > 2 and parts[0] == DEFAULT_REGISTRY:
+        parts = parts[1:]
+        if len(parts) > 2 and parts[0] == DEFAULT_NAMESPACE:
+            parts = parts[1:]
+    return f"{'/'.join(parts[:-1])}:{parts[-1]}"
+
 
 def store_root(explicit=None):
     """Where ollama keeps its blobs. OLLAMA_MODELS wins, then the per-OS default."""
@@ -42,7 +67,8 @@ def installed(root=None):
 
     Walks manifests/ rather than calling `ollama list`, so it works when the daemon is not
     running and it gives the blob path directly. The manifest name is its path under
-    manifests/<registry>/<namespace>/<model>/<tag>, which is how ollama itself addresses it.
+    manifests/<registry>/<namespace>/<model>/<tag>, which is how ollama itself addresses it -
+    see manifest_name() for the one prefix that is implicit and may be dropped.
     """
     root = store_root(root)
     mdir = os.path.join(root, "manifests")
@@ -61,7 +87,7 @@ def installed(root=None):
         if not layers:
             continue
         rel = os.path.relpath(f, mdir).replace(os.sep, "/").split("/")
-        name = f"{rel[-2]}:{rel[-1]}" if len(rel) >= 2 else "/".join(rel)
+        name = manifest_name(rel)
         digest = layers[0]["digest"].split(":")[-1]
         blob = os.path.join(root, "blobs", f"sha256-{digest}")
         if os.path.isfile(blob):
