@@ -146,15 +146,28 @@ def loaded_placement(name):
         return None, None
     import re
 
+    # CONTEXT is read as the first number AFTER the processor field, not as "the number before a
+    # countdown". Ollama 0.40 inserted a RUNNER column between CONTEXT and UNTIL, and UNTIL can
+    # read "About a minute from now" with no digit at all - either one silently broke the old
+    # adjacency regex, so `--measure` benched at depth 0 and never said so. Whether a CONTEXT
+    # column exists is taken from the header, so an older layout's countdown is never misread.
+    has_context = None
     for line in out.splitlines():
-        cells = line.split()  # NAME is the first column; the header and blanks fall out here
+        cells = line.split()  # NAME is the first column; blanks fall out here
+        if cells and cells[0] == "NAME":
+            has_context = "CONTEXT" in cells
+            continue
         if not cells or not _is_same_model(cells[0], name):
             continue
         m = re.search(r"(\d+)%/(\d+)%\s*CPU/GPU", line)
         gpu = int(m.group(2)) if m else (100 if "100% GPU" in line else None)
-        re.search(r"\b(\d{3,6})\b\s*$", line.replace("from now", "").strip())
-        ctxm = re.search(r"\s(\d{3,6})\s+\d+\s*(?:minutes?|seconds?|hours?)", line)
-        return gpu, int(ctxm.group(1)) if ctxm else None
+        proc = m or re.search(r"100%\s*(?:GPU|CPU)", line)
+        ctx = None
+        if proc and has_context is not False:
+            after = line[proc.end() :].split()
+            if after and after[0].isdigit() and 3 <= len(after[0]) <= 7:
+                ctx = int(after[0])
+        return gpu, ctx
     return None, None
 
 

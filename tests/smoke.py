@@ -5212,6 +5212,87 @@ def t_a_stored_param_block_is_pinned_to_the_file_it_was_measured_on():
     return None
 
 
+def t_ollama_context_survives_the_runner_column():
+    """Ollama 0.40 inserted RUNNER between CONTEXT and UNTIL in `ollama ps`, and UNTIL can read
+    "About a minute from now" with no digit at all. The old regex needed CONTEXT immediately
+    followed by a numeric countdown, so it returned no context and `audit-ollama --measure`
+    benched at depth 0 without saying so. Found by the review of the September PR batch.
+
+    The first row is verbatim from Ollama 0.40.17 on the dev box (2026-11-27, qwen2.5:7b loaded
+    via the local API for the capture). The second is the older layout with no CONTEXT column,
+    whose countdown digit must never be read as a context."""
+    from quantprobe import ollama as ol
+
+    class Ps:
+        stdout = (
+            "NAME          ID              SIZE      PROCESSOR          CONTEXT    RUNNER      UNTIL\n"
+            "qwen2.5:7b    845dbda0ea48    5.2 GB    16%/84% CPU/GPU    4096       llamacpp    "
+            "About a minute from now\n"
+        )
+
+    real_run, real_bin = ol.subprocess.run, ol.ollama_bin
+    try:
+        ol.ollama_bin = lambda: "ollama"
+        ol.subprocess.run = lambda *a, **k: Ps()
+        got = ol.loaded_placement("qwen2.5:7b")
+        assert got == (84, 4096), f"0.40 layout: {got}"
+        Ps.stdout = (
+            "NAME          ID              SIZE      PROCESSOR    UNTIL\n"
+            "qwen2.5:7b    845dbda0ea48    5.2 GB    100% GPU     4 minutes from now\n"
+        )
+        got = ol.loaded_placement("qwen2.5:7b")
+        assert got == (100, None), f"pre-CONTEXT layout misread the countdown: {got}"
+    finally:
+        ol.subprocess.run, ol.ollama_bin = real_run, real_bin
+    return None
+
+
+def t_a_remote_file_name_cannot_write_outside_its_destination():
+    """`auto` takes file names from a repository's own listing, so a download name is untrusted.
+    os.path.join silently discards the destination for an absolute component, '..' climbs out of
+    it, and on Windows a 'C:' segment makes the join drive-relative. Two independent reviews of
+    the September PR batch flagged that fetch() joined remote names unchecked.
+
+    Pinned: nested names stay inside and come back with native separators, escaping names are
+    refused, and fetch() refuses them BEFORE any network request (requests is trapped here, so
+    a regression cannot pass by quietly reaching the network). Mutation owed and discharged:
+    removing the containment check in fetch() makes the trap fire."""
+    import shutil
+    import tempfile
+
+    import requests
+
+    from quantprobe import fetch as fe
+
+    d = tempfile.mkdtemp(prefix="qp-contain-")
+    real = (requests.head, requests.get)
+
+    def trap(*a, **k):
+        raise AssertionError("fetch() reached the network with a name it should have refused")
+
+    try:
+        ok = fe.contained(d, "Q8_0/Model-Q8_0.gguf")
+        assert ok and os.path.realpath(ok).startswith(os.path.realpath(d)), ok
+        assert ok.endswith(os.path.join("Q8_0", "Model-Q8_0.gguf")), f"not native: {ok}"
+        for bad in ("../evil.gguf", "Q8_0/../../evil.gguf", "/abs/evil.gguf", "a//evil.gguf", ""):
+            assert fe.contained(d, bad) is None, f"{bad!r} was allowed"
+        if os.name == "nt":
+            # A segment naming the destination's OWN drive is joined as relative and stays inside,
+            # so the escape to test is a DIFFERENT drive, where os.path.join discards `dest`.
+            here = os.path.splitdrive(os.path.realpath(d))[0].upper()
+            other = "Z:" if here != "Z:" else "Y:"
+            assert fe.contained(d, f"{other}/evil.gguf") is None, "another drive escaped on Windows"
+        requests.head, requests.get = trap, trap
+        out = io.StringIO()
+        with redirect_stdout(out):
+            got = fe.fetch("someone/repo", d, "../evil.gguf", None)
+        assert got is False and "REFUSED" in out.getvalue(), out.getvalue()
+    finally:
+        requests.head, requests.get = real
+        shutil.rmtree(d, ignore_errors=True)
+    return None
+
+
 def t_every_launch_flag_is_accepted_by_the_llama_cpp_that_runs_it():
     """llama.cpp b10875 (2026-09-09) folded --no-mmap/--mlock/--direct-io into -lm/--load-mode
     and made the old spellings hard errors; llama-bench did the same to --mmap 0|1. For ten weeks
