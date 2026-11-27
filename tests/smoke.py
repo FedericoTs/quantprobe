@@ -5331,6 +5331,89 @@ def t_every_launch_flag_is_accepted_by_the_llama_cpp_that_runs_it():
     return None
 
 
+def t_every_printed_command_is_accepted_by_a_real_llama_cpp():
+    """The test above knows what llama.cpp REMOVED, as remembered by whoever wrote it. It passed
+    while `run` failed at launch on every llama.cpp since b10584 (2026-08-22): run appended -cnv,
+    llama-cli became chat-only and rejects it, and no test ever asked a real binary. Neither did
+    the -lm fix that shipped this morning.
+
+    tests/llamacpp_flags.json is what a real build ACCEPTS, read from each tool's own --help by
+    weights/llamacpp_flag_snapshot.py (refresh it when validating a newer build). Checked here:
+      1. every flag in the commands run / run --serve / bench print, for MoE and dense plans;
+      2. bench's forwarding table: any llama-cli flag bench forwards must exist in llama-bench
+         (it listed "-c", which llama-bench has never had);
+      3. every flag literal in the builders no dry run prints - probe's quantize / perplexity /
+         imatrix calls, calibrate's and the ollama path's llama-bench calls - read from the
+         functions' own source, so a flag added there later is checked without editing this.
+    Mutations owed and discharged: an unconditional -cnv fails part 1, "-c" back in BENCH_VALUED
+    fails part 2, a "--no-mmap" literal in make_imatrix fails part 3."""
+    import ast
+    import inspect
+    import json
+    import textwrap
+
+    from quantprobe import calibrate as cal
+    from quantprobe import ollama as oll
+    from quantprobe import probe as pr
+    from quantprobe import runtime as rt
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    snap = json.load(open(os.path.join(here, "llamacpp_flags.json"), encoding="utf-8"))
+    ok = {tool: set(flags) for tool, flags in snap["tools"].items()}
+    is_flag = re.compile(r"^-{1,2}[A-Za-z][\w-]*$")
+
+    # 1. the commands a user is shown, and run/bench execute
+    seen = set()
+    for model in ("qwen3-30b", "mistral-7b"):
+        base = ["--gguf", "x.gguf", "--model", model, "--machine", "2016-xmp", "--dry"]
+        for args in (["run"] + base, ["run"] + base + ["--ctx", "8192"],
+                     ["run"] + base + ["--serve"], ["bench"] + base,
+                     ["bench"] + base + ["--depth", "4096"]):
+            rc, out = cli(*args)
+            lines = [ln for ln in out.splitlines() if "[quantprobe] exec:" in ln
+                     or "[quantprobe] bench:" in ln]
+            assert rc == 0 and lines, f"{' '.join(args)} printed no command: {out[-300:]}"
+            toks = lines[-1].split(":", 1)[1].split()
+            tool = toks[0]
+            bad = [t for t in toks[1:] if is_flag.match(t) and t not in ok[tool]]
+            assert not bad, (f"{' '.join(args)} prints {bad}, which {tool} b{snap['build']} "
+                             f"rejects: {' '.join(toks)}")
+            seen.add(tool)
+    assert seen == {"llama-cli", "llama-server", "llama-bench"}, seen
+
+    # 2. bench's translation table against the real llama-bench
+    for f in sorted(ok["llama-cli"]):
+        try:
+            fwd = rt.bench_flags([f, "1"], "modern")
+        except SystemExit:
+            continue  # refused with an explanation: the safe answer for a flag bench lacks
+        bad = [t for t in fwd if is_flag.match(t) and t not in ok["llama-bench"]]
+        assert not bad, f"bench forwards {f} as {bad}, which llama-bench b{snap['build']} rejects"
+
+    # 3. the builders no dry run prints, read from their own source
+    builders = {
+        pr._ppl_once: {"llama-perplexity"},
+        pr.kld: {"llama-perplexity"},
+        pr.make_imatrix: {"llama-imatrix"},
+        pr.build_depthaware: {"llama-quantize"},
+        pr.run: {"llama-quantize", "llama-perplexity"},
+        cal._bench_anchor: {"llama-bench"},
+        oll.bench_blob: {"llama-bench"},
+    }
+    for fn, tools in builders.items():
+        tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))
+        lits = {n.value for n in ast.walk(tree)
+                if isinstance(n, ast.Constant) and isinstance(n.value, str) and is_flag.match(n.value)}
+        accepted = set().union(*(ok[t] for t in tools))
+        bad = sorted(lits - accepted)
+        assert not bad, f"probe.{fn.__name__} uses {bad}, which {sorted(tools)} b{snap['build']} rejects"
+
+    assert rt.conversation_flags("-cnv,  --conversation, -no-cnv, --no-conversation") == ["-cnv"]
+    assert rt.conversation_flags("-no-cnv, --no-conversation") == []
+    assert rt.conversation_flags("") == []
+    return None
+
+
 def t_fetch_publication_regression():
     """`fetch --force` deleted the published model BEFORE its first network call, so a HEAD
     error, a 503, a broken stream or a failed rename left the user with nothing where a working

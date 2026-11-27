@@ -34,7 +34,40 @@ def find_llama(explicit, tool):
     )
 
 
-_DIALECTS = {}
+_HELP = {}
+
+
+def help_text(binary):
+    """This llama.cpp binary's own --help, asked once per path and cached.
+
+    The binary is the only authority on what it accepts: llama.cpp renames flags between builds
+    and makes the old spelling a hard error, twice in three weeks of 2026 (b10584, b10875).
+    `--help` loads no model and returns in about a second. '' when the binary cannot be asked,
+    which every caller reads as "current llama.cpp"."""
+    if binary not in _HELP:
+        try:
+            out = subprocess.run(
+                [binary, "--help"],
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=60,
+                check=False,
+            )
+            _HELP[binary] = out.stdout + out.stderr
+        except Exception:
+            _HELP[binary] = ""
+    return _HELP[binary]
+
+
+def conversation_flags(text):
+    """['-cnv'] if this llama-cli still takes the flag, else [].
+
+    Before b10584 (2026-08-22) conversation mode was a flag, auto-enabled when the model has a
+    chat template. From b10584 llama-cli is chat-only and REJECTS -cnv ("invalid argument"); the
+    flag lives on in llama-completion. Passing it to every build made `run` fail at launch on
+    every llama.cpp released since. Pure, so both answers are testable without a binary."""
+    return ["-cnv"] if re.search(r"(^|[\s,])-cnv([\s,]|$)", text, re.MULTILINE) else []
 
 
 def dialect_from_help(text):
@@ -52,23 +85,9 @@ def load_dialect(binary):
     """Which load-mode spelling this llama.cpp binary accepts, asked of the binary itself.
 
     The two dialects reject each other's flags outright (b10875, 2026-09-09; see plan.NO_MMAP),
-    so a wrong guess is a crash, not a slower run. `--help` loads no model and returns in about
-    a second, and the answer is cached per path. When the binary cannot be asked, assume the
+    so a wrong guess is a crash, not a slower run. When the binary cannot be asked, assume the
     current spelling: every build since b10875 requires it."""
-    if binary not in _DIALECTS:
-        try:
-            out = subprocess.run(
-                [binary, "--help"],
-                capture_output=True,
-                text=True,
-                errors="replace",
-                timeout=60,
-                check=False,
-            )
-            _DIALECTS[binary] = dialect_from_help(out.stdout + out.stderr) or "modern"
-        except Exception:
-            _DIALECTS[binary] = "modern"
-    return _DIALECTS[binary]
+    return dialect_from_help(help_text(binary)) or "modern"
 
 
 def for_dialect(flags, dialect):
@@ -254,7 +273,8 @@ def run(a):
     if (getattr(a, "ctx", 0) or 0) > 0:
         cmd += ["-c", str(a.ctx)]  # launch with the context you planned for
     if not a.serve:
-        cmd += ["-cnv"]
+        # --dry asks no binary, so it previews what current llama.cpp takes: no -cnv
+        cmd += conversation_flags("" if a.dry else help_text(binp))
     if a.extra:
         cmd += a.extra.split()
     if a.serve:
@@ -284,14 +304,17 @@ def bench_flags(flags, dialect):
     # `bench` would have quietly measured the un-flagged configuration and reported the law as
     # wrong. An allow-list that drops the unknown is the same shape as every other silent-fallback
     # defect in this project's history, so unknown flags now RAISE.
+    # Take a value, same spelling in bench. Checked against a real llama-bench --help
+    # (tests/llamacpp_flags.json). "-c" was listed here and llama-bench has no such flag - it sets
+    # depth with -d, which bench() passes itself - so a planner that ever emitted -c would have
+    # crashed bench instead of reaching the refusal below.
     BENCH_VALUED = {
         "-ngl",
         "-ot",
         "-ub",
         "-b",
-        "-c",
         "-t",
-    }  # take a value, same spelling in bench
+    }
     BENCH_VALUED_RENAME = {"--threads": "-t"}  # take a value, renamed in bench
 
     # Load mode is the one flag whose spelling depends on the BUILD, not on bench vs cli: a

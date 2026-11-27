@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.39.1 - 2026-11-27
+
+**`quantprobe run` works with current llama.cpp again.** Since llama.cpp b10584 (22 August 2026),
+`llama-cli` is chat-only and rejects `-cnv` as an invalid argument. `run` passed that flag to every
+build, so it failed at launch on every llama.cpp released in the last three months. It now asks
+your binary whether it takes `-cnv` and passes it only to the older builds that do, where nothing
+changes. `run --serve`, `bench` and `dashboard` were not affected.
+
+**Every printed command is now checked against a real llama.cpp.** Both flag breaks this autumn
+(`-cnv` at b10584, `--no-mmap` at b10875) passed a green test suite, because the tests knew only
+the flags their author remembered. `tests/llamacpp_flags.json` now records the flags a real build
+accepts, read from each tool's own `--help` by `weights/llamacpp_flag_snapshot.py`. A new test
+checks against it every command `run`, `run --serve` and `bench` print, bench's flag translation
+table, and the flags `probe` passes to llama-quantize, llama-perplexity and llama-imatrix. Its
+three planted bugs (`-cnv` restored, `-c` restored, `--no-mmap` added to the imatrix call) each
+fail it.
+
+The check found one more error, a latent one: bench's translation table said llama-bench takes
+`-c`, which it does not. The planner never hands bench a `-c`, so no run was affected; a future
+one would now get a clear refusal instead of a llama-bench crash.
+
+Checked against llama.cpp **b12815** (2026-11-27), the current release: every flag quantprobe
+prints is accepted.
+
 ## v1.39.0 - 2026-11-27
 
 **Ten fixes from [Divyam Talwar](https://github.com/DivyamTalwar), reviewed and merged — thank
