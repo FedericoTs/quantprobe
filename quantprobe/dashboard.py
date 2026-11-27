@@ -339,6 +339,10 @@ def _anatomy(gguf):
 def dashboard(a):
     best, flags = runtime.best_flags(a)
     binp = runtime.find_llama(a.llama_dir, "llama-server")
+    # Spell the load mode the way THIS build accepts it (b10875 changed it; see plan.NO_MMAP).
+    # The server's stderr goes to DEVNULL below, so a rejected flag would only surface as a
+    # startup exit with no reason given.
+    flags = runtime.for_dialect(flags, runtime.load_dialect(binp))
     sport = a.server_port
     # Loopback-pinned: the proxy below already binds 127.0.0.1 and talks to the upstream over
     # 127.0.0.1, so inheriting llama.cpp's default host was the one place the intent was not

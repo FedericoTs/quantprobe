@@ -34,6 +34,61 @@ def find_llama(explicit, tool):
     )
 
 
+_DIALECTS = {}
+
+
+def dialect_from_help(text):
+    """'modern' if a llama.cpp binary's --help lists -lm/--load-mode, 'legacy' if it lists the
+    old mmap flags instead, None if it shows neither. Pure, so the decision is testable without
+    a binary on the box."""
+    if "--load-mode" in text:
+        return "modern"
+    if "--no-mmap" in text or "--mmap" in text:
+        return "legacy"
+    return None
+
+
+def load_dialect(binary):
+    """Which load-mode spelling this llama.cpp binary accepts, asked of the binary itself.
+
+    The two dialects reject each other's flags outright (b10875, 2026-09-09; see plan.NO_MMAP),
+    so a wrong guess is a crash, not a slower run. `--help` loads no model and returns in about
+    a second, and the answer is cached per path. When the binary cannot be asked, assume the
+    current spelling: every build since b10875 requires it."""
+    if binary not in _DIALECTS:
+        try:
+            out = subprocess.run(
+                [binary, "--help"],
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=60,
+                check=False,
+            )
+            _DIALECTS[binary] = dialect_from_help(out.stdout + out.stderr) or "modern"
+        except Exception:
+            _DIALECTS[binary] = "modern"
+    return _DIALECTS[binary]
+
+
+def for_dialect(flags, dialect):
+    """The planner's flags, spelled for a llama-cli / llama-server of this dialect.
+
+    The planner emits the current spelling (plan.NO_MMAP), so only a legacy binary needs a
+    rewrite: the two-token `-lm none` becomes the single old flag."""
+    if dialect != "legacy":
+        return list(flags)
+    out, i = [], 0
+    while i < len(flags):
+        if flags[i] == "-lm" and i + 1 < len(flags) and flags[i + 1] == "none":
+            out.append(planmod.LEGACY_NO_MMAP)
+            i += 2
+        else:
+            out.append(flags[i])
+            i += 1
+    return out
+
+
 LOOPBACK = "127.0.0.1"
 
 
@@ -190,6 +245,11 @@ def run(a):
     tool = "llama-server" if a.serve else "llama-cli"
     # --dry previews the plan + command WITHOUT requiring llama.cpp installed
     binp = tool if a.dry else find_llama(a.llama_dir, tool)
+    if not a.dry and load_dialect(binp) == "legacy":
+        legacy = for_dialect(flags, "legacy")
+        if legacy != flags:
+            print(f"[quantprobe] this llama.cpp predates b10875: using {planmod.LEGACY_NO_MMAP}")
+        flags = legacy
     cmd = [binp, "-m", a.gguf] + flags
     if (getattr(a, "ctx", 0) or 0) > 0:
         cmd += ["-c", str(a.ctx)]  # launch with the context you planned for
@@ -212,11 +272,9 @@ def run(a):
     sys.exit(subprocess.call(cmd))
 
 
-def bench(a):
-    if getattr(a, "depth", None):
-        a.ctx = a.depth  # prediction at the benched depth
-    best, flags = best_flags(a)
-    binp = "llama-bench" if getattr(a, "dry", False) else find_llama(a.llama_dir, "llama-bench")
+def bench_flags(flags, dialect):
+    """The planner's flags forwarded into llama-bench's spelling for this build. Pure, so both
+    dialects are testable without a llama.cpp binary on the box."""
     # Forward the planned flags into llama-bench, translating where the two CLIs differ.
     #
     # This used to hand-list -ngl and -ot and SILENTLY DROP everything else, which means any flag
@@ -234,13 +292,24 @@ def bench(a):
         "-c",
         "-t",
     }  # take a value, same spelling in bench
-    BENCH_TRANSLATE = {"--no-mmap": ["--mmap", "0"]}  # spelled differently in llama-bench
     BENCH_VALUED_RENAME = {"--threads": "-t"}  # take a value, renamed in bench
+
+    # Load mode is the one flag whose spelling depends on the BUILD, not on bench vs cli: a
+    # current llama-bench takes `-lm <mode>` like llama-cli, an older one only `--mmap 0|1`, and
+    # each rejects the other (b10875; see plan.NO_MMAP). bench() asks the binary which it is.
+    def load_mode(mode):
+        if dialect == "legacy":
+            return ["--mmap", "0" if mode == "none" else "1"]
+        return ["-lm", mode]
+
     bflags, i = [], 0
     while i < len(flags):
         f = flags[i]
-        if f in BENCH_TRANSLATE:
-            bflags += BENCH_TRANSLATE[f]
+        if f == "-lm" and i + 1 < len(flags):
+            bflags += load_mode(flags[i + 1])
+            i += 2
+        elif f == planmod.LEGACY_NO_MMAP:
+            bflags += load_mode("none")
             i += 1
         elif f in BENCH_VALUED_RENAME:
             bflags += [BENCH_VALUED_RENAME[f], flags[i + 1]]
@@ -251,11 +320,22 @@ def bench(a):
         else:
             raise SystemExit(
                 f"[quantprobe] internal: the planner emitted '{f}', which bench does not know how "
-                f"to forward. Add it to BENCH_VALUED or BENCH_TRANSLATE in runtime.py - dropping "
-                f"it would make every predicted-vs-measured figure wrong by the size of that flag."
+                f"to forward. Add it to BENCH_VALUED or BENCH_VALUED_RENAME in runtime.py - "
+                f"dropping it would make every predicted-vs-measured figure wrong by the size of "
+                f"that flag."
             )
-    if "--mmap" not in bflags:
-        bflags += ["--mmap", "1"]
+    if "-lm" not in bflags and "--mmap" not in bflags:
+        bflags += load_mode("mmap")  # explicit, as the old `--mmap 1` was
+    return bflags
+
+
+def bench(a):
+    if getattr(a, "depth", None):
+        a.ctx = a.depth  # prediction at the benched depth
+    best, flags = best_flags(a)
+    binp = "llama-bench" if getattr(a, "dry", False) else find_llama(a.llama_dir, "llama-bench")
+    dialect = "modern" if getattr(a, "dry", False) else load_dialect(binp)
+    bflags = bench_flags(flags, dialect)
     cmd = [binp, "-m", a.gguf, "-n", "32", "-p", "0", "-r", str(a.reps)] + bflags
     if getattr(a, "depth", None):
         cmd += ["-d", str(a.depth)]

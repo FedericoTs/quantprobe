@@ -1,5 +1,46 @@
 # Changelog
 
+## v1.38.0 - 2026-11-27
+
+**The commands quantprobe prints run again on current llama.cpp.** This is a repair release.
+
+llama.cpp **b10875 (9 September 2026)** folded `--no-mmap`, `--mlock` and `--direct-io` into one
+option, `-lm/--load-mode`, and made the old spellings hard errors. Any unknown flag now stops
+llama.cpp with `error: invalid argument`. llama-bench made the same change to its `--mmap 0|1`.
+Since then, every run command the planner printed was rejected by current builds, and
+`quantprobe bench` could not run at all. Both were verified against llama.cpp's own source
+(`common/arg.cpp`, `tools/llama-bench/llama-bench.cpp`), not inferred from a changelog.
+
+- **The planner prints the current spelling**, `-lm none`, with a one-line note for older builds.
+- **`run`, `bench` and `dashboard` ask your llama.cpp binary which dialect it speaks** (its own
+  `--help`, which loads no model), then translate for a build older than b10875. Verified end to
+  end on a real b10098 binary: detected as legacy, translated to `--mmap 1`, and the benchmark ran
+  and was scored.
+- **Every flag quantprobe emits was audited** against the three current llama.cpp parsers,
+  including the stub list of removed flags that still appear in the source only to throw. The
+  load-mode change was the only break. The speculative-decoding flags were already on their
+  current names.
+- **New regression test**: no placement row may emit a flag current llama.cpp rejects, and both
+  dialects are pinned for llama-cli/server and llama-bench. It fails if either half of the fix is
+  undone (mutation-tested).
+
+**The register and README now match the code.**
+
+- **U-51** (count KV only on full-attention layers) shipped in v1.28.0 on 16 August, one day after
+  it was staked, but the register kept saying "not built" for 103 days. A November 2026
+  opportunity audit took it at its word and reported a KV overcount the code no longer had.
+- **New C-35** narrows v1.37.0's MTP finding. llama.cpp executes MTP heads when speculative
+  decoding asks for them (PR #22673, merged 16 May 2026). Since PR #26296 (merged 31 July 2026) it
+  also stops loading unused heads. So "resident but never executed" holds only for older builds.
+  On current ones the printed footprint overstates memory by the MTP block (+2.4% on Qwen3.6-35B
+  UD), a conservative error that is recorded rather than fixed.
+- **README badge:** "validated 7B → 744B" becomes "measured 7B → 118B". The largest model
+  actually run is 118B, and its disk-tier prediction missed its band, so "validated" overstated it.
+- **An untraceable "−9% perplexity (Gemma-12B)" claim** is replaced by the two equal-bytes results
+  that have receipts, with their caveat stated: no imatrix in either arm.
+- **The hardware table** credited the RTX 5070 validation (E-08) to an RTX 5060 Ti, a card nobody
+  measured. The generator is fixed and the table regenerated.
+
 ## v1.37.0 - 2026-08-24
 
 **A block that is never executed no longer costs you predicted speed.**

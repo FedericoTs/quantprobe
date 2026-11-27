@@ -1,5 +1,9 @@
 # Worked examples — real commands, real outputs, measured
 
+> These outputs were captured in July 2026 and are left exactly as printed. Since llama.cpp
+> b10875 (September 2026), `--no-mmap` is spelled `-lm none` and the old flag is rejected;
+> quantprobe now prints the new spelling, and `run`/`bench` translate it for older builds.
+
 ## Zero-config: one file, nothing else
 
 ```text
@@ -138,7 +142,7 @@ Every row here is a bug I actually hit and diagnosed — the table is the scar t
 | symptom | cause | fix |
 |---|---|---|
 | `llama-quantize: failed to quantize` from a Q6/Q8 source | requantizing an already-quantized GGUF | add `--allow-requantize` (quantprobe does this automatically) |
-| hybrid MoE placement *slower* than pure CPU | full-file `mmap` + CUDA staging thrash a tight RAM box | use `--no-mmap` (quantprobe's `run` emits it for hybrids) |
+| hybrid MoE placement *slower* than pure CPU | full-file `mmap` + CUDA staging thrash a tight RAM box | turn mmap off: `-lm none` (`--no-mmap` on llama.cpp before b10875); quantprobe's `run` emits it for hybrids |
 | bench numbers wildly unstable (±3 on a 30B) | benching two >8 GB models back-to-back, or a cold page cache | warm-up pass first, then measure; don't bench big models back-to-back |
 | post-reboot benches read low for ~10 min | antivirus first-read scan + cold cache | run once to warm, discard it, then measure |
 | `ModuleNotFoundError: sentencepiece` on conversion | some tokenizers need it and it isn't a hard dep | `pip install sentencepiece` |

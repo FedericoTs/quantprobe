@@ -688,6 +688,20 @@ def effective_n_layer(args=None, model=None):
 # dominates RAM, which is E-08's regime.
 MMAP_HOST_SHARE_CAP = 0.75
 
+# How to say "load without mmap". llama.cpp b10875 (2026-09-09) folded --no-mmap, --mlock and
+# --direct-io into ONE option, -lm/--load-mode, and made the old spellings hard errors - an unknown
+# flag throws "error: invalid argument" - while llama-bench made the same change to its --mmap 0/1.
+# Verified against common/arg.cpp and tools/llama-bench/llama-bench.cpp on master, 2026-11-27.
+# For ten weeks every run command this tool printed was rejected by current builds, and `bench`
+# could not run at all. The planner now prints the CURRENT spelling; run/bench/dashboard ask the
+# binary they found which dialect it speaks (runtime.load_dialect) and translate for an older one.
+NO_MMAP = "-lm none"
+LEGACY_NO_MMAP = "--no-mmap"
+LEGACY_NOTE = (
+    f"llama.cpp older than b10875 (Sep 2026) spells `{NO_MMAP}` as `{LEGACY_NO_MMAP}`; "
+    f"newer builds reject the old flag. run/bench detect this for you."
+)
+
 
 def mmap_decision(host_gb, ram_gb):
     """(use_no_mmap, note). host_gb = how much this placement holds in RAM.
@@ -704,13 +718,13 @@ def mmap_decision(host_gb, ram_gb):
     return True, (
         f"RAM-TIGHT TRADE-OFF, both sides measured: this placement holds ~{host_gb:.0f}GB "
         f"of your ~{ram_gb:.0f}GB usable RAM ({host_gb / ram_gb:.0%}). We keep "
-        f"--no-mmap because dropping it measured **2.9x SLOWER** here (22.20 -> 7.70 "
-        f"tok/s: near the RAM boundary the OS pages the mapped file in and out every "
-        f"token). The risk you accept: --no-mmap pages are NOT evictable, so under "
-        f"desktop memory pressure the process can OOM instead of slowing down (U-23, "
-        f"reported by a user whose 32GB box was left with 330 MiB free). If your box "
-        f"OOMs, remove --no-mmap and expect roughly a third of the speed, or offload "
-        f"fewer layers so less sits in RAM."
+        f"mmap off ({NO_MMAP}) because mapping the file measured **2.9x SLOWER** here "
+        f"(22.20 -> 7.70 tok/s: near the RAM boundary the OS pages the mapped file in and "
+        f"out every token). The risk you accept: pages loaded without mmap are NOT "
+        f"evictable, so under desktop memory pressure the process can OOM instead of "
+        f"slowing down (U-23, reported by a user whose 32GB box was left with 330 MiB "
+        f"free). If your box OOMs, drop {NO_MMAP} and expect roughly a third of the "
+        f"speed, or offload fewer layers so less sits in RAM."
     )
 
 
@@ -727,7 +741,7 @@ def moe_split_flags(frac, n_layer, host_gb=None, ram_gb=None):
     # split placement: 16.45 tok/s with mmap vs 18.70 without (+13.7%). Gated by U-23 above.
     use_nm = True if host_gb is None or ram_gb is None else mmap_decision(host_gb, ram_gb)[0]
     return '-ngl 99 -ot "blk\\.({})\\.ffn_.*_exps\\.=CPU"{}'.format(
-        "|".join(str(i) for i in range(k, n_layer)), " --no-mmap" if use_nm else ""
+        "|".join(str(i) for i in range(k, n_layer)), f" {NO_MMAP}" if use_nm else ""
     )
 
 
@@ -1519,7 +1533,11 @@ def evaluate(
         v_need = ne * ab / 8 * 1.08 + 0.9 + kv_gb
         r_need = size - ne * ab / 8 * 1.08
         if v_need <= vc * 0.95 and r_need <= ra:
-            warn = "RAM boundary - needs --no-mmap; can be unstable" if r_need > ra * 0.85 else None
+            warn = (
+                f"RAM boundary - needs mmap off ({NO_MMAP}); can be unstable"
+                if r_need > ra * 0.85
+                else None
+            )
             # PINNED-MEMORY CAPACITY RISK (first external replication, u/MoneroApe, extends D-08):
             # `-ot ...=CPU` host buffers are CUDA-pinned. Pinning is why the PCIe path is fast -
             # and pinning a large share of system RAM fails outright under memory pressure. On his
@@ -1539,7 +1557,7 @@ def evaluate(
                     "hybrid: attention->VRAM, experts->RAM",
                     1 / (act_ne / (geta * vb) + act_ex / (eta_r * rb) + kv_gb / (ETA_KV * vb)),
                     warn,
-                    '-ngl 99 -ot "exps=CPU" --no-mmap',
+                    f'-ngl 99 -ot "exps=CPU" {NO_MMAP}',
                     {"vram_bw": h_vram, "ram_bw": h_ram},
                 )
             )
@@ -2654,6 +2672,8 @@ def run(args):
     run_flags = f"{best[3]} {ub}" if ub else best[3]
     run_flags, nthreads = append_threads_flag(run_flags, best[0])
     print(f"\n  run it:  llama-server -m model.gguf {run_flags}")
+    if NO_MMAP in run_flags:
+        print(f"           ({LEGACY_NOTE})")
     if "--threads" in run_flags:
         print(
             f"           (--threads {nthreads} = this machine's LOGICAL cores; llama.cpp's own"
@@ -2984,5 +3004,5 @@ def run(args):
         )
     print(
         "\n  (eta bands fitted from published measurements; estimates +/-25%. "
-        "Hybrid needs --no-mmap.)"
+        f"Hybrid needs mmap off ({NO_MMAP}).)"
     )

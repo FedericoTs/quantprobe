@@ -15,7 +15,7 @@ Current census: **1 measured / 3 external / 65 spec-only.** Every `quantprobe be
 | 1060 | NVIDIA | 192 | measured | reference box - eta measured across the full ladder (FINDINGS) |
 | rx 5700 xt | AMD | 448 | external | [issue #1 / E-13](https://github.com/FedericoTs/quantprobe/issues/1): predicted 73.1 vs measured 73.18 +/- 0.16 (+0.1%), Vulkan, Windows 11 |
 | 3090 | NVIDIA | 936 | external | first external replication (Ryzen 8600G box; source of the channel-count rule) |
-| 5060 ti | NVIDIA | 448 | external | E-08: Blackwell-generation replication, +2%..+7.6% inside the published band |
+| 5070 | NVIDIA | 672 | external | E-08: Blackwell-generation replication, +2%..+7.6% inside the published band |
 | radeon vii | AMD | 1024 | spec |  |
 | rx 7900 xtx | AMD | 960 | spec |  |
 | rx 7900 xt | AMD | 800 | spec |  |
@@ -68,8 +68,8 @@ Current census: **1 measured / 3 external / 65 spec-only.** Every `quantprobe be
 | 5070 ti | NVIDIA | 896 | spec |  |
 | 3080 | NVIDIA | 760 | spec |  |
 | 4080 | NVIDIA | 717 | spec |  |
-| 5070 | NVIDIA | 672 | spec |  |
 | 4070 | NVIDIA | 504 | spec |  |
+| 5060 ti | NVIDIA | 448 | spec |  |
 | 5060 | NVIDIA | 448 | spec |  |
 | 3070 | NVIDIA | 448 | spec |  |
 | 3060 ti | NVIDIA | 448 | spec |  |

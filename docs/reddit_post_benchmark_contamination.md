@@ -101,7 +101,7 @@ machine; the contamination effect is about the size relationship, not the hardwa
 
 ## Comment-thread prep (likely replies, answered honestly)
 
-- **"Just use `--no-mmap`."** Different lever, and it cuts both ways here — measured 2.9× *slower*
+- **"Just turn mmap off"** (`-lm none` on current llama.cpp, `--no-mmap` before b10875). Different lever, and it cuts both ways here — measured 2.9× *slower*
   on one placement near the RAM boundary because non-evictable pages OOM instead of degrading. It
   doesn't remove the predecessor effect; it changes which resource you run out of.
 - **"This is just cold cache, everyone knows."** Cold-vs-warm is known; the *directional

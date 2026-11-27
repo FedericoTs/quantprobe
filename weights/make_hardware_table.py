@@ -23,8 +23,10 @@ VALIDATED = {
     "rx 5700 xt": ("external",
                    "[issue #1 / E-13](https://github.com/FedericoTs/quantprobe/issues/1): "
                    "predicted 73.1 vs measured 73.18 +/- 0.16 (+0.1%), Vulkan, Windows 11"),
-    "5060 ti": ("external", "E-08: Blackwell-generation replication, +2%..+7.6% inside the "
-                            "published band"),
+    # RTX 5070 12GB per the register's E-08 record and the reporter's own post. This key read
+    # "5060 ti" until 2026-11-27, putting the validation on a card nobody measured.
+    "5070": ("external", "E-08: Blackwell-generation replication, +2%..+7.6% inside the "
+                         "published band"),
     "3090": ("external", "first external replication (Ryzen 8600G box; source of the "
                          "channel-count rule)"),
 }

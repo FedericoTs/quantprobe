@@ -34,8 +34,8 @@
    "vram_bw_gbs": 672,
    "geta_hint": 0.6,
    "gl_hint": 0.4,
-   "status": "spec",
-   "evidence": ""
+   "status": "external",
+   "evidence": "E-08: Blackwell-generation replication, +2%..+7.6% inside the published band"
   },
   {
    "match": "5060 ti",
@@ -43,8 +43,8 @@
    "vram_bw_gbs": 448,
    "geta_hint": 0.58,
    "gl_hint": 0.38,
-   "status": "external",
-   "evidence": "E-08: Blackwell-generation replication, +2%..+7.6% inside the published band"
+   "status": "spec",
+   "evidence": ""
   },
   {
    "match": "5060",

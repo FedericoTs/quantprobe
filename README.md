@@ -18,7 +18,7 @@ Most tools help you pick a quantization someone else built. This one **measures 
 
 [**Quickstart**](#quickstart) · [**Browser version**](https://federicots.github.io/quantprobe/) · [**What runs on what**](docs/MATRIX.md) · [**Commands**](#commands) · [**The laws**](LAWS.md) · [**When it won't help**](#when-quantprobe-wont-help-you)
 
-![smoke](https://github.com/FedericoTs/quantprobe/actions/workflows/smoke.yml/badge.svg) ![pypi](https://img.shields.io/pypi/v/quantprobe?color=0f766e) ![license](https://img.shields.io/badge/license-MIT-0f766e) ![models](https://img.shields.io/badge/validated-7B_→_744B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
+![smoke](https://github.com/FedericoTs/quantprobe/actions/workflows/smoke.yml/badge.svg) ![pypi](https://img.shields.io/pypi/v/quantprobe?color=0f766e) ![license](https://img.shields.io/badge/license-MIT-0f766e) ![models](https://img.shields.io/badge/measured-7B_→_118B-378add) [![x](https://img.shields.io/badge/author-@federico__sciuca-14181f)](https://x.com/federico_sciuca)
 
 **Validated, not vibes.** 14-model ladder at **8.4% median error** on measured hardware · every printed all-in-VRAM number a documented **floor** (real speed ≥0.90× on 13/13 benchmarks, typically 1.1–1.8× higher) · retrodicts third-party results it never trained on ([airllm's 30× spread, DGX Spark reports, a 1.56 TB Kimi rig](docs/MATRIX.md)) · **every prediction staked before measuring, and the misses published at the same size as the hits.**
 
@@ -50,7 +50,8 @@ quantprobe plan - Qwen3-30B-A3B @ 2.5-bit on THIS machine [auto-detected]
   binding constraint: BANDWIDTH-BOUND (system RAM bandwidth) - 51% of every decode token is spent there.
     validation       derived from the law, not confirmed by variance attribution (prereg #95 - …)
 
-  run it:  llama-server -m model.gguf -ngl 99 -ot "blk\.(16|17|…|47)\.ffn_.*_exps\.=CPU" --no-mmap -b 1024 -ub 1024 --threads 4
+  run it:  llama-server -m model.gguf -ngl 99 -ot "blk\.(16|17|…|47)\.ffn_.*_exps\.=CPU" -lm none -b 1024 -ub 1024 --threads 4
+           (llama.cpp older than b10875 (Sep 2026) spells `-lm none` as `--no-mmap`; newer builds reject the old flag. run/bench detect this for you.)
 ```
 
 The first line is what a fresh install prints. The `calibration applied` and `anchored:` lines appear after you run `quantprobe calibrate` once — measured constants and your own anchor runs, not spec sheets. The **binding constraint** line is the part most tools never tell you: *3 tok/s, disk-bound* means buy RAM; *3 tok/s, bandwidth-bound* means don't bother. And it now carries its own scope label, because we tested it the hard way: [prereg #95](preregistrations/2026-08-07-doe-flag-screening.md)'s variance-attribution arm did **not** confirm the flag-level mapping (the placement lever carried the variance, decided 1000/1000) — so every classification prints *"derived from the law, not confirmed by variance attribution"* until a re-derivation earns the confirmation. The time decomposition itself is untouched arithmetic; the label prices exactly what isn't measured.
@@ -93,7 +94,7 @@ One pipeline, end to end — most tools ship the first line only:
 - **Anchors predictions to *your* machine** — run `quantprobe calibrate` once and two benchmark runs on your own GGUF scale every prediction. That path passed the gate it pre-registered before any number existed (prereg #64): leave-one-out median error **19% → 5.8%** across 5 arms; ~12% median on the full ladder, misses erring low. `--no-anchors` restores the plain law.
 - **Emits the exact command**, including the `-ot` regex most guides get wrong.
 - **Finds free speed in what you already have** — [partial expert offload](#free-speed-you-probably-already-have) and [prompt-lookup speculation](#free-speed-part-two-if-you-write-code) need no new download.
-- **Builds layer-aware quantizations** — measures which layers of *your* model break under compression, then protects them (−9% perplexity at the same file size). [Why a recipe cannot be reused ↓](#why-your-model-needs-its-own-recipe)
+- **Builds layer-aware quantizations** — measures which layers of *your* model break under compression, then protects them (−13.2% perplexity on a 7B, and 43.3% less excess loss on a dense 27B, at the same file size). [Why a recipe cannot be reused ↓](#why-your-model-needs-its-own-recipe)
 - **Audits a running Ollama install** — `quantprobe audit-ollama` reads the placement Ollama actually chose, prices it against the planner's, and refuses to compare while VRAM is contended (a measurement discipline most benchmarks skip).
 - **Proves quality, not just speed** — perplexity *and* full-distribution KL divergence via llama.cpp's own `--kl-divergence`, because we measured perplexity moving 23% while the model changed its chosen token on 27% of positions.
 - **Tells you when to stop** — it declines the expensive path on machines that don't need it.
@@ -173,7 +174,7 @@ recommends (U-38 overturned our own prior "2× ceiling"; U-39 confirmed the MoE 
 | time | minutes (mostly download) | **~50 min for a 7B, ~10 h for a 35B** — it tells you before starting |
 | disk | one file | source + working files, 3–4× bigger |
 | **speed** | full | **identical** — speed comes from placement, not from the build |
-| **quality** | whatever the community published | **−9% ppl** (Gemma-12B) · **−13.2% ppl / −39.5% KLD** (Qwen2.5-7B, byte-matched, [staked](preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md)) |
+| **quality** | whatever the community published | **43.3% less excess loss** (Qwen3.8-27B, byte-identical, [prereg #112](preregistrations/2026-08-24-does-depth-aware-pay-on-a-dense-27b.md)) · **−13.2% ppl / −39.5% KLD** (Qwen2.5-7B, byte-matched, [staked](preregistrations/2026-08-04-a2a-depth-aware-vs-uniform.md)) · both measured with no imatrix in either arm |
 
 **Most people want Fast.** Above ~3 bits per weight, community quants are already near-lossless — so `--custom` refuses to run on machines that don't need it and says why. Reach for Custom when you're squeezing a model that barely fits (under ~3 bits, where ordinary compression falls off a cliff), when you have a fine-tune nobody has published, or when you need maximum quality at a fixed size.
 

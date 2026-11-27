@@ -1425,10 +1425,11 @@ def t_invariant_cpu_override_implies_no_mmap():
     # MEASURED it: 16.45 vs 18.70 tok/s (+13.7%). v1.8.0 shipped a row that violated this.
     # U-23 adds ONE sanctioned exception: on a RAM-dominating placement we keep mmap so the
     # pages stay evictable - but the row must then SAY so. Silent omission stays a failure.
+    from quantprobe.plan import NO_MMAP
     bad = [(c[0], c[3]) for c, _ in _all_placement_rows()
-           if "-ot" in c[3] and "=CPU" in c[3] and "--no-mmap" not in c[3]
+           if "-ot" in c[3] and "=CPU" in c[3] and NO_MMAP not in c[3]
            and "expert cache" not in c[0] and "keeping mmap" not in (c[2] or "")]
-    assert not bad, f"rows override tensors to CPU without --no-mmap and without saying why: {bad[:3]}"
+    assert not bad, f"rows override tensors to CPU without {NO_MMAP} and without saying why: {bad[:3]}"
 
 
 def t_u23_mmap_gate():
@@ -1437,13 +1438,13 @@ def t_u23_mmap_gate():
     # v1.23's remedy (dropping --no-mmap when RAM-tight) was REFUTED by the full ladder: it cost
     # 2.9x (22.20 -> 7.70), because near the RAM boundary mmap thrashes. --no-mmap now ALWAYS
     # ships; the tight case gets both measured numbers and the user chooses.
-    from quantprobe.plan import mmap_decision, moe_split_flags, MMAP_HOST_SHARE_CAP
+    from quantprobe.plan import mmap_decision, moe_split_flags, MMAP_HOST_SHARE_CAP, NO_MMAP
     assert mmap_decision(7, 12) == (True, None), "roomy: keep the flag, say nothing"
     ok, note = mmap_decision(11, 12)
     assert ok is True, "the flag must never be dropped again - it measured 2.9x"
     assert note and "2.9x SLOWER" in note and "OOM" in note, "tight case must give BOTH sides"
     for args in ((0.3, 48, 7, 12), (0.3, 48, 11, 12), (0.3, 48)):
-        assert "--no-mmap" in moe_split_flags(*args), f"flag dropped for {args}"
+        assert NO_MMAP in moe_split_flags(*args), f"flag dropped for {args}"
     assert 0.5 < MMAP_HOST_SHARE_CAP < 1.0
 
 def t_invariant_flags_are_valid_argv():
@@ -5034,6 +5035,44 @@ def t_a_stored_param_block_is_pinned_to_the_file_it_was_measured_on():
             f"{r['model']['key']}: measured_from must name the GGUF, got {p.get('measured_from')!r}"
         )
     assert checked >= 8, f"only {checked} recipes carry params - expected the whole atlas"
+    return None
+
+
+def t_every_launch_flag_is_accepted_by_the_llama_cpp_that_runs_it():
+    """llama.cpp b10875 (2026-09-09) folded --no-mmap/--mlock/--direct-io into -lm/--load-mode
+    and made the old spellings hard errors; llama-bench did the same to --mmap 0|1. For ten weeks
+    every run command this tool printed was rejected by current builds and `bench` could not run
+    at all, and the suite stayed green because no test knew what current llama.cpp accepts.
+
+    Pinned three ways: no placement row emits a flag current llama.cpp REMOVED (the stub list in
+    common/arg.cpp, which still contains the names only to throw "the argument has been
+    removed"); a legacy binary gets the old spelling for llama-cli/server and for llama-bench;
+    and the dialect is read from the binary's own --help rather than guessed.
+    Mutation owed and discharged: re-emitting --no-mmap in moe_split_flags fails part 1, and an
+    identity for_dialect fails part 2."""
+    from quantprobe import runtime as rt
+
+    removed = {  # rejected by llama.cpp master, verified 2026-11-27
+        "--no-mmap", "--mmap", "--mlock", "--direct-io",
+        "--draft", "--draft-n", "--draft-max", "--draft-min", "--draft-n-min",
+        "--spec-ngram-size-n", "--spec-ngram-size-m", "--spec-ngram-min-hits",
+    }
+    for c, _ in _all_placement_rows():
+        toks = set(c[3].replace('"', "").split())
+        assert not toks & removed, f"{c[0]}: emits {toks & removed}, which current llama.cpp rejects"
+
+    planned = ["-ngl", "99", "-ot", "exps=CPU", "-lm", "none"]
+    assert rt.for_dialect(planned, "modern") == planned
+    assert rt.for_dialect(planned, "legacy") == ["-ngl", "99", "-ot", "exps=CPU", "--no-mmap"]
+    assert rt.bench_flags(planned, "modern")[-2:] == ["-lm", "none"]
+    assert rt.bench_flags(planned, "legacy")[-2:] == ["--mmap", "0"]
+    assert rt.bench_flags(["-ngl", "99"], "modern")[-2:] == ["-lm", "mmap"]
+    assert rt.bench_flags(["-ngl", "99"], "legacy")[-2:] == ["--mmap", "1"]
+
+    assert rt.dialect_from_help("  -lm, --load-mode MODE      model loading mode") == "modern"
+    assert rt.dialect_from_help("  --no-mmap                  do not memory-map model") == "legacy"
+    assert rt.dialect_from_help("  -mmp, --mmap <0|1>         (default: 1)") == "legacy"
+    assert rt.dialect_from_help("usage: something unrelated") is None
     return None
 
 
