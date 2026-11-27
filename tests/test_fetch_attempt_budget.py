@@ -57,6 +57,10 @@ class FakeResponse:
         if self._break_after:
             raise requests.exceptions.ChunkedEncodingError("connection broken: truncated response")
 
+    def close(self):
+        # requests.Response.close - #24 releases a rejected or rolled-back response with it
+        pass
+
 
 class FakeRemote:
     """A scripted HF endpoint. Entry i of `script` serves GET i; the last entry repeats.
@@ -98,9 +102,17 @@ class FakeRemote:
             return FakeResponse(action[1])
         start = int(rng.split("=")[1].split("-")[0]) if rng else 0
         end = len(PAYLOAD) if kind == "rest" else min(len(PAYLOAD), start + action[1])
+        headers = {}
+        if rng:
+            # A real 206 always carries Content-Range, and since #24 one without it is rejected
+            # unread. A clean short answer names exactly the bytes it sends (a legal short range);
+            # a dropping one names the remainder it never finishes.
+            last = (len(PAYLOAD) - 1) if kind in ("rest", "bytes_then_break") else (end - 1)
+            headers["Content-Range"] = f"bytes {start}-{last}/{len(PAYLOAD)}"
         return FakeResponse(
             206 if rng else 200,
             PAYLOAD[start:end],
+            headers=headers,
             break_after=(kind == "bytes_then_break"),
         )
 
@@ -172,15 +184,18 @@ class FetchAttemptBudgetTests(unittest.TestCase):
         r = self.run_fetch([("bytes", 512)], tries=1)
         self.assertEqual(len(r.gets), 1, "tries=1 must issue exactly one GET")
         self.assertFalse(r.ok)
-        self.assertEqual(r.part_size, 512, "the bytes that did arrive must be kept")
+        # Since #24 a 200 that ends cleanly short of the remote size is the server contradicting
+        # itself (an error page under a 200, a truncated object) and is rolled back, not kept.
+        self.assertEqual(r.part_size, 0, "a clean-but-short 200 is rolled back")
         self.assertIsNone(r.out_bytes, "an incomplete download must not be published")
 
     def test_short_success_consumes_one_attempt_each(self):
-        r = self.run_fetch([("bytes", 512)], tries=2)
+        # Ranged from the start, so each short answer is a LEGAL short 206 (#24 keeps those).
+        r = self.run_fetch([("bytes", 512)], tries=2, part=PAYLOAD[:512])
         self.assertEqual(len(r.gets), 2, "tries=2 must issue exactly two GETs")
         self.assertFalse(r.ok)
-        self.assertEqual(r.gets[1], "bytes=512-", "the second GET must resume, not restart")
-        self.assertEqual(r.part_size, 1024, "partial progress accumulates across attempts")
+        self.assertEqual(r.gets, ["bytes=512-", "bytes=1024-"], "each GET must resume, not restart")
+        self.assertEqual(r.part_size, 1536, "partial progress accumulates across attempts")
 
     def test_empty_success_response_consumes_an_attempt(self):
         r = self.run_fetch([("bytes", 0)], tries=3)
@@ -194,17 +209,18 @@ class FetchAttemptBudgetTests(unittest.TestCase):
         )
         self.assertEqual(len(r.gets), 4, "every issued GET spends one attempt, whatever it does")
         self.assertFalse(r.ok)
-        self.assertEqual(r.part_size, 512, "bytes from the surviving attempts are kept")
+        # The clean-short 200 of GET 1 is rolled back (#24); the 256 B the dropped GET 2
+        # delivered before breaking are real bytes at the right offset and are kept.
+        self.assertEqual(r.part_size, 256, "bytes from the surviving attempts are kept")
 
     def test_unknown_remote_size_fails_finitely(self):
-        """No Content-Length means the completeness test can never fire, so the budget is the
-        only thing that can end the loop - and the result must be a failure, not a silent
-        "complete". Content-Range/HEAD validation is out of scope on this branch."""
+        """No Content-Length means a new download could never be certified. Since #24 that is
+        refused at the HEAD, before any GET - finite by construction, and never "complete"."""
         r = self.run_fetch([("bytes", 1024)], tries=3, total=0)
-        self.assertEqual(len(r.gets), 3)
+        self.assertEqual(len(r.gets), 0)
         self.assertFalse(r.ok, "an unverifiable transfer must never be accepted as complete")
         self.assertIsNone(r.out_bytes)
-        self.assertIn("INCOMPLETE", r.printed)
+        self.assertIn("CANNOT FETCH", r.printed)
 
     # --- what must keep working ------------------------------------------------------------
 

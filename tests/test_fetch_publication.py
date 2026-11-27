@@ -162,10 +162,14 @@ class FetchPublicationTest(unittest.TestCase):
         self.assertOldIntact()
 
     def test_force_head_exception_keeps_old_bytes(self):
+        # Since #24 (remote_size) a HEAD that raises is a refusal - CANNOT FETCH, return False -
+        # rather than a traceback. What this test protects is unchanged: the old bytes survive.
         self.publish_old()
         self.net(requests.exceptions.ConnectionError("dns"), [])
-        with self.assertRaises(requests.exceptions.ConnectionError):
-            self.fetch(force=True)
+        ok, log = self.fetch(force=True)
+        self.assertFalse(ok)
+        self.assertIn("CANNOT FETCH", log)
+        self.assertEqual(self.gets, [], "no GET may follow a HEAD that could not size the file")
         self.assertOldIntact()
 
     def test_publication_failure_keeps_old_bytes(self):
@@ -199,7 +203,10 @@ class FetchPublicationTest(unittest.TestCase):
     def test_force_without_published_output_resumes_existing_partial(self):
         with open(self.part, "wb") as f:
             f.write(NEW[:400])
-        self.net(_Resp(length=len(NEW)), [_Resp(206, chunks=[NEW[400:]])])
+        resumed = _Resp(206, chunks=[NEW[400:]])
+        # A real 206 always names its range; since #24 one that does not is rejected unread.
+        resumed.headers["Content-Range"] = f"bytes 400-{len(NEW) - 1}/{len(NEW)}"
+        self.net(_Resp(length=len(NEW)), [resumed])
         ok, _ = self.fetch(force=True, tries=1)
         self.assertTrue(ok)
         self.assertEqual(self.gets[0].get("Range"), "bytes=400-")

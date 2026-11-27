@@ -1767,6 +1767,10 @@ def t_fetch_force_and_collision():
     import os, tempfile
     from quantprobe import fetch as fmod
     class _R:
+        # A real requests.Response always carries a status; a mock with only `headers` is
+        # indistinguishable from an error page, and fetch no longer reads a length off one.
+        # The two assertions below are unchanged - see tests/test_fetch_remote_metadata.py.
+        status_code = 200
         headers = {"Content-Length": "1000"}
     real_head = fmod.requests.head
     fmod.requests.head = lambda *a, **k: _R()
@@ -1794,6 +1798,24 @@ def t_fetch_attempt_budget():
     # `tries` bounds ISSUED GETs: a clean-but-short 200/206 used to charge nothing, so the
     # budget could not end the loop. Cases in tests/test_fetch_attempt_budget.py.
     from tests.test_fetch_attempt_budget import run_smoke
+    return run_smoke()
+
+
+def t_fetch_remote_metadata_and_range_integrity():
+    """An error page's Content-Length decides nothing, and a 206 proves its offset before it lands.
+
+    Both halves of the same defect - a byte count standing in for "this is the right file". The
+    skip path no longer reads a length off an unsuccessful HEAD in either direction (it neither
+    certifies nor accuses); an already-present file is still REUSED when the size is
+    unobtainable, but reported as present, not complete. The resume path validates
+    Content-Range before opening the file, and counts what it wrote.
+
+    The cases live in tests/test_fetch_remote_metadata.py as unittest (they need a per-case
+    temp dir and a fake transport), and include the `auto` caller regression that pays for the
+    skip path; this runs every one of them inside the pytest-free suite too, so
+    `python tests/smoke.py` stays the single gate CONTRIBUTING.md points contributors at.
+    """
+    from tests.test_fetch_remote_metadata import run_smoke
     return run_smoke()
 
 
