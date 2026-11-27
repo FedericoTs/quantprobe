@@ -99,6 +99,27 @@ def check_content_range(value, want_start, want_total):
     return end - start + 1, None
 
 
+def contained(dest, fname):
+    """The local path for remote file `fname` under `dest`, or None if it would escape `dest`.
+
+    `fname` is untrusted: `auto` takes it from a repository's own file listing. os.path.join
+    silently DISCARDS `dest` when a component is absolute, '..' climbs out of it, and on Windows a
+    segment such as 'C:' turns the join into a drive-relative path. Hugging Face rejects most of
+    these names itself, but a download path is not the place to rely on that. Remote paths always
+    use '/', so splitting on it also gives Windows native separators, which `auto` now builds the
+    same way when it looks for what was fetched."""
+    parts = str(fname).replace("\\", "/").split("/")
+    if not fname or any(p in ("", ".", "..") for p in parts):
+        return None
+    out = os.path.join(dest, *parts)
+    root = os.path.realpath(dest)
+    try:
+        inside = os.path.commonpath([root, os.path.realpath(out)]) == root
+    except ValueError:  # Windows: different drives
+        inside = False
+    return out if inside else None
+
+
 def fetch(repo, dest, fname, tok, tries=100, force=False):
     """Download `fname` into `dest`, resuming a `.part`; True when `dest/fname` is usable.
 
@@ -123,7 +144,13 @@ def fetch(repo, dest, fname, tok, tries=100, force=False):
     the final publication check also preserves completion when tries=0.
     """
     url = f"https://huggingface.co/{repo}/resolve/main/{fname}"
-    out = os.path.join(dest, fname)
+    out = contained(dest, fname)
+    if out is None:
+        print(
+            f"[quantprobe] REFUSED: {fname!r} would be written outside {dest!r}. A remote file "
+            f"name may not contain '..', an absolute path or a drive letter. Nothing was fetched."
+        )
+        return False
     part = out + ".part"
     hdr0 = {"Authorization": f"Bearer {tok}"} if tok else {}
     if os.path.exists(out) and not force:
