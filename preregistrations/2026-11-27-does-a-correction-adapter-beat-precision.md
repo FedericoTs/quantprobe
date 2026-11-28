@@ -114,3 +114,50 @@ Band-versus-outside medians and the Q3_K-base margins are published without a st
 
 After #113 completes. It needs #113's importance matrix and arm files, and running alongside
 #113's builds and evaluations would contend for CPU and RAM (C-14).
+
+## Verdict — scored 2026-11-27, 2 of 3; decision: dead end
+
+`python weights/prereg114_score.py --results weights/data/prereg114.json`, run unchanged. Both
+validation gates passed first. In-process quantization with #113's imatrix was byte-identical to
+#113's SPREAD-I (`blk.5.ffn_down`, Q2_K) and OURS-I (`blk.51.ffn_down`, Q4_K). So every precision
+point below is exactly what llama-quantize writes.
+
+- **P-1 MISS.** `ffn_down` was the most concentrated tensor in only **2 of 10** blocks; I staked 8
+  or more. The reasoning was wrong about where the error lives. Without the imatrix, `ffn_gate` and
+  `ffn_up` carry far more concentrated weighted error: top-16 share 16–20%, against 5.3% for
+  `ffn_down`. Their input is the normalized residual stream, whose few outlier channels dominate.
+- **P-2 HIT, 30 of 30.** Without the imatrix, the top-16 share is higher in every tensor.
+- **P-3 HIT.** At +0.25 bits per weight on Q2_K, precision beats the best adapter that fits for
+  every kind. Median margins are −0.77 dB (gate), −0.74 dB (up) and −0.77 dB (down). Only one of
+  30 tensors goes positive, `blk.63.ffn_down` at +0.07 dB, far below the +0.5 dB that would stake
+  Stage B. **No adapter file is built.**
+
+**The mechanism.** Ratios below are each tensor kind's median top-16 share against the
+white-noise level, 0.74% for these shapes.
+
+| tensor | with the imatrix | without it |
+|---|---|---|
+| `ffn_gate` | 1.38% (1.9×) | 16.3% (22×) |
+| `ffn_up` | 1.38% (1.9×) | 19.9% (27×) |
+| `ffn_down` | 1.04% (1.4×) | 5.3% (7×) |
+
+The first-principles bar was roughly 6× white noise to break even. With the imatrix, no kind comes
+close; the most concentrated single tensor, `blk.63.ffn_down`, reaches 6.9× and merely breaks even
+(+0.07 dB). Without it, the error is 7–27× white noise, exactly the concentration that published
+correction methods exploit on quantizers that ignore activations. **An activation-aware quantizer
+removes that concentration first.** That is why a closed-form correction that recovers large gaps
+elsewhere has nothing cheap left to capture here.
+
+**Descriptive.**
+- The precision ladder measured 6.3 dB per bit from Q2_K to Q3_K and 6.0 from Q3_K to Q4_K. The
+  ~6 dB per bit the bar assumed held.
+- The imatrix itself is worth 1.65 dB on Q2_K in this metric.
+- Band and outside-band tensors behave alike (Q2_K-base medians −0.74 to −0.75 dB against −0.79 to
+  −0.83 dB).
+- On a Q3_K base the adapter loses less, but still loses (−0.19 to −0.60 dB).
+- Margins worsen with budget, from −0.15 dB at +0.05 bits per weight to −1.9 dB at +0.5.
+
+**Scope, unchanged.** This rules out diagonal-metric (imatrix-weighted) corrections on imatrix
+K-quants for this dense 27B. A correction fitted to the full input covariance (EoRA, QERA) is not
+measured. The prereg made that follow-up conditional on a margin near zero; at −0.75 dB it is not
+near zero, so it is not pursued.
