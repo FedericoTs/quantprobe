@@ -33,7 +33,10 @@ TIMEOUT_S = 1200
 
 COMMON = ["-m", MODEL, "-ngl", "99", "-lm", "none", "-b", "1024", "-ub", "1024", "--threads", "4",
           "-c", "2048", "-n", str(N_PREDICT), "--temp", "0.7", "--seed", "42", "--ignore-eos",
-          "-no-cnv", "-f", PROMPT]
+          "-no-cnv", "-f", PROMPT,
+          # the cache prints its slots and counters only at log verbosity 4 (llama.cpp's own tuner
+          # uses -lv 4 too); a pilot showed it adds start-up and exit lines only, nothing per token
+          "-lv", "4"]
 
 
 def ot(first):

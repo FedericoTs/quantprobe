@@ -96,3 +96,18 @@ hit-rate curve of one trace from 126 MiB to 4 GiB.
 - **A bandwidth model of the cache arms is not staked.** C-32 already shows Law 4 over-predicting
   this placement on this machine by about 60%, and the cache adds a per-layer host round trip that
   the law does not price. Modelling that comes after this measures what dominates.
+
+## Amendment, before any scored arm ran
+
+Pilots of arm C1008, with 16 and then 4 generated tokens, checked the harness. Their numbers are
+not scored.
+
+- `llama-completion` exits by itself, and its timing line parses.
+- The cache prints its slot and counter lines only at log verbosity 4, the level llama.cpp's own
+  tuner uses. **`-lv 4` is added to every arm.** It adds start-up and exit lines and nothing per
+  token: a 4-token log had 240 lines, all of them one-off.
+- The 4-token pilot's trace, replayed by the port at 1,008 MiB and share 0, reproduced llama.cpp's
+  own line exactly: 606 and 241 slots, 325 hits, 1,064 misses, 1,275.19 MiB uploaded. P-2 is still
+  scored on the full runs.
+- llama.cpp's `--fit` reported the cache arm 500 MiB short of its default 1 GiB free-memory
+  margin. It changed nothing, because `-ngl` is set explicitly; VRAM use was 4,673 of 6,143 MiB.
