@@ -111,3 +111,66 @@ not scored.
   scored on the full runs.
 - llama.cpp's `--fit` reported the cache arm 500 MiB short of its default 1 GiB free-memory
   margin. It changed nothing, because `-ngl` is set explicitly; VRAM use was 4,673 of 6,143 MiB.
+
+## Verdict — scored 2026-11-27, 1 of 3; decision: the static split stays
+
+`python weights/prereg115_score.py --results weights/data/prereg115.json`, run unchanged after all
+12 runs completed (rc 0).
+
+| arm | VRAM on experts | decode tok/s (3 runs) | median | hit rate | uploaded per token |
+|---|---|---|---|---|---|
+| **A** | layers 0–8, 2,268 MiB | 21.67, 23.42, 23.75 | **23.42** | — | — |
+| C1008 | layers 0–4 + 1,008 MiB cache | 20.47, 20.44, 20.36 | 20.44 | 64.94% | 116.9 MiB |
+| C1008s | the same, CPU share 0.95 | 21.91, 21.95, 21.85 | 21.91 | 53.87% | 9.6 MiB (≈122 misses on the CPU) |
+| C504 | layers 0–4 + 504 MiB cache | 18.14, 18.16, 18.15 | 18.15 | 49.92% | 167.2 MiB |
+
+- **P-1 MISS: the static split wins.** The faster equal-VRAM cache arm, C1008s, reaches 0.936× A.
+- **P-2 HIT: the port is exact.** Replaying each of the nine cache runs' own traces reproduced
+  llama.cpp's logged counters with a worst deviation of **0.0001%**: hits, misses, misses on the
+  CPU, and MiB uploaded.
+- **P-3 MISS, half of it.**
+  - Across cache sizes the prediction was exact: C1008's trace replayed at 504 MiB predicted
+    49.92%, and C504 measured 49.92%.
+  - Across CPU shares it missed by 5.0 points: 58.87% predicted against 53.87% measured.
+  - The cause is the text, not the port. Repetitions of one configuration wrote identical traces,
+    but C1008's and C1008s's traces diverge at lookup 91, the second generated token. Computing
+    misses on the CPU changes the numerics, so sampled decoding wrote different text, and the hit
+    rate follows the text. C1008s's own trace replayed at share 0 gives 58.83%, against C1008's
+    64.94%.
+  - **For a planner:** a trace predicts other cache sizes exactly, as long as the numerics stay the
+    same. Different text from the same model moved the hit rate by about 5–6 points.
+
+**Why the cache lost here.** This decomposition is descriptive, not staked.
+
+- C1008 and C504 differ only in cache size. 50.3 MiB more uploaded per token cost 6.2 ms more per
+  token, so an upload costs about 0.12 ms per MiB, roughly 8 GB/s effective over PCIe 3.0 x16.
+- C1008 spends about 14 ms of its 48.9 ms per token uploading 117 MiB of misses. Everything else
+  takes about 34.5 ms, less than A's whole 42.7 ms. Were misses free, the cache would win; at a 65%
+  hit rate they are not.
+- Break-even on this machine needs misses at or below about 67 MiB per token, a hit rate near 80%.
+  The curve below puts that at about 1.7 GB of cache. At equal VRAM that leaves about two static
+  layers, and about 11 GiB of experts pinned in a 16 GB machine's RAM.
+- Share 0.95 trades uploads for CPU work and per-layer round trips, and lands in between.
+
+**Hit-rate curve.** C1008 rep 1's trace, share 0, under llama.cpp's own cache policy:
+
+| cache | 126 MiB | 252 | 504 | 1008 | 1512 | 2016 | 3024 | 4032 |
+|---|---|---|---|---|---|---|---|---|
+| hit rate | 14.1% | 30.4% | 49.9% | 64.9% | 75.7% | 83.6% | 90.9% | 93.7% |
+
+**A side observation, not scored.** Arm A is the exact run line `quantprobe plan` prints. It
+measured a median of **23.42 tok/s** against the plan's own prediction of 23.4. C-32 records
+11.0–14.4 tok/s for this model on this machine under the older `-ngl 12` placement and llama.cpp
+b10098. The harness here (512 generated tokens via `llama-completion`) is not the published
+figure's method, so no number is changed on this alone. A re-measurement with `quantprobe bench`
+is the follow-up.
+
+**Consequences.**
+
+- The plan keeps the static split for this class of machine: 6 GB of VRAM, PCIe 3.0, 16 GB of RAM.
+  No cache integration is staked.
+- The reusable part is the instrument: an exact simulator of llama.cpp's MoE cache, validated
+  against nine runs, plus the first hit-rate curve for this model. More VRAM per expert byte, or a
+  faster link, moves the break-even, and the decomposition above is what pricing that needs.
+
+**Scope.** One machine, one model, one prompt, decode only.

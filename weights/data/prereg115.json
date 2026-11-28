@@ -1,0 +1,440 @@
+{
+ "protocol": {
+  "llama": "llamacpp-b12815",
+  "model": "Qwen3.6-35B-A3B-OURS-depthaware.gguf",
+  "model_bytes": 14115658720,
+  "reps": 3,
+  "n_predict": 512,
+  "common": [
+   "-m",
+   "D:/evo-compress-data/gguf/Qwen3.6-35B-A3B-OURS-depthaware.gguf",
+   "-ngl",
+   "99",
+   "-lm",
+   "none",
+   "-b",
+   "1024",
+   "-ub",
+   "1024",
+   "--threads",
+   "4",
+   "-c",
+   "2048",
+   "-n",
+   "512",
+   "--temp",
+   "0.7",
+   "--seed",
+   "42",
+   "--ignore-eos",
+   "-no-cnv",
+   "-f",
+   "C:\\Users\\Federico\\Documents\\evo-compress\\.claude\\worktrees\\law5-prefill\\weights\\data\\prereg115_prompt.txt",
+   "-lv",
+   "4"
+  ],
+  "arms": {
+   "A": {
+    "flags": [
+     "-ot",
+     "blk\\.(9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39)\\.ffn_.*_exps\\.=CPU"
+    ],
+    "mib": 0,
+    "share": 0.0
+   },
+   "C1008": {
+    "flags": [
+     "-ot",
+     "blk\\.(5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39)\\.ffn_.*_exps\\.=CPU",
+     "--moe-cache-mib",
+     "1008",
+     "--moe-cache-cpu-share",
+     "0"
+    ],
+    "mib": 1008,
+    "share": 0.0
+   },
+   "C504": {
+    "flags": [
+     "-ot",
+     "blk\\.(5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39)\\.ffn_.*_exps\\.=CPU",
+     "--moe-cache-mib",
+     "504",
+     "--moe-cache-cpu-share",
+     "0"
+    ],
+    "mib": 504,
+    "share": 0.0
+   },
+   "C1008s": {
+    "flags": [
+     "-ot",
+     "blk\\.(5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39)\\.ffn_.*_exps\\.=CPU",
+     "--moe-cache-mib",
+     "1008",
+     "--moe-cache-cpu-share",
+     "0.95"
+    ],
+    "mib": 1008,
+    "share": 0.95
+   }
+  }
+ },
+ "runs": {
+  "A_r1": {
+   "arm": "A",
+   "rep": 1,
+   "mib": 0,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 64.0,
+   "ram_avail_gib": 12.23,
+   "trace": null,
+   "eval_ms": 23576.42,
+   "eval_n": 511,
+   "decode_tps": 21.67,
+   "prompt_n": 402,
+   "prompt_tps": 212.52,
+   "slots": []
+  },
+  "C1008_r1": {
+   "arm": "C1008",
+   "rep": 1,
+   "mib": 1008,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 64.5,
+   "ram_avail_gib": 12.21,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C1008_r1.mct1",
+   "eval_ms": 24958.6,
+   "eval_n": 511,
+   "decode_tps": 20.47,
+   "prompt_n": 402,
+   "prompt_tps": 218.09,
+   "small": {
+    "hits": 93269,
+    "misses": 50360,
+    "cpu": 0,
+    "hit_rate": 64.94,
+    "uploaded_mib": 59750.16
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     606
+    ],
+    [
+     10,
+     "q4_K",
+     241
+    ]
+   ]
+  },
+  "C504_r1": {
+   "arm": "C504",
+   "rep": 1,
+   "mib": 504,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 67.3,
+   "ram_avail_gib": 12.43,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C504_r1.mct1",
+   "eval_ms": 28172.16,
+   "eval_n": 511,
+   "decode_tps": 18.14,
+   "prompt_n": 402,
+   "prompt_tps": 219.79,
+   "small": {
+    "hits": 71693,
+    "misses": 71936,
+    "cpu": 0,
+    "hit_rate": 49.92,
+    "uploaded_mib": 85417.31
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     302
+    ],
+    [
+     10,
+     "q4_K",
+     120
+    ]
+   ]
+  },
+  "C1008s_r1": {
+   "arm": "C1008s",
+   "rep": 1,
+   "mib": 1008,
+   "share": 0.95,
+   "rc": 0,
+   "seconds": 62.6,
+   "ram_avail_gib": 12.58,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C1008s_r1.mct1",
+   "eval_ms": 23326.46,
+   "eval_n": 511,
+   "decode_tps": 21.91,
+   "prompt_n": 402,
+   "prompt_tps": 216.21,
+   "small": {
+    "hits": 77374,
+    "misses": 66255,
+    "cpu": 62130,
+    "hit_rate": 53.87,
+    "uploaded_mib": 4903.59
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     598
+    ],
+    [
+     10,
+     "q4_K",
+     233
+    ]
+   ]
+  },
+  "A_r2": {
+   "arm": "A",
+   "rep": 2,
+   "mib": 0,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 60.4,
+   "ram_avail_gib": 12.9,
+   "trace": null,
+   "eval_ms": 21816.51,
+   "eval_n": 511,
+   "decode_tps": 23.42,
+   "prompt_n": 402,
+   "prompt_tps": 215.49,
+   "slots": []
+  },
+  "C1008_r2": {
+   "arm": "C1008",
+   "rep": 2,
+   "mib": 1008,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 64.3,
+   "ram_avail_gib": 12.71,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C1008_r2.mct1",
+   "eval_ms": 25002.54,
+   "eval_n": 511,
+   "decode_tps": 20.44,
+   "prompt_n": 402,
+   "prompt_tps": 214.09,
+   "small": {
+    "hits": 93269,
+    "misses": 50360,
+    "cpu": 0,
+    "hit_rate": 64.94,
+    "uploaded_mib": 59750.16
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     606
+    ],
+    [
+     10,
+     "q4_K",
+     241
+    ]
+   ]
+  },
+  "C504_r2": {
+   "arm": "C504",
+   "rep": 2,
+   "mib": 504,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 67.1,
+   "ram_avail_gib": 12.88,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C504_r2.mct1",
+   "eval_ms": 28141.75,
+   "eval_n": 511,
+   "decode_tps": 18.16,
+   "prompt_n": 402,
+   "prompt_tps": 218.43,
+   "small": {
+    "hits": 71693,
+    "misses": 71936,
+    "cpu": 0,
+    "hit_rate": 49.92,
+    "uploaded_mib": 85417.31
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     302
+    ],
+    [
+     10,
+     "q4_K",
+     120
+    ]
+   ]
+  },
+  "C1008s_r2": {
+   "arm": "C1008s",
+   "rep": 2,
+   "mib": 1008,
+   "share": 0.95,
+   "rc": 0,
+   "seconds": 62.4,
+   "ram_avail_gib": 12.99,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C1008s_r2.mct1",
+   "eval_ms": 23284.07,
+   "eval_n": 511,
+   "decode_tps": 21.95,
+   "prompt_n": 402,
+   "prompt_tps": 215.74,
+   "small": {
+    "hits": 77374,
+    "misses": 66255,
+    "cpu": 62130,
+    "hit_rate": 53.87,
+    "uploaded_mib": 4903.59
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     598
+    ],
+    [
+     10,
+     "q4_K",
+     233
+    ]
+   ]
+  },
+  "A_r3": {
+   "arm": "A",
+   "rep": 3,
+   "mib": 0,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 60.2,
+   "ram_avail_gib": 13.06,
+   "trace": null,
+   "eval_ms": 21514.51,
+   "eval_n": 511,
+   "decode_tps": 23.75,
+   "prompt_n": 402,
+   "prompt_tps": 216.56,
+   "slots": []
+  },
+  "C1008_r3": {
+   "arm": "C1008",
+   "rep": 3,
+   "mib": 1008,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 64.4,
+   "ram_avail_gib": 13.09,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C1008_r3.mct1",
+   "eval_ms": 25094.09,
+   "eval_n": 511,
+   "decode_tps": 20.36,
+   "prompt_n": 402,
+   "prompt_tps": 215.61,
+   "small": {
+    "hits": 93269,
+    "misses": 50360,
+    "cpu": 0,
+    "hit_rate": 64.94,
+    "uploaded_mib": 59750.16
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     606
+    ],
+    [
+     10,
+     "q4_K",
+     241
+    ]
+   ]
+  },
+  "C504_r3": {
+   "arm": "C504",
+   "rep": 3,
+   "mib": 504,
+   "share": 0.0,
+   "rc": 0,
+   "seconds": 67.3,
+   "ram_avail_gib": 13.09,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C504_r3.mct1",
+   "eval_ms": 28159.11,
+   "eval_n": 511,
+   "decode_tps": 18.15,
+   "prompt_n": 402,
+   "prompt_tps": 215.21,
+   "small": {
+    "hits": 71693,
+    "misses": 71936,
+    "cpu": 0,
+    "hit_rate": 49.92,
+    "uploaded_mib": 85417.31
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     302
+    ],
+    [
+     10,
+     "q4_K",
+     120
+    ]
+   ]
+  },
+  "C1008s_r3": {
+   "arm": "C1008s",
+   "rep": 3,
+   "mib": 1008,
+   "share": 0.95,
+   "rc": 0,
+   "seconds": 62.6,
+   "ram_avail_gib": 13.14,
+   "trace": "D:/evo-compress-data/prereg115/prereg115_C1008s_r3.mct1",
+   "eval_ms": 23382.59,
+   "eval_n": 511,
+   "decode_tps": 21.85,
+   "prompt_n": 402,
+   "prompt_tps": 215.77,
+   "small": {
+    "hits": 77374,
+    "misses": 66255,
+    "cpu": 62130,
+    "hit_rate": 53.87,
+    "uploaded_mib": 4903.59
+   },
+   "slots": [
+    [
+     25,
+     "q2_K",
+     598
+    ],
+    [
+     10,
+     "q4_K",
+     233
+    ]
+   ]
+  }
+ },
+ "status": "complete"
+}

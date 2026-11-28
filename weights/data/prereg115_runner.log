@@ -1,0 +1,26 @@
+[18:30:21] A_r1: 12.2 GiB RAM available
+[18:31:25] A_r1: rc=0 decode 21.67 tok/s, hit rate None
+[18:31:25] C1008_r1: 12.2 GiB RAM available
+[18:32:29] C1008_r1: rc=0 decode 20.47 tok/s, hit rate 64.94
+[18:32:29] C504_r1: 12.4 GiB RAM available
+[18:33:37] C504_r1: rc=0 decode 18.14 tok/s, hit rate 49.92
+[18:33:37] C1008s_r1: 12.6 GiB RAM available
+[18:34:39] C1008s_r1: rc=0 decode 21.91 tok/s, hit rate 53.87
+[18:34:39] A_r2: 12.9 GiB RAM available
+[18:35:40] A_r2: rc=0 decode 23.42 tok/s, hit rate None
+[18:35:40] C1008_r2: 12.7 GiB RAM available
+[18:36:44] C1008_r2: rc=0 decode 20.44 tok/s, hit rate 64.94
+[18:36:44] C504_r2: 12.9 GiB RAM available
+[18:37:51] C504_r2: rc=0 decode 18.16 tok/s, hit rate 49.92
+[18:37:51] C1008s_r2: 13.0 GiB RAM available
+[18:38:53] C1008s_r2: rc=0 decode 21.95 tok/s, hit rate 53.87
+[18:38:53] A_r3: 13.1 GiB RAM available
+[18:39:54] A_r3: rc=0 decode 23.75 tok/s, hit rate None
+[18:39:54] C1008_r3: 13.1 GiB RAM available
+[18:40:58] C1008_r3: rc=0 decode 20.36 tok/s, hit rate 64.94
+[18:40:58] C504_r3: 13.1 GiB RAM available
+[18:42:05] C504_r3: rc=0 decode 18.15 tok/s, hit rate 49.92
+[18:42:05] C1008s_r3: 13.1 GiB RAM available
+[18:43:08] C1008s_r3: rc=0 decode 21.85 tok/s, hit rate 53.87
+
+all runs complete -> python weights/prereg115_score.py --results C:\Users\Federico\Documents\evo-compress\.claude\worktrees\law5-prefill\weights\data\prereg115.json
