@@ -174,3 +174,10 @@ is the follow-up.
   faster link, moves the break-even, and the decomposition above is what pricing that needs.
 
 **Scope.** One machine, one model, one prompt, decode only.
+
+**Follow-up, the same evening.** `quantprobe bench --gguf …Qwen3.6-35B-A3B-OURS-depthaware.gguf
+--llama-dir …llamacpp-b12815 --reps 5` measured **22.90 ± 0.48 tok/s** for arm A's placement, with
+llama-bench methodology (tg32), against the plan's predicted 23.4 (−2%). Free RAM was 12.5 GiB,
+against a 13.1 GiB model. Two harnesses agree. The published model card's 11.0–14.4 tok/s
+describes the older `-ngl 12` placement on b10098, not the placement the plan recommends.
+Updating the card is proposed, not done: it is a public upload.
